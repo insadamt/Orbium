@@ -1,0 +1,7 @@
+{
+  "name": "Orbium Codex Implementation Handoff",
+  "target_release": "v0.1.0",
+  "workflow": "phase-by-phase with manual approval gate",
+  "file_count": 31,
+  "entrypoint": "START_HERE.md"
+}
