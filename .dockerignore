@@ -1,0 +1,13 @@
+.git
+AGENTS.md
+.agents
+.codex
+Docs
+node_modules
+vendor
+.env
+storage/logs/*
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+public/build
