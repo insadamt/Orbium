@@ -91,7 +91,8 @@ Image
 File
 Table
 Mermaid
-Math
+Math block
+Inline math
 Divider
 ```
 

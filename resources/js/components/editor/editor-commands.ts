@@ -114,10 +114,21 @@ export const blockCommands: BlockCommand[] = [
         },
     },
     {
-        label: 'Math',
-        search: 'equation latex',
+        label: 'Math block',
+        search: 'equation latex display',
         run: (editor) => {
             editor.chain().focus().insertBlockMath({ latex: 'E = mc^2' }).run();
+        },
+    },
+    {
+        label: 'Inline math',
+        search: 'math equation latex',
+        run: (editor) => {
+            editor
+                .chain()
+                .focus()
+                .insertInlineMath({ latex: 'E = mc^2' })
+                .run();
         },
     },
     {

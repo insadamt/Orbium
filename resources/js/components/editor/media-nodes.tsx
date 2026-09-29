@@ -5,7 +5,8 @@ import {
     type NodeViewProps,
 } from '@tiptap/react';
 import DOMPurify from 'dompurify';
-import { useEffect, useState } from 'react';
+import { Eye, Pencil } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { attachmentUrl } from './editor-api';
 
 type MediaContext = { workspaceId: number; nodeId: number };
@@ -125,11 +126,17 @@ function FileView({
     );
 }
 
-function MermaidView({ node, updateAttributes, selected }: NodeViewProps) {
+function MermaidView({ node, updateAttributes }: NodeViewProps) {
     const [preview, setPreview] = useState('');
     const [error, setError] = useState('');
-    const [showSource, setShowSource] = useState(false);
+    const [renderedSource, setRenderedSource] = useState('');
+    const [isEditing, setIsEditing] = useState(false);
+    const sourceInput = useRef<HTMLTextAreaElement>(null);
     const source = String(node.attrs.source ?? '');
+
+    useEffect(() => {
+        if (isEditing) sourceInput.current?.focus();
+    }, [isEditing]);
 
     useEffect(() => {
         let active = true;
@@ -153,6 +160,7 @@ function MermaidView({ node, updateAttributes, selected }: NodeViewProps) {
                         }),
                     );
                     setError('');
+                    setRenderedSource(source);
                 }
             } catch {
                 if (active) {
@@ -160,6 +168,7 @@ function MermaidView({ node, updateAttributes, selected }: NodeViewProps) {
                     setError(
                         'Diagram syntax could not be rendered. The source is preserved.',
                     );
+                    setRenderedSource(source);
                 }
             }
         };
@@ -179,35 +188,54 @@ function MermaidView({ node, updateAttributes, selected }: NodeViewProps) {
                 contentEditable={false}
             >
                 <span>Mermaid</span>
-                <button
-                    type="button"
-                    onClick={() => setShowSource(!showSource)}
+                <div
+                    role="group"
+                    aria-label="Mermaid mode"
+                    className="inline-flex rounded-lg border border-border bg-muted/60 p-0.5"
                 >
-                    {showSource ? 'Preview' : 'Edit source'}
-                </button>
+                    <button
+                        type="button"
+                        aria-pressed={isEditing}
+                        onClick={() => setIsEditing(true)}
+                        className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 transition-colors focus-visible:outline-2 focus-visible:outline-ring ${isEditing ? 'bg-background text-foreground shadow-sm' : 'hover:bg-accent hover:text-foreground'}`}
+                    >
+                        <Pencil size={13} aria-hidden="true" /> Edit
+                    </button>
+                    <button
+                        type="button"
+                        aria-pressed={!isEditing}
+                        onClick={() => setIsEditing(false)}
+                        className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 transition-colors focus-visible:outline-2 focus-visible:outline-ring ${!isEditing ? 'bg-background text-foreground shadow-sm' : 'hover:bg-accent hover:text-foreground'}`}
+                    >
+                        <Eye size={14} aria-hidden="true" /> Preview
+                    </button>
+                </div>
             </div>
-            {(showSource || selected || error) && (
+            {isEditing ? (
                 <textarea
+                    ref={sourceInput}
                     aria-label="Mermaid source"
                     value={source}
                     onChange={(event) =>
                         updateAttributes({ source: event.target.value })
                     }
                     rows={6}
-                    className="mb-3 w-full rounded-md bg-muted p-3 font-mono text-sm"
+                    className="w-full rounded-md bg-muted p-3 font-mono text-sm"
                 />
-            )}
-            {error && (
+            ) : renderedSource !== source ? (
+                <p className="text-sm text-muted-foreground">
+                    Rendering diagram…
+                </p>
+            ) : error ? (
                 <p role="alert" className="text-sm text-destructive">
                     {error}
                 </p>
-            )}
-            {preview && (
+            ) : preview ? (
                 <div
                     className="overflow-auto"
                     dangerouslySetInnerHTML={{ __html: preview }}
                 />
-            )}
+            ) : null}
         </NodeViewWrapper>
     );
 }

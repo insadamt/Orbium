@@ -1,7 +1,7 @@
 import type { Editor, JSONContent } from '@tiptap/core';
 import { router } from '@inertiajs/react';
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
-import { Mathematics } from '@tiptap/extension-mathematics';
+import { BlockMath, InlineMath } from '@tiptap/extension-mathematics';
 import Placeholder from '@tiptap/extension-placeholder';
 import { TableKit } from '@tiptap/extension-table';
 import TaskList from '@tiptap/extension-task-list';
@@ -28,6 +28,8 @@ import {
 } from './editor-suggestions';
 import { useDocumentAutosave } from './use-document-autosave';
 import CodeBlockView from './code-block-view';
+import MathBlockView from './math-block-view';
+import MathInlineView from './math-inline-view';
 
 type Props = {
     workspaceId: number;
@@ -88,7 +90,6 @@ export default function DocumentEditor({
     const [matchCount, setMatchCount] = useState(0);
     const [uploadError, setUploadError] = useState('');
     const fileInput = useRef<HTMLInputElement>(null);
-    const editorInstance = useRef<Editor | null>(null);
     const { status, error, navigationNotice, queueSave, saveNow } =
         useDocumentAutosave(workspaceId, nodeId, revision);
 
@@ -108,33 +109,18 @@ export default function DocumentEditor({
             TableKit,
             TaskList,
             TaskItem.configure({ nested: true }),
-            Mathematics.configure({
+            BlockMath.configure({
                 katexOptions: { throwOnError: false, trust: false },
-                inlineOptions: {
-                    onClick: (node, pos) => {
-                        const latex = window.prompt(
-                            'Edit inline math',
-                            String(node.attrs.latex),
-                        );
-                        if (latex !== null)
-                            editorInstance.current?.commands.updateInlineMath({
-                                latex,
-                                pos,
-                            });
-                    },
+            }).extend({
+                addNodeView() {
+                    return ReactNodeViewRenderer(MathBlockView);
                 },
-                blockOptions: {
-                    onClick: (node, pos) => {
-                        const latex = window.prompt(
-                            'Edit block math',
-                            String(node.attrs.latex),
-                        );
-                        if (latex !== null)
-                            editorInstance.current?.commands.updateBlockMath({
-                                latex,
-                                pos,
-                            });
-                    },
+            }),
+            InlineMath.configure({
+                katexOptions: { throwOnError: false, trust: false },
+            }).extend({
+                addNodeView() {
+                    return ReactNodeViewRenderer(MathInlineView);
                 },
             }),
             Placeholder.configure({
@@ -165,10 +151,6 @@ export default function DocumentEditor({
         },
         [extensions],
     );
-
-    useEffect(() => {
-        editorInstance.current = editor;
-    }, [editor]);
 
     async function addFiles(files: FileList | File[]) {
         if (!editor) return;
