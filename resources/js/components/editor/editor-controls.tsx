@@ -1,4 +1,5 @@
 import type { Editor } from '@tiptap/core';
+import { TextSelection } from '@tiptap/pm/state';
 import { BubbleMenu } from '@tiptap/react/menus';
 import {
     Bold,
@@ -118,6 +119,7 @@ export function SelectionToolbar({ editor }: { editor: Editor }) {
     return (
         <BubbleMenu
             editor={editor}
+            shouldShow={() => canFormatTextSelection(editor)}
             className="glass-surface flex items-center gap-1 rounded-xl border border-border p-1 shadow-lg"
         >
             <FormatButton
@@ -170,6 +172,31 @@ export function SelectionToolbar({ editor }: { editor: Editor }) {
             </FormatButton>
         </BubbleMenu>
     );
+}
+
+function canFormatTextSelection(editor: Editor): boolean {
+    const { selection, doc, schema } = editor.state;
+    if (
+        !editor.isEditable ||
+        !(selection instanceof TextSelection) ||
+        selection.empty
+    )
+        return false;
+
+    let containsText = false;
+    let supportsFormatting = true;
+    doc.nodesBetween(selection.from, selection.to, (node) => {
+        if (node.isText && node.text?.length) containsText = true;
+        if (
+            (node.isTextblock &&
+                !node.type.allowsMarkType(schema.marks.bold)) ||
+            (node.isAtom && !node.isText)
+        ) {
+            supportsFormatting = false;
+        }
+    });
+
+    return containsText && supportsFormatting;
 }
 
 function FormatButton({

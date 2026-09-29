@@ -6,98 +6,11 @@ import {
 } from '@tiptap/react';
 import DOMPurify from 'dompurify';
 import { Eye, Pencil } from 'lucide-react';
+import ImageView from './image-view';
 import { useEffect, useRef, useState } from 'react';
 import { attachmentUrl } from './editor-api';
 
 type MediaContext = { workspaceId: number; nodeId: number };
-
-function ImageView({
-    node,
-    updateAttributes,
-    selected,
-    context,
-}: NodeViewProps & { context: MediaContext }) {
-    const { workspaceId, nodeId } = context;
-    const attachmentId = Number(node.attrs.attachmentId);
-    return (
-        <NodeViewWrapper className="editor-image my-5" data-drag-handle>
-            <figure
-                className={selected ? 'outline outline-2 outline-ring' : ''}
-            >
-                <img
-                    src={attachmentUrl(workspaceId, nodeId, attachmentId)}
-                    alt={String(node.attrs.alt ?? '')}
-                    width={Number(node.attrs.width) || undefined}
-                    className="max-w-full rounded-lg"
-                    style={{
-                        marginInline:
-                            node.attrs.alignment === 'center'
-                                ? 'auto'
-                                : undefined,
-                    }}
-                />
-                <figcaption className="mt-2 text-sm text-muted-foreground">
-                    <input
-                        aria-label="Image caption"
-                        value={String(node.attrs.caption ?? '')}
-                        onChange={(event) =>
-                            updateAttributes({ caption: event.target.value })
-                        }
-                        placeholder="Add a caption"
-                        className="w-full bg-transparent text-center outline-none"
-                    />
-                </figcaption>
-            </figure>
-            {selected && (
-                <div
-                    className="mt-2 flex gap-2 text-xs"
-                    contentEditable={false}
-                >
-                    <button
-                        type="button"
-                        onClick={() => updateAttributes({ alignment: 'left' })}
-                    >
-                        Left
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() =>
-                            updateAttributes({ alignment: 'center' })
-                        }
-                    >
-                        Center
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() =>
-                            updateAttributes({
-                                width: Math.max(
-                                    160,
-                                    Number(node.attrs.width || 720) - 100,
-                                ),
-                            })
-                        }
-                    >
-                        Smaller
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() =>
-                            updateAttributes({
-                                width: Math.min(
-                                    1200,
-                                    Number(node.attrs.width || 720) + 100,
-                                ),
-                            })
-                        }
-                    >
-                        Larger
-                    </button>
-                </div>
-            )}
-        </NodeViewWrapper>
-    );
-}
 
 function FileView({
     node,

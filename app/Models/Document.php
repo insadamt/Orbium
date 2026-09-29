@@ -11,7 +11,7 @@ class Document extends Model
 
     public $incrementing = false;
 
-    protected $fillable = ['content', 'content_format_version', 'plain_text', 'cover_attachment_id', 'revision'];
+    protected $fillable = ['content', 'content_format_version', 'plain_text', 'cover_attachment_id', 'icon_attachment_id', 'revision'];
 
     protected function casts(): array
     {

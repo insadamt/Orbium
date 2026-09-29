@@ -28,7 +28,7 @@ class DocumentController extends Controller
         return Inertia::render('documents/show', [
             'workspace' => $workspaceModel->only(['id', 'name']),
             'node' => $documentNode->only(['id', 'title', 'icon', 'parent_id']),
-            'document' => $document->only(['content', 'revision', 'cover_attachment_id']),
+            'document' => $document->only(['content', 'revision', 'cover_attachment_id', 'icon_attachment_id']),
             'breadcrumbs' => [...$breadcrumbs, ...$ancestors],
         ]);
     }
@@ -55,19 +55,29 @@ class DocumentController extends Controller
             'title' => ['sometimes', 'required', 'string', 'max:255'],
             'icon' => ['sometimes', 'nullable', 'string', 'max:16'],
             'cover_attachment_id' => ['sometimes', 'nullable', 'integer'],
+            'icon_attachment_id' => ['sometimes', 'nullable', 'integer'],
         ]);
-        if (array_key_exists('cover_attachment_id', $data) && $data['cover_attachment_id'] !== null) {
-            $validCover = Attachment::query()->where('workspace_id', $documentNode->workspace_id)
+        foreach (['cover_attachment_id', 'icon_attachment_id'] as $attachmentField) {
+            if (! array_key_exists($attachmentField, $data) || $data[$attachmentField] === null) {
+                continue;
+            }
+            $validImage = Attachment::query()->where('workspace_id', $documentNode->workspace_id)
                 ->where('owner_node_id', $documentNode->id)->where('purpose', 'image')
-                ->whereKey($data['cover_attachment_id'])->exists();
-            abort_unless($validCover, 422);
+                ->whereKey($data[$attachmentField])->exists();
+            abort_unless($validImage, 422);
         }
         $documentNode->update(collect($data)->only(['title', 'icon'])->all());
-        if (array_key_exists('cover_attachment_id', $data)) {
-            $documentNode->document()->update(['cover_attachment_id' => $data['cover_attachment_id']]);
+        $documentChanges = collect($data)->only(['cover_attachment_id', 'icon_attachment_id'])->all();
+        if ($documentChanges !== []) {
+            $documentNode->document()->update($documentChanges);
         }
 
-        return response()->json(['title' => $documentNode->title, 'icon' => $documentNode->icon, 'cover_attachment_id' => $documentNode->document->cover_attachment_id]);
+        return response()->json([
+            'title' => $documentNode->title,
+            'icon' => $documentNode->icon,
+            'cover_attachment_id' => $documentNode->document->cover_attachment_id,
+            'icon_attachment_id' => $documentNode->document->icon_attachment_id,
+        ]);
     }
 
     private function ownedDocument(Request $request, int $workspaceId, int $nodeId): Node

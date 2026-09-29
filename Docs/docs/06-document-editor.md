@@ -20,6 +20,10 @@ Document Title
 Body...
 ```
 
+The document image menu opens pickers for PNG, JPEG, GIF, or WebP icons and covers. A selected icon overlaps the cover edge by half its height and sits beside the title column. Existing text icons remain visible until replaced or removed.
+
+Images that do not match the icon's 512×512 or cover's 1470×432 target open a crop dialog before upload. The user can position and zoom the crop or cancel without changing the current image.
+
 No permanent formatting toolbar.
 
 Preferred text column:

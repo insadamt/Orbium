@@ -71,6 +71,7 @@ content jsonb
 content_format_version integer
 plain_text text
 cover_attachment_id nullable
+icon_attachment_id nullable -> attachments.id
 created_at
 updated_at
 ```
