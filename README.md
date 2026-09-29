@@ -17,7 +17,7 @@ Requirements: Docker with Compose.
     Paste the printed `base64:...` value into `APP_KEY` in `.env`.
 
 4. Run `docker compose up --build -d`.
-5. Open `http://localhost:8080` (or the port set by `ORBIUM_PORT`). Create an account, then sign in.
+5. Open `http://localhost:8081` (or the port set by `ORBIUM_PORT`). Create an account, then sign in.
 
 The app runs migrations at startup. PostgreSQL and uploaded application files use named Docker volumes. `docker compose down` keeps them; `docker compose down -v` deletes them. Keep the same `APP_KEY` when restarting or updating. For internet exposure, put HTTPS in front of nginx and set `APP_URL` to the public HTTPS URL. A future Orbium portable archive is different from a server backup; back up the database and application file volume together until archive export arrives in Phase 6.
 
