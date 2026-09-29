@@ -6,6 +6,7 @@ import type { Auth, BreadcrumbItem } from '@/types';
 
 type ShellPageProps = {
     auth: Auth;
+    breadcrumbs?: BreadcrumbItem[];
 };
 
 type AppLayoutProps = {
@@ -17,7 +18,9 @@ export default function AppLayout({
     breadcrumbs = [],
     children,
 }: AppLayoutProps) {
-    const { auth } = usePage<ShellPageProps>().props;
+    const { auth, breadcrumbs: pageBreadcrumbs } =
+        usePage<ShellPageProps>().props;
+    const activeBreadcrumbs = pageBreadcrumbs ?? breadcrumbs;
     const [accountMenuOpen, setAccountMenuOpen] = useState(false);
 
     function signOut(): void {
@@ -54,9 +57,9 @@ export default function AppLayout({
                                     Home
                                 </Link>
                             </li>
-                            {breadcrumbs.map((crumb) => (
+                            {activeBreadcrumbs.map((crumb) => (
                                 <li
-                                    key={crumb.title}
+                                    key={JSON.stringify(crumb.href)}
                                     className="flex min-w-0 items-center gap-2"
                                 >
                                     <span aria-hidden="true">/</span>
@@ -125,10 +128,10 @@ export default function AppLayout({
                             aria-selected="true"
                             className="rounded-t-md border-b-2 border-foreground px-3 py-2 text-xs font-medium"
                         >
-                            Home
+                            Workspace
                         </span>
                         <span className="text-xs text-muted-foreground">
-                            Workspace tabs arrive in Phase 4
+                            Tabs arrive in Phase 4
                         </span>
                     </div>
                     <Link
@@ -144,7 +147,7 @@ export default function AppLayout({
                 {children}
             </main>
             <footer className="mx-auto flex max-w-[1600px] items-center justify-between border-t border-border px-5 py-5 text-xs text-muted-foreground md:px-8">
-                <span>Orbium · Foundation</span>
+                <span>Orbium · Workspaces</span>
                 <AppearanceTabs />
             </footer>
         </div>

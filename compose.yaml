@@ -1,6 +1,7 @@
 services:
     postgres:
         image: postgres:17-alpine
+        restart: unless-stopped
         ports:
             - '127.0.0.1:${ORBIUM_DB_PORT:-54329}:5432'
         environment:
@@ -23,6 +24,9 @@ services:
         build: .
         env_file: .env
         environment:
+            APP_ENV: production
+            APP_DEBUG: 'false'
+            APP_URL: ${ORBIUM_DOCKER_APP_URL:-${APP_URL:-http://localhost:18082}}
             DB_CONNECTION: pgsql
             DB_HOST: postgres
             DB_PORT: 5432

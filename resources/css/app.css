@@ -1,6 +1,181 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 
+.orbium-editor {
+    color: var(--foreground);
+    font-size: 1.03rem;
+    line-height: 1.75;
+    overflow-wrap: anywhere;
+    min-width: 0;
+}
+
+.orbium-editor > * + * {
+    margin-top: 0.75em;
+}
+.orbium-editor > .editor-block-dragging {
+    opacity: 0.45;
+}
+.editor-block-drag-preview {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 50;
+    pointer-events: none;
+    max-width: 20rem;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    background: var(--popover);
+    color: var(--foreground);
+    padding: 0.4rem 0.7rem;
+    font-size: 0.875rem;
+    line-height: 1.4;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    box-shadow: 0 8px 24px rgb(0 0 0 / 0.16);
+}
+.orbium-editor p.is-editor-empty:first-child::before {
+    content: attr(data-placeholder);
+    float: left;
+    color: var(--muted-foreground);
+    pointer-events: none;
+    height: 0;
+}
+.orbium-editor h1 {
+    font-size: 2rem;
+    font-weight: 650;
+    line-height: 1.2;
+    margin-top: 1.3em;
+}
+.orbium-editor h2 {
+    font-size: 1.5rem;
+    font-weight: 630;
+    line-height: 1.25;
+    margin-top: 1.2em;
+}
+.orbium-editor h3 {
+    font-size: 1.2rem;
+    font-weight: 620;
+    line-height: 1.3;
+    margin-top: 1.1em;
+}
+.orbium-editor ul:not([data-type='taskList']) {
+    list-style: disc;
+    padding-left: 1.6em;
+}
+.orbium-editor ol {
+    list-style: decimal;
+    padding-left: 1.6em;
+}
+.orbium-editor ul[data-type='taskList'] {
+    list-style: none;
+    padding-left: 0;
+}
+.orbium-editor ul[data-type='taskList'] li {
+    display: flex;
+    gap: 0.6em;
+}
+.orbium-editor ul[data-type='taskList'] li > label {
+    flex: none;
+}
+.orbium-editor ul[data-type='taskList'] li > div {
+    flex: 1;
+}
+.orbium-editor blockquote {
+    border-left: 3px solid var(--border);
+    padding-left: 1.1rem;
+    color: var(--muted-foreground);
+}
+.orbium-editor .editor-callout,
+.orbium-editor aside[data-callout] {
+    border: 1px solid var(--border);
+    border-radius: 0.8rem;
+    padding: 1rem 1.2rem;
+    background: var(--muted);
+}
+.orbium-editor hr {
+    border: 0;
+    border-top: 1px solid var(--border);
+    margin: 1.5rem 0;
+}
+.orbium-editor a {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+.orbium-editor code {
+    border-radius: 0.25rem;
+    background: var(--muted);
+    padding: 0.1em 0.3em;
+    font-size: 0.88em;
+}
+.orbium-editor pre {
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: 0.8rem;
+    background: var(--muted);
+    padding: 1rem;
+    font-size: 0.85rem;
+    line-height: 1.55;
+}
+.orbium-editor pre code {
+    background: transparent;
+    padding: 0;
+}
+.orbium-editor .hljs-keyword,
+.orbium-editor .hljs-selector-tag {
+    color: var(--color-info);
+}
+.orbium-editor .hljs-string,
+.orbium-editor .hljs-number {
+    color: var(--color-success);
+}
+.orbium-editor .hljs-comment {
+    color: var(--muted-foreground);
+}
+.orbium-editor .tableWrapper {
+    width: max-content;
+    max-width: var(--table-available-width, 100%);
+    min-width: 0;
+    overflow-x: auto;
+    margin-bottom: 2rem;
+}
+.orbium-editor table {
+    border-collapse: collapse;
+    width: max-content;
+}
+.orbium-editor th,
+.orbium-editor td {
+    border: 1px solid var(--border);
+    min-width: 6rem;
+    padding: 0.45rem 0.65rem;
+    vertical-align: top;
+}
+.orbium-editor th {
+    background: var(--muted);
+    text-align: left;
+}
+.table-edge-control {
+    pointer-events: auto;
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border);
+    border-radius: 0.4rem;
+    background: var(--background);
+    color: var(--muted-foreground);
+}
+.table-edge-control:hover {
+    background: var(--accent);
+    color: var(--foreground);
+}
+.orbium-editor .editor-mention {
+    background: var(--muted);
+    border-radius: 0.25rem;
+    padding: 0.1rem 0.2rem;
+    font-weight: 600;
+}
+
 @source '../views';
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 

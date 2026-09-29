@@ -1,0 +1,84 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Actions\Documents\SaveDocument;
+use App\Models\Attachment;
+use App\Models\Node;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Inertia\Inertia;
+use Inertia\Response;
+
+class DocumentController extends Controller
+{
+    public function show(Request $request, int $workspace, int $node): Response
+    {
+        $documentNode = $this->ownedDocument($request, $workspace, $node);
+        $document = $documentNode->document()->firstOrFail();
+        $workspaceModel = $documentNode->workspace;
+        $breadcrumbs = [['title' => $workspaceModel->name, 'href' => route('workspaces.show', $workspaceModel)]];
+        $ancestors = [];
+        $parent = $documentNode->parent;
+        while ($parent !== null) {
+            array_unshift($ancestors, ['title' => $parent->title, 'href' => route('nodes.show', [$workspaceModel, $parent])]);
+            $parent = $parent->parent;
+        }
+
+        return Inertia::render('documents/show', [
+            'workspace' => $workspaceModel->only(['id', 'name']),
+            'node' => $documentNode->only(['id', 'title', 'icon', 'parent_id']),
+            'document' => $document->only(['content', 'revision', 'cover_attachment_id']),
+            'breadcrumbs' => [...$breadcrumbs, ...$ancestors],
+        ]);
+    }
+
+    public function update(Request $request, int $workspace, int $node, SaveDocument $save): JsonResponse
+    {
+        $documentNode = $this->ownedDocument($request, $workspace, $node);
+        $data = $request->validate([
+            'content' => ['required', 'array'],
+            'revision' => ['required', 'integer', 'min:0'],
+        ]);
+        if (strlen(json_encode($data['content'], JSON_THROW_ON_ERROR)) > 1048576) {
+            return response()->json(['message' => 'Document content exceeds 1 MB.'], 422);
+        }
+        $document = $save->save($documentNode, $data['content'], $data['revision']);
+
+        return response()->json(['revision' => $document->revision, 'saved_at' => $document->updated_at?->toIso8601String()]);
+    }
+
+    public function updateHeader(Request $request, int $workspace, int $node): JsonResponse
+    {
+        $documentNode = $this->ownedDocument($request, $workspace, $node);
+        $data = $request->validate([
+            'title' => ['sometimes', 'required', 'string', 'max:255'],
+            'icon' => ['sometimes', 'nullable', 'string', 'max:16'],
+            'cover_attachment_id' => ['sometimes', 'nullable', 'integer'],
+        ]);
+        if (array_key_exists('cover_attachment_id', $data) && $data['cover_attachment_id'] !== null) {
+            $validCover = Attachment::query()->where('workspace_id', $documentNode->workspace_id)
+                ->where('owner_node_id', $documentNode->id)->where('purpose', 'image')
+                ->whereKey($data['cover_attachment_id'])->exists();
+            abort_unless($validCover, 422);
+        }
+        $documentNode->update(collect($data)->only(['title', 'icon'])->all());
+        if (array_key_exists('cover_attachment_id', $data)) {
+            $documentNode->document()->update(['cover_attachment_id' => $data['cover_attachment_id']]);
+        }
+
+        return response()->json(['title' => $documentNode->title, 'icon' => $documentNode->icon, 'cover_attachment_id' => $documentNode->document->cover_attachment_id]);
+    }
+
+    private function ownedDocument(Request $request, int $workspaceId, int $nodeId): Node
+    {
+        $workspace = $request->user()->workspaces()->findOrFail($workspaceId);
+        $node = $workspace->nodes()->where('type', 'document')->findOrFail($nodeId);
+        $ancestor = $node;
+        while ($ancestor->parent_id !== null) {
+            $ancestor = $workspace->nodes()->findOrFail($ancestor->parent_id);
+        }
+
+        return $node;
+    }
+}

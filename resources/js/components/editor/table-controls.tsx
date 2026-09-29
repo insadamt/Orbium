@@ -1,0 +1,156 @@
+import type { Editor } from '@tiptap/core';
+import { TableMap } from '@tiptap/pm/tables';
+import { Plus } from 'lucide-react';
+import { useEffect, useState, type RefObject } from 'react';
+
+type TableLocation = {
+    position: number;
+    width: number;
+    height: number;
+    left: number;
+    top: number;
+};
+
+function activeTable(
+    editor: Editor,
+    surface: HTMLElement,
+): TableLocation | null {
+    const { $from } = editor.state.selection;
+    let tableDepth = $from.depth;
+    while (tableDepth > 0 && $from.node(tableDepth).type.name !== 'table')
+        tableDepth--;
+    if (tableDepth === 0) return null;
+
+    const position = $from.before(tableDepth);
+    const tableWrapper = editor.view.nodeDOM(position);
+    if (!(tableWrapper instanceof HTMLElement)) return null;
+
+    const tableBounds = tableWrapper.getBoundingClientRect();
+    const surfaceBounds = surface.getBoundingClientRect();
+    return {
+        position,
+        width: tableBounds.width,
+        height: tableBounds.height,
+        left: tableBounds.left - surfaceBounds.left,
+        top: tableBounds.top - surfaceBounds.top,
+    };
+}
+
+function selectCell(
+    editor: Editor,
+    tablePosition: number,
+    row: number,
+    column: number,
+): boolean {
+    const table = editor.state.doc.nodeAt(tablePosition);
+    if (!table) return false;
+    const map = TableMap.get(table);
+    const cellPosition = tablePosition + 1 + map.map[row * map.width + column];
+    return editor
+        .chain()
+        .focus()
+        .setTextSelection(cellPosition + 2)
+        .run();
+}
+
+export default function TableControls({
+    editor,
+    surfaceRef,
+}: {
+    editor: Editor;
+    surfaceRef: RefObject<HTMLDivElement | null>;
+}) {
+    const [table, setTable] = useState<TableLocation | null>(null);
+
+    useEffect(() => {
+        const surface = surfaceRef.current;
+        if (!surface) return;
+        const updateLocation = () => {
+            const editorLeft = editor.view.dom.getBoundingClientRect().left;
+            const availableWidth = Math.max(
+                0,
+                window.innerWidth - editorLeft - 40,
+            );
+            surface.style.setProperty(
+                '--table-available-width',
+                `${availableWidth}px`,
+            );
+            setTable(activeTable(editor, surface));
+        };
+        const resizeObserver = new ResizeObserver(updateLocation);
+        resizeObserver.observe(surface);
+        editor.on('selectionUpdate', updateLocation);
+        editor.on('update', updateLocation);
+        window.addEventListener('resize', updateLocation);
+        window.addEventListener('scroll', updateLocation, true);
+        updateLocation();
+        return () => {
+            surface.style.removeProperty('--table-available-width');
+            resizeObserver.disconnect();
+            editor.off('selectionUpdate', updateLocation);
+            editor.off('update', updateLocation);
+            window.removeEventListener('resize', updateLocation);
+            window.removeEventListener('scroll', updateLocation, true);
+        };
+    }, [editor, surfaceRef]);
+
+    if (!table) return null;
+
+    function addRow() {
+        if (!table) return;
+        const node = editor.state.doc.nodeAt(table.position);
+        if (!node) return;
+        const map = TableMap.get(node);
+        if (selectCell(editor, table.position, map.height - 1, 0))
+            editor.chain().focus().addRowAfter().run();
+    }
+
+    function addColumn() {
+        if (!table) return;
+        const node = editor.state.doc.nodeAt(table.position);
+        if (!node) return;
+        const map = TableMap.get(node);
+        if (selectCell(editor, table.position, 0, map.width - 1))
+            editor.chain().focus().addColumnAfter().run();
+    }
+
+    return (
+        <div
+            data-table-controls
+            className="pointer-events-none absolute inset-0 z-20"
+        >
+            <button
+                type="button"
+                aria-label="Add row to table"
+                title="Add row"
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={addRow}
+                className="table-edge-control"
+                style={{
+                    left: table.left,
+                    top: table.top + table.height + 5,
+                    width: table.width,
+                    height: 22,
+                }}
+            >
+                <Plus size={15} />
+            </button>
+            <button
+                type="button"
+                aria-label="Add column to table"
+                title="Add column"
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={addColumn}
+                className="table-edge-control"
+                style={{
+                    left: table.left + table.width + 5,
+                    top: table.top,
+                    width: 22,
+                    height: table.height,
+                }}
+            >
+                <Plus size={15} />
+            </button>
+        </div>
+    );
+}
