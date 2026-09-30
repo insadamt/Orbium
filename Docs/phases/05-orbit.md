@@ -4,9 +4,9 @@
 
 The user replaced the earlier orbital home brief with a continuous, neutral workspace of independent floating controls and compact items. This pass supersedes the carousel/half-orb explorer, while leaving document/database work surfaces and the backend unchanged.
 
-- Four floating top groups: logo, custom workspace selector, centered opened-tabs island whose plus button opens workspace home in a new tab, and settings/account controls. Back remains a floating button. Search expands into an inline, current-page field; Ctrl+Space still opens Search Master.
+- Independent floating top groups: logo, custom workspace selector, a separate breadcrumb-path island immediately to its right, a centered opened-tabs island whose plus button opens workspace home in a new tab, and settings/account controls. The former floating Back button is removed; breadcrumb ancestors open their hierarchy location. Search expands into an inline, current-page field; Ctrl+Space still opens Search Master.
 - Show only direct children, in persisted order, without a sidebar, headings, counts, hero, footer, or visible Trash shortcut.
-- Click/Enter opens an entity in the current tab; Ctrl+click or Ctrl+Enter opens it in a new app tab. Space can select a focused item. Native drag/drop supports reorder and validated containment; item actions provide an alternative.
+- Click/Enter opens an entity in the current tab; Ctrl+click or Ctrl+Enter opens it in a new app tab. Space can select a focused item. Native drag/drop supports reorder and validated containment. Right-clicking empty explorer space offers document, folder, and database creation; right-clicking an item offers Open, Open in new tab, Rename, and Delete. The item menu does not expose Move.
 - Use short CSS transitions and honor reduced motion.
 - Review routes, checks, compromises, and manual acceptance are recorded in `../reports/05-floating-workspace.md`.
 

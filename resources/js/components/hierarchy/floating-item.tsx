@@ -11,7 +11,7 @@ type Props = {
     dragHandlers: HTMLAttributes<HTMLDivElement>;
     onSelect: () => void;
     onOpen: (newTab: boolean) => void;
-    onActions: () => void;
+    onActions: (target: HTMLElement) => void;
     onReorder: (direction: number) => void;
 };
 
@@ -39,14 +39,11 @@ export function FloatingItem({
             data-selected={selected}
             data-dragging={dragging}
             data-drop={placement}
+            data-node-id={node.id}
             onClick={(event) => {
                 if (event.button !== 0) return;
                 onSelect();
                 onOpen(event.ctrlKey || event.metaKey);
-            }}
-            onContextMenu={(event) => {
-                event.preventDefault();
-                onActions();
             }}
             onKeyDown={(event) => {
                 if (event.target !== event.currentTarget) return;
@@ -60,7 +57,7 @@ export function FloatingItem({
                 }
                 if (event.shiftKey && event.key === 'F10') {
                     event.preventDefault();
-                    onActions();
+                    onActions(event.currentTarget);
                 }
                 if (
                     event.altKey &&
@@ -88,7 +85,7 @@ export function FloatingItem({
                 onDoubleClick={(event) => event.stopPropagation()}
                 onClick={(event) => {
                     event.stopPropagation();
-                    onActions();
+                    onActions(event.currentTarget);
                 }}
             >
                 <MoreHorizontal size={17} />

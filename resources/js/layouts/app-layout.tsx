@@ -28,6 +28,8 @@ type ShellPageProps = {
     nodes?: TreeNode[];
     trashedNodes?: TrashedNode[];
     currentNode?: TreeNode | null;
+    node?: { title: string };
+    database?: { title: string };
     breadcrumbs?: BreadcrumbItem[];
 };
 
@@ -71,19 +73,33 @@ export default function AppLayout({ children }: AppLayoutProps) {
             ? 'database'
             : 'settings';
     const breadcrumbLinks = page.props.breadcrumbs ?? [];
-    const fallbackHref = isHomePage
-        ? page.props.currentNode
-            ? breadcrumbLinks.at(-2)?.href
-            : undefined
-        : page.component === 'documents/show'
-          ? breadcrumbLinks.at(-1)?.href
-          : page.component === 'databases/show'
-            ? breadcrumbLinks.at(-2)?.href
-            : shellWorkspace
-              ? `/workspaces/${shellWorkspace.id}`
-              : undefined;
-    const fallbackUrl =
-        typeof fallbackHref === 'string' ? fallbackHref : undefined;
+    const currentPath = page.url.split('?')[0];
+    const floatingBreadcrumbs: BreadcrumbItem[] = page.component.startsWith(
+        'settings/',
+    )
+        ? [
+              ...(shellWorkspace
+                  ? [
+                        {
+                            title: shellWorkspace.name,
+                            href: `/workspaces/${shellWorkspace.id}`,
+                        },
+                    ]
+                  : []),
+              { title: 'Settings', href: '/settings/profile' },
+              {
+                  title: page.component
+                      .split('/')[1]
+                      .replace(/^./, (letter) => letter.toUpperCase()),
+                  href: currentPath,
+              },
+          ]
+        : page.component === 'documents/show' && page.props.node
+          ? [
+                ...breadcrumbLinks,
+                { title: page.props.node.title, href: currentPath },
+            ]
+          : breadcrumbLinks;
     const [accountMenuOpen, setAccountMenuOpen] = useState(false);
     const [workspaceManagerOpen, setWorkspaceManagerOpen] = useState(false);
 
@@ -192,7 +208,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                                     ? (page.props.trashedNodes ?? [])
                                     : []
                             }
-                            fallbackUrl={fallbackUrl}
+                            breadcrumbs={floatingBreadcrumbs}
                             showContentActions={isHomePage}
                             pageType={pageType}
                         />

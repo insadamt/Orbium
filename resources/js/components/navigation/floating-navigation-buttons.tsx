@@ -1,33 +1,6 @@
-import { ArrowLeft, Search, X } from 'lucide-react';
+import { Search, X } from 'lucide-react';
 import { useEffect, useRef } from 'react';
-import { useNavigation } from './navigation-store';
 import { usePageSearch } from './page-search';
-import { openLocation, stepHistory } from './tab-navigation';
-
-export function FloatingBackButton({ fallbackUrl }: { fallbackUrl?: string }) {
-    const tabs = useNavigation((state) => state.tabs);
-    const activeId = useNavigation((state) => state.activeId);
-    const activeTab = tabs.find((tab) => tab.id === activeId);
-    const hasTabHistory = Boolean(activeTab && activeTab.index > 0);
-
-    function goBack() {
-        if (hasTabHistory) stepHistory(-1);
-        else if (fallbackUrl) openLocation(fallbackUrl);
-    }
-
-    return (
-        <button
-            type="button"
-            className="floating-icon-button floating-surface"
-            aria-label="Go back"
-            title="Go back"
-            disabled={!hasTabHistory && !fallbackUrl}
-            onClick={goBack}
-        >
-            <ArrowLeft size={18} />
-        </button>
-    );
-}
 
 export function FloatingPageSearch({
     pageType,

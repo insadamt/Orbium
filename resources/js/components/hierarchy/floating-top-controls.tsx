@@ -12,14 +12,12 @@ import {
     DialogTitle,
 } from '@/components/navigation/navigation-dialog';
 import { NavigationTabStrip } from '@/components/navigation/navigation-tab-strip';
-import {
-    FloatingBackButton,
-    FloatingPageSearch,
-} from '@/components/navigation/floating-navigation-buttons';
+import { FloatingPageSearch } from '@/components/navigation/floating-navigation-buttons';
+import { FloatingBreadcrumbs } from '@/components/navigation/floating-breadcrumbs';
 import { usePageSearch } from '@/components/navigation/page-search';
 import type { TreeNode } from '@/components/navigation/navigation-types';
 import { openLocation } from '@/components/navigation/tab-navigation';
-import type { Auth } from '@/types';
+import type { Auth, BreadcrumbItem } from '@/types';
 import WorkspacePanel, {
     type WorkspaceSummary,
     type TrashedWorkspace,
@@ -34,7 +32,7 @@ type Props = {
     currentNode: TreeNode | null;
     trashedNodes: TrashedNode[];
     nodes: TreeNode[];
-    fallbackUrl?: string;
+    breadcrumbs: BreadcrumbItem[];
     showContentActions?: boolean;
     pageType: 'explorer' | 'document' | 'database' | 'settings';
 };
@@ -46,7 +44,7 @@ export function FloatingTopControls({
     currentNode,
     trashedNodes,
     nodes,
-    fallbackUrl,
+    breadcrumbs,
     showContentActions = true,
     pageType,
 }: Props) {
@@ -134,7 +132,6 @@ export function FloatingTopControls({
                     >
                         <AppLogoIcon className="size-7" />
                     </Link>
-                    <FloatingBackButton fallbackUrl={fallbackUrl} />
                     <Menu.Root>
                         <Menu.Trigger
                             className="floating-workspace-trigger floating-surface"
@@ -180,6 +177,7 @@ export function FloatingTopControls({
                             </Menu.Content>
                         </Menu.Portal>
                     </Menu.Root>
+                    <FloatingBreadcrumbs items={breadcrumbs} />
                 </div>
                 <div className="floating-tab-island floating-surface">
                     <NavigationTabStrip floating />
