@@ -7,7 +7,6 @@ type Props = {
     workspaceId: number;
     parentId: number | null;
     type: TreeNode['type'];
-    revealInOrbit?: boolean;
     onCancel: () => void;
     onCreated: () => void;
 };
@@ -16,7 +15,6 @@ export function CreateNodeForm({
     workspaceId,
     parentId,
     type,
-    revealInOrbit = false,
     onCancel,
     onCreated,
 }: Props) {
@@ -33,7 +31,6 @@ export function CreateNodeForm({
                 type,
                 title: title.trim(),
                 parent_id: parentId,
-                reveal_in_orbit: revealInOrbit,
             },
             {
                 onSuccess: onCreated,

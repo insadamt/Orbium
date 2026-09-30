@@ -13,7 +13,7 @@ export function locationKind(url: string): Location['kind'] {
     if (url.includes('/documents/')) return 'document';
     if (url.includes('/databases/')) return 'database';
     if (url.startsWith('/settings/')) return 'settings';
-    return 'orbit';
+    return 'workspace';
 }
 export function recordPage(page: { url: string; props: PageContext }) {
     const context =
@@ -54,40 +54,16 @@ function visitTab(
         onFinish: () => useNavigation.setState({ pending: false }),
     });
 }
-function applyOrbitReveal(page: Page) {
-    const params = new URLSearchParams(page.url.split('?')[1] ?? '');
-    const focusId = Number(params.get('focus'));
-    const context = page.props as PageContext;
-    if (params.get('view') !== 'orbit' || !focusId || !context.workspace)
-        return;
-    const containerId = context.database?.id ?? context.currentNode?.id ?? 0;
-    const state = useNavigation.getState();
-    state.updateView(
-        context.database
-            ? `database.${containerId}.view`
-            : `container.${context.workspace.id}.${containerId}.view`,
-        'orbit',
-    );
-    state.updateView(
-        `orbit.${context.workspace.id}.${containerId}.selected`,
-        focusId,
-    );
-    if (context.database) state.updateView(`database.${containerId}.query`, '');
-}
 export function openLocation(url: string, newTab = false) {
-    visitTab(
-        url,
-        (page) => {
-            if (newTab)
-                useNavigation.getState().createTab({
-                    url: page.url,
-                    title: 'Loading…',
-                    kind: locationKind(page.url),
-                    scroll: 0,
-                });
-        },
-        { onRecorded: applyOrbitReveal },
-    );
+    visitTab(url, (page) => {
+        if (newTab)
+            useNavigation.getState().createTab({
+                url: page.url,
+                title: 'Loading…',
+                kind: locationKind(page.url),
+                scroll: 0,
+            });
+    });
 }
 export function activateTab(id: string) {
     const tab = useNavigation.getState().tabs.find((item) => item.id === id);

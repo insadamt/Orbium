@@ -110,7 +110,7 @@ class DatabaseController extends Controller
     public function saveView(Request $request, int $workspace, int $node, string $view, ManageDatabase $action): RedirectResponse
     {
         $database = $this->ownedDatabase($request, $workspace, $node);
-        abort_unless(in_array($view, ['table', 'gallery', 'orbit'], true), 404);
+        abort_unless(in_array($view, ['table', 'gallery'], true), 404);
         $data = $request->validate([
             'visible_property_ids' => ['sometimes', 'array'],
             'visible_property_ids.*' => ['integer'],

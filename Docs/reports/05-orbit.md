@@ -1,5 +1,7 @@
 # Phase 5 — 3D Orbit
 
+> Historical report. The implementation described below was removed on 2026-09-30 at the user's request; its validation steps no longer describe the current app.
+
 ## Compact shell follow-up — 2026-09-30
 
 The user's review found the two stacked navigation rows visually heavy. Orbium now has one 56 px header containing the logo, breadcrumbs, workspace controls, and account menu. Search Master, new tab, and Navigator are direct controls. Back/Forward, open tabs, closing tabs, and Reveal actions are in a compact tab menu. Existing keyboard shortcuts remain in place. Orbit's minimum scene height was increased to use the space recovered from the removed row.

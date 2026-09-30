@@ -5,7 +5,6 @@ import {
     FolderPlus,
     Database,
     Pencil,
-    Orbit,
     Tags,
     Trash2,
     X,
@@ -15,7 +14,7 @@ import { toast } from 'sonner';
 import { csrfToken } from '@/components/editor/editor-api';
 import { CreateNodeForm } from './create-node-form';
 import type { TreeNode } from './navigation-types';
-import { nodeUrl, orbitRevealUrl } from './navigation-types';
+import { nodeUrl } from './navigation-types';
 
 type Props = {
     workspaceId: number;
@@ -279,15 +278,6 @@ export function NodeActions({
                 </div>
             ) : (
                 <div className="grid grid-cols-2 gap-1">
-                    <button
-                        className={actionClass}
-                        onClick={() => {
-                            onOpen(orbitRevealUrl(workspaceId, node, nodes));
-                            onDismiss();
-                        }}
-                    >
-                        <Orbit size={15} /> Reveal in Orbit
-                    </button>
                     <button
                         className={actionClass}
                         onClick={() => {

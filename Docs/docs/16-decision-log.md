@@ -1,5 +1,9 @@
 # Product decision log
 
+## 2026-09-30 — Home and spatial UI reset
+
+The user requested a fresh start for the home page and removal of both the 3D and 2.5D implementations. The existing Orbit scene, Orbit views, related controls, and home page hero were removed. Workspace and database list/table/gallery flows remain available. The earlier Orbit and visual identity decisions below describe the original plan; they are suspended until the user approves a new design.
+
 These decisions were made during product planning and should not be reopened casually during implementation.
 
 ## Name

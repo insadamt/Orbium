@@ -1,5 +1,7 @@
 # Phase 5 — 3D Orbit
 
+> Suspended on 2026-09-30 after the user requested a fresh home and spatial UI. The 3D and 2.5D implementations have been removed. Do not resume the tasks below without a new user-approved design.
+
 ## Goal
 
 Implement Orbium's signature spatial hierarchy navigator using the stable domain/navigation systems from previous phases.

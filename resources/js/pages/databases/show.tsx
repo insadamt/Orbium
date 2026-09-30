@@ -6,7 +6,6 @@ import {
     Filter,
     GalleryHorizontalEnd,
     Loader2,
-    Orbit,
     Plus,
     Search,
     SlidersHorizontal,
@@ -14,7 +13,6 @@ import {
     X,
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import DatabaseOrbit from './database-orbit';
 import { useTabView } from '@/components/navigation/use-tab-view';
 import { csrfToken, uploadAttachment } from '@/components/editor/editor-api';
 import { visibleDocuments, valueFor } from './database-data';
@@ -30,7 +28,6 @@ import type { DatabasePageProps, Property, ViewConfig } from './types';
 const viewTypes = [
     { id: 'table', label: 'Table', icon: Table2 },
     { id: 'gallery', label: 'Gallery', icon: GalleryHorizontalEnd },
-    { id: 'orbit', label: 'Orbit', icon: Orbit },
 ] as const;
 
 export default function ShowDatabase() {
@@ -50,18 +47,12 @@ function DatabasePage({ page }: { page: DatabasePageProps }) {
         fileReferences,
         errors,
     } = page;
-    const focusId =
-        Number(
-            new URLSearchParams(usePage().url.split('?')[1] ?? '').get('focus'),
-        ) || null;
     const [title, setTitle] = useState(database.title);
-    const [view, setView] = useTabView<'table' | 'gallery' | 'orbit'>(
+    const [storedView, setView] = useTabView<'table' | 'gallery'>(
         `database.${database.id}.view`,
-        new URLSearchParams(usePage().url.split('?')[1] ?? '').get('view') ===
-            'orbit'
-            ? 'orbit'
-            : 'table',
+        'table',
     );
+    const view = storedView === 'gallery' ? 'gallery' : 'table';
     const [query, setQuery] = useTabView<string>(
         `database.${database.id}.query`,
         '',
@@ -398,7 +389,7 @@ function DatabasePage({ page }: { page: DatabasePageProps }) {
                         creating={creating}
                     />
                 )}
-                {view !== 'orbit' && !shownDocuments.length && (
+                {!shownDocuments.length && (
                     <div className="flex flex-col items-center py-20 text-center">
                         <div className="mb-4 flex size-12 items-center justify-center rounded-xl bg-muted/50">
                             <Database
@@ -435,20 +426,7 @@ function DatabasePage({ page }: { page: DatabasePageProps }) {
                         </button>
                     </div>
                 )}
-                {view === 'orbit' && (
-                    <DatabaseOrbit
-                        workspaceId={workspace.id}
-                        database={database}
-                        documents={shownDocuments}
-                        allDocuments={documents}
-                        focusId={focusId}
-                        properties={visibleProperties.slice(0, 2)}
-                        values={values}
-                        candidates={candidates}
-                        files={fileReferences}
-                    />
-                )}
-                {view !== 'orbit' && shownDocuments.length > 0 && (
+                {shownDocuments.length > 0 && (
                     <p className="mt-4 px-3 text-[11px] text-muted-foreground/65">
                         {shownDocuments.length}{' '}
                         {shownDocuments.length === 1 ? 'document' : 'documents'}

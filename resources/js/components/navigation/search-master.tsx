@@ -24,7 +24,6 @@ type Props = {
     onClose: () => void;
     onNavigator: (id?: number) => void;
     onOpen: (url: string, newTab?: boolean) => void;
-    onReveal: (node: TreeNode) => void;
 };
 
 const resultIcons = { document: FileText, folder: Folder, database: Database };
@@ -37,7 +36,6 @@ export function SearchMaster({
     onClose,
     onNavigator,
     onOpen,
-    onReveal,
 }: Props) {
     const [query, setQuery] = useState('');
     const [results, setResults] = useState<SearchResult[]>([]);
@@ -361,15 +359,6 @@ export function SearchMaster({
                                                         }}
                                                     >
                                                         Reveal in Navigator
-                                                    </button>
-                                                    <button
-                                                        className="rounded-md px-2 py-1.5 hover:bg-background"
-                                                        onClick={() => {
-                                                            onClose();
-                                                            onReveal(result);
-                                                        }}
-                                                    >
-                                                        Reveal in Orbit
                                                     </button>
                                                 </div>
                                             )}

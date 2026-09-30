@@ -40,7 +40,7 @@ export default function Dashboard() {
                     {Object.values(errors).join(' ')}
                 </div>
             )}
-            <div className="orbium-dashboard-content mx-auto max-w-[980px]">
+            <div className="mx-auto max-w-[980px]">
                 <WorkspacePanel
                     workspaces={workspaces}
                     trashedWorkspaces={trashedWorkspaces}
@@ -54,21 +54,7 @@ export default function Dashboard() {
                         trashedNodes={trashedNodes}
                         currentNode={currentNode}
                     />
-                ) : (
-                    <section className="flex min-h-[55vh] flex-1 flex-col justify-center rounded-2xl border border-dashed border-border p-10">
-                        <p className="text-xs font-semibold tracking-[0.18em] text-muted-foreground uppercase">
-                            Your space begins here
-                        </p>
-                        <h1 className="mt-4 text-4xl font-light tracking-tight md:text-6xl">
-                            Create your first workspace.
-                        </h1>
-                        <p className="mt-5 max-w-lg text-muted-foreground">
-                            Workspaces keep separate hierarchies for your
-                            projects and ideas. Give one a name in the panel to
-                            begin.
-                        </p>
-                    </section>
-                )}
+                ) : null}
             </div>
         </>
     );

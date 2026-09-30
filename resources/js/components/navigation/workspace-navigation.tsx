@@ -1,9 +1,7 @@
 import { router, usePage } from '@inertiajs/react';
 import { ListTree, Plus, Search } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { useOrbitInteraction } from '@/components/orbit/orbit-preferences';
 import { NavigationTabMenu } from './navigation-tab-menu';
-import { orbitRevealUrl } from './navigation-types';
 import type { Auth } from '@/types';
 import { Navigator } from './navigator';
 import { useNavigation } from './navigation-store';
@@ -45,13 +43,6 @@ export function WorkspaceNavigation() {
         locationKind(page.url) === 'document'
             ? (nodes.find((item) => item.id === node?.parent_id) ?? null)
             : (nodes.find((item) => item.id === currentId) ?? null);
-
-    useEffect(() => {
-        useOrbitInteraction.setState({ paused: searchOpen || navigatorOpen });
-        return () => {
-            useOrbitInteraction.setState({ paused: false });
-        };
-    }, [searchOpen, navigatorOpen]);
 
     useEffect(() => {
         const firstLoad = !useNavigation.getState().storageKey;
@@ -166,9 +157,6 @@ export function WorkspaceNavigation() {
         document.addEventListener('click', modifiedLink, true);
         return () => document.removeEventListener('click', modifiedLink, true);
     }, [open]);
-    function revealInOrbit(target: TreeNode) {
-        if (workspaceId) open(orbitRevealUrl(workspaceId, target, nodes));
-    }
     return (
         <>
             <div
@@ -176,17 +164,6 @@ export function WorkspaceNavigation() {
                 aria-label="Workspace controls"
             >
                 <NavigationTabMenu
-                    onRevealInOrbit={
-                        currentId !== undefined &&
-                        nodes.some((item) => item.id === currentId)
-                            ? () =>
-                                  revealInOrbit(
-                                      nodes.find(
-                                          (item) => item.id === currentId,
-                                      )!,
-                                  )
-                            : undefined
-                    }
                     onRevealInNavigator={
                         currentId
                             ? () => {
@@ -250,7 +227,6 @@ export function WorkspaceNavigation() {
                             setNavigatorOpen(true);
                         }}
                         onOpen={open}
-                        onReveal={revealInOrbit}
                     />
                     <Navigator
                         key={`navigator-${workspaceId}`}

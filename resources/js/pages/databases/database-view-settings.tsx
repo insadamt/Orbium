@@ -99,12 +99,6 @@ export default function DatabaseViewSettings({
             <div className="min-h-52 overflow-y-auto px-6 py-5">
                 {section === 'properties' && (
                     <div className="space-y-4">
-                        {view === 'orbit' && (
-                            <p className="text-xs text-muted-foreground">
-                                Orbit shows the first two visible properties on
-                                selected nodes.
-                            </p>
-                        )}
                         {view === 'gallery' && (
                             <div className="border-b border-border/60 pb-4">
                                 <p className="mb-2 text-xs font-medium text-muted-foreground">

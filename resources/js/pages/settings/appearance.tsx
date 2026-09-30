@@ -1,5 +1,4 @@
 import { Head } from '@inertiajs/react';
-import { OrbitPreferences } from '@/components/orbit/orbit-preferences';
 import AppearanceTabs from '@/components/appearance-tabs';
 import Heading from '@/components/heading';
 import { edit as editAppearance } from '@/routes/appearance';
@@ -18,7 +17,6 @@ export default function Appearance() {
                     description="Choose how Orbium looks on this browser"
                 />
                 <AppearanceTabs />
-                <OrbitPreferences />
             </div>
         </>
     );

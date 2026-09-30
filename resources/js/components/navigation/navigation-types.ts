@@ -26,17 +26,3 @@ export function nodeUrl(
               : 'nodes';
     return `/workspaces/${workspaceId}/${segment}/${node.id}`;
 }
-
-export function orbitRevealUrl(
-    workspaceId: number,
-    node: TreeNode,
-    nodes: TreeNode[],
-) {
-    const parent = nodes.find((candidate) => candidate.id === node.parent_id);
-    const containerUrl = parent
-        ? nodeUrl(workspaceId, parent)
-        : node.parent_id
-          ? `/workspaces/${workspaceId}/nodes/${node.parent_id}`
-          : `/workspaces/${workspaceId}`;
-    return `${containerUrl}?view=orbit&focus=${node.id}`;
-}

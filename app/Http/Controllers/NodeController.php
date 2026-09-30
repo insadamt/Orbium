@@ -17,18 +17,8 @@ class NodeController extends Controller
             'type' => ['required', 'in:folder,document,database'],
             'title' => ['required', 'string', 'max:255'],
             'parent_id' => ['nullable', 'integer'],
-            'reveal_in_orbit' => ['sometimes', 'boolean'],
         ]);
         $node = $hierarchy->create($workspace, $data['type'], $data['title'], $data['parent_id'] ?? null);
-
-        if ($data['reveal_in_orbit'] ?? false) {
-            $parameters = ['workspace' => $workspace->id, 'view' => 'orbit', 'focus' => $node->id];
-            if ($node->parent_id !== null) {
-                return to_route('nodes.show', [...$parameters, 'node' => $node->parent_id]);
-            }
-
-            return to_route('workspaces.show', $parameters);
-        }
 
         return to_route('nodes.show', [$workspace, $node]);
     }

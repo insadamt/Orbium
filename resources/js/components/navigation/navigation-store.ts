@@ -3,7 +3,7 @@ import { create } from 'zustand';
 export type Location = {
     url: string;
     title: string;
-    kind: 'orbit' | 'document' | 'database' | 'settings';
+    kind: 'workspace' | 'document' | 'database' | 'settings';
     scroll: number;
     viewState?: Record<string, unknown>;
 };
@@ -77,7 +77,17 @@ export const useNavigation = create<NavigationState>((set, get) => ({
                 )
             )
                 saved = {
-                    tabs: value.tabs,
+                    tabs: value.tabs.map((tab: Tab) => ({
+                        ...tab,
+                        entries: tab.entries.map((entry) => ({
+                            ...entry,
+                            kind: ['document', 'database', 'settings'].includes(
+                                entry.kind,
+                            )
+                                ? entry.kind
+                                : 'workspace',
+                        })),
+                    })),
                     activeId: value.activeId,
                     recent: Array.isArray(value.recent)
                         ? value.recent.filter(Number.isInteger).slice(0, 40)

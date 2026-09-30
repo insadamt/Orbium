@@ -4,7 +4,6 @@ import {
     ChevronDown,
     Database,
     FileText,
-    Orbit,
     Settings2,
     X,
 } from 'lucide-react';
@@ -13,7 +12,6 @@ import { useNavigation } from './navigation-store';
 import { activateTab, closeTab, stepHistory } from './tab-navigation';
 
 type Props = {
-    onRevealInOrbit?: () => void;
     onRevealInNavigator?: () => void;
 };
 
@@ -21,19 +19,16 @@ const tabIcons = {
     document: FileText,
     database: Database,
     settings: Settings2,
-    orbit: Orbit,
+    workspace: Database,
 };
 
-export function NavigationTabMenu({
-    onRevealInOrbit,
-    onRevealInNavigator,
-}: Props) {
+export function NavigationTabMenu({ onRevealInNavigator }: Props) {
     const tabs = useNavigation((state) => state.tabs);
     const activeId = useNavigation((state) => state.activeId);
     const menu = useRef<HTMLDetailsElement>(null);
     const active = tabs.find((tab) => tab.id === activeId);
     const current = active?.entries[active.index];
-    const ActiveIcon = current ? tabIcons[current.kind] : Orbit;
+    const ActiveIcon = current ? tabIcons[current.kind] : Database;
 
     useEffect(() => {
         function closeOnOutsideClick(event: PointerEvent) {
@@ -136,20 +131,8 @@ export function NavigationTabMenu({
                         );
                     })}
                 </div>
-                {(onRevealInOrbit || onRevealInNavigator) && (
+                {onRevealInNavigator && (
                     <div className="space-y-0.5 border-t border-border/70 pt-2 text-sm">
-                        {onRevealInOrbit && (
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    onRevealInOrbit();
-                                    closeMenu();
-                                }}
-                                className="block w-full rounded-md px-2 py-2 text-left hover:bg-accent"
-                            >
-                                Reveal in Orbit
-                            </button>
-                        )}
                         {onRevealInNavigator && (
                             <button
                                 type="button"
