@@ -1,8 +1,16 @@
 # Product decision log
 
+## 2026-09-30 — Workspace home redesign
+
+The user approved a dark, three-area workspace layout inspired by a file management reference: a narrow navigation rail, collapsible folder tree, and primary content area. Workspace and folder pages show folders as cards and documents/databases as a compact list. Items open with a single click. The sidebar may be hidden to give the explorer more room. The editor and database work surfaces keep the compact top shell. This approval replaces the earlier no-sidebar decision for workspace and folder pages; the spatial UI remains suspended.
+
 ## 2026-09-30 — Home and spatial UI reset
 
 The user requested a fresh start for the home page and removal of both the 3D and 2.5D implementations. The existing Orbit scene, Orbit views, related controls, and home page hero were removed. Workspace and database list/table/gallery flows remain available. The earlier Orbit and visual identity decisions below describe the original plan; they are suspended until the user approves a new design.
+
+## 2026-09-30 — File explorer home
+
+The workspace home and folder pages use a file explorer grid. Dragging to a tile edge reorders items; dragging to a folder center moves an item into that folder. Breadcrumbs accept drops to move an item to an ancestor. Database nodes are opened as work surfaces and are not drag destinations in the explorer, because moving documents into or out of a database resets structured values. The existing native drag implementation in Navigator is reused, with the Move action available for non-pointer input.
 
 These decisions were made during product planning and should not be reopened casually during implementation.
 

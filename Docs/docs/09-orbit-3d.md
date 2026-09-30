@@ -194,7 +194,7 @@ Desktop interactions:
 
 Do not allow unrestricted 3D navigation that can strand the camera behind/inside objects.
 
-Breadcrumbs/Navigator/Search remain deterministic escape routes.
+Breadcrumbs, workspace explorer, and Search remain deterministic escape routes.
 
 ## Background
 
@@ -233,7 +233,7 @@ Do not redesign the hierarchy model for a rare extreme case.
 
 Everything accessible through Orbit must also be reachable through:
 
-- Navigator;
+- workspace explorer;
 - Search Master;
 - breadcrumbs.
 

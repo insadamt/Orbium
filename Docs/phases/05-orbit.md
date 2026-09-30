@@ -1,6 +1,16 @@
-# Phase 5 — 3D Orbit
+# Phase 5 — Explorer review
 
-> Suspended on 2026-09-30 after the user requested a fresh home and spatial UI. The 3D and 2.5D implementations have been removed. Do not resume the tasks below without a new user-approved design.
+## Current floating workspace pass (2026-09-30)
+
+The user replaced the earlier orbital home brief with a continuous, neutral workspace of independent floating controls and compact items. This pass supersedes the carousel/half-orb explorer, while leaving document/database work surfaces and the backend unchanged.
+
+- Four floating top groups: logo, custom workspace selector, centered opened-tabs island whose plus button opens workspace home in a new tab, and settings/account controls. Back remains a floating button. Search expands into an inline, current-page field; Ctrl+Space still opens Search Master.
+- Show only direct children, in persisted order, without a sidebar, headings, counts, hero, footer, or visible Trash shortcut.
+- Click/Enter opens an entity in the current tab; Ctrl+click or Ctrl+Enter opens it in a new app tab. Space can select a focused item. Native drag/drop supports reorder and validated containment; item actions provide an alternative.
+- Use short CSS transitions and honor reduced motion.
+- Review routes, checks, compromises, and manual acceptance are recorded in `../reports/05-floating-workspace.md`.
+
+The floating shell now also wraps document, database, and settings pages. Settings categories sit horizontally inside one floating island. Their editor, database views, and controls sit inside a single spacious island; data behavior remains unchanged. The original 3D tasks below remain suspended. Stop after this explorer review; do not start another phase.
 
 ## Goal
 
@@ -74,7 +84,7 @@ Display configurable limited property metadata.
 
 **Commit:** `feat(databases): enable spatial database view`
 
-### 5.9 Search/Navigator reveal
+### 5.9 Search reveal
 
 Complete `Reveal in Orbit`:
 

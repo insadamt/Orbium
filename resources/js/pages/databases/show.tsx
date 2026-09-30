@@ -1,18 +1,16 @@
-import { Head, Link, router, usePage } from '@inertiajs/react';
+import { Head, router, usePage } from '@inertiajs/react';
 import {
     ArrowDownUp,
-    ArrowLeft,
     Database,
     Filter,
     GalleryHorizontalEnd,
     Loader2,
     Plus,
-    Search,
     SlidersHorizontal,
     Table2,
-    X,
 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { usePageSearch } from '@/components/navigation/page-search';
 import { useTabView } from '@/components/navigation/use-tab-view';
 import { csrfToken, uploadAttachment } from '@/components/editor/editor-api';
 import { visibleDocuments, valueFor } from './database-data';
@@ -53,11 +51,9 @@ function DatabasePage({ page }: { page: DatabasePageProps }) {
         'table',
     );
     const view = storedView === 'gallery' ? 'gallery' : 'table';
-    const [query, setQuery] = useTabView<string>(
-        `database.${database.id}.query`,
-        '',
-    );
-    const [searchOpen, setSearchOpen] = useState(false);
+    const pageSearch = usePageSearch();
+    const query = pageSearch.query;
+    const setQuery = pageSearch.setQuery;
     const [settingsSection, setSettingsSection] =
         useState<SettingsSection | null>(null);
     const [propertyEditor, setPropertyEditor] = useState<
@@ -92,9 +88,9 @@ function DatabasePage({ page }: { page: DatabasePageProps }) {
             ),
         [documents, properties, values, config.filters, config.sorts, query],
     );
-    const parentUrl = database.parent_id
-        ? `/workspaces/${workspace.id}/nodes/${database.parent_id}`
-        : `/workspaces/${workspace.id}`;
+    useEffect(() => {
+        pageSearch.setResultCount(query.trim() ? shownDocuments.length : null);
+    }, [pageSearch.setResultCount, query, shownDocuments.length]);
 
     function saveView(next: ViewConfig) {
         setViewError('');
@@ -182,14 +178,7 @@ function DatabasePage({ page }: { page: DatabasePageProps }) {
     return (
         <>
             <Head title={database.title} />
-            <div className="mx-auto min-h-[65vh] max-w-[1120px]">
-                <Link
-                    href={parentUrl}
-                    className="mb-8 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
-                >
-                    <ArrowLeft size={16} />
-                    Back to {workspace.name}
-                </Link>
+            <div className="floating-body-island floating-database-island mx-auto min-h-[65vh] max-w-[1280px]">
                 <header className="mb-9 px-1">
                     <div className="mb-5 flex items-center gap-3">
                         <div className="flex size-12 items-center justify-center rounded-xl border border-border/60 bg-muted/35">
@@ -298,18 +287,6 @@ function DatabasePage({ page }: { page: DatabasePageProps }) {
                         </button>
                         <button
                             type="button"
-                            aria-label="Search database"
-                            aria-expanded={searchOpen}
-                            onClick={() => {
-                                setSearchOpen(!searchOpen);
-                                if (searchOpen) setQuery('');
-                            }}
-                            className="db-icon-button"
-                        >
-                            <Search size={16} />
-                        </button>
-                        <button
-                            type="button"
                             aria-label="View settings"
                             title="View settings"
                             onClick={() => setSettingsSection('properties')}
@@ -333,36 +310,6 @@ function DatabasePage({ page }: { page: DatabasePageProps }) {
                         </button>
                     </div>
                 </div>
-                {searchOpen && (
-                    <div className="flex items-center gap-2 border-b border-border/60 px-3 py-2">
-                        <Search size={14} className="text-muted-foreground" />
-                        <input
-                            autoFocus
-                            aria-label="Search document titles"
-                            value={query}
-                            onChange={(event) => setQuery(event.target.value)}
-                            onKeyDown={(event) => {
-                                if (event.key === 'Escape') {
-                                    setSearchOpen(false);
-                                    setQuery('');
-                                }
-                            }}
-                            placeholder="Search documents…"
-                            className="h-7 min-w-0 flex-1 bg-transparent text-sm outline-none"
-                        />
-                        <button
-                            type="button"
-                            aria-label="Close search"
-                            className="db-icon-button"
-                            onClick={() => {
-                                setSearchOpen(false);
-                                setQuery('');
-                            }}
-                        >
-                            <X size={14} />
-                        </button>
-                    </div>
-                )}
                 {view === 'table' && (
                     <DatabaseTable
                         workspaceId={workspace.id}

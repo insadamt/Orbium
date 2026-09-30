@@ -17,11 +17,15 @@ type Props = {
     workspaces: WorkspaceSummary[];
     trashedWorkspaces: TrashedWorkspace[];
     activeWorkspaceId?: number;
+    inline?: boolean;
+    onWorkspaceNavigation?: () => void;
 };
 export default function WorkspacePanel({
     workspaces,
     trashedWorkspaces,
     activeWorkspaceId,
+    inline = false,
+    onWorkspaceNavigation,
 }: Props) {
     const [open, setOpen] = useState(false);
     const [newName, setNewName] = useState('');
@@ -42,6 +46,7 @@ export default function WorkspacePanel({
                 onSuccess: () => {
                     setNewName('');
                     setOpen(false);
+                    onWorkspaceNavigation?.();
                 },
             },
         );
@@ -56,22 +61,34 @@ export default function WorkspacePanel({
         );
     }
     return (
-        <div className="relative z-10 mb-9 max-w-[980px]">
-            <button
-                type="button"
-                aria-expanded={open}
-                onClick={() => setOpen((value) => !value)}
-                className="inline-flex items-center gap-2 rounded-lg border border-border bg-background/70 px-3 py-2 text-sm font-medium hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
-            >
-                {activeWorkspace?.name ?? 'Workspaces'}{' '}
-                <ChevronDown size={15} className="text-muted-foreground" />
-            </button>
-            {open && (
-                <div className="glass-surface absolute top-full left-0 mt-2 w-[min(360px,calc(100vw-2.5rem))] rounded-xl border border-border p-2 shadow-xl">
+        <div className={inline ? 'min-w-0' : 'relative z-10 mb-9'}>
+            {!inline && (
+                <button
+                    type="button"
+                    aria-expanded={open}
+                    onClick={() => setOpen((value) => !value)}
+                    className="inline-flex items-center gap-2 rounded-lg border border-border bg-background/70 px-3 py-2 text-sm font-medium hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                    {activeWorkspace?.name ?? 'Workspaces'}{' '}
+                    <ChevronDown size={15} className="text-muted-foreground" />
+                </button>
+            )}
+            {(open || inline) && (
+                <div
+                    className={
+                        inline
+                            ? 'min-w-0 p-2'
+                            : 'glass-surface absolute top-full left-0 mt-2 w-[min(360px,calc(100vw-2.5rem))] rounded-xl border border-border p-2 shadow-xl'
+                    }
+                >
                     <p className="px-2 py-2 text-[11px] font-medium tracking-wider text-muted-foreground uppercase">
                         Workspaces
                     </p>
-                    <div className="max-h-56 overflow-y-auto">
+                    <div
+                        className={
+                            inline ? 'space-y-0.5' : 'max-h-56 overflow-y-auto'
+                        }
+                    >
                         {workspaces.map((workspace, index) => (
                             <div
                                 key={workspace.id}
@@ -107,7 +124,10 @@ export default function WorkspacePanel({
                                     <div className="flex items-center gap-1">
                                         <Link
                                             href={`/workspaces/${workspace.id}`}
-                                            onClick={() => setOpen(false)}
+                                            onClick={() => {
+                                                setOpen(false);
+                                                onWorkspaceNavigation?.();
+                                            }}
                                             className="min-w-0 flex-1 truncate px-3 py-2.5 text-sm"
                                         >
                                             {workspace.name}

@@ -40,12 +40,8 @@ export function changeBlockOrder(
     editor.view.dispatch(tr.scrollIntoView());
 }
 
-export function selectNextMatch(
-    editor: Editor,
-    query: string,
-    previous = false,
-): number {
-    if (!query) return 0;
+function findDocumentMatches(editor: Editor, query: string): number[] {
+    if (!query) return [];
     const matches: number[] = [];
     editor.state.doc.descendants((node, pos) => {
         if (!node.isText || !node.text) return;
@@ -57,6 +53,19 @@ export function selectNextMatch(
             start += needle.length;
         }
     });
+    return matches;
+}
+
+export function countDocumentMatches(editor: Editor, query: string): number {
+    return findDocumentMatches(editor, query).length;
+}
+
+export function selectNextMatch(
+    editor: Editor,
+    query: string,
+    previous = false,
+): number {
+    const matches = findDocumentMatches(editor, query);
     const current = editor.state.selection.from;
     const found = previous
         ? ([...matches].reverse().find((pos) => pos < current) ??

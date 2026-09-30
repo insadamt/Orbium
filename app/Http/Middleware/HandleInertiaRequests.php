@@ -41,7 +41,8 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $request->user(),
             ],
-            'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
+            'workspaces' => fn () => $request->user()?->workspaces()->orderBy('position')->get(['id', 'name', 'position']) ?? [],
+            'trashedWorkspaces' => fn () => $request->user()?->workspaces()->onlyTrashed()->orderByDesc('deleted_at')->get(['id', 'name', 'deleted_at']) ?? [],
         ];
     }
 }

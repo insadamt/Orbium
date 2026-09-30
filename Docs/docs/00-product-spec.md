@@ -12,7 +12,7 @@ It combines:
 - structured database documents;
 - a minimalist 3D hierarchy visualization;
 - fast direct navigation through Search Master;
-- conventional hierarchy access through Navigator;
+- conventional hierarchy access through the workspace explorer;
 - complete user-data portability between self-hosted installations.
 
 Orbium must be useful as normal productivity software even if the user never interacts heavily with the 3D scene. The 3D layer is a navigation identity, not a gimmick.
@@ -30,7 +30,7 @@ Jump    → Search Master
 The supporting deterministic navigation mode is:
 
 ```text
-Browse hierarchy → Navigator
+Browse hierarchy → Workspace explorer
 ```
 
 The product must preserve both beauty and speed.
@@ -246,15 +246,9 @@ then apply contextual boosts such as recent access and current hierarchy proximi
 
 Opening with an empty query shows recent/pinned content.
 
-## 9. Navigator and tabs
+## 9. Workspace selector and tabs
 
-Navigator is a conventional hierarchical tree shown in a temporary frosted panel.
-
-Suggested shortcut:
-
-```text
-Ctrl + B
-```
+The workspace name in the top bar opens a native workspace selector. Workspace and folder pages provide a collapsible folder tree beside the hierarchy explorer.
 
 Orbium also supports workspace-style tabs. Tabs can hold:
 
@@ -289,6 +283,8 @@ The layout is deterministic, not physics-based.
 Mentions never create lines in the 3D Orbit.
 
 ## 11. Visual identity
+
+The home explorer direction was revised on 2026-09-30: large workspace orbs lead into a half orb container with direct children on a circular track. Sparse star-like points may support the sense of space. This explorer direction takes precedence over the older 3D Orbit layout description below; document and database work surfaces are unchanged in this pass.
 
 Identity:
 

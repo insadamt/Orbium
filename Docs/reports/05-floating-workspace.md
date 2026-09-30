@@ -1,0 +1,116 @@
+# Phase 5 — Floating workspace review
+
+## Result and scope
+
+Replaced the active home/workspace/folder orbital explorer with a neutral, continuous open workspace. Four independent control groups float above compact icon/name items. The workspace and user name controls each have a subtle surface, border, and elevation. On the explorer there is no sidebar, hero, content panel, heading, count, instructional copy, footer, or main-screen Trash shortcut. Back floats in the top controls. Search expands into an inline current-page input. Document, database, and settings bodies each sit in one spacious island below the same controls. Empty workspaces retain only the controls.
+
+The working tree already contained a substantial uncommitted explorer redesign. Those changes were preserved; this report lists only files authored or modified during this pass. No commit was created and no later phase was started.
+
+## Files and responsibilities
+
+Created:
+
+- `resources/js/components/hierarchy/floating-top-controls.tsx`: isolated logo, Back, Radix workspace selector, tab island/home-tab button, Search, settings/account menu, workspace creation/management dialogs, and workspace-root drop target.
+- `resources/js/components/navigation/floating-navigation-buttons.tsx`: history-aware Back with parent fallback and the expanding current-page Search input.
+- `resources/js/components/navigation/page-search.tsx`: route-local search state shared by the top input and current page.
+- `resources/js/components/hierarchy/workspace-contents.tsx`: current direct children, server moves, keyboard selection and opening entities in the current or a new tab, existing node actions.
+- `resources/js/components/hierarchy/floating-item.tsx`: compact item visuals, click/keyboard opening, selection, and keyboard reorder, hover actions.
+- `resources/js/components/hierarchy/use-item-drag.ts`: drop-zone resolution, containment/cycle rejection, drag preview, destination order calculation.
+- `resources/css/floating-workspace.css`: neutral light/dark surfaces, responsive layout, drop states, reduced-motion-aware transitions.
+- `Docs/reports/05-floating-workspace.md`: this report.
+
+Modified:
+
+- `resources/js/pages/dashboard.tsx`: renders explorer contents beneath the shared floating shell.
+- `resources/js/components/navigation/navigation-tab-strip.tsx`: optional floating presentation and folder icons; existing work-surface presentation remains available.
+- `resources/js/components/navigation/navigation-events.tsx`: lets focused-item reorder shortcuts take precedence over global history shortcuts.
+- `resources/js/layouts/app-layout.tsx`: shares the floating controls and route-local search provider across explorer, document, database, and settings pages.
+- `resources/js/pages/documents/show.tsx`: contains the existing document editor, cover/icon, title, and properties in a floating island.
+- `resources/js/pages/databases/show.tsx`: contains existing database title, views, controls, and table/gallery in a floating island; current documents filter through the top input.
+- `resources/js/layouts/settings/layout.tsx`: replaces the sidebar with horizontal category links inside a floating island and filters categories through the top input.
+- `resources/js/components/editor/document-editor.tsx` and `resources/js/components/editor/editor-controls.tsx`: reuse Tiptap document match scanning for the inline finder and match count.
+- `resources/css/app.css`: imports the new scoped stylesheet.
+- `Docs/phases/05-orbit.md`: records the user-approved replacement brief within the current phase.
+- `Docs/docs/05-ui-ux-system.md` and `Docs/docs/08-search-navigation.md`: record the current explorer override.
+
+## Library decision
+
+Reviewed dnd-kit's official sensor/accessibility documentation and Radix Dropdown Menu/Toolbar documentation. Asked the user whether to adopt dnd-kit or extend existing native drag/drop; proceeded with the recommended existing implementation after leaving time for a preference.
+
+- Radix Dropdown Menu is already installed and handles custom-menu focus, keyboard navigation, dismissal, and portalling. Orbium supplies its visual styling.
+- dnd-kit offers pointer/touch and keyboard sensors, but still requires application-specific collision zones and hierarchy validation. It would add a dependency and replace the existing native drag integration.
+- Radix Toolbar provides managed keyboard focus for a cohesive toolbar, but these floating controls are independent objects. Existing button semantics and CSS avoid a new dependency; Back uses the current navigation service. The top search is a small controlled React field with page-specific filtering; global Search Master remains on `Ctrl + Space`.
+- Reviewed mark.js for arbitrary DOM text highlighting and Radix Collapsible for input expansion. mark.js wraps rendered text nodes, which is a poor fit for Tiptap's controlled editable DOM; Radix Collapsible is designed for disclosure content rather than a compact input. Existing Tiptap match scanning and React/CSS are used instead. No search dependency was added.
+- This desktop prototype extends native drag/drop. Touch drag behavior remains browser-dependent; keyboard reorder and the existing Move action remain available. No dependency, backend, migration, or persisted-format change was introduced in this pass.
+
+References: https://www.radix-ui.com/primitives/docs/components/dropdown-menu, https://www.radix-ui.com/primitives/docs/components/toolbar, https://www.radix-ui.com/primitives/docs/components/collapsible, https://markjs.io/, and https://dndkit.com/react/guides/sensors/.
+
+## Drag/drop and hierarchy
+
+All child types share the same persisted ordering. The outer left/right edges (or top/bottom strips) signal before/after placement with a slim line. The center signals containment only for a valid folder or database. Original opacity drops during drag; the browser carries a compact icon/name preview. Invalid centers do not highlight or accept drops.
+
+A folder accepts all three entity types; a database accepts documents only; documents never accept children. Client validation walks ancestors with a visited set to reject cycles. Drops only use known nodes from the current workspace. In a nested folder, dropping on the logo moves an item back to workspace root. Other destinations are available through item actions.
+
+Writes continue through `PATCH /workspaces/{workspace}/nodes/{node}/move`. Existing `ManageHierarchy` scopes parents to the workspace, rejects self/descendant and trashed destinations, validates containment, locks the workspace in a transaction, normalizes sibling positions, and handles database property values when documents change parents. Server failures surface as toasts. No optimistic hierarchy copy is stored in Zustand.
+
+## Tabs and motion
+
+- Clicking an item or pressing Enter opens it in the current tab. Ctrl+click or Ctrl+Enter creates a new app tab through the existing navigation service. Space selects the focused item without opening it.
+- Activate, close, persisted tabs/history, and horizontal overflow remain available. The last remaining tab cannot be closed, matching existing behavior.
+- Workspace switching uses existing SPA navigation and retains the existing global tab/history model. Back steps within active-tab history first; on direct visits it opens the parent workspace/folder/database route. Top Search expands into a route-local field on all four page types. Global Search Master remains on `Ctrl + Space` where a workspace is active.
+- The rightmost plus control stays inside the island and outside the scroll area. It opens workspace home in a new tab. The user menu and Search Master provide item creation in the current container.
+- The document and database bodies use a neutral border, background, and soft elevation; title/editor/table layouts remain intact. Their islands fade in without transforming descendants, so positioned editor/database overlays stay anchored.
+- Items hover upward by 2px; selection and drop surfaces transition in 180ms. New container contents fade/shift in 220ms; menus enter in 180ms. Reduced motion disables these effects.
+
+## Validation
+
+- `npm run types:check`: PASS.
+- `npm run lint` (formatting and lint): PASS.
+- `./vendor/bin/pint --test`: PASS.
+- `npm run build`: PASS; existing large-chunk warning remains (chunks above 500 kB).
+- `git diff --check`: PASS.
+- Automated tests: neither written nor run, as instructed.
+- Browser screenshots and interactive visual verification: not performed; exact routes/states below are for user review.
+
+## Manual checklist
+
+Use real workspace/node IDs from the URL. Create test content through the user menu or Search Master if needed.
+
+1. Open `/dashboard`, which redirects to `/workspaces/{workspace}` for an account with content. Expected: four detached top groups and only direct-child icon/name items; no stars, orbs, sidebar, headings, item counts, footer, or main Trash shortcut.
+2. Open the workspace-name menu with mouse and keyboard. Expected: current workspace is marked; long names truncate; Escape/outside click dismisses. Choose another workspace: its name and root items update through SPA navigation.
+3. Choose “New workspace” from the workspace selector, enter a name, and submit. Expected: new workspace opens with an empty canvas and usable controls. Repeat with an account with no workspaces: the selector still allows creation.
+4. Use the user menu or Search Master to create a folder, document, and database. Expected: each appears in the current container with only icon/name at rest. Repeat inside a folder; new nodes belong to that folder.
+5. Click a folder, document, and database normally. Expected: each opens on the first click in the current tab; a folder navigates to `/workspaces/{workspace}/nodes/{folder}` and shows only its children. Documents/databases open their existing work surfaces. Use tab history or browser Back to return.
+6. Ctrl+click a folder, document, or database (Cmd+click on macOS). Expected: each opens in a new app tab while preserving the original tab. Press “+” from a nested folder: a new workspace-root tab opens immediately. Open enough items to overflow the island; tabs scroll while “+” remains visible. Activate/close tabs, then refresh: tab persistence still works.
+7. Drag an item to the left/right edge of another item, including mixed folder/document/database order and across wrapped rows. Expected: a slim insertion line appears; dropping updates order. Refresh to confirm persistence. Drag onto itself or cancel with Escape: no move.
+8. Drag a document onto the center of a folder, then another document onto a database. Expected: valid target strengthens; drop removes the child from the old container and places it in the destination. Open destination to confirm.
+9. Drag a folder/database onto a database center, or any item onto a document center. Expected: no containment highlight or move. Edges still permit sibling reorder.
+10. Inside a folder, drag an item onto the logo. Expected: logo highlights and the item moves to workspace root. Click logo and verify it is present.
+11. Open item actions and inspect Move destinations. Attempt a folder move into itself/descendant if an option is exposed. Expected: invalid targets are excluded or rejected; hierarchy remains intact. Server cycle validation remains the unchanged existing service.
+12. Tab to an item: Space selects, Enter opens in the current tab, Ctrl+Enter opens in a new tab, Alt+Left/Right reorders one position, and Shift+F10 opens actions. Expected: visible focus; reorder does not navigate browser/tab history. Use Move in actions for keyboard containment moves.
+13. Open account menu → Trash and restore a test item. Expected: Trash remains available contextually. Check account appearance controls and settings link.
+14. From a nested folder, click floating Back. Expected: active-tab history moves back; on a direct visit, the parent folder/root opens. At root with no history, Back is disabled. Click top Search in a folder, type part of a child title, and close it: only matching direct children appear while typing, then all return.
+15. Open a document with a cover, icon, database properties, and rich editor content. Expected: all content sits inside one floating island beneath the shared top controls. Type a known body word in top Search: the match count updates; Enter/Shift+Enter moves through matches. Edit title/body, use the image menu, and inspect a long document: content saves and overlays remain positioned correctly.
+16. Open a database in Table and Gallery views. Expected: title, controls, table/gallery, filtering, sorting, property editor, and creation remain functional inside one island. Type a document title in top Search: both views filter the current documents. Open a child document and use Back to return.
+17. Open Settings → Profile, Security, and Appearance. Expected: the same floating top controls and one settings island with horizontal categories. Type “password” in top Search: only Security remains as a category. Choose it: the new route resets the search; verify forms and appearance controls still work.
+18. Press `Ctrl + Space` from a workspace page. Expected: global Search Master still opens separately from the top inline field.
+19. Inspect light and dark modes at 1440px, 1024px, 768px, and 375px widths, including long workspace/user/item names. Expected: no control overlap or horizontal page overflow; tabs move to a second centered row at smaller widths; items wrap and remain compact.
+20. Enable OS/browser reduced motion, then switch folders, hover, and open menus. Expected: transitions are removed while all actions work.
+21. Use browser network throttling/offline mode for a move and restore connectivity. Expected: no speculative hierarchy move is committed; errors remain visible and subsequent navigation shows server-authoritative data.
+
+## Compromises and limits
+
+- Native drag previews/touch support vary by browser; dedicated touch dragging is not implemented.
+- Tab drag reorder is not implemented. Existing tab activation, close, persistence, and history are preserved.
+- Container transitions animate arrival; there is no delayed outgoing-page animation. Reorder placement updates after the server responds rather than using a choreographed layout animation.
+- Existing orbital components/styles remain in the working tree but are not mounted as the home explorer. Existing contextual Trash UI retains its older appearance; document and database internals keep their established controls. The top document finder counts matches while typing and selects them on Enter; it does not highlight every occurrence at once.
+- Browser feel, responsive layout, and input behavior await manual review.
+
+## Suggested commits
+
+- `feat(workspace): introduce minimal floating home and tab island`
+- `feat(hierarchy): add floating item reorder and containment drops`
+- `feat(shell): extend floating controls and surfaces to work pages`
+- `feat(search): add inline page search and floating settings layout`
+
+Stop here for Phase 5 manual review.

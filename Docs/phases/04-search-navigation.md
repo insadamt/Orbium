@@ -1,4 +1,4 @@
-# Phase 4 — Search Master, Navigator, tabs and navigation
+# Phase 4 — Search Master, workspace selection, tabs and navigation
 
 ## Goal
 
@@ -49,17 +49,17 @@ Implement useful initial syntax without delaying core search.
 
 **Commit:** `feat(search): add query filters`
 
-### 4.6 Navigator
+### 4.6 Workspace selector
 
-Build overlay tree with keyboard controls/context menu/tree filter.
+Show the active workspace name in the top bar as a native select. Selecting a workspace opens its root.
 
-**Commit:** `feat(navigation): add Navigator`
+**Commit:** `feat(navigation): add native workspace selector`
 
-### 4.7 Navigator drag/drop
+### 4.7 Workspace explorer drag/drop
 
-Wire to Phase 1 move action.
+Use the Phase 1 move action in the workspace explorer.
 
-**Commit:** `feat(navigation): add tree drag and drop`
+**Commit:** `feat(navigation): add explorer drag and drop`
 
 ### 4.8 Tabs
 
@@ -75,7 +75,6 @@ Back/forward and context restoration.
 
 ### 4.10 Reveal actions
 
-- Reveal in Navigator
 - placeholder/contract for Reveal in Orbit, completed visually in Phase 5
 
 **Commit:** `feat(navigation): add reveal actions`
@@ -86,7 +85,7 @@ The user can operate Orbium efficiently without 3D:
 
 ```text
 Ctrl + Space → jump anywhere
-Ctrl + B     → browse tree
+Workspace   → switch from the top bar
 Tabs         → multitask
 ```
 
@@ -98,7 +97,7 @@ Tabs         → multitask
 - workspace isolation;
 - Search Master keyboard tests;
 - command containment;
-- Navigator move integration;
+- workspace explorer move integration;
 - tab persistence;
 - history.
 
@@ -114,11 +113,11 @@ Tabs         → multitask
 5. Use keyboard only to open result.
 6. Use command mode to create node.
    - Expected: created in valid current parent.
-7. Open Navigator and browse/move node.
+7. Use the workspace selector, then browse/move a node in the explorer.
 8. Open several tabs, reload.
    - Expected: tabs restored.
 9. Back/forward within a tab.
-10. Confirm Navigator local filter does not behave like global Search.
+10. Confirm `Ctrl + Space` still searches the active workspace.
 
 ## Stop
 

@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Actions\Workspaces\ManageWorkspaces;
 use App\Models\Node;
 use App\Models\Workspace;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -19,7 +18,7 @@ class WorkspaceController extends Controller
 
         return $workspace
             ? to_route('workspaces.show', $workspace)
-            : Inertia::render('dashboard', ['workspaces' => [], 'trashedWorkspaces' => $this->trashedWorkspaces($request)]);
+            : Inertia::render('dashboard');
     }
 
     public function show(Request $request, int $workspace): Response
@@ -112,8 +111,6 @@ class WorkspaceController extends Controller
         }
 
         return Inertia::render('dashboard', [
-            'workspaces' => $request->user()->workspaces()->orderBy('position')->get(['id', 'name', 'position']),
-            'trashedWorkspaces' => $this->trashedWorkspaces($request),
             'workspace' => $workspace->only(['id', 'name', 'position']),
             'nodes' => $visibleNodes->map(fn (Node $node) => $node->only(['id', 'parent_id', 'type', 'title', 'position']))->values(),
             'trashedNodes' => Node::query()->onlyTrashed()->where('workspace_id', $workspace->id)->orderByDesc('deleted_at')->get(['id', 'parent_id', 'type', 'title', 'deleted_at']),
@@ -125,11 +122,5 @@ class WorkspaceController extends Controller
     private function ownedWorkspace(Request $request, int $workspaceId): Workspace
     {
         return $request->user()->workspaces()->findOrFail($workspaceId);
-    }
-
-    /** @return Collection<int, Workspace> */
-    private function trashedWorkspaces(Request $request): Collection
-    {
-        return Workspace::query()->onlyTrashed()->where('user_id', $request->user()->id)->orderByDesc('deleted_at')->get(['id', 'name', 'deleted_at']);
     }
 }

@@ -8,6 +8,9 @@ The Orbit is where Orbium may be visually expressive. The editor should get out 
 
 ## Layout
 
+The document page uses the shared floating top controls. The title, optional cover/icon, database properties, and editor sit inside one spacious floating island. Back remains in the top controls. Search expands there into a document-local finder with a match count and Enter/Shift+Enter navigation.
+
+
 Typical document:
 
 ```text

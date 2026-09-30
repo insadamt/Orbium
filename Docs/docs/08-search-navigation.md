@@ -1,4 +1,12 @@
-# Search Master, Navigator, tabs and navigation
+# Search Master, workspace selector, tabs and navigation
+
+> Current home/workspace/folder override (2026-09-30): the floating workspace brief supersedes older native-selector, sidebar, card/row, and orbital-carousel guidance below for these routes. Render only direct children as compact horizontal objects. Use a custom workspace menu, independent floating top controls, and a centered tab island whose plus button opens workspace home in a new tab. Create items through the contextual user menu or Search Master. Click/Enter opens an entity in the current tab; Ctrl+click or Ctrl+Enter opens a new app tab. Space selects a focused item. Empty containers stay visually empty. Document and database pages share these floating top controls; their existing work surfaces sit inside one spacious floating island. See `../reports/05-floating-workspace.md`.
+
+## Inline current-page search
+
+The floating top Search control expands to a focused inline input. It is separate from Search Master. It filters only direct children on explorer pages, current database document titles, and settings categories. On a document it counts text matches while typing; Enter/Shift+Enter selects the next/previous match. Closing clears the query. Changing routes resets the input. `Ctrl + Space` remains the global Search Master shortcut.
+
+
 
 ## Search Master
 
@@ -90,7 +98,6 @@ New document
 New folder
 New database
 Go to workspace root
-Open Navigator
 Open Settings
 Toggle appearance
 ```
@@ -118,59 +125,12 @@ A result can expose:
 - Open
 - Open in new tab
 - Reveal in Orbit
-- Reveal in Navigator
 - Favorite
 - Copy internal reference/link if defined
 
-## Navigator
+## Workspace selection and hierarchy browsing
 
-Shortcut:
-
-```text
-Ctrl + B
-```
-
-Temporary left overlay.
-
-Tree actions:
-
-- expand/collapse;
-- select;
-- open;
-- open in new tab;
-- rename;
-- move;
-- duplicate where safe;
-- trash;
-- create child where parent allows.
-
-Keyboard:
-
-```text
-↑ ↓     move selection
-→       expand
-←       collapse
-Enter   open
-```
-
-## Navigator drag/drop
-
-Dropping a node changes its `parent_id` and order.
-
-The server action must validate:
-
-- same workspace;
-- allowed parent;
-- no cycle;
-- ownership.
-
-Do not optimistically leave an invalid tree state if the server rejects the move.
-
-## Navigator filter
-
-Tree-local filter only.
-
-Do not confuse it with Search Master.
+The workspace name in the top bar is a native select. Selecting a workspace opens its root. Workspace and folder pages show a collapsible folder tree and the hierarchy explorer; explorer drag/drop moves use the same validated server action as other moves.
 
 ## Tabs
 

@@ -1,5 +1,8 @@
 # Database specification
 
+The database page uses the shared floating top controls. Its title, view controls, table/gallery, and contextual settings sit inside one spacious floating island. Back remains in the top controls. Search expands there into a title filter for the current database documents.
+
+
 ## Concept
 
 A database is a structured container of documents.

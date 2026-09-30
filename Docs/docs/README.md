@@ -10,7 +10,7 @@
 | `05-ui-ux-system.md` | Visual and shell rules |
 | `06-document-editor.md` | Editor specification |
 | `07-databases.md` | Structured database behavior |
-| `08-search-navigation.md` | Search Master/Navigator/tabs |
+| `08-search-navigation.md` | Search Master/workspace selector/tabs |
 | `09-orbit-3d.md` | 3D navigation |
 | `10-portability-protocol.md` | Versioned one-file export/restore |
 | `11-security-self-hosting.md` | Security/deployment boundaries |

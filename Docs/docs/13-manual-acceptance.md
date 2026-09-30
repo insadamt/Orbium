@@ -15,7 +15,7 @@ This document supplements the specific phase checklists.
 ## Navigation
 
 - Search Master opens globally with `Ctrl + Space`;
-- Navigator is keyboard usable;
+- the native workspace selector is keyboard usable;
 - breadcrumbs always provide deterministic location;
 - browser/tab navigation does not strand the user;
 - opening documents/databases behaves consistently;
@@ -72,7 +72,7 @@ This document supplements the specific phase checklists.
 - hover target does not move away;
 - camera cannot easily become unusable;
 - reduced motion is functional;
-- equivalent navigation exists through Search/Navigator.
+- equivalent navigation exists through Search and the workspace explorer.
 
 ## Portability
 

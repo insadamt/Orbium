@@ -22,7 +22,6 @@ type Props = {
     parent: TreeNode | null;
     open: boolean;
     onClose: () => void;
-    onNavigator: (id?: number) => void;
     onOpen: (url: string, newTab?: boolean) => void;
 };
 
@@ -34,7 +33,6 @@ export function SearchMaster({
     parent,
     open,
     onClose,
-    onNavigator,
     onOpen,
 }: Props) {
     const [query, setQuery] = useState('');
@@ -116,13 +114,6 @@ export function SearchMaster({
             action: () => {
                 onOpen(`/workspaces/${workspaceId}`);
                 onClose();
-            },
-        },
-        {
-            label: 'Open Navigator',
-            action: () => {
-                onClose();
-                onNavigator();
             },
         },
         {
@@ -348,17 +339,6 @@ export function SearchMaster({
                                                         }
                                                     >
                                                         Open in new tab
-                                                    </button>
-                                                    <button
-                                                        className="rounded-md px-2 py-1.5 hover:bg-background"
-                                                        onClick={() => {
-                                                            onClose();
-                                                            onNavigator(
-                                                                result.id,
-                                                            );
-                                                        }}
-                                                    >
-                                                        Reveal in Navigator
                                                     </button>
                                                 </div>
                                             )}

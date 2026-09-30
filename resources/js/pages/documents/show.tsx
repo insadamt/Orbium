@@ -1,5 +1,4 @@
-import { Head, Link, usePage } from '@inertiajs/react';
-import { ArrowLeft } from 'lucide-react';
+import { Head, usePage } from '@inertiajs/react';
 import { useRef, useState } from 'react';
 import DocumentEditor from '@/components/editor/document-editor';
 import type { EditorDocument } from '@/components/editor/editor-api';
@@ -230,17 +229,7 @@ function DocumentPage({
     return (
         <>
             <Head title={title} />
-            <div className="mx-auto max-w-[980px]">
-                <Link
-                    href={
-                        node.parent_id
-                            ? `/workspaces/${workspace.id}/nodes/${node.parent_id}`
-                            : `/workspaces/${workspace.id}`
-                    }
-                    className="mb-6 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
-                >
-                    <ArrowLeft size={16} /> Back to {workspace.name}
-                </Link>
+            <div className="floating-body-island floating-document-island mx-auto max-w-[1120px]">
                 <div className="relative">
                     {coverId && (
                         <div className="aspect-[980/288] overflow-hidden rounded-2xl">

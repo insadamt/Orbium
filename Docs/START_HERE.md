@@ -50,7 +50,7 @@ Do not silently invent product behavior to resolve a conflict. Prefer the smalle
 | 1 | Workspaces, hierarchy, node CRUD, containment |
 | 2 | Document editor, Markdown UX, mentions, attachments |
 | 3 | Databases, properties, Table and Gallery |
-| 4 | Search Master, Navigator, tabs, navigation history |
+| 4 | Search Master, workspace selector, tabs, navigation history |
 | 5 | 3D Orbit and motion system |
 | 6 | Versioned portability protocol and restore |
 | 7 | Settings, onboarding, resilience, UX polish |
@@ -64,7 +64,7 @@ See `phases/README.md`.
 - **Mention**: contextual reference from one document to another node.
 - **Orbit**: 3D visualization of relations only.
 - **Search Master**: global search/navigation/command interface opened with `Ctrl + Space`.
-- **Navigator**: conventional hierarchical tree.
+- **Workspace explorer**: conventional hierarchy browsing on workspace and folder pages.
 - **Database document**: a normal document whose parent is a database and which additionally has structured property values.
 
 ## Absolute product rules

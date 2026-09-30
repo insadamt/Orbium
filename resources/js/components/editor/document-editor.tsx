@@ -15,7 +15,9 @@ import 'katex/dist/katex.min.css';
 import EditorBlockGutter from './editor-block-gutter';
 import type { EditorDocument } from './editor-api';
 import { uploadAttachment } from './editor-api';
+import { usePageSearch } from '@/components/navigation/page-search';
 import {
+    countDocumentMatches,
     DocumentSearch,
     selectNextMatch,
     SelectionToolbar,
@@ -88,6 +90,7 @@ export default function DocumentEditor({
     const searchTerm =
         new URLSearchParams(usePage().url.split('?')[1] ?? '').get('find') ??
         '';
+    const pageSearch = usePageSearch();
     const [menu, setMenu] = useState<EditorMenu | null>(null);
     const [searchOpen, setSearchOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
@@ -162,6 +165,38 @@ export default function DocumentEditor({
         setSearchOpen(true);
         setMatchCount(selectNextMatch(editor, searchTerm));
     }, [editor, searchTerm]);
+
+    useEffect(() => {
+        if (!editor) {
+            pageSearch.setResultCount(null);
+            return;
+        }
+        const refreshMatchCount = () =>
+            pageSearch.setResultCount(
+                pageSearch.query.trim()
+                    ? countDocumentMatches(editor, pageSearch.query)
+                    : null,
+            );
+        refreshMatchCount();
+        editor.on('update', refreshMatchCount);
+        return () => {
+            editor.off('update', refreshMatchCount);
+        };
+    }, [editor, pageSearch.query, pageSearch.setResultCount]);
+
+    useEffect(() => {
+        if (
+            !editor ||
+            !pageSearch.searchStep.query ||
+            pageSearch.searchStep.id === 0
+        )
+            return;
+        selectNextMatch(
+            editor,
+            pageSearch.searchStep.query,
+            pageSearch.searchStep.previous,
+        );
+    }, [editor, pageSearch.searchStep]);
 
     async function addFiles(files: FileList | File[]) {
         if (!editor) return;

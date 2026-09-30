@@ -47,7 +47,7 @@ Use for critical user flows:
 - mention a node;
 - create/use database;
 - Search Master jump;
-- Navigator move;
+- workspace explorer move;
 - Orbit navigation;
 - portability preview/restore where test fixture size allows.
 
@@ -143,7 +143,7 @@ Automated checks where practical plus manual keyboard review.
 Critical interfaces:
 
 - Search Master;
-- Navigator;
+- native workspace selector and workspace explorer;
 - slash menu;
 - context menus;
 - settings;

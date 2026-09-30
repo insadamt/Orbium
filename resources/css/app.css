@@ -1,4 +1,7 @@
 @import 'tailwindcss';
+@import './orbital-explorer.css';
+@import './orbital-explorer-content.css';
+@import './floating-workspace.css';
 @import 'tw-animate-css';
 
 .orbium-editor {

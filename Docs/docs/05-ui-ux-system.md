@@ -1,5 +1,10 @@
 # UI/UX system
 
+> Current home/workspace/folder override (2026-09-30): the floating workspace brief supersedes older native-selector, sidebar, card/row, and orbital-carousel guidance below for these routes. Render only direct children as compact horizontal objects. Use a custom workspace menu, independent floating top controls, and a centered tab island whose plus button opens workspace home in a new tab. Create items through the contextual user menu or Search Master. Click/Enter opens an entity in the current tab; Ctrl+click or Ctrl+Enter opens a new app tab. Space selects a focused item. Empty containers stay visually empty. Document and database pages share these floating top controls; their existing work surfaces sit inside one spacious floating island. See `../reports/05-floating-workspace.md`.
+
+> Latest shell update (2026-09-30): Settings also uses the floating controls and one content island with horizontal category links. The top Search button expands into an inline current-page field; it filters the current explorer container, database documents, or settings categories, and finds matches within the open document. `Ctrl + Space` remains Search Master.
+
+
 ## Design direction
 
 Orbium is:
@@ -23,7 +28,7 @@ Dark mode:
 - near-black rather than absolute black where depth benefits;
 - extremely subtle radial illumination;
 - restrained noise/grain if it improves material depth;
-- no starfield by default.
+- sparse, subdued star points on the spatial explorer only.
 
 Light mode:
 
@@ -36,7 +41,6 @@ Light mode:
 Good uses:
 
 - Search Master;
-- Navigator;
 - tabs/top controls;
 - context menus;
 - property dropdowns;
@@ -67,17 +71,21 @@ The same semantic meaning should use the same color role across views.
 
 ## Global shell
 
+### Spatial explorer direction (2026-09-30)
+
+The workspace and folder explorer is a spacious, dark spatial view. Large workspace orbs are selected horizontally. Entering one reveals a half orb at the left edge with direct children arranged along a circular path. Small floating controls expose essential actions without persistent bars. This direction currently applies to the explorer; document and database surfaces keep their existing shell until reviewed separately.
+
+Pointer, touch, wheel, and keyboard navigation must reach the same content. The user can disable motion through the browser's reduced-motion preference. Search Master remains available with `Ctrl + Space`.
+
 The shell must stay visually quiet.
 
 Persistent/available elements:
 
-- breadcrumbs;
-- tab strip;
-- minimal creation/search/account controls;
-- temporary Navigator;
+- workspace name selector with the tab strip beside it;
+- account controls;
 - Search Master overlay.
 
-No permanent heavy Notion-style sidebar.
+Workspace and folder pages have a narrow navigation rail and a collapsible folder sidebar. Document and database work surfaces retain the compact top shell so their content has room.
 
 ## Breadcrumbs
 
@@ -101,8 +109,7 @@ Keep only essential actions.
 
 Potential controls:
 
-- Navigator toggle;
-- breadcrumbs;
+- workspace selector;
 - tabs;
 - Search;
 - Create;
@@ -138,20 +145,9 @@ Displays current workspace and allows:
 
 Switching changes the current hierarchy context cleanly.
 
-## Navigator
+## Hierarchy browsing
 
-Temporary left-side frosted panel.
-
-Supports:
-
-- tree expansion/collapse;
-- keyboard navigation;
-- drag/drop moves;
-- context actions;
-- tree-only filter;
-- reveal current node.
-
-Navigator filter is not Search Master.
+Workspace and folder pages show a folder tree beside a file explorer. The explorer shows folders as cards and documents/databases as rows. A single click opens an item; drag/drop and the item action menu provide moves. Search Master provides direct jumps.
 
 ## Tabs
 
@@ -236,13 +232,13 @@ Do not use large red modals for recoverable background failures.
 - adequate contrast on glass surfaces;
 - reduced motion honored;
 - semantic HTML outside the canvas;
-- Orbit actions must have non-3D alternatives through Search/Navigator;
+- Orbit actions must have non-3D alternatives through Search and the workspace explorer;
 - 3D must never be the only path to critical content.
 
 ## Responsive boundary
 
 v0.1.0 is desktop-first.
 
-Tablet should remain usable with overlay Navigator and scrollable tabs.
+Tablet should remain usable with the collapsible folder sidebar and scrollable tabs.
 
 Mobile-first optimization is deferred. Do not break mobile unnecessarily, but do not sacrifice desktop signature UX to complete a mobile redesign in v0.1.0.

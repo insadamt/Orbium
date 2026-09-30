@@ -1,21 +1,12 @@
 import { Link, router } from '@inertiajs/react';
-import {
-    ArrowLeft,
-    Database,
-    FileText,
-    Folder,
-    MoreHorizontal,
-    Plus,
-    RotateCcw,
-    Trash2,
-} from 'lucide-react';
-import { useState } from 'react';
+import { ChevronRight, Plus, RotateCcw, Trash2 } from 'lucide-react';
+import { useState, type DragEvent } from 'react';
 import { toast } from 'sonner';
 import { CreateNodeForm } from '@/components/navigation/create-node-form';
 import { NodeActions } from '@/components/navigation/node-actions';
-import { nodeUrl } from '@/components/navigation/navigation-types';
 import type { TreeNode } from '@/components/navigation/navigation-types';
 import { openLocation } from '@/components/navigation/tab-navigation';
+import FileExplorer from './file-explorer';
 
 export type HierarchyNode = TreeNode;
 export type TrashedNode = Pick<
@@ -30,7 +21,18 @@ type Props = {
     trashedNodes: TrashedNode[];
     currentNode: HierarchyNode | null;
 };
-const nodeIcons = { folder: Folder, document: FileText, database: Database };
+
+function ancestorPath(node: HierarchyNode | null, nodes: HierarchyNode[]) {
+    const ancestors: HierarchyNode[] = [];
+    let current = node;
+    while (current) {
+        ancestors.unshift(current);
+        current =
+            nodes.find((candidate) => candidate.id === current?.parent_id) ??
+            null;
+    }
+    return ancestors;
+}
 
 export default function NodeBrowser({
     workspaceId,
@@ -45,6 +47,9 @@ export default function NodeBrowser({
     const [createMenuOpen, setCreateMenuOpen] = useState(false);
     const [actionsId, setActionsId] = useState<number | null>(null);
     const [showTrash, setShowTrash] = useState(false);
+    const [dropParentId, setDropParentId] = useState<
+        number | null | undefined
+    >();
     const [localTags, setLocalTags] = useState<Record<number, string[]>>({});
     const parentId =
         currentNode?.type === 'document'
@@ -60,9 +65,15 @@ export default function NodeBrowser({
             ? ['document']
             : ['document', 'folder', 'database'];
     const selectedNode = nodes.find((node) => node.id === actionsId);
-    const parentUrl = currentNode?.parent_id
-        ? `/workspaces/${workspaceId}/nodes/${currentNode.parent_id}`
-        : `/workspaces/${workspaceId}`;
+    const ancestors = ancestorPath(currentNode, nodes);
+    const locations = [
+        { id: null, title: workspaceName, url: `/workspaces/${workspaceId}` },
+        ...ancestors.map((node) => ({
+            id: node.id,
+            title: node.title,
+            url: `/workspaces/${workspaceId}/nodes/${node.id}`,
+        })),
+    ];
 
     function move(
         nodeId: number,
@@ -78,28 +89,81 @@ export default function NodeBrowser({
             },
         );
     }
+
+    function dropIntoLocation(
+        event: DragEvent<HTMLElement>,
+        destinationParentId: number | null,
+    ) {
+        event.preventDefault();
+        const sourceId = Number(
+            event.dataTransfer.getData('application/orbium-node'),
+        );
+        setDropParentId(undefined);
+        if (!sourceId || sourceId === destinationParentId) return;
+        const position = nodes.filter(
+            (node) =>
+                node.parent_id === destinationParentId && node.id !== sourceId,
+        ).length;
+        move(sourceId, destinationParentId, position);
+    }
+
     return (
-        <section className="mx-auto max-w-[980px] min-w-0 flex-1">
-            {currentNode && (
-                <Link
-                    href={parentUrl}
-                    className="mb-6 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
-                >
-                    <ArrowLeft size={16} /> Back to{' '}
-                    {nodes.find((node) => node.id === currentNode.parent_id)
-                        ?.title ?? workspaceName}
-                </Link>
-            )}
-            <div className="mx-auto max-w-[780px]">
+        <section className="min-w-0 flex-1">
+            <nav
+                aria-label="Folder path"
+                className="mb-5 flex flex-wrap items-center gap-1 text-xs"
+            >
+                {locations.map((location, index) => (
+                    <span
+                        key={location.id ?? 'root'}
+                        className="inline-flex items-center gap-1"
+                    >
+                        {index > 0 && (
+                            <ChevronRight
+                                size={15}
+                                className="text-muted-foreground"
+                                aria-hidden="true"
+                            />
+                        )}
+                        <Link
+                            href={location.url}
+                            aria-current={
+                                index === locations.length - 1
+                                    ? 'page'
+                                    : undefined
+                            }
+                            onDragOver={(event) => {
+                                if (
+                                    !event.dataTransfer.types.includes(
+                                        'application/orbium-node',
+                                    )
+                                )
+                                    return;
+                                event.preventDefault();
+                                event.dataTransfer.dropEffect = 'move';
+                                setDropParentId(location.id);
+                            }}
+                            onDragLeave={() => setDropParentId(undefined)}
+                            onDrop={(event) =>
+                                dropIntoLocation(event, location.id)
+                            }
+                            className={`rounded-md px-2 py-1.5 ${dropParentId === location.id ? 'bg-accent ring-2 ring-ring' : 'hover:bg-accent'} ${index === locations.length - 1 ? 'font-medium text-foreground' : 'text-muted-foreground'}`}
+                        >
+                            {location.title}
+                        </Link>
+                    </span>
+                ))}
+            </nav>
+            <div className="w-full">
                 <div>
                     <div>
-                        <p className="mb-2 text-xs font-medium tracking-[0.16em] text-muted-foreground uppercase">
+                        <p className="mb-1 text-xs font-medium tracking-[0.14em] text-muted-foreground uppercase">
                             {workspaceName}
                         </p>
-                        <h1 className="text-4xl font-semibold tracking-tight break-words md:text-5xl">
+                        <h1 className="text-3xl font-semibold tracking-tight break-words md:text-4xl">
                             {currentNode?.title ?? workspaceName}
                         </h1>
-                        <p className="mt-3 text-sm text-muted-foreground">
+                        <p className="mt-2 text-sm text-muted-foreground">
                             {currentNode
                                 ? currentNode.type === 'folder'
                                     ? 'Folder'
@@ -111,7 +175,7 @@ export default function NodeBrowser({
                             {children.length === 1 ? 'item' : 'items'}
                         </p>
                     </div>
-                    <div className="mt-9 flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3">
+                    <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3">
                         <div className="flex items-center gap-2">
                             <button
                                 type="button"
@@ -123,36 +187,36 @@ export default function NodeBrowser({
                                     ? ` (${trashedNodes.length})`
                                     : ''}
                             </button>
-                            <div className="relative">
-                                <button
-                                    type="button"
-                                    aria-label="Create an item"
-                                    aria-expanded={createMenuOpen}
-                                    onClick={() =>
-                                        setCreateMenuOpen((value) => !value)
-                                    }
-                                    className="inline-flex items-center gap-2 rounded-lg bg-foreground px-3.5 py-2 text-sm font-medium text-background"
-                                >
-                                    <Plus size={16} /> New
-                                </button>
-                                {createMenuOpen && (
-                                    <div className="absolute right-0 z-10 mt-1 w-44 rounded-xl border border-border bg-popover p-1 text-popover-foreground shadow-xl">
-                                        {allowedTypes.map((type) => (
-                                            <button
-                                                type="button"
-                                                key={type}
-                                                onClick={() => {
-                                                    setCreateType(type);
-                                                    setCreateMenuOpen(false);
-                                                }}
-                                                className="block w-full rounded-lg px-3 py-2 text-left text-sm capitalize hover:bg-accent"
-                                            >
-                                                {type}
-                                            </button>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
+                        </div>
+                        <div className="relative">
+                            <button
+                                type="button"
+                                aria-label="Create an item"
+                                aria-expanded={createMenuOpen}
+                                onClick={() =>
+                                    setCreateMenuOpen((value) => !value)
+                                }
+                                className="inline-flex items-center gap-2 rounded-lg bg-foreground px-3.5 py-2 text-sm font-medium text-background"
+                            >
+                                <Plus size={16} /> New
+                            </button>
+                            {createMenuOpen && (
+                                <div className="absolute right-0 z-10 mt-1 w-44 rounded-xl border border-border bg-popover p-1 text-popover-foreground shadow-xl">
+                                    {allowedTypes.map((type) => (
+                                        <button
+                                            type="button"
+                                            key={type}
+                                            onClick={() => {
+                                                setCreateType(type);
+                                                setCreateMenuOpen(false);
+                                            }}
+                                            className="block w-full rounded-lg px-3 py-2 text-left text-sm capitalize hover:bg-accent"
+                                        >
+                                            {type}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -169,15 +233,20 @@ export default function NodeBrowser({
                 )}
                 {children.length === 0 ? (
                     <div className="py-20 text-center">
-                        <p className="text-lg font-medium">Nothing here yet</p>
+                        <p className="text-lg font-medium">
+                            {currentNode
+                                ? 'This folder is empty'
+                                : 'This workspace is empty'}
+                        </p>
                         <p className="mt-2 text-sm text-muted-foreground">
-                            Create a document, folder or database to get
+                            Create a document, folder, or database to get
                             started.
                         </p>
                         <div className="mt-5 flex justify-center gap-2">
                             {allowedTypes.map((type) => (
                                 <button
                                     key={type}
+                                    type="button"
                                     onClick={() => setCreateType(type)}
                                     className="rounded-lg border border-border px-3 py-2 text-sm capitalize hover:bg-accent"
                                 >
@@ -187,46 +256,13 @@ export default function NodeBrowser({
                         </div>
                     </div>
                 ) : (
-                    <div className="divide-y divide-border/70">
-                        {children.map((node) => {
-                            const Icon = nodeIcons[node.type];
-                            return (
-                                <div
-                                    key={node.id}
-                                    className="group flex min-w-0 items-center gap-3 rounded-lg px-2 py-3 hover:bg-accent/50"
-                                >
-                                    <Icon
-                                        size={19}
-                                        className="shrink-0 text-muted-foreground"
-                                        aria-hidden="true"
-                                    />
-                                    <Link
-                                        href={nodeUrl(workspaceId, node)}
-                                        className="min-w-0 flex-1 truncate text-sm font-medium focus-visible:underline"
-                                    >
-                                        {node.title}
-                                    </Link>
-                                    <span className="hidden text-xs text-muted-foreground sm:block">
-                                        {node.type}
-                                    </span>
-                                    <button
-                                        type="button"
-                                        aria-label={`Actions for ${node.title}`}
-                                        onClick={() =>
-                                            setActionsId(
-                                                actionsId === node.id
-                                                    ? null
-                                                    : node.id,
-                                            )
-                                        }
-                                        className="rounded-md p-2 text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-background hover:text-foreground focus:opacity-100"
-                                    >
-                                        <MoreHorizontal size={17} />
-                                    </button>
-                                </div>
-                            );
-                        })}
-                    </div>
+                    <FileExplorer
+                        nodes={children}
+                        allNodes={nodes}
+                        workspaceId={workspaceId}
+                        onActions={(nodeId) => setActionsId(nodeId)}
+                        onMove={move}
+                    />
                 )}
                 {selectedNode && (
                     <div className="mt-4 overflow-hidden rounded-xl border border-border">
