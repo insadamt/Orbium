@@ -40,7 +40,7 @@ export default function Dashboard() {
                     {Object.values(errors).join(' ')}
                 </div>
             )}
-            <div className="flex flex-col gap-8 lg:flex-row">
+            <div className="orbium-dashboard-content mx-auto max-w-[980px]">
                 <WorkspacePanel
                     workspaces={workspaces}
                     trashedWorkspaces={trashedWorkspaces}

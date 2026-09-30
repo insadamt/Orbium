@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Actions\Documents\SaveDocument;
 use App\Models\Attachment;
+use App\Models\DatabaseProperty;
+use App\Models\DatabaseValue;
 use App\Models\Node;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -29,6 +31,13 @@ class DocumentController extends Controller
             'workspace' => $workspaceModel->only(['id', 'name']),
             'node' => $documentNode->only(['id', 'title', 'icon', 'parent_id']),
             'document' => $document->only(['content', 'revision', 'cover_attachment_id', 'icon_attachment_id']),
+            'databaseProperties' => $documentNode->parent?->type === 'database'
+                ? DatabaseProperty::query()->where('database_node_id', $documentNode->parent_id)->orderBy('position')->get(['id', 'name', 'type', 'position', 'config']) : [],
+            'databaseValues' => $documentNode->parent?->type === 'database'
+                ? DatabaseValue::query()->where('document_node_id', $documentNode->id)->get(['property_id', 'value']) : [],
+            'mentionCandidates' => $workspaceModel->nodes()->get(['id', 'title', 'type']),
+            'databaseFiles' => Attachment::query()->where('workspace_id', $workspaceModel->id)
+                ->where('owner_node_id', $documentNode->id)->get(['id', 'original_name']),
             'breadcrumbs' => [...$breadcrumbs, ...$ancestors],
         ]);
     }

@@ -2,6 +2,8 @@
 
 namespace App\Actions\Nodes;
 
+use App\Actions\Databases\ManageDatabase;
+use App\Models\DatabaseValue;
 use App\Models\Node;
 use App\Models\Workspace;
 use Illuminate\Database\Eloquent\Builder;
@@ -31,6 +33,12 @@ class ManageHierarchy
                     'plain_text' => '',
                 ]);
             }
+            if ($type === 'database') {
+                $node->database()->create();
+            }
+            if ($type === 'document' && $parent?->type === 'database') {
+                app(ManageDatabase::class)->initializeDocument($parent, $node);
+            }
 
             return $node;
         });
@@ -52,6 +60,12 @@ class ManageHierarchy
 
             $node->parent()->associate($parent);
             $node->save();
+            if ($node->type === 'document' && $previousParentId !== $parentId) {
+                DatabaseValue::query()->where('document_node_id', $node->id)->delete();
+                if ($parent?->type === 'database') {
+                    app(ManageDatabase::class)->initializeDocument($parent, $node);
+                }
+            }
             $this->writeSiblingPositions($destination);
 
             if ($previousParentId !== $parentId) {

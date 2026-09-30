@@ -34,6 +34,9 @@ class WorkspaceController extends Controller
         if ($nodeModel->type === 'document') {
             return to_route('documents.show', [$workspace, $node]);
         }
+        if ($nodeModel->type === 'database') {
+            return to_route('databases.show', [$workspace, $node, ...$request->only(['view', 'focus'])]);
+        }
 
         return $this->renderWorkspace($request, $workspace, $node);
     }

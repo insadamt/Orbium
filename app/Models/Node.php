@@ -42,4 +42,9 @@ class Node extends Model
     {
         return $this->hasOne(Document::class);
     }
+
+    public function database(): HasOne
+    {
+        return $this->hasOne(Database::class);
+    }
 }

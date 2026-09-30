@@ -1,39 +1,52 @@
-import { Link, router } from '@inertiajs/react';
+import { Link, router, usePage } from '@inertiajs/react';
 import {
-    ArrowDown,
-    ArrowUp,
+    ArrowLeft,
     Database,
     FileText,
     Folder,
+    MoreHorizontal,
+    Plus,
     RotateCcw,
     Trash2,
 } from 'lucide-react';
-import { useState, type FormEvent } from 'react';
+import { useState } from 'react';
+import { toast } from 'sonner';
+import { CreateNodeForm } from '@/components/navigation/create-node-form';
+import { NodeActions } from '@/components/navigation/node-actions';
+import { nodeUrl } from '@/components/navigation/navigation-types';
+import type { TreeNode } from '@/components/navigation/navigation-types';
+import OrbitView from '@/components/orbit/orbit-view';
+import { returnToOrbitLocation } from '@/components/orbit/orbit-navigation';
+import { useReducedOrbitMotion } from '@/components/orbit/orbit-preferences';
+import { useTabView } from '@/components/navigation/use-tab-view';
+import { openLocation } from '@/components/navigation/tab-navigation';
 
-export type HierarchyNode = {
-    id: number;
-    parent_id: number | null;
-    type: 'folder' | 'document' | 'database';
-    title: string;
-    position: number;
-};
-
+export type HierarchyNode = TreeNode;
 export type TrashedNode = Pick<
     HierarchyNode,
     'id' | 'parent_id' | 'type' | 'title'
-> & {
-    deleted_at: string;
-};
+> & { deleted_at: string };
 
-type NodeBrowserProps = {
+type Props = {
     workspaceId: number;
     workspaceName: string;
     nodes: HierarchyNode[];
     trashedNodes: TrashedNode[];
     currentNode: HierarchyNode | null;
 };
-
 const nodeIcons = { folder: Folder, document: FileText, database: Database };
+
+function ancestorPath(node: HierarchyNode | null, nodes: HierarchyNode[]) {
+    const ancestors: HierarchyNode[] = [];
+    let current = node;
+    while (current) {
+        ancestors.unshift(current);
+        current =
+            nodes.find((candidate) => candidate.id === current?.parent_id) ??
+            null;
+    }
+    return ancestors;
+}
 
 export default function NodeBrowser({
     workspaceId,
@@ -41,15 +54,23 @@ export default function NodeBrowser({
     nodes,
     trashedNodes,
     currentNode,
-}: NodeBrowserProps) {
-    const [title, setTitle] = useState('');
-    const [type, setType] = useState<HierarchyNode['type']>('document');
-    const [editingId, setEditingId] = useState<number | null>(null);
-    const [editedTitle, setEditedTitle] = useState('');
-    const [movingId, setMovingId] = useState<number | null>(null);
-    const [targetParentId, setTargetParentId] = useState<string>('root');
+}: Props) {
+    const page = usePage();
+    const reducedMotion = useReducedOrbitMotion();
+    const [view, setView] = useTabView<'list' | 'orbit'>(
+        `container.${workspaceId}.${currentNode?.id ?? 0}.view`,
+        new URLSearchParams(page.url.split('?')[1] ?? '').get('view') === 'list'
+            ? 'list'
+            : 'orbit',
+    );
+    const [createType, setCreateType] = useState<HierarchyNode['type'] | null>(
+        null,
+    );
+    const [createMenuOpen, setCreateMenuOpen] = useState(false);
+    const [actionsId, setActionsId] = useState<number | null>(null);
     const [showTrash, setShowTrash] = useState(false);
-    const creationParentId =
+    const [localTags, setLocalTags] = useState<Record<number, string[]>>({});
+    const parentId =
         currentNode?.type === 'document'
             ? currentNode.parent_id
             : (currentNode?.id ?? null);
@@ -62,338 +83,333 @@ export default function NodeBrowser({
         currentNode?.type === 'database'
             ? ['document']
             : ['document', 'folder', 'database'];
+    const selectedNode = nodes.find((node) => node.id === actionsId);
+    const parentUrl = currentNode?.parent_id
+        ? `/workspaces/${workspaceId}/nodes/${currentNode.parent_id}`
+        : `/workspaces/${workspaceId}`;
+    const ancestors = ancestorPath(currentNode, nodes);
 
-    function createNode(event: FormEvent<HTMLFormElement>): void {
-        event.preventDefault();
-        router.post(
-            `/workspaces/${workspaceId}/nodes`,
-            {
-                title: title.trim(),
-                type: allowedTypes.includes(type) ? type : 'document',
-                parent_id: creationParentId,
-            },
-            { onSuccess: () => setTitle('') },
-        );
-    }
-
-    function renameNode(event: FormEvent<HTMLFormElement>, id: number): void {
-        event.preventDefault();
+    function move(
+        nodeId: number,
+        nextParentId: number | null,
+        position: number,
+    ) {
         router.patch(
-            `/workspaces/${workspaceId}/nodes/${id}`,
-            { title: editedTitle.trim() },
+            `/workspaces/${workspaceId}/nodes/${nodeId}/move`,
+            { parent_id: nextParentId, position },
             {
-                onSuccess: () => setEditingId(null),
+                preserveScroll: true,
+                onError: (errors) => toast.error(Object.values(errors)[0]),
             },
         );
     }
-
-    function moveNode(
-        event: FormEvent<HTMLFormElement>,
-        node: HierarchyNode,
-    ): void {
-        event.preventDefault();
-        const parentId =
-            targetParentId === 'root' ? null : Number(targetParentId);
-        const position = nodes.filter(
-            (item) => item.parent_id === parentId && item.id !== node.id,
-        ).length;
-        router.patch(
-            `/workspaces/${workspaceId}/nodes/${node.id}/move`,
-            {
-                parent_id: parentId,
-                position,
-            },
-            { onSuccess: () => setMovingId(null) },
-        );
-    }
-
-    function reorderNode(node: HierarchyNode, position: number): void {
-        router.patch(`/workspaces/${workspaceId}/nodes/${node.id}/move`, {
-            parent_id: node.parent_id,
-            position,
-        });
-    }
-
-    function trashNode(node: HierarchyNode): void {
-        if (
-            window.confirm(`Move “${node.title}” and its descendants to Trash?`)
-        ) {
-            router.delete(`/workspaces/${workspaceId}/nodes/${node.id}`);
-        }
-    }
-
     return (
-        <section className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-start justify-between gap-4">
-                <div>
-                    <p className="text-xs font-semibold tracking-[0.18em] text-muted-foreground uppercase">
-                        {workspaceName}
-                    </p>
-                    <h1 className="mt-2 text-4xl font-light tracking-tight break-words">
-                        {currentNode?.title ?? 'Workspace root'}
-                    </h1>
-                    {currentNode && (
-                        <p className="mt-2 text-sm text-muted-foreground capitalize">
-                            {currentNode.type}
-                            {currentNode.type === 'document'
-                                ? ' · Editor arrives in Phase 2'
-                                : currentNode.type === 'database'
-                                  ? ' · Views arrive in Phase 3'
-                                  : ''}
-                        </p>
-                    )}
-                </div>
-                <button
-                    type="button"
-                    onClick={() => setShowTrash(!showTrash)}
-                    className="rounded-full border border-border px-4 py-2 text-sm hover:bg-accent"
+        <section
+            className={`min-w-0 flex-1 ${view === 'orbit' ? 'orbium-orbit-page' : 'mx-auto max-w-[980px]'}`}
+        >
+            {currentNode && (
+                <Link
+                    href={parentUrl}
+                    className="mb-6 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
                 >
-                    {showTrash
-                        ? 'Hide Trash'
-                        : `Trash (${trashedNodes.length})`}
-                </button>
-            </div>
-
-            <form
-                onSubmit={createNode}
-                className="glass-surface mt-8 flex flex-wrap gap-2 rounded-2xl border border-border p-4"
+                    <ArrowLeft size={16} /> Back to{' '}
+                    {nodes.find((node) => node.id === currentNode.parent_id)
+                        ?.title ?? workspaceName}
+                </Link>
+            )}
+            <div
+                className={
+                    view === 'orbit'
+                        ? 'orbium-orbit-content'
+                        : 'mx-auto max-w-[780px]'
+                }
             >
-                <select
-                    aria-label="New node type"
-                    value={allowedTypes.includes(type) ? type : 'document'}
-                    onChange={(event) =>
-                        setType(event.target.value as HierarchyNode['type'])
+                <div
+                    className={
+                        view === 'orbit' ? 'orbium-container-header' : ''
                     }
-                    className="rounded-lg border bg-background px-3 py-2 text-sm"
                 >
-                    {allowedTypes.map((option) => (
-                        <option key={option} value={option}>
-                            {option[0].toUpperCase() + option.slice(1)}
-                        </option>
-                    ))}
-                </select>
-                <input
-                    aria-label="New node title"
-                    value={title}
-                    onChange={(event) => setTitle(event.target.value)}
-                    maxLength={255}
-                    placeholder="Name your item"
-                    className="min-w-40 flex-1 rounded-lg border bg-background px-3 py-2 text-sm"
-                />
-                <button
-                    type="submit"
-                    disabled={!title.trim()}
-                    className="rounded-lg bg-foreground px-5 py-2 text-sm font-medium text-background disabled:opacity-40"
-                >
-                    Create
-                </button>
-            </form>
-
-            <div className="mt-8 space-y-3">
-                {children.length === 0 && (
-                    <p className="rounded-2xl border border-dashed border-border p-10 text-center text-sm text-muted-foreground">
-                        Nothing here yet. Create an item above.
-                    </p>
-                )}
-                {children.map((node, index) => {
-                    const Icon = nodeIcons[node.type];
-                    return (
-                        <article
-                            key={node.id}
-                            className="rounded-2xl border border-border bg-card/70 p-4"
-                        >
-                            <div className="flex flex-wrap items-center justify-between gap-3">
-                                {editingId === node.id ? (
-                                    <form
-                                        onSubmit={(event) =>
-                                            renameNode(event, node.id)
-                                        }
-                                        className="flex min-w-0 flex-1 gap-2"
-                                    >
-                                        <input
-                                            aria-label="Node title"
-                                            value={editedTitle}
-                                            onChange={(event) =>
-                                                setEditedTitle(
-                                                    event.target.value,
-                                                )
-                                            }
-                                            maxLength={255}
-                                            className="min-w-0 flex-1 rounded-md border bg-background px-3 py-1"
-                                        />
-                                        <button
-                                            type="submit"
-                                            className="text-sm font-medium"
-                                        >
-                                            Save
-                                        </button>
-                                    </form>
-                                ) : (
-                                    <Link
-                                        href={`/workspaces/${workspaceId}/nodes/${node.id}`}
-                                        className="flex min-w-0 items-center gap-3 hover:underline"
-                                    >
-                                        <Icon
-                                            size={20}
-                                            className="shrink-0 text-muted-foreground"
-                                        />
-                                        <span className="truncate font-medium">
-                                            {node.title}
-                                        </span>
-                                        <span className="text-xs text-muted-foreground capitalize">
-                                            {node.type}
-                                        </span>
-                                    </Link>
-                                )}
-                                <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setEditingId(node.id);
-                                            setEditedTitle(node.title);
-                                        }}
-                                        className="rounded px-2 py-1 hover:bg-accent"
-                                    >
-                                        Rename
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setMovingId(
-                                                movingId === node.id
-                                                    ? null
-                                                    : node.id,
-                                            );
-                                            setTargetParentId(
-                                                node.parent_id === null
-                                                    ? 'root'
-                                                    : String(node.parent_id),
-                                            );
-                                        }}
-                                        className="rounded px-2 py-1 hover:bg-accent"
-                                    >
-                                        Move
-                                    </button>
-                                    <button
-                                        type="button"
-                                        disabled={index === 0}
-                                        onClick={() =>
-                                            reorderNode(node, index - 1)
-                                        }
-                                        aria-label={`Move ${node.title} up`}
-                                        className="rounded p-1 hover:bg-accent disabled:opacity-30"
-                                    >
-                                        <ArrowUp size={16} />
-                                    </button>
-                                    <button
-                                        type="button"
-                                        disabled={index === children.length - 1}
-                                        onClick={() =>
-                                            reorderNode(node, index + 1)
-                                        }
-                                        aria-label={`Move ${node.title} down`}
-                                        className="rounded p-1 hover:bg-accent disabled:opacity-30"
-                                    >
-                                        <ArrowDown size={16} />
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => trashNode(node)}
-                                        aria-label={`Trash ${node.title}`}
-                                        className="rounded p-1 text-destructive hover:bg-accent"
-                                    >
-                                        <Trash2 size={16} />
-                                    </button>
-                                </div>
-                            </div>
-                            {movingId === node.id && (
-                                <form
-                                    onSubmit={(event) => moveNode(event, node)}
-                                    className="mt-4 flex flex-wrap gap-2 border-t border-border pt-4"
-                                >
-                                    <select
-                                        aria-label={`Move ${node.title} to`}
-                                        value={targetParentId}
-                                        onChange={(event) =>
-                                            setTargetParentId(
-                                                event.target.value,
-                                            )
-                                        }
-                                        className="min-w-0 flex-1 rounded-lg border bg-background px-3 py-2 text-sm"
-                                    >
-                                        <option value="root">
-                                            Workspace root
-                                        </option>
-                                        {nodes
-                                            .filter(
-                                                (candidate) =>
-                                                    candidate.type ===
-                                                        'folder' ||
-                                                    (candidate.type ===
-                                                        'database' &&
-                                                        node.type ===
-                                                            'document'),
-                                            )
-                                            .map((candidate) => (
-                                                <option
-                                                    key={candidate.id}
-                                                    value={candidate.id}
-                                                >
-                                                    {candidate.title} ·{' '}
-                                                    {candidate.type}
-                                                </option>
-                                            ))}
-                                    </select>
-                                    <button
-                                        type="submit"
-                                        className="rounded-lg bg-foreground px-4 py-2 text-sm text-background"
-                                    >
-                                        Move
-                                    </button>
-                                </form>
-                            )}
-                        </article>
-                    );
-                })}
-            </div>
-
-            {showTrash && (
-                <section className="mt-10 border-t border-border pt-6">
-                    <h2 className="text-lg font-medium">Trash</h2>
-                    {trashedNodes.length === 0 && (
-                        <p className="mt-3 text-sm text-muted-foreground">
-                            No trashed items.
-                        </p>
-                    )}
-                    <div className="mt-4 space-y-2">
-                        {trashedNodes.map((node) => (
-                            <div
-                                key={node.id}
-                                className="flex items-center justify-between gap-3 rounded-xl border border-border p-3 text-sm"
+                    <div>
+                        {view === 'orbit' && (
+                            <nav
+                                aria-label="Orbit breadcrumbs"
+                                className="orbium-orbit-breadcrumbs"
                             >
-                                <span className="truncate">
-                                    {node.title}{' '}
-                                    <span className="text-muted-foreground capitalize">
-                                        · {node.type}
+                                <Link href="/dashboard">Home</Link>
+                                <span aria-hidden="true">/</span>
+                                <Link
+                                    href={`/workspaces/${workspaceId}?view=orbit`}
+                                    aria-current={
+                                        !currentNode ? 'page' : undefined
+                                    }
+                                    onClick={(event) => {
+                                        if (!currentNode) return;
+                                        event.preventDefault();
+                                        returnToOrbitLocation(
+                                            `/workspaces/${workspaceId}?view=orbit`,
+                                            reducedMotion,
+                                        );
+                                    }}
+                                >
+                                    {workspaceName}
+                                </Link>
+                                {ancestors.map((ancestor, index) => (
+                                    <span
+                                        key={ancestor.id}
+                                        className="contents"
+                                    >
+                                        <span aria-hidden="true">/</span>
+                                        {index === ancestors.length - 1 ? (
+                                            <span aria-current="page">
+                                                {ancestor.title}
+                                            </span>
+                                        ) : (
+                                            <Link
+                                                href={`/workspaces/${workspaceId}/nodes/${ancestor.id}?view=orbit`}
+                                                onClick={(event) => {
+                                                    event.preventDefault();
+                                                    returnToOrbitLocation(
+                                                        `/workspaces/${workspaceId}/nodes/${ancestor.id}?view=orbit`,
+                                                        reducedMotion,
+                                                    );
+                                                }}
+                                            >
+                                                {ancestor.title}
+                                            </Link>
+                                        )}
                                     </span>
-                                </span>
+                                ))}
+                            </nav>
+                        )}
+                        <p className="mb-2 text-xs font-medium tracking-[0.16em] text-muted-foreground uppercase">
+                            {workspaceName}
+                        </p>
+                        <h1 className="text-4xl font-semibold tracking-tight break-words md:text-5xl">
+                            {currentNode?.title ?? workspaceName}
+                        </h1>
+                        <p className="mt-3 text-sm text-muted-foreground">
+                            {currentNode
+                                ? currentNode.type === 'folder'
+                                    ? 'Folder'
+                                    : currentNode.type === 'database'
+                                      ? 'Database'
+                                      : 'Document'
+                                : 'Workspace'}{' '}
+                            · {children.length}{' '}
+                            {children.length === 1 ? 'item' : 'items'}
+                        </p>
+                    </div>
+                    <div className="mt-9 flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3">
+                        <div className="flex gap-1" aria-label="Container view">
+                            {(['orbit', 'list'] as const).map((mode) => (
+                                <button
+                                    key={mode}
+                                    aria-pressed={view === mode}
+                                    onClick={() => setView(mode)}
+                                    className={`rounded-lg px-3 py-2 text-sm capitalize ${view === mode ? 'bg-accent font-medium' : 'text-muted-foreground'}`}
+                                >
+                                    {mode}
+                                </button>
+                            ))}
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <button
+                                type="button"
+                                onClick={() => setShowTrash((value) => !value)}
+                                className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground"
+                            >
+                                <Trash2 size={15} /> Trash
+                                {trashedNodes.length > 0
+                                    ? ` (${trashedNodes.length})`
+                                    : ''}
+                            </button>
+                            <div className="relative">
                                 <button
                                     type="button"
+                                    aria-label="Create an item"
+                                    aria-expanded={createMenuOpen}
                                     onClick={() =>
-                                        router.post(
-                                            `/workspaces/${workspaceId}/nodes/${node.id}/restore`,
-                                        )
+                                        setCreateMenuOpen((value) => !value)
                                     }
-                                    aria-label={`Restore ${node.title}`}
-                                    className="rounded p-1 hover:bg-accent"
+                                    className="inline-flex items-center gap-2 rounded-lg bg-foreground px-3.5 py-2 text-sm font-medium text-background"
                                 >
-                                    <RotateCcw size={16} />
+                                    <Plus size={16} /> New
                                 </button>
+                                {createMenuOpen && (
+                                    <div className="absolute right-0 z-10 mt-1 w-44 rounded-xl border border-border bg-popover p-1 text-popover-foreground shadow-xl">
+                                        {allowedTypes.map((type) => (
+                                            <button
+                                                type="button"
+                                                key={type}
+                                                onClick={() => {
+                                                    setCreateType(type);
+                                                    setCreateMenuOpen(false);
+                                                }}
+                                                className="block w-full rounded-lg px-3 py-2 text-left text-sm capitalize hover:bg-accent"
+                                            >
+                                                {type}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
-                        ))}
+                        </div>
                     </div>
-                </section>
-            )}
+                </div>
+                {createType && (
+                    <div
+                        className={
+                            view === 'orbit' ? 'orbium-orbit-create' : 'mt-4'
+                        }
+                    >
+                        <CreateNodeForm
+                            workspaceId={workspaceId}
+                            parentId={parentId}
+                            revealInOrbit={view === 'orbit'}
+                            type={createType}
+                            onCancel={() => setCreateType(null)}
+                            onCreated={() => setCreateType(null)}
+                        />
+                    </div>
+                )}
+                {view === 'orbit' && (
+                    <OrbitView
+                        workspaceId={workspaceId}
+                        center={{
+                            id: currentNode?.id ?? 0,
+                            title: currentNode?.title ?? workspaceName,
+                            type: currentNode?.type ?? 'workspace',
+                        }}
+                        nodes={children}
+                    />
+                )}
+                {view === 'list' &&
+                    (children.length === 0 ? (
+                        <div className="py-20 text-center">
+                            <p className="text-lg font-medium">
+                                Nothing here yet
+                            </p>
+                            <p className="mt-2 text-sm text-muted-foreground">
+                                Create a document, folder or database to get
+                                started.
+                            </p>
+                            <div className="mt-5 flex justify-center gap-2">
+                                {allowedTypes.map((type) => (
+                                    <button
+                                        key={type}
+                                        onClick={() => setCreateType(type)}
+                                        className="rounded-lg border border-border px-3 py-2 text-sm capitalize hover:bg-accent"
+                                    >
+                                        New {type}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="divide-y divide-border/70">
+                            {children.map((node) => {
+                                const Icon = nodeIcons[node.type];
+                                return (
+                                    <div
+                                        key={node.id}
+                                        className="group flex min-w-0 items-center gap-3 rounded-lg px-2 py-3 hover:bg-accent/50"
+                                    >
+                                        <Icon
+                                            size={19}
+                                            className="shrink-0 text-muted-foreground"
+                                            aria-hidden="true"
+                                        />
+                                        <Link
+                                            href={nodeUrl(workspaceId, node)}
+                                            className="min-w-0 flex-1 truncate text-sm font-medium focus-visible:underline"
+                                        >
+                                            {node.title}
+                                        </Link>
+                                        <span className="hidden text-xs text-muted-foreground sm:block">
+                                            {node.type}
+                                        </span>
+                                        <button
+                                            type="button"
+                                            aria-label={`Actions for ${node.title}`}
+                                            onClick={() =>
+                                                setActionsId(
+                                                    actionsId === node.id
+                                                        ? null
+                                                        : node.id,
+                                                )
+                                            }
+                                            className="rounded-md p-2 text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-background hover:text-foreground focus:opacity-100"
+                                        >
+                                            <MoreHorizontal size={17} />
+                                        </button>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    ))}
+                {selectedNode && (
+                    <div className="mt-4 overflow-hidden rounded-xl border border-border">
+                        <NodeActions
+                            workspaceId={workspaceId}
+                            node={{
+                                ...selectedNode,
+                                tags:
+                                    localTags[selectedNode.id] ??
+                                    selectedNode.tags,
+                            }}
+                            nodes={nodes}
+                            onClose={() => setActionsId(null)}
+                            onDismiss={() => setActionsId(null)}
+                            onTagsSaved={(id, tags) =>
+                                setLocalTags((previous) => ({
+                                    ...previous,
+                                    [id]: tags,
+                                }))
+                            }
+                            onOpen={openLocation}
+                            onMove={move}
+                        />
+                    </div>
+                )}
+                {showTrash && (
+                    <section className="mt-10 border-t border-border pt-5">
+                        <h2 className="text-sm font-medium">Trash</h2>
+                        {trashedNodes.length === 0 ? (
+                            <p className="mt-4 text-sm text-muted-foreground">
+                                Trash is empty.
+                            </p>
+                        ) : (
+                            <div className="mt-3 divide-y divide-border/70">
+                                {trashedNodes.map((node) => (
+                                    <div
+                                        key={node.id}
+                                        className="flex items-center justify-between gap-3 py-3 text-sm"
+                                    >
+                                        <span className="min-w-0 truncate">
+                                            {node.title}{' '}
+                                            <span className="text-xs text-muted-foreground">
+                                                · {node.type}
+                                            </span>
+                                        </span>
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                router.post(
+                                                    `/workspaces/${workspaceId}/nodes/${node.id}/restore`,
+                                                )
+                                            }
+                                            aria-label={`Restore ${node.title}`}
+                                            className="rounded-md p-2 text-muted-foreground hover:bg-accent hover:text-foreground"
+                                        >
+                                            <RotateCcw size={16} />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </section>
+                )}
+            </div>
         </section>
     );
 }

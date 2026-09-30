@@ -1,8 +1,10 @@
 <?php
 
 use App\Http\Controllers\AttachmentController;
+use App\Http\Controllers\DatabaseController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\MentionCandidateController;
+use App\Http\Controllers\NavigationController;
 use App\Http\Controllers\NodeController;
 use App\Http\Controllers\WorkspaceController;
 use Illuminate\Support\Facades\Route;
@@ -10,6 +12,9 @@ use Illuminate\Support\Facades\Route;
 Route::redirect('/', '/dashboard')->name('home');
 
 Route::middleware('auth')->group(function () {
+    Route::get('workspaces/{workspace}/search', [NavigationController::class, 'search'])->name('navigation.search');
+    Route::get('workspaces/{workspace}/tree', [NavigationController::class, 'tree'])->name('navigation.tree');
+    Route::put('workspaces/{workspace}/nodes/{node}/tags', [NavigationController::class, 'updateTags'])->name('navigation.tags');
     Route::get('dashboard', [WorkspaceController::class, 'index'])->name('dashboard');
     Route::post('workspaces', [WorkspaceController::class, 'store'])->name('workspaces.store');
     Route::post('workspaces/{workspace}/restore', [WorkspaceController::class, 'restore'])->name('workspaces.restore');
@@ -20,6 +25,14 @@ Route::middleware('auth')->group(function () {
     Route::get('workspaces/{workspace}/mentions', [MentionCandidateController::class, 'index'])->name('mentions.candidates');
     Route::post('workspaces/{workspace}/nodes', [NodeController::class, 'store'])->name('nodes.store');
     Route::get('workspaces/{workspace}/nodes/{node}', [WorkspaceController::class, 'showNode'])->name('nodes.show');
+    Route::get('workspaces/{workspace}/databases/{node}', [DatabaseController::class, 'show'])->name('databases.show');
+    Route::post('workspaces/{workspace}/databases/{node}/documents', [DatabaseController::class, 'createDocument'])->name('databases.documents.store');
+    Route::post('workspaces/{workspace}/databases/{node}/properties', [DatabaseController::class, 'createProperty'])->name('databases.properties.store');
+    Route::patch('workspaces/{workspace}/databases/{node}/properties/{property}', [DatabaseController::class, 'updateProperty'])->name('databases.properties.update');
+    Route::patch('workspaces/{workspace}/databases/{node}/properties/{property}/order', [DatabaseController::class, 'reorderProperty'])->name('databases.properties.order');
+    Route::delete('workspaces/{workspace}/databases/{node}/properties/{property}', [DatabaseController::class, 'deleteProperty'])->name('databases.properties.destroy');
+    Route::put('workspaces/{workspace}/databases/{node}/documents/{document}/properties/{property}', [DatabaseController::class, 'writeValue'])->name('databases.values.update');
+    Route::put('workspaces/{workspace}/databases/{node}/views/{view}', [DatabaseController::class, 'saveView'])->name('databases.views.update');
     Route::get('workspaces/{workspace}/documents/{node}', [DocumentController::class, 'show'])->name('documents.show');
     Route::put('workspaces/{workspace}/documents/{node}', [DocumentController::class, 'update'])->name('documents.update');
     Route::patch('workspaces/{workspace}/documents/{node}/header', [DocumentController::class, 'updateHeader'])->name('documents.header');

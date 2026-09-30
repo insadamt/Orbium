@@ -1,5 +1,5 @@
 import type { Editor, JSONContent } from '@tiptap/core';
-import { router } from '@inertiajs/react';
+import { router, usePage } from '@inertiajs/react';
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
 import { BlockMath, InlineMath } from '@tiptap/extension-mathematics';
 import Placeholder from '@tiptap/extension-placeholder';
@@ -17,6 +17,7 @@ import type { EditorDocument } from './editor-api';
 import { uploadAttachment } from './editor-api';
 import {
     DocumentSearch,
+    selectNextMatch,
     SelectionToolbar,
     SuggestionMenu,
 } from './editor-controls';
@@ -84,6 +85,9 @@ export default function DocumentEditor({
     content,
     revision,
 }: Props) {
+    const searchTerm =
+        new URLSearchParams(usePage().url.split('?')[1] ?? '').get('find') ??
+        '';
     const [menu, setMenu] = useState<EditorMenu | null>(null);
     const [searchOpen, setSearchOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
@@ -151,6 +155,13 @@ export default function DocumentEditor({
         },
         [extensions],
     );
+
+    useEffect(() => {
+        if (!editor || !searchTerm) return;
+        setSearchQuery(searchTerm);
+        setSearchOpen(true);
+        setMatchCount(selectNextMatch(editor, searchTerm));
+    }, [editor, searchTerm]);
 
     async function addFiles(files: FileList | File[]) {
         if (!editor) return;

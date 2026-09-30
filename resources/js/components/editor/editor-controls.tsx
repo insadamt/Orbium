@@ -40,7 +40,7 @@ export function changeBlockOrder(
     editor.view.dispatch(tr.scrollIntoView());
 }
 
-function selectNextMatch(
+export function selectNextMatch(
     editor: Editor,
     query: string,
     previous = false,
@@ -67,6 +67,7 @@ function selectNextMatch(
             .chain()
             .focus()
             .setTextSelection({ from: found, to: found + query.length })
+            .scrollIntoView()
             .run();
     return matches.length;
 }

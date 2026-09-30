@@ -17,6 +17,8 @@ import {
     type DocumentImageKind,
 } from './document-image-crop';
 import DocumentMediaMenu from './document-media-menu';
+import DatabasePropertyHeader from './database-property-header';
+import type { Candidate, FileReference, Property } from '../databases/types';
 
 type Props = {
     workspace: { id: number; name: string };
@@ -32,6 +34,10 @@ type Props = {
         cover_attachment_id: number | null;
         icon_attachment_id: number | null;
     };
+    databaseProperties: Property[];
+    databaseValues: { property_id: number; value: unknown }[];
+    mentionCandidates: Candidate[];
+    databaseFiles: FileReference[];
 };
 
 type DocumentHeaderChanges = Partial<{
@@ -42,7 +48,15 @@ type DocumentHeaderChanges = Partial<{
 }>;
 
 export default function ShowDocument() {
-    const { workspace, node, document: savedDocument } = usePage<Props>().props;
+    const {
+        workspace,
+        node,
+        document: savedDocument,
+        databaseProperties,
+        databaseValues,
+        mentionCandidates,
+        databaseFiles,
+    } = usePage<Props>().props;
 
     return (
         <DocumentPage
@@ -50,6 +64,10 @@ export default function ShowDocument() {
             workspace={workspace}
             node={node}
             savedDocument={savedDocument}
+            databaseProperties={databaseProperties}
+            databaseValues={databaseValues}
+            mentionCandidates={mentionCandidates}
+            databaseFiles={databaseFiles}
         />
     );
 }
@@ -58,10 +76,18 @@ function DocumentPage({
     workspace,
     node,
     savedDocument,
+    databaseProperties,
+    databaseValues,
+    mentionCandidates,
+    databaseFiles,
 }: {
     workspace: Props['workspace'];
     node: Props['node'];
     savedDocument: Props['document'];
+    databaseProperties: Props['databaseProperties'];
+    databaseValues: Props['databaseValues'];
+    mentionCandidates: Props['mentionCandidates'];
+    databaseFiles: Props['databaseFiles'];
 }) {
     const [title, setTitle] = useState(node.title);
     const [legacyIcon, setLegacyIcon] = useState(node.icon);
@@ -291,6 +317,18 @@ function DocumentPage({
                                 {headerError}
                             </p>
                         )}
+                        {databaseProperties.length > 0 &&
+                            node.parent_id !== null && (
+                                <DatabasePropertyHeader
+                                    workspaceId={workspace.id}
+                                    databaseId={node.parent_id}
+                                    documentId={node.id}
+                                    properties={databaseProperties}
+                                    values={databaseValues}
+                                    candidates={mentionCandidates}
+                                    files={databaseFiles}
+                                />
+                            )}
                         <DocumentEditor
                             workspaceId={workspace.id}
                             nodeId={node.id}
