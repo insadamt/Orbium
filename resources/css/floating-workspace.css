@@ -9,7 +9,7 @@
 }
 .floating-top-controls {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, auto) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 720px) minmax(0, 1fr);
     align-items: center;
     gap: 24px;
     position: relative;
@@ -74,10 +74,6 @@
     align-items: center;
     overflow-x: auto;
     white-space: nowrap;
-    scrollbar-width: none;
-}
-.floating-breadcrumbs ol::-webkit-scrollbar {
-    display: none;
 }
 .floating-breadcrumbs li {
     display: flex;
@@ -122,7 +118,7 @@
 .floating-tab-island {
     display: flex;
     align-items: center;
-    width: max-content;
+    width: 720px;
     max-width: 100%;
     min-width: 0;
     justify-self: center;
@@ -131,14 +127,53 @@
     gap: 4px;
 }
 .floating-tabs {
+    position: relative;
+    flex: 1 1 auto;
     min-width: 0;
+    overflow: hidden;
+}
+.tab-scroll-list {
+    scrollbar-width: none;
+}
+.tab-scroll-list::-webkit-scrollbar {
+    display: none;
+}
+.tab-scroll-button {
+    position: absolute;
+    top: 50%;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 28px;
+    transform: translateY(-50%);
+    border-radius: 9px;
+    background: color-mix(in srgb, var(--background) 92%, transparent);
+    color: var(--muted-foreground);
+}
+.tab-scroll-button:hover {
+    background: var(--accent);
+    color: var(--foreground);
+}
+.tab-scroll-button:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: -2px;
+}
+.tab-scroll-button-left {
+    left: 0;
+}
+.tab-scroll-button-right {
+    right: 0;
 }
 .floating-tab-list {
     display: flex;
     align-items: center;
     gap: 4px;
+    width: 100%;
+    min-width: 0;
     overflow-x: auto;
-    scrollbar-width: thin;
+    overscroll-behavior-x: contain;
 }
 .floating-tab {
     display: flex;
@@ -151,16 +186,24 @@
 .floating-tab [role='tab'] {
     font-size: 12px;
 }
-.floating-tab[data-dragging='true'] {
-    opacity: 0.55;
-    z-index: 1;
+.floating-tab-drag-preview {
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    min-width: 100%;
+    max-width: 100%;
+    height: 36px;
+    overflow: hidden;
+    border-radius: 14px;
+    white-space: nowrap;
+    pointer-events: none;
 }
-.tab-drag-handle {
+.tab-drag-surface {
     cursor: grab;
-    touch-action: none;
-    color: var(--muted-foreground);
+    touch-action: manipulation;
 }
-.tab-drag-handle:active {
+.tab-drag-surface:active {
     cursor: grabbing;
 }
 .floating-add-tab {
@@ -472,10 +515,7 @@
         width: min(230px, 40vw);
     }
 }
-@media (max-width: 1000px) {
-    .floating-workspace {
-        padding: 24px;
-    }
+@media (max-width: 1500px) {
     .floating-top-controls {
         grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
         gap: 24px 16px;
@@ -487,6 +527,11 @@
     .floating-account-controls {
         grid-column: 2;
         grid-row: 1;
+    }
+}
+@media (max-width: 1000px) {
+    .floating-workspace {
+        padding: 24px;
     }
     .floating-contents {
         padding-top: 64px;
