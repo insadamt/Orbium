@@ -1,6 +1,7 @@
 import {
     csrfToken,
     type UploadedAttachment,
+    uploadErrorMessage,
 } from '@/components/editor/editor-api';
 
 export function nodeImageUrl(
@@ -31,9 +32,10 @@ export async function uploadNodeImage(
     );
     if (!response.ok) {
         throw new Error(
-            response.status === 413
-                ? 'The image exceeds the upload limit.'
-                : 'The image could not be uploaded.',
+            await uploadErrorMessage(
+                response,
+                'The image could not be uploaded.',
+            ),
         );
     }
     return (await response.json()) as UploadedAttachment;

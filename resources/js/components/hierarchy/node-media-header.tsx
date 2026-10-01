@@ -105,8 +105,12 @@ export function NodeMediaHeader({
             ) {
                 setCoverId(attachment.id);
             }
-        } catch {
-            setError(`Could not upload the ${kind}.`);
+        } catch (error) {
+            setError(
+                error instanceof Error
+                    ? error.message
+                    : `Could not upload the ${kind}.`,
+            );
         } finally {
             setUploading(false);
         }

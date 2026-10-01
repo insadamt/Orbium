@@ -43,6 +43,8 @@ Store using server-generated keys.
 
 Enforce configurable size limits.
 
+Document and database attachments default to 100 MB and can be lowered with `ORBIUM_MAX_ATTACHMENT_MB`. PHP accepts 100 MB files with a 101 MB request limit; nginx accepts 101 MB request bodies. Local `php artisan serve` must load `docker/php/uploads.ini` as described in the root README. Folder and database image uploads retain a 10 MB application limit.
+
 Serve through authorized application/storage routes as appropriate.
 
 Dangerous active content should not be executed merely because it was uploaded.

@@ -77,8 +77,12 @@ export default function PropertyInput({
                 { id, original_name: file.name },
             ]);
             await save([...selected, id]);
-        } catch {
-            setError('Could not upload this file. Please try again.');
+        } catch (error) {
+            setError(
+                error instanceof Error
+                    ? error.message
+                    : 'Could not upload this file. Please try again.',
+            );
         } finally {
             setBusy(false);
         }
@@ -242,9 +246,6 @@ export default function PropertyInput({
                                     >
                                         <Upload size={15} />
                                         Upload a file
-                                        <span className="ml-auto text-[10px] text-muted-foreground">
-                                            Up to 10 MB
-                                        </span>
                                     </DropdownMenu.Item>
                                 </>
                             ) : (

@@ -18,7 +18,7 @@ class AttachmentController extends Controller
         $documentNode = $request->user()->workspaces()->findOrFail($workspace)
             ->nodes()->where('type', 'document')->findOrFail($node);
         $this->assertVisible($documentNode);
-        $data = $request->validate(['file' => ['required', 'file', 'max:10240']]);
+        $data = $request->validate(['file' => ['required', 'file', 'max:'.(config('uploads.max_attachment_mb') * 1024)]]);
 
         return $this->persistAttachment($workspace, $node, $data['file'], 'attachments.show');
     }

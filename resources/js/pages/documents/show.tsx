@@ -162,8 +162,12 @@ function DocumentPage({
             }
             if (await saveHeader({ cover_attachment_id: attachment.id }))
                 setCoverId(attachment.id);
-        } catch {
-            setHeaderError('Could not upload the cover.');
+        } catch (error) {
+            setHeaderError(
+                error instanceof Error
+                    ? error.message
+                    : 'Could not upload the cover.',
+            );
         } finally {
             setCoverUploading(false);
         }
@@ -193,8 +197,12 @@ function DocumentPage({
                 setIconAttachmentId(attachment.id);
                 setLegacyIcon(null);
             }
-        } catch {
-            setHeaderError('Could not upload the icon.');
+        } catch (error) {
+            setHeaderError(
+                error instanceof Error
+                    ? error.message
+                    : 'Could not upload the icon.',
+            );
         } finally {
             setIconUploading(false);
         }
