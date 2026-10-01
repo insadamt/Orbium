@@ -414,17 +414,6 @@
     pointer-events: none;
 }
 
-.orbium-background::after {
-    position: absolute;
-    inset: 0;
-    background: rgb(255 255 255 / 0.4);
-    content: '';
-}
-
-.dark .orbium-background::after {
-    background: rgb(0 0 0 / 0.4);
-}
-
 .orbium-background-image {
     width: 100%;
     height: 100%;

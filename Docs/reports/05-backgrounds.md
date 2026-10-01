@@ -5,7 +5,7 @@
 - Added Backgrounds to Appearance with the original background, Ghost Fibers, Molten Metal, and an uploaded image.
 - Installed both requested React Bits JS/CSS components and their OGL dependency. Kept the required React Bits license notice.
 - Exposed the animation parameters, colors, quality controls where supported, reset actions, and reduced-motion behavior.
-- Applied the chosen background behind authenticated app surfaces with a theme-aware tint for readability. Uploaded images use browser IndexedDB; selection and animation settings use browser local storage.
+- Applied the chosen background behind authenticated app surfaces. Uploaded images use browser IndexedDB; selection and animation settings use browser local storage.
 
 ## Library decision and limits
 
@@ -72,3 +72,9 @@ Wait for the user's manual review before extending this feature or starting anot
 7. If available, enable Reduce Transparency or disable backdrop blur, then inspect both themes. Expected: Frosted surfaces become more opaque and controls remain usable.
 
 Validation: `npm run check:fix`, `npm run types:check`, `npm run lint`, `npm run build`, `./vendor/bin/pint --test`, and `git diff --check` passed. The build still reports existing large chunks. Automated tests were neither written nor run, per repository instructions. Visual timing and contrast on arbitrary uploaded imagery need manual review.
+
+## Manual review fix — Untinted wallpapers (2026-10-01)
+
+Removed the global white overlay in Light mode and black overlay in Dark mode from selected wallpapers. Images and shader effects now display their own colors; Frosted glass panels retain their local blur and tint.
+
+Manual check: select each background in Light and Dark. Expected: the wallpaper itself keeps the same colors and brightness when switching themes, while app panels remain readable. Compare an uploaded image with the original file to confirm there is no full-screen wash.
