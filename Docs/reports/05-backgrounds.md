@@ -78,3 +78,49 @@ Validation: `npm run check:fix`, `npm run types:check`, `npm run lint`, `npm run
 Removed the global white overlay in Light mode and black overlay in Dark mode from selected wallpapers. Images and shader effects now display their own colors; Frosted glass panels retain their local blur and tint.
 
 Manual check: select each background in Light and Dark. Expected: the wallpaper itself keeps the same colors and brightness when switching themes, while app panels remain readable. Compare an uploaded image with the original file to confirm there is no full-screen wash.
+
+## Manual review fix — Theme-independent animated wallpapers (2026-10-01)
+
+Ghost Fibers and Molten Metal no longer receive the app's Light/Dark mode. Their shader palettes now remain on their selected settings when the app theme changes. The theme still changes the surrounding UI and surface materials.
+
+Manual check: select each animated wallpaper, leave its color controls unchanged, and switch Light → Dark → Light. Expected: the animation's background, colors, and brightness stay the same throughout, while panels and text change theme.
+
+## Manual review fix — Opaque Molten Metal output (2026-10-01)
+
+Molten Metal was still theme-sensitive because its dark shader path emitted transparent pixels. The app's changing page color showed through those pixels. The shader now composites its output over the existing Molten Metal Background color control and emits opaque pixels. The unused light-mode shader branch and prop were removed.
+
+Manual check: select Molten Metal, then switch Light → Dark → Light with a custom Background color and default settings. Expected: its background and glow colors stay the same in each theme; only the UI surfaces change. Adjust Opacity and Background color afterward. Expected: both controls still affect the animation.
+
+Validation: `npm run check:fix`, `npm run types:check`, `npm run lint`, `npm run build`, `./vendor/bin/pint --test`, and `git diff --check` passed. No automated tests were run. The local Docker app was rebuilt and is healthy; nginx responds at `/settings/appearance` with the expected unauthenticated HTTP 302. The build retains its large-chunk warning.
+
+## Phase 5 extension — Additional React Bits wallpapers (2026-10-01)
+
+Added Gradient Waves, Web Threads, Light Tunnel, Scanner, Lightfall, Liquid Ether, Prism, Dark Veil, Light Pillar, Silk, Soft Aurora, Aurora, Plasma, Grainient, Prismatic Burst, Hyperspeed, and Iridescence through the requested shadcn React Bits registry entries. Each appears in Appearance with saved controls and Reset. Effect settings extend the existing `orbium.backgrounds.v1` browser preference with defaults for older saved preferences. Only the selected component is mounted, and it loads on demand. The app keeps the animated wallpaper palette independent of Light/Dark mode.
+
+### Library decision and limits
+
+Used the requested React Bits source instead of reimplementing 17 shaders and scenes. The registry added Three.js, React Three Fiber, and `postprocessing`; OGL was already present. These effects use WebGL and may tax lower-end GPUs, especially Liquid Ether, Light Pillar, Silk, and Hyperspeed. Orbium shows the selected effect's fixed background color when reduced motion is requested, and falls back to that color if an effect fails. Browser-local settings do not sync or enter account archives. The imported upstream Liquid Ether and Hyperspeed source files exceed the project's usual 500-line guideline; splitting their vendor code would complicate future upstream updates. The existing React Bits license notice applies to these components.
+
+### Manual test checklist
+
+1. Open Settings → Appearance. Select each of the 17 new named wallpapers. Expected: the selected effect fills the viewport behind app surfaces, and its own controls appear. No other animation remains mounted.
+2. For each effect, change a color, a numeric control, and a checkbox or mode selector when available. Expected: the background responds. Select Reset. Expected: that effect returns to its initial values.
+3. Select Liquid Ether and move the pointer, select Prism and change Offset X/Y, select Iridescence and change Color, then select each Hyperspeed preset. Expected: pointer, offset, color, and preset changes affect the right component without a crash.
+4. Reload with one new effect selected. Expected: the selection and its adjusted settings persist. Switch to another effect and back. Expected: the first effect retains its settings.
+5. Switch Light → Dark → Light with several new effects selected. Expected: wallpaper colors do not change with the app theme; only UI surfaces and text change.
+6. Enable Reduce Motion. Expected: the new effects stop rendering motion and retain a static background color. Disable it. Expected: the selected effect returns.
+7. On a device without WebGL support, or if an effect cannot initialize, select a new effect. Expected: the app remains usable with a static background color.
+
+Suggested commit message: `feat(appearance): add configurable React Bits wallpapers`.
+
+Validation: `npm run check:fix`, `npm run types:check`, `npm run lint`, `npm run build`, `./vendor/bin/pint --test`, and `git diff --check` passed. No automated tests were written or run, per project instructions. Docker rebuilt with `npm ci`; app and PostgreSQL are healthy, and nginx returns the expected unauthenticated HTTP 302 for `/settings/appearance`. The build warns about large chunks. `npm audit --omit=dev --audit-level=high` reports five high advisories in the existing Mermaid → Chevrotain → lodash-es dependency chain; they are unrelated to the newly added wallpaper packages and a suggested forced fix would downgrade Mermaid across a major version.
+
+## Manual review fix — React Bits wallpaper mounting (2026-10-01)
+
+The new effects now mount from the component module already loaded by the selector. This avoids showing an empty Suspense frame during the circular wallpaper reveal. Each effect also receives a full viewport container, so its canvas and percentage-sized wrapper can measure a stable area. The renderer no longer removes every new effect when Reduce Motion is enabled; effects that support pausing receive the paused flag. Some upstream effects do not expose a pause control and can still animate under Reduce Motion; this remains a limitation requiring a later source-level adaptation.
+
+Manual check: select Gradient Waves, Dark Veil, Silk, and Hyperspeed in Settings → Appearance. Expected: the selected button and settings appear, and the effect becomes visible behind the page after the centered reveal. Change a color and speed setting, navigate to another page, then reload. Expected: the chosen effect and settings persist. Repeat with Reduce Motion enabled. Expected: the wallpaper remains visible. The user should confirm whether any specific effect still fails or displays a browser error.
+
+Validation: `npm run check:fix`, `npm run types:check`, `npm run lint`, `npm run build`, and `./vendor/bin/pint --test` passed. The production build retains its large-chunk warning. No automated tests were written or run.
+
+Suggested commit message: `fix(appearance): mount React Bits wallpapers during selection`.

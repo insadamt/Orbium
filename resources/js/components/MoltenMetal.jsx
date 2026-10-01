@@ -48,7 +48,6 @@ uniform vec3 uColor1;
 uniform vec3 uColor2;
 uniform vec3 uColor3;
 uniform vec3 uBackgroundColor;
-uniform bool uLightMode;
 out vec4 fragColor;
 
 float hash(vec2 p) {
@@ -105,24 +104,7 @@ void main() {
     a += (gr - 0.5) * uGrainIntensity;
   }
   a = clamp(a, 0.0, 1.0) * uOpacity;
-  if (uLightMode) {
-    float signal = 1.0 - exp(-max(c, 0.0) * 6.5);
-    float body = smoothstep(0.075, 0.68, signal);
-    float ridge = smoothstep(0.42, 0.92, signal);
-
-    vec3 lightCol = mix(uColor1, uColor2, smoothstep(0.08, 0.52, signal));
-    lightCol = mix(lightCol, uColor3, smoothstep(0.52, 0.96, signal));
-    lightCol = mix(lightCol, lightCol * 0.72, ridge * 0.24);
-
-    float coverage = body * mix(0.2, 0.86, signal) * uOpacity;
-    if (uGrain > 0.5) {
-      float gr = hash(gl_FragCoord.xy + iTime);
-      coverage += (gr - 0.5) * uGrainIntensity * body * 0.16;
-    }
-    fragColor = vec4(mix(uBackgroundColor, lightCol, clamp(coverage, 0.0, 0.92)), 1.0);
-  } else {
-    fragColor = vec4(col * a, a);
-  }
+  fragColor = vec4(mix(uBackgroundColor, col, a), 1.0);
 }
 `;
 
@@ -148,7 +130,6 @@ const MoltenMetal = ({
     mouseStrength = 0.3,
     opacity = 1.0,
     backgroundColor = '#FFFFFF',
-    lightMode = false,
     paused = false,
     className = '',
 }) => {
@@ -201,7 +182,6 @@ const MoltenMetal = ({
                 uColor2: { value: new Float32Array([1, 1, 1]) },
                 uColor3: { value: new Float32Array([1, 1, 1]) },
                 uBackgroundColor: { value: new Float32Array([1, 1, 1]) },
-                uLightMode: { value: false },
             },
         });
 
@@ -332,7 +312,6 @@ const MoltenMetal = ({
         u.uOpacity.value = opacity;
         u.uMouseStrength.value = mouseStrength;
         u.uEnableMouse.value = mouseInteraction;
-        u.uLightMode.value = lightMode;
         const c1 = hexToRgb(color1);
         const c2 = hexToRgb(color2);
         const c3 = hexToRgb(color3);
@@ -373,7 +352,6 @@ const MoltenMetal = ({
         mouseStrength,
         opacity,
         backgroundColor,
-        lightMode,
         paused,
     ]);
 

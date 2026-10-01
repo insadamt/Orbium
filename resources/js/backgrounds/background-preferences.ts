@@ -1,4 +1,10 @@
 import { useSyncExternalStore } from 'react';
+import {
+    defaultReactBitsSettings,
+    findReactBitsEffect,
+    readReactBitsSettings,
+    type EffectSettings,
+} from './react-bits-catalog';
 
 export const ghostDefaults = {
     lineColor: '#74748d',
@@ -50,13 +56,19 @@ export const moltenDefaults = {
     opacity: 1,
 };
 
-export type BackgroundKind = 'default' | 'ghost' | 'molten' | 'image';
+export type BackgroundKind =
+    | 'default'
+    | 'ghost'
+    | 'molten'
+    | 'image'
+    | (string & {});
 export type GhostSettings = typeof ghostDefaults;
 export type MoltenSettings = typeof moltenDefaults;
 export type BackgroundPreferences = {
     kind: BackgroundKind;
     ghost: GhostSettings;
     molten: MoltenSettings;
+    effects: Record<string, EffectSettings>;
 };
 
 const storageKey = 'orbium.backgrounds.v1';
@@ -65,6 +77,7 @@ const defaultPreferences: BackgroundPreferences = {
     kind: 'default',
     ghost: ghostDefaults,
     molten: moltenDefaults,
+    effects: defaultReactBitsSettings(),
 };
 
 function readPreferences(): BackgroundPreferences {
@@ -72,15 +85,16 @@ function readPreferences(): BackgroundPreferences {
     try {
         const saved = JSON.parse(localStorage.getItem(storageKey) ?? 'null');
         if (!saved || typeof saved !== 'object') return defaultPreferences;
-        const kind = ['default', 'ghost', 'molten', 'image'].includes(
-            saved.kind,
-        )
-            ? (saved.kind as BackgroundKind)
-            : 'default';
+        const kind =
+            ['default', 'ghost', 'molten', 'image'].includes(saved.kind) ||
+            findReactBitsEffect(saved.kind)
+                ? (saved.kind as BackgroundKind)
+                : 'default';
         return {
             kind,
             ghost: { ...ghostDefaults, ...saved.ghost },
             molten: { ...moltenDefaults, ...saved.molten },
+            effects: readReactBitsSettings(saved.effects),
         };
     } catch {
         return defaultPreferences;
@@ -124,5 +138,24 @@ export function useBackgroundPreferences() {
             savePreferences({ ...preferences, ghost: ghostDefaults }),
         resetMolten: () =>
             savePreferences({ ...preferences, molten: moltenDefaults }),
+        updateEffect: (kind: string, values: EffectSettings) =>
+            savePreferences({
+                ...preferences,
+                effects: {
+                    ...preferences.effects,
+                    [kind]: { ...preferences.effects[kind], ...values },
+                },
+            }),
+        resetEffect: (kind: string) => {
+            const effect = findReactBitsEffect(kind);
+            if (!effect) return;
+            savePreferences({
+                ...preferences,
+                effects: {
+                    ...preferences.effects,
+                    [kind]: { ...effect.defaults },
+                },
+            });
+        },
     };
 }

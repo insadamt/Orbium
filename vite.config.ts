@@ -43,6 +43,8 @@ export default defineConfig({
             'tailwind.config.js',
             'resources/js/actions/**',
             'resources/js/components/ui/*',
+            'resources/js/components/*.jsx',
+            'resources/js/components/HyperSpeedPresets.js',
             'resources/js/routes/**',
             'resources/js/wayfinder/**',
         ],

@@ -7,10 +7,11 @@ import {
     useState,
     type ReactNode,
 } from 'react';
-import { useAppearance } from '@/hooks/use-appearance';
 import { useBackgroundImage } from './background-image';
 import { revealAppearanceFromCenter } from './appearance-reveal';
 import { useBackgroundPreferences } from './background-preferences';
+import { findReactBitsEffect } from './react-bits-catalog';
+import { ReactBitsBackground } from './react-bits-background';
 
 const GhostFibers = lazy(() => import('@/components/GhostFibers'));
 const MoltenMetal = lazy(() => import('@/components/MoltenMetal'));
@@ -31,7 +32,11 @@ class BackgroundErrorBoundary extends Component<
 }
 
 function useReducedMotion() {
-    const [reduced, setReduced] = useState(false);
+    const [reduced, setReduced] = useState(
+        () =>
+            typeof window !== 'undefined' &&
+            window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+    );
     useEffect(() => {
         const query = window.matchMedia('(prefers-reduced-motion: reduce)');
         const update = () => setReduced(query.matches);
@@ -44,15 +49,14 @@ function useReducedMotion() {
 
 export function AppBackground() {
     const { preferences } = useBackgroundPreferences();
-    const { resolvedAppearance } = useAppearance();
     const { imageUrl } = useBackgroundImage();
     const reducedMotion = useReducedMotion();
-    const lightMode = resolvedAppearance === 'light';
     const [displayedBackground, setDisplayedBackground] = useState(() => ({
         kind: preferences.kind,
         imageUrl: null as string | null,
     }));
     const initialImageLoaded = useRef(preferences.kind !== 'image');
+    const activeEffect = findReactBitsEffect(displayedBackground.kind);
 
     useEffect(() => {
         if (preferences.kind === 'image' && !imageUrl) return;
@@ -83,7 +87,20 @@ export function AppBackground() {
     if (displayedBackground.kind === 'default') return null;
 
     return (
-        <div className="orbium-background" aria-hidden="true">
+        <div
+            className="orbium-background"
+            aria-hidden="true"
+            style={
+                activeEffect
+                    ? {
+                          backgroundColor: String(
+                              preferences.effects[activeEffect.kind]
+                                  ?.backgroundColor ?? '#0d1012',
+                          ),
+                      }
+                    : undefined
+            }
+        >
             {displayedBackground.kind === 'image' &&
                 displayedBackground.imageUrl && (
                     <div
@@ -98,15 +115,20 @@ export function AppBackground() {
                     {displayedBackground.kind === 'ghost' && (
                         <GhostFibers
                             {...preferences.ghost}
-                            lightMode={lightMode}
                             paused={reducedMotion}
                         />
                     )}
                     {displayedBackground.kind === 'molten' && (
                         <MoltenMetal
                             {...preferences.molten}
-                            lightMode={lightMode}
                             paused={reducedMotion}
+                        />
+                    )}
+                    {activeEffect && (
+                        <ReactBitsBackground
+                            kind={activeEffect.kind}
+                            settings={preferences.effects[activeEffect.kind]}
+                            reducedMotion={reducedMotion}
                         />
                     )}
                 </Suspense>

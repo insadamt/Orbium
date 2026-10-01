@@ -20,7 +20,6 @@ declare const MoltenMetal: ComponentType<{
     mouseInteraction?: boolean;
     mouseStrength?: number;
     opacity?: number;
-    lightMode?: boolean;
     paused?: boolean;
     className?: string;
 }>;

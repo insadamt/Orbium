@@ -14,6 +14,9 @@ import {
     useBackgroundPreferences,
     type BackgroundKind,
 } from './background-preferences';
+import { findReactBitsEffect, reactBitsEffects } from './react-bits-catalog';
+import { preloadReactBitsEffect } from './react-bits-background';
+import { ReactBitsSettings } from './react-bits-settings';
 
 const options: { kind: BackgroundKind; title: string; description: string }[] =
     [
@@ -37,6 +40,11 @@ const options: { kind: BackgroundKind; title: string; description: string }[] =
             title: 'Your image',
             description: 'An image from this browser',
         },
+        ...reactBitsEffects.map(({ kind, title, description }) => ({
+            kind,
+            title,
+            description,
+        })),
     ];
 
 export function BackgroundSettings() {
@@ -47,21 +55,27 @@ export function BackgroundSettings() {
         updateMolten,
         resetGhost,
         resetMolten,
+        updateEffect,
+        resetEffect,
     } = useBackgroundPreferences();
     const { imageUrl, loading } = useBackgroundImage();
     const fileInput = useRef<HTMLInputElement>(null);
+    const selectionRequest = useRef(0);
     const [uploading, setUploading] = useState(false);
     const [error, setError] = useState('');
 
     async function chooseBackground(kind: BackgroundKind) {
         if (kind === preferences.kind) return;
+        const request = ++selectionRequest.current;
         setError('');
         try {
             if (kind === 'ghost') await import('@/components/GhostFibers');
             if (kind === 'molten') await import('@/components/MoltenMetal');
-            selectBackground(kind);
+            if (findReactBitsEffect(kind)) await preloadReactBitsEffect(kind);
+            if (request === selectionRequest.current) selectBackground(kind);
         } catch {
-            setError('Could not load the selected background.');
+            if (request === selectionRequest.current)
+                setError('Could not load the selected background.');
         }
     }
 
@@ -299,6 +313,16 @@ export function BackgroundSettings() {
                     Animation pauses when your system requests reduced motion or
                     this tab is hidden. These effects require WebGL 2.
                 </p>
+            )}
+            {findReactBitsEffect(preferences.kind) && (
+                <ReactBitsSettings
+                    effect={findReactBitsEffect(preferences.kind)!}
+                    settings={preferences.effects[preferences.kind]}
+                    onChange={(values) =>
+                        updateEffect(preferences.kind, values)
+                    }
+                    onReset={() => resetEffect(preferences.kind)}
+                />
             )}
         </section>
     );

@@ -12,6 +12,8 @@
 
 > Surface and appearance update (2026-10-01): Appearance offers Normal solid surfaces and Frosted glass panels. Theme, surface, and background changes reveal from a centered expanding circle when same-document View Transitions are available; reduced motion and unsupported browsers switch immediately. Surface style is stored in this browser.
 
+> Expanded backgrounds update (2026-10-01): Appearance also offers 17 React Bits animated wallpapers, each with saved effect controls and Reset. The selected effect loads on demand. Animated wallpapers keep their own colors across Light/Dark mode; reduced motion shows a static background color for the new effects.
+
 
 ## Design direction
 
