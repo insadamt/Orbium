@@ -178,11 +178,12 @@ function DatabasePage({ page }: { page: DatabasePageProps }) {
     return (
         <>
             <Head title={database.title} />
-            <div className="floating-body-island floating-database-island mx-auto min-h-[65vh] max-w-[1280px]">
+            <div className="floating-body-island floating-database-island mx-auto min-h-[65vh] max-w-[1120px]">
                 <NodeMediaHeader
                     workspaceId={workspace.id}
                     node={{ ...database, type: 'database' }}
                     detail={`${documents.length} ${documents.length === 1 ? 'document' : 'documents'} · ${properties.length} ${properties.length === 1 ? 'property' : 'properties'}`}
+                    layout="document"
                 />
                 {Object.keys(errors).length > 0 &&
                     !propertyEditor &&

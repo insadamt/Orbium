@@ -32,10 +32,12 @@ export function NodeMediaHeader({
     workspaceId,
     node,
     detail,
+    layout = 'compact',
 }: {
     workspaceId: number;
     node: MediaContainer;
     detail?: string;
+    layout?: 'compact' | 'document';
 }) {
     const [title, setTitle] = useState(node.title);
     const [legacyIcon, setLegacyIcon] = useState(node.icon);
@@ -155,7 +157,7 @@ export function NodeMediaHeader({
     }
 
     return (
-        <div className="node-media-header">
+        <div className="node-media-header" data-layout={layout}>
             {coverId && (
                 <img
                     className="node-media-cover"
@@ -195,18 +197,21 @@ export function NodeMediaHeader({
                         />
                     )}
                 </div>
-                <input
-                    aria-label={`${label} title`}
-                    value={title}
-                    maxLength={255}
-                    onChange={(event) => setTitle(event.target.value)}
-                    onBlur={saveTitle}
-                    onKeyDown={(event) => {
-                        if (event.key === 'Enter') event.currentTarget.blur();
-                    }}
-                    placeholder={`Untitled ${node.type}`}
-                />
-                {detail && <p className="node-media-detail">{detail}</p>}
+                <div className="node-media-title-row">
+                    <input
+                        aria-label={`${label} title`}
+                        value={title}
+                        maxLength={255}
+                        onChange={(event) => setTitle(event.target.value)}
+                        onBlur={saveTitle}
+                        onKeyDown={(event) => {
+                            if (event.key === 'Enter')
+                                event.currentTarget.blur();
+                        }}
+                        placeholder={`Untitled ${node.type}`}
+                    />
+                    {detail && <p className="node-media-detail">{detail}</p>}
+                </div>
                 {error && (
                     <p role="alert" className="node-media-error">
                         {error}

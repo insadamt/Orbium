@@ -1,5 +1,11 @@
 # Phase 5 — Floating workspace review
 
+## Database surface alignment (2026-10-01)
+
+The database work island now uses the document island width and its full-width cover. Its header uses the document-sized icon and title, with the document/property count aligned to the right of the title. At narrow widths, the count wraps below the title. Folder headers retain their compact treatment. This uses the existing header component and CSS; no new library is needed for static layout, and CSS alone does not guarantee identical text wrapping for every user title length.
+
+Manual review: open a document and database with covers and icons at the same viewport width. Confirm their islands and covers line up; confirm the database count sits at the right of the title. Narrow the viewport and check that the count wraps without clipping. Switch between Table and Gallery and confirm the contents still fit within the island.
+
 ## Explorer icon and parent drop follow-up (2026-10-01)
 
 Item icons are larger in Grid, List, and Gallery, including uploaded images, emoji, and type fallbacks. During a drag inside a folder, an area above its items accepts a drop and moves the item to that folder's immediate parent, appending it there. Workspace root has no parent area. The existing native drag implementation and move endpoint are reused; touch drag availability still depends on the browser. The installed dnd-kit library offers sortable contexts and drag overlays, but adopting it for this small addition would require replacing the explorer's existing drop resolution and containment handling.
@@ -26,7 +32,7 @@ Manual review: open at least three tabs, drag a tab by its icon/title to reorder
 
 ## Explorer view correction (2026-10-01)
 
-Removed the explorer switcher's negative bottom margin because the following contents section overlapped its buttons and could intercept clicks. The List layout also now prevents column wrapping so rows stay full width. Folder and database headers are narrower than document headers, with a 62px icon and smaller title; their cover keeps the document crop ratio at a smaller display width. Manual confirmation is still required.
+Removed the explorer switcher's negative bottom margin because the following contents section overlapped its buttons and could intercept clicks. The List layout also now prevents column wrapping so rows stay full width. Folder headers use a 62px icon and smaller title, with the document cover crop ratio at a smaller display width. Database headers originally shared that compact layout; the database surface alignment update above brings them to document size. Manual confirmation is still required.
 
 Validation: `./vendor/bin/pint --test`, `npm run types:check`, `npm run lint`, `npm run build`, and `git diff --check` passed on 2026-10-01. The build still reports chunks over 500 kB. Automated and browser tests were not run, per the user's manual-testing instruction. To verify: click each explorer view button and confirm its pressed state and layout change; refresh and revisit the folder to check view retention; inspect folder and database covers/icons beside a document at desktop and phone widths.
 
