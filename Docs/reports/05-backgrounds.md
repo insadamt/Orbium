@@ -124,3 +124,13 @@ Manual check: select Gradient Waves, Dark Veil, Silk, and Hyperspeed in Settings
 Validation: `npm run check:fix`, `npm run types:check`, `npm run lint`, `npm run build`, and `./vendor/bin/pint --test` passed. The production build retains its large-chunk warning. No automated tests were written or run.
 
 Suggested commit message: `fix(appearance): mount React Bits wallpapers during selection`.
+
+## Manual review fix — Reload and rendering cost (2026-10-01)
+
+The wallpaper host now uses one explicit component loader for both selection and page refresh. It keeps one in-flight import per effect and mounts the resolved component after the import completes, without a separate `React.lazy` path on reload. Hyperspeed no longer initializes after being removed while its assets are still loading, and its canvas rule is scoped to the wallpaper. High-density WebGL canvases are capped at 1.25 device pixels per CSS pixel across the affected React Bits components; Plasma's default cap is also 1.25. This reduces fill work on high-density displays, with a possible slight loss of sharpness. No additional library was needed: the installed effects already expose their renderers and quality settings.
+
+Manual check: select Gradient Waves, Silk, Liquid Ether, Hyperspeed, and a simpler effect such as Dark Veil. Refresh after each selection. Expected: the selected wallpaper returns and animates without opening Appearance again. Switch rapidly away from Hyperspeed while it is loading, then use the app. Expected: the previous Hyperspeed scene does not continue consuming resources. On a high-density display, compare scrolling and typing with a heavy wallpaper active before and after this update; expected: smoother interaction, with the wallpaper still filling the viewport. Test Light/Dark switching and settings changes to confirm the effect stays visible.
+
+Suggested commit message: `fix(appearance): restore wallpapers on reload and reduce GPU load`.
+
+Validation: `npm run check:fix`, `npm run types:check`, `npm run lint`, `npm run build`, `./vendor/bin/pint --test`, and `git diff --check` passed. The build still reports large chunks. No automated tests were written or run, per project instructions. The Docker app was rebuilt; the app and database containers are healthy, nginx is running, and `/settings/appearance` returns the expected unauthenticated HTTP 302. Authenticated visual refresh and performance remain for the user's manual review.

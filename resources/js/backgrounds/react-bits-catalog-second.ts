@@ -56,7 +56,7 @@ export const secondEffects: EffectDefinition[] = [
             opacity: 1,
             mouseInteractive: true,
             renderScale: 0.55,
-            maxDpr: 1.5,
+            maxDpr: 1.25,
             targetFps: 60,
             iterations: 60,
         },

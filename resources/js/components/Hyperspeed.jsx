@@ -412,7 +412,9 @@ const Hyperspeed = ({
                     alpha: true,
                 });
                 this.renderer.setSize(initW, initH, false);
-                this.renderer.setPixelRatio(window.devicePixelRatio);
+                this.renderer.setPixelRatio(
+                    Math.min(window.devicePixelRatio || 1, 1.25),
+                );
                 this.composer = new EffectComposer(this.renderer);
                 container.append(this.renderer.domElement);
 
@@ -553,6 +555,7 @@ const Hyperspeed = ({
             }
 
             init() {
+                if (this.disposed) return;
                 this.initPasses();
                 const options = this.options;
                 this.road.init();
@@ -1400,7 +1403,9 @@ const Hyperspeed = ({
 
         const myApp = new App(container, options);
         appRef.current = myApp;
-        myApp.loadAssets().then(myApp.init);
+        myApp.loadAssets().then(() => {
+            if (!myApp.disposed) myApp.init();
+        });
 
         return () => {
             if (appRef.current) {

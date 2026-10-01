@@ -1,10 +1,11 @@
-import { lazy, useMemo, type ComponentType } from 'react';
+import { useEffect, useState, type ComponentType } from 'react';
 import { hyperspeedPresets } from '@/components/HyperSpeedPresets';
 import type { EffectSettings } from './react-bits-catalog';
 
 type EffectModule = { default: ComponentType<Record<string, unknown>> };
 const componentModules = import.meta.glob<EffectModule>('../components/*.jsx');
 const loadedModules = new Map<string, EffectModule>();
+const loadingModules = new Map<string, Promise<EffectModule>>();
 
 const componentNames: Record<string, string> = {
     gradientWaves: 'GradientWaves',
@@ -33,10 +34,29 @@ function moduleLoader(kind: string): (() => Promise<EffectModule>) | undefined {
         : undefined;
 }
 
-export async function preloadReactBitsEffect(kind: string): Promise<void> {
+function loadReactBitsEffect(kind: string): Promise<EffectModule> {
+    const loaded = loadedModules.get(kind);
+    if (loaded) return Promise.resolve(loaded);
+    const pending = loadingModules.get(kind);
+    if (pending) return pending;
     const load = moduleLoader(kind);
-    if (!load) throw new Error(`Unknown background: ${kind}`);
-    loadedModules.set(kind, await load());
+    if (!load) return Promise.reject(new Error(`Unknown background: ${kind}`));
+    const request = load()
+        .then((module) => {
+            loadedModules.set(kind, module);
+            loadingModules.delete(kind);
+            return module;
+        })
+        .catch((error: unknown) => {
+            loadingModules.delete(kind);
+            throw error;
+        });
+    loadingModules.set(kind, request);
+    return request;
+}
+
+export async function preloadReactBitsEffect(kind: string): Promise<void> {
+    await loadReactBitsEffect(kind);
 }
 
 function hexToNumber(hex: string): number {
@@ -110,17 +130,38 @@ export function ReactBitsBackground({
     settings: EffectSettings;
     reducedMotion: boolean;
 }) {
-    const loadedModule = loadedModules.get(kind);
-    const Effect = useMemo(() => {
-        const load = moduleLoader(kind);
-        return load ? lazy(load) : null;
+    const [loadedModule, setLoadedModule] = useState<EffectModule | null>(
+        () => loadedModules.get(kind) ?? null,
+    );
+    const [loadError, setLoadError] = useState<Error | null>(null);
+
+    useEffect(() => {
+        let active = true;
+        void loadReactBitsEffect(kind).then(
+            (module) => {
+                if (active) setLoadedModule(module);
+            },
+            (error: unknown) => {
+                if (active)
+                    setLoadError(
+                        error instanceof Error
+                            ? error
+                            : new Error(`Could not load background: ${kind}`),
+                    );
+            },
+        );
+        return () => {
+            active = false;
+        };
     }, [kind]);
-    if (!Effect) return null;
+
+    if (loadError) throw loadError;
+    if (!loadedModule) return null;
     const props = effectProps(kind, settings, reducedMotion);
-    const LoadedEffect = loadedModule?.default;
+    const LoadedEffect = loadedModule.default;
     return (
         <div className="orbium-background-effect">
-            {LoadedEffect ? <LoadedEffect {...props} /> : <Effect {...props} />}
+            <LoadedEffect {...props} />
         </div>
     );
 }

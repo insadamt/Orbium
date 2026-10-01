@@ -144,7 +144,7 @@ const Silk = ({
     }, [speed, scale, noiseIntensity, color, rotation, lightMode, uniforms]);
 
     return (
-        <Canvas dpr={[1, 2]} frameloop="always">
+        <Canvas dpr={[1, 1.25]} frameloop="always">
             <SilkPlane ref={meshRef} uniforms={uniforms} />
         </Canvas>
     );
