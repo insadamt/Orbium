@@ -15,7 +15,7 @@ import {
 } from '@/components/navigation/navigation-types';
 import { openLocation } from '@/components/navigation/tab-navigation';
 import { usePageSearch } from '@/components/navigation/page-search';
-import { useTabView } from '@/components/navigation/use-tab-view';
+import { useContainerView } from '@/components/navigation/use-container-view';
 import { FloatingItem } from './floating-item';
 import {
     ExplorerContextMenu,
@@ -32,7 +32,7 @@ export function WorkspaceContents({
     nodes: TreeNode[];
     parentId: number | null;
 }) {
-    const [savedView, setView] = useTabView<'grid' | 'list' | 'gallery'>(
+    const [savedView, setView] = useContainerView<'grid' | 'list' | 'gallery'>(
         `explorer.${workspaceId}.${parentId ?? 'root'}.view`,
         'grid',
     );

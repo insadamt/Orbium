@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { usePageSearch } from '@/components/navigation/page-search';
-import { useTabView } from '@/components/navigation/use-tab-view';
+import { useContainerView } from '@/components/navigation/use-container-view';
 import { NodeMediaHeader } from '@/components/hierarchy/node-media-header';
 import { csrfToken, uploadAttachment } from '@/components/editor/editor-api';
 import { visibleDocuments, valueFor } from './database-data';
@@ -46,7 +46,7 @@ function DatabasePage({ page }: { page: DatabasePageProps }) {
         fileReferences,
         errors,
     } = page;
-    const [storedView, setView] = useTabView<'table' | 'gallery'>(
+    const [storedView, setView] = useContainerView<'table' | 'gallery'>(
         `database.${database.id}.view`,
         'table',
     );

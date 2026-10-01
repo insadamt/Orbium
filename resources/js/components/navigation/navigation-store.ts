@@ -21,6 +21,7 @@ type NavigationState = {
     storageKey: string;
     pending: boolean;
     recent: number[];
+    containerViews: Record<string, string>;
     initialize: (userId: number) => void;
     record: (location: Location, nodeId?: number) => void;
     createTab: (location: Location) => void;
@@ -32,8 +33,41 @@ type NavigationState = {
     forgetWorkspace: (workspaceId: number) => void;
     step: (delta: number) => void;
     saveScroll: () => void;
-    updateView: (key: string, value: unknown) => void;
+    setContainerView: (key: string, value: string) => void;
 };
+function restoreContainerViews(value: {
+    tabs: Tab[];
+    activeId: string;
+    containerViews?: Record<string, unknown>;
+}): Record<string, string> {
+    const views: Record<string, string> = {};
+    const entries = value.tabs.flatMap((tab) => tab.entries);
+    const activeTab = value.tabs.find((tab) => tab.id === value.activeId);
+    if (activeTab) entries.push(activeTab.entries[activeTab.index]);
+    for (const entry of entries) {
+        for (const [key, selectedView] of Object.entries(
+            entry.viewState ?? {},
+        )) {
+            if (
+                (key.startsWith('explorer.') || key.startsWith('database.')) &&
+                typeof selectedView === 'string'
+            ) {
+                views[key] = selectedView;
+            }
+        }
+    }
+    for (const [key, selectedView] of Object.entries(
+        value.containerViews ?? {},
+    )) {
+        if (
+            (key.startsWith('explorer.') || key.startsWith('database.')) &&
+            typeof selectedView === 'string'
+        ) {
+            views[key] = selectedView;
+        }
+    }
+    return views;
+}
 function persist(state: NavigationState) {
     try {
         localStorage.setItem(
@@ -42,6 +76,7 @@ function persist(state: NavigationState) {
                 tabs: state.tabs,
                 activeId: state.activeId,
                 recent: state.recent,
+                containerViews: state.containerViews,
             }),
         );
     } catch {
@@ -54,13 +89,18 @@ export const useNavigation = create<NavigationState>((set, get) => ({
     storageKey: '',
     pending: false,
     recent: [],
+    containerViews: {},
     initialize(userId) {
         const storageKey = `orbium.navigation.v1.${userId}`;
         if (get().storageKey === storageKey) return;
-        let saved: Pick<NavigationState, 'tabs' | 'activeId' | 'recent'> = {
+        let saved: Pick<
+            NavigationState,
+            'tabs' | 'activeId' | 'recent' | 'containerViews'
+        > = {
             tabs: [],
             activeId: '',
             recent: [],
+            containerViews: {},
         };
         try {
             const value = JSON.parse(
@@ -104,6 +144,7 @@ export const useNavigation = create<NavigationState>((set, get) => ({
                     recent: Array.isArray(value.recent)
                         ? value.recent.filter(Number.isInteger).slice(0, 40)
                         : [],
+                    containerViews: restoreContainerViews(value),
                 };
         } catch {
             /* Corrupt local state must not prevent opening the workspace. */
@@ -282,27 +323,8 @@ export const useNavigation = create<NavigationState>((set, get) => ({
         });
         persist(get());
     },
-    updateView(key, value) {
-        set({
-            tabs: get().tabs.map((tab) =>
-                tab.id === get().activeId
-                    ? {
-                          ...tab,
-                          entries: tab.entries.map((entry, index) =>
-                              index === tab.index
-                                  ? {
-                                        ...entry,
-                                        viewState: {
-                                            ...entry.viewState,
-                                            [key]: value,
-                                        },
-                                    }
-                                  : entry,
-                          ),
-                      }
-                    : tab,
-            ),
-        });
+    setContainerView(key, value) {
+        set({ containerViews: { ...get().containerViews, [key]: value } });
         persist(get());
     },
     saveScroll() {

@@ -1,5 +1,11 @@
 # Phase 5 — Floating workspace review
 
+## Per-container view memory (2026-10-01)
+
+Explorer Grid/List/Gallery selection now follows each workspace root or folder, and database Table/Gallery selection follows each database across app tabs, navigation, and reloads in the same browser. Existing saved tab-entry views are used to initialize the new container preferences. Preferences stay in the user-scoped browser navigation storage and are not synchronized between devices. The installed Zustand store and existing localStorage handling suffice; Zustand's persist middleware would duplicate the store's dynamic per-user hydration and migration path for this small preference map. Browser storage can be cleared, unavailable, or full, so the fallback remains Grid for explorers and Table for databases.
+
+Manual review: choose List in folder A and Gallery in folder B, leave and reopen each through another app tab, then reload; each should retain its own view. Set a workspace root to Grid and confirm neither folder changes. Choose Gallery in database A and Table in database B, switch tabs and reload, and confirm each opens in its own last selected view.
+
 ## Database surface alignment (2026-10-01)
 
 The database work island now uses the document island width and its full-width cover. Its header uses the document-sized icon and title, with the document/property count aligned to the right of the title. At narrow widths, the count wraps below the title. Folder headers retain their compact treatment. This uses the existing header component and CSS; no new library is needed for static layout, and CSS alone does not guarantee identical text wrapping for every user title length.
