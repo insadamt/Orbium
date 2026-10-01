@@ -21,6 +21,7 @@ Route::middleware('auth')->group(function () {
     Route::patch('workspaces/{workspace}', [WorkspaceController::class, 'update'])->name('workspaces.update');
     Route::patch('workspaces/{workspace}/order', [WorkspaceController::class, 'reorder'])->name('workspaces.reorder');
     Route::delete('workspaces/{workspace}', [WorkspaceController::class, 'destroy'])->name('workspaces.destroy');
+    Route::delete('workspaces/{workspace}/permanent', [WorkspaceController::class, 'destroyPermanently'])->name('workspaces.destroy-permanently');
     Route::get('workspaces/{workspace}', [WorkspaceController::class, 'show'])->name('workspaces.show');
     Route::get('workspaces/{workspace}/mentions', [MentionCandidateController::class, 'index'])->name('mentions.candidates');
     Route::post('workspaces/{workspace}/nodes', [NodeController::class, 'store'])->name('nodes.store');
@@ -39,6 +40,9 @@ Route::middleware('auth')->group(function () {
     Route::post('workspaces/{workspace}/documents/{node}/attachments', [AttachmentController::class, 'store'])->name('attachments.store');
     Route::get('workspaces/{workspace}/documents/{node}/attachments/{attachment}', [AttachmentController::class, 'show'])->name('attachments.show');
     Route::patch('workspaces/{workspace}/nodes/{node}', [NodeController::class, 'update'])->name('nodes.update');
+    Route::patch('workspaces/{workspace}/nodes/{node}/header', [NodeController::class, 'updateHeader'])->name('nodes.header');
+    Route::post('workspaces/{workspace}/nodes/{node}/images', [AttachmentController::class, 'storeNodeImage'])->name('nodes.images.store');
+    Route::get('workspaces/{workspace}/nodes/{node}/images/{attachment}', [AttachmentController::class, 'showNodeImage'])->name('nodes.images.show');
     Route::patch('workspaces/{workspace}/nodes/{node}/move', [NodeController::class, 'move'])->name('nodes.move');
     Route::delete('workspaces/{workspace}/nodes/{node}', [NodeController::class, 'destroy'])->name('nodes.destroy');
     Route::post('workspaces/{workspace}/nodes/{node}/restore', [NodeController::class, 'restore'])->name('nodes.restore');

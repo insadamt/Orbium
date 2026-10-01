@@ -44,7 +44,14 @@ export type ViewConfig = {
 };
 export type DatabasePageProps = {
     workspace: { id: number; name: string };
-    database: { id: number; title: string; parent_id: number | null };
+    database: {
+        id: number;
+        title: string;
+        parent_id: number | null;
+        icon: string | null;
+        cover_attachment_id: number | null;
+        icon_attachment_id: number | null;
+    };
     properties: Property[];
     documents: DatabaseDocument[];
     values: Value[];

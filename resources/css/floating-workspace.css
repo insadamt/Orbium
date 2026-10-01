@@ -9,7 +9,7 @@
 }
 .floating-top-controls {
     display: grid;
-    grid-template-columns: minmax(0, 1.4fr) minmax(160px, 1.6fr) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) minmax(0, auto) minmax(0, 1fr);
     align-items: center;
     gap: 24px;
     position: relative;
@@ -198,6 +198,11 @@
     width: 100%;
     background: transparent;
     font-size: 12px;
+    border: 0;
+    outline: none;
+    box-shadow: none;
+}
+.floating-page-search input:focus-visible {
     outline: none;
 }
 .floating-page-search input::-webkit-search-cancel-button {

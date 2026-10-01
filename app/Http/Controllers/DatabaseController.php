@@ -34,7 +34,7 @@ class DatabaseController extends Controller
 
         return Inertia::render('databases/show', [
             'workspace' => $database->workspace->only(['id', 'name']),
-            'database' => $database->only(['id', 'title', 'parent_id']),
+            'database' => $database->only(['id', 'title', 'parent_id', 'icon', 'cover_attachment_id', 'icon_attachment_id']),
             'properties' => $properties->map(fn (DatabaseProperty $property) => $property->only(['id', 'name', 'type', 'position', 'config']))->values(),
             'documents' => $documents->map(fn (Node $document) => [
                 'id' => $document->id,

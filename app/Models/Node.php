@@ -12,7 +12,7 @@ class Node extends Model
 {
     use SoftDeletes;
 
-    protected $fillable = ['parent_id', 'type', 'title', 'icon', 'position', 'is_favorite'];
+    protected $fillable = ['parent_id', 'type', 'title', 'icon', 'icon_attachment_id', 'cover_attachment_id', 'position', 'is_favorite'];
 
     protected function casts(): array
     {

@@ -2,6 +2,10 @@
 
 ## Current floating workspace pass (2026-09-30)
 
+The workspace selector now includes **Manage workspaces**, which opens the Workspaces section in Settings. Its floating manager offers compact creation, drag reorder, row menus for Rename and Move to Trash, and a collapsible Trash with Restore and permanent deletion. Permanent deletion is reached from a trashed workspace's menu and requires the exact workspace name; the server repeats that check and removes the workspace hierarchy, related records, and attachment directory. Search and document text fields use borderless surfaces without a black native focus frame.
+
+The review also centers the tab island, adds Grid/List/Gallery explorer layouts, and gives folders and databases compact image icon and cover headers. Trash rows have more space between avatar and title. The layout selection is transient per app tab and container; the container media IDs are stored on nodes through a new migration. The 2026-10-01 review fixes view-switcher click interception and list wrapping.
+
 The user replaced the earlier orbital home brief with a continuous, neutral workspace of independent floating controls and compact items. This pass supersedes the carousel/half-orb explorer, while leaving document/database work surfaces and the backend unchanged.
 
 - Independent floating top groups: logo, custom workspace selector, a separate breadcrumb-path island immediately to its right, a centered opened-tabs island whose plus button opens workspace home in a new tab, and settings/account controls. The former floating Back button is removed; breadcrumb ancestors open their hierarchy location. Search expands into an inline, current-page field; Ctrl+Space still opens Search Master.

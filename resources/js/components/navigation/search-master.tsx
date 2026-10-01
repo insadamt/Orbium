@@ -230,7 +230,7 @@ export function SearchMaster({
                             }
                         }}
                         placeholder="Search anything…"
-                        className="min-w-0 flex-1 bg-transparent text-base outline-none placeholder:text-muted-foreground"
+                        className="min-w-0 flex-1 border-0 bg-transparent text-base shadow-none outline-none placeholder:text-muted-foreground focus-visible:outline-none"
                     />
                     <kbd className="hidden rounded-md border border-border px-2 py-1 text-[11px] text-muted-foreground sm:block">
                         ESC

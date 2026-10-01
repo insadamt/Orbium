@@ -295,7 +295,7 @@ function DocumentPage({
                                     setTitle(node.title);
                                 }
                             }}
-                            className={`mb-8 w-full bg-transparent text-4xl font-semibold tracking-tight outline-none placeholder:text-muted-foreground md:text-5xl ${coverId && !iconAttachmentId && !legacyIcon ? 'mt-8' : ''}`}
+                            className={`mb-8 w-full border-0 bg-transparent text-4xl font-semibold tracking-tight shadow-none outline-none placeholder:text-muted-foreground focus-visible:outline-none md:text-5xl ${coverId && !iconAttachmentId && !legacyIcon ? 'mt-8' : ''}`}
                             placeholder="Untitled"
                         />
                         {headerError && (

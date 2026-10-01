@@ -1,7 +1,7 @@
 import { Head, router, usePage } from '@inertiajs/react';
 import {
     ArrowDownUp,
-    Database,
+    Database as DatabaseIcon,
     Filter,
     GalleryHorizontalEnd,
     Loader2,
@@ -12,6 +12,7 @@ import {
 import { useEffect, useMemo, useState } from 'react';
 import { usePageSearch } from '@/components/navigation/page-search';
 import { useTabView } from '@/components/navigation/use-tab-view';
+import { NodeMediaHeader } from '@/components/hierarchy/node-media-header';
 import { csrfToken, uploadAttachment } from '@/components/editor/editor-api';
 import { visibleDocuments, valueFor } from './database-data';
 import DatabaseGallery from './database-gallery';
@@ -45,7 +46,6 @@ function DatabasePage({ page }: { page: DatabasePageProps }) {
         fileReferences,
         errors,
     } = page;
-    const [title, setTitle] = useState(database.title);
     const [storedView, setView] = useTabView<'table' | 'gallery'>(
         `database.${database.id}.view`,
         'table',
@@ -179,52 +179,11 @@ function DatabasePage({ page }: { page: DatabasePageProps }) {
         <>
             <Head title={database.title} />
             <div className="floating-body-island floating-database-island mx-auto min-h-[65vh] max-w-[1280px]">
-                <header className="mb-9 px-1">
-                    <div className="mb-5 flex items-center gap-3">
-                        <div className="flex size-12 items-center justify-center rounded-xl border border-border/60 bg-muted/35">
-                            <Database
-                                size={25}
-                                strokeWidth={1.4}
-                                className="text-foreground/75"
-                            />
-                        </div>
-                        <span className="text-xs text-muted-foreground">
-                            Database
-                        </span>
-                    </div>
-                    <input
-                        aria-label="Database title"
-                        value={title}
-                        maxLength={255}
-                        onChange={(event) => setTitle(event.target.value)}
-                        onBlur={() => {
-                            const next = title.trim();
-                            if (!next) {
-                                setTitle(database.title);
-                                return;
-                            }
-                            if (next !== database.title)
-                                router.patch(
-                                    `/workspaces/${workspace.id}/nodes/${database.id}`,
-                                    { title: next },
-                                    { preserveScroll: true },
-                                );
-                        }}
-                        onKeyDown={(event) => {
-                            if (event.key === 'Enter')
-                                event.currentTarget.blur();
-                        }}
-                        className="w-full bg-transparent text-4xl font-semibold tracking-tight outline-none placeholder:text-muted-foreground md:text-5xl"
-                        placeholder="Untitled database"
-                    />
-                    <p className="mt-3 text-sm text-muted-foreground/75">
-                        {documents.length}{' '}
-                        {documents.length === 1 ? 'document' : 'documents'}
-                        <span className="mx-2 text-border">·</span>
-                        {properties.length}{' '}
-                        {properties.length === 1 ? 'property' : 'properties'}
-                    </p>
-                </header>
+                <NodeMediaHeader
+                    workspaceId={workspace.id}
+                    node={{ ...database, type: 'database' }}
+                    detail={`${documents.length} ${documents.length === 1 ? 'document' : 'documents'} · ${properties.length} ${properties.length === 1 ? 'property' : 'properties'}`}
+                />
                 {Object.keys(errors).length > 0 &&
                     !propertyEditor &&
                     !settingsSection && (
@@ -339,7 +298,7 @@ function DatabasePage({ page }: { page: DatabasePageProps }) {
                 {!shownDocuments.length && (
                     <div className="flex flex-col items-center py-20 text-center">
                         <div className="mb-4 flex size-12 items-center justify-center rounded-xl bg-muted/50">
-                            <Database
+                            <DatabaseIcon
                                 size={22}
                                 strokeWidth={1.3}
                                 className="text-muted-foreground"

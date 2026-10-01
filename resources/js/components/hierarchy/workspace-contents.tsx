@@ -1,4 +1,6 @@
 import { router } from '@inertiajs/react';
+import * as ToggleGroup from '@radix-ui/react-toggle-group';
+import { Images, LayoutGrid, List } from 'lucide-react';
 import { useEffect, useState, type FormEvent } from 'react';
 import { toast } from 'sonner';
 import {
@@ -13,6 +15,7 @@ import {
 } from '@/components/navigation/navigation-types';
 import { openLocation } from '@/components/navigation/tab-navigation';
 import { usePageSearch } from '@/components/navigation/page-search';
+import { useTabView } from '@/components/navigation/use-tab-view';
 import { FloatingItem } from './floating-item';
 import {
     ExplorerContextMenu,
@@ -29,6 +32,13 @@ export function WorkspaceContents({
     nodes: TreeNode[];
     parentId: number | null;
 }) {
+    const [savedView, setView] = useTabView<'grid' | 'list' | 'gallery'>(
+        `explorer.${workspaceId}.${parentId ?? 'root'}.view`,
+        'grid',
+    );
+    const view = ['grid', 'list', 'gallery'].includes(savedView)
+        ? savedView
+        : 'grid';
     const focusId = Number(
         new URLSearchParams(window.location.search).get('focus'),
     );
@@ -118,8 +128,40 @@ export function WorkspaceContents({
     }
     return (
         <>
+            <ToggleGroup.Root
+                type="single"
+                value={view}
+                onValueChange={(next) => {
+                    if (next) setView(next as typeof view);
+                }}
+                aria-label="Explorer view"
+                className="explorer-view-switcher"
+            >
+                <ToggleGroup.Item
+                    value="grid"
+                    aria-label="Grid view"
+                    title="Grid view"
+                >
+                    <LayoutGrid size={17} />
+                </ToggleGroup.Item>
+                <ToggleGroup.Item
+                    value="list"
+                    aria-label="List view"
+                    title="List view"
+                >
+                    <List size={18} />
+                </ToggleGroup.Item>
+                <ToggleGroup.Item
+                    value="gallery"
+                    aria-label="Gallery view"
+                    title="Gallery view"
+                >
+                    <Images size={17} />
+                </ToggleGroup.Item>
+            </ToggleGroup.Root>
             <section
                 className="floating-contents"
+                data-view={view}
                 aria-label="Current container contents"
                 aria-busy={moving}
                 tabIndex={0}
@@ -149,6 +191,8 @@ export function WorkspaceContents({
                 {children.map((node, index) => (
                     <FloatingItem
                         key={node.id}
+                        workspaceId={workspaceId}
+                        view={view}
                         node={node}
                         selected={selectedId === node.id}
                         dragging={draggedId === node.id}

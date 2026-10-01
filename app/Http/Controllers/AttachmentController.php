@@ -6,6 +6,7 @@ use App\Models\Attachment;
 use App\Models\Node;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -18,7 +19,22 @@ class AttachmentController extends Controller
             ->nodes()->where('type', 'document')->findOrFail($node);
         $this->assertVisible($documentNode);
         $data = $request->validate(['file' => ['required', 'file', 'max:10240']]);
-        $file = $data['file'];
+
+        return $this->persistAttachment($workspace, $node, $data['file'], 'attachments.show');
+    }
+
+    public function storeNodeImage(Request $request, int $workspace, int $node): JsonResponse
+    {
+        $container = $request->user()->workspaces()->findOrFail($workspace)
+            ->nodes()->whereIn('type', ['folder', 'database'])->findOrFail($node);
+        $this->assertVisible($container);
+        $data = $request->validate(['file' => ['required', 'file', 'mimetypes:image/png,image/jpeg,image/gif,image/webp', 'max:10240']]);
+
+        return $this->persistAttachment($workspace, $node, $data['file'], 'nodes.images.show');
+    }
+
+    private function persistAttachment(int $workspace, int $node, UploadedFile $file, string $showRoute): JsonResponse
+    {
         $mime = $file->getMimeType() ?: 'application/octet-stream';
         $isImage = in_array($mime, ['image/png', 'image/jpeg', 'image/gif', 'image/webp'], true);
         $originalName = preg_replace('/[^\pL\pN ._()-]/u', '_', mb_substr($file->getClientOriginalName(), 0, 255)) ?: 'attachment';
@@ -47,7 +63,7 @@ class AttachmentController extends Controller
             'name' => $attachment->original_name,
             'mime_type' => $attachment->mime_type,
             'size_bytes' => $attachment->size_bytes,
-            'url' => route('attachments.show', [$workspace, $node, $attachment]),
+            'url' => route($showRoute, [$workspace, $node, $attachment]),
         ], 201);
     }
 
@@ -56,7 +72,23 @@ class AttachmentController extends Controller
         $documentNode = $request->user()->workspaces()->findOrFail($workspace)
             ->nodes()->where('type', 'document')->findOrFail($node);
         $this->assertVisible($documentNode);
+
+        return $this->serveAttachment($workspace, $node, $attachment, false);
+    }
+
+    public function showNodeImage(Request $request, int $workspace, int $node, int $attachment): BinaryFileResponse
+    {
+        $container = $request->user()->workspaces()->findOrFail($workspace)
+            ->nodes()->whereIn('type', ['folder', 'database'])->findOrFail($node);
+        $this->assertVisible($container);
+
+        return $this->serveAttachment($workspace, $node, $attachment, true);
+    }
+
+    private function serveAttachment(int $workspace, int $node, int $attachment, bool $imageOnly): BinaryFileResponse
+    {
         $file = Attachment::query()->where('workspace_id', $workspace)->where('owner_node_id', $node)->findOrFail($attachment);
+        abort_if($imageOnly && $file->purpose !== 'image', 404);
         $path = Storage::disk('local')->path($file->storage_key);
         abort_unless(is_file($path), 404);
 

@@ -18,17 +18,13 @@ import { usePageSearch } from '@/components/navigation/page-search';
 import type { TreeNode } from '@/components/navigation/navigation-types';
 import { openLocation } from '@/components/navigation/tab-navigation';
 import type { Auth, BreadcrumbItem } from '@/types';
-import WorkspacePanel, {
-    type WorkspaceSummary,
-    type TrashedWorkspace,
-} from './workspace-panel';
+import type { WorkspaceSummary } from './workspace-panel';
 import OrbitalTrash from './orbital-trash';
 import type { TrashedNode } from './node-browser';
 
 type Props = {
     workspace?: Pick<WorkspaceSummary, 'id' | 'name'>;
     workspaces: WorkspaceSummary[];
-    trashedWorkspaces: TrashedWorkspace[];
     currentNode: TreeNode | null;
     trashedNodes: TrashedNode[];
     nodes: TreeNode[];
@@ -40,7 +36,6 @@ type Props = {
 export function FloatingTopControls({
     workspace,
     workspaces,
-    trashedWorkspaces,
     currentNode,
     trashedNodes,
     nodes,
@@ -50,7 +45,6 @@ export function FloatingTopControls({
 }: Props) {
     const { auth } = usePage<{ auth: Auth }>().props;
     const pageSearch = usePageSearch();
-    const [manageOpen, setManageOpen] = useState(false);
     const [trashOpen, setTrashOpen] = useState(false);
     const [createType, setCreateType] = useState<TreeNode['type'] | null>(null);
     const [newWorkspaceOpen, setNewWorkspaceOpen] = useState(false);
@@ -174,6 +168,14 @@ export function FloatingTopControls({
                                 >
                                     <Plus size={15} /> New workspace
                                 </Menu.Item>
+                                <Menu.Item
+                                    className="floating-menu-item"
+                                    onSelect={() =>
+                                        openLocation('/settings/workspaces')
+                                    }
+                                >
+                                    <Settings2 size={15} /> Manage workspaces
+                                </Menu.Item>
                             </Menu.Content>
                         </Menu.Portal>
                     </Menu.Root>
@@ -225,7 +227,9 @@ export function FloatingTopControls({
                             >
                                 <Menu.Item
                                     className="floating-menu-item"
-                                    onSelect={() => setManageOpen(true)}
+                                    onSelect={() =>
+                                        openLocation('/settings/workspaces')
+                                    }
                                 >
                                     Manage workspaces
                                 </Menu.Item>
@@ -323,18 +327,6 @@ export function FloatingTopControls({
                             {saving ? 'Creating…' : 'Create workspace'}
                         </button>
                     </form>
-                </DialogContent>
-            </Dialog>
-            <Dialog open={manageOpen} onOpenChange={setManageOpen}>
-                <DialogContent className="max-h-[80dvh] overflow-y-auto">
-                    <DialogTitle>Manage workspaces</DialogTitle>
-                    <WorkspacePanel
-                        inline
-                        workspaces={workspaces}
-                        trashedWorkspaces={trashedWorkspaces}
-                        activeWorkspaceId={workspace?.id}
-                        onWorkspaceNavigation={() => setManageOpen(false)}
-                    />
                 </DialogContent>
             </Dialog>
             <Dialog

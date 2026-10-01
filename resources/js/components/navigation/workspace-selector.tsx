@@ -8,11 +8,7 @@ type WorkspacePageProps = {
     workspaces?: WorkspaceSummary[];
 };
 
-type Props = {
-    onManage: () => void;
-};
-
-export function WorkspaceSelector({ onManage }: Props) {
+export function WorkspaceSelector() {
     const { workspace, workspaces = [] } = usePage<WorkspacePageProps>().props;
     const [lastWorkspaceId, setLastWorkspaceId] = useState<number | null>(
         () => {
@@ -47,7 +43,7 @@ export function WorkspaceSelector({ onManage }: Props) {
 
     function selectWorkspace(value: string) {
         if (value === 'manage') {
-            onManage();
+            openLocation('/settings/workspaces');
             return;
         }
         const id = Number(value);

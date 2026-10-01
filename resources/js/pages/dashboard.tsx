@@ -1,5 +1,6 @@
 import { Head, usePage } from '@inertiajs/react';
 import type { HierarchyNode } from '@/components/hierarchy/node-browser';
+import { NodeMediaHeader } from '@/components/hierarchy/node-media-header';
 import { WorkspaceContents } from '@/components/hierarchy/workspace-contents';
 import type { WorkspaceSummary } from '@/components/hierarchy/workspace-panel';
 
@@ -26,12 +27,32 @@ export default function Dashboard() {
                 </p>
             )}
             {workspace && (
-                <WorkspaceContents
-                    key={`${workspace.id}-${currentNode?.id ?? 'root'}`}
-                    workspaceId={workspace.id}
-                    nodes={nodes}
-                    parentId={currentNode?.id ?? null}
-                />
+                <>
+                    {currentNode?.type === 'folder' && (
+                        <div className="floating-folder-header">
+                            <NodeMediaHeader
+                                key={currentNode.id}
+                                workspaceId={workspace.id}
+                                node={{
+                                    id: currentNode.id,
+                                    title: currentNode.title,
+                                    type: 'folder',
+                                    icon: currentNode.icon ?? null,
+                                    cover_attachment_id:
+                                        currentNode.cover_attachment_id ?? null,
+                                    icon_attachment_id:
+                                        currentNode.icon_attachment_id ?? null,
+                                }}
+                            />
+                        </div>
+                    )}
+                    <WorkspaceContents
+                        key={`${workspace.id}-${currentNode?.id ?? 'root'}`}
+                        workspaceId={workspace.id}
+                        nodes={nodes}
+                        parentId={currentNode?.id ?? null}
+                    />
+                </>
             )}
         </>
     );

@@ -2,6 +2,7 @@ import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { Ellipsis, ImagePlus, Trash2 } from 'lucide-react';
 
 type Props = {
+    entityLabel?: string;
     hasIcon: boolean;
     hasCover: boolean;
     iconUploading: boolean;
@@ -16,6 +17,7 @@ const itemClass =
     'flex w-full cursor-pointer items-center gap-2 rounded-md px-2.5 py-2 text-left text-sm outline-none focus:bg-accent data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50';
 
 export default function DocumentMediaMenu({
+    entityLabel = 'Document',
     hasIcon,
     hasCover,
     iconUploading,
@@ -30,8 +32,8 @@ export default function DocumentMediaMenu({
             <DropdownMenu.Trigger asChild>
                 <button
                     type="button"
-                    aria-label="Document image options"
-                    title="Document image options"
+                    aria-label={`${entityLabel} image options`}
+                    title={`${entityLabel} image options`}
                     className="glass-surface inline-flex size-9 items-center justify-center rounded-lg border border-border text-foreground shadow-sm hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring"
                 >
                     <Ellipsis size={19} aria-hidden="true" />
@@ -44,7 +46,7 @@ export default function DocumentMediaMenu({
                     className="glass-surface z-50 w-48 rounded-xl border border-border p-1.5 text-foreground shadow-xl"
                 >
                     <DropdownMenu.Label className="px-2.5 py-1 text-xs text-muted-foreground">
-                        Document images
+                        {entityLabel} images
                     </DropdownMenu.Label>
                     <DropdownMenu.Item
                         disabled={iconUploading}

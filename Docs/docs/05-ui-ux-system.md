@@ -4,6 +4,10 @@
 
 > Latest shell update (2026-09-30): Settings also uses the floating controls and one content island with horizontal category links. The top Search button expands into an inline current-page field; it filters the current explorer container, database documents, or settings categories, and finds matches within the open document. `Ctrl + Space` remains Search Master.
 
+> Workspace management update (2026-09-30): Manage workspaces in the workspace menu navigates to Settings → Workspaces. The dedicated page uses floating rows, a compact create action, drag reordering, overflow menus for Rename and Move to Trash, and a collapsible Trash with Restore. Permanent deletion starts from a trashed workspace's overflow menu and ends in a typed-name confirmation dialog.
+
+> Explorer review update (2026-10-01): The opened-tabs island is centered in the viewport. Workspace and folder explorers offer Grid, List, and Gallery layouts, with the selected layout kept per open app tab and container. Gallery displays a node's cover when present. Folders and databases use compact image icon and cover headers, managed like document media. Trash rows keep clear space between their avatar and name.
+
 
 ## Design direction
 

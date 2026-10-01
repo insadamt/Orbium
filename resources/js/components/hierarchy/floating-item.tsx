@@ -1,9 +1,13 @@
 import { Database, FileText, Folder, MoreHorizontal } from 'lucide-react';
 import type { HTMLAttributes } from 'react';
 import type { TreeNode } from '@/components/navigation/navigation-types';
+import { attachmentUrl } from '@/components/editor/editor-api';
+import { nodeImageUrl } from './node-media-api';
 
 const icons = { folder: Folder, document: FileText, database: Database };
 type Props = {
+    workspaceId: number;
+    view: 'grid' | 'list' | 'gallery';
     node: TreeNode;
     selected: boolean;
     dragging: boolean;
@@ -16,6 +20,8 @@ type Props = {
 };
 
 export function FloatingItem({
+    workspaceId,
+    view,
     node,
     selected,
     dragging,
@@ -27,6 +33,10 @@ export function FloatingItem({
     onReorder,
 }: Props) {
     const Icon = icons[node.type];
+    const imageUrl = (attachmentId: number) =>
+        node.type === 'document'
+            ? attachmentUrl(workspaceId, node.id, attachmentId)
+            : nodeImageUrl(workspaceId, node.id, attachmentId);
     return (
         <div
             {...dragHandlers}
@@ -35,11 +45,16 @@ export function FloatingItem({
             tabIndex={0}
             aria-label={`${node.title}, ${node.type}`}
             aria-pressed={selected}
-            aria-keyshortcuts="Enter Alt+ArrowLeft Alt+ArrowRight Shift+F10"
+            aria-keyshortcuts={
+                view === 'list'
+                    ? 'Enter Alt+ArrowUp Alt+ArrowDown Shift+F10'
+                    : 'Enter Alt+ArrowLeft Alt+ArrowRight Shift+F10'
+            }
             data-selected={selected}
             data-dragging={dragging}
             data-drop={placement}
             data-node-id={node.id}
+            data-view={view}
             onClick={(event) => {
                 if (event.button !== 0) return;
                 onSelect();
@@ -61,22 +76,53 @@ export function FloatingItem({
                 }
                 if (
                     event.altKey &&
-                    ['ArrowLeft', 'ArrowRight'].includes(event.key)
+                    (view === 'list'
+                        ? ['ArrowUp', 'ArrowDown']
+                        : ['ArrowLeft', 'ArrowRight']
+                    ).includes(event.key)
                 ) {
                     event.preventDefault();
                     event.stopPropagation();
-                    onReorder(event.key === 'ArrowLeft' ? -1 : 1);
+                    onReorder(
+                        ['ArrowLeft', 'ArrowUp'].includes(event.key) ? -1 : 1,
+                    );
                 }
             }}
         >
-            <Icon
-                size={21}
-                strokeWidth={1.5}
-                aria-hidden="true"
-                className="shrink-0 text-muted-foreground"
-            />
-            <span className="min-w-0 flex-1 truncate" title={node.title}>
-                {node.title}
+            {view === 'gallery' && (
+                <div className="floating-item-preview">
+                    {node.cover_attachment_id ? (
+                        <img src={imageUrl(node.cover_attachment_id)} alt="" />
+                    ) : (
+                        <Icon size={34} strokeWidth={1.3} aria-hidden="true" />
+                    )}
+                </div>
+            )}
+            <span className="floating-item-label">
+                {node.icon_attachment_id ? (
+                    <img
+                        className="floating-item-icon-image"
+                        src={imageUrl(node.icon_attachment_id)}
+                        alt=""
+                    />
+                ) : node.icon ? (
+                    <span
+                        className="floating-item-icon-emoji"
+                        aria-hidden="true"
+                    >
+                        {node.icon}
+                    </span>
+                ) : (
+                    <Icon
+                        size={21}
+                        strokeWidth={1.5}
+                        aria-hidden="true"
+                        className="shrink-0 text-muted-foreground"
+                    />
+                )}
+                <span className="min-w-0 flex-1 truncate" title={node.title}>
+                    {node.title}
+                </span>
             </span>
             <button
                 type="button"

@@ -4,6 +4,9 @@ export type TreeNode = {
     title: string;
     type: 'folder' | 'document' | 'database';
     position: number;
+    icon?: string | null;
+    cover_attachment_id?: number | null;
+    icon_attachment_id?: number | null;
     tags?: string[];
 };
 export type SearchResult = TreeNode & {

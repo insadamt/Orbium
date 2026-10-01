@@ -4,15 +4,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import AppearanceTabs from '@/components/appearance-tabs';
 import { FloatingTopControls } from '@/components/hierarchy/floating-top-controls';
 import type { TrashedNode } from '@/components/hierarchy/node-browser';
-import WorkspacePanel, {
-    type TrashedWorkspace,
-    type WorkspaceSummary,
-} from '@/components/hierarchy/workspace-panel';
-import {
-    Dialog,
-    DialogContent,
-    DialogTitle,
-} from '@/components/navigation/navigation-dialog';
+import type { WorkspaceSummary } from '@/components/hierarchy/workspace-panel';
 import { NavigationEvents } from '@/components/navigation/navigation-events';
 import { NavigationTabStrip } from '@/components/navigation/navigation-tab-strip';
 import { PageSearchProvider } from '@/components/navigation/page-search';
@@ -24,7 +16,6 @@ type ShellPageProps = {
     auth: Auth;
     workspace?: { id: number; name: string };
     workspaces?: WorkspaceSummary[];
-    trashedWorkspaces?: TrashedWorkspace[];
     nodes?: TreeNode[];
     trashedNodes?: TrashedNode[];
     currentNode?: TreeNode | null;
@@ -101,7 +92,6 @@ export default function AppLayout({ children }: AppLayoutProps) {
             ]
           : breadcrumbLinks;
     const [accountMenuOpen, setAccountMenuOpen] = useState(false);
-    const [workspaceManagerOpen, setWorkspaceManagerOpen] = useState(false);
 
     function signOut(): void {
         router.post('/logout');
@@ -113,9 +103,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
             {!isFloatingPage && (
                 <header className="glass-surface sticky top-0 z-20 border-b border-border/70">
                     <div className="flex h-14 items-center gap-2 px-3 md:gap-3 md:px-5">
-                        <WorkspaceSelector
-                            onManage={() => setWorkspaceManagerOpen(true)}
-                        />
+                        <WorkspaceSelector />
                         <NavigationTabStrip />
                         <button
                             type="button"
@@ -194,9 +182,6 @@ export default function AppLayout({ children }: AppLayoutProps) {
                             key={shellWorkspace?.id ?? 'home'}
                             workspace={shellWorkspace}
                             workspaces={page.props.workspaces ?? []}
-                            trashedWorkspaces={
-                                page.props.trashedWorkspaces ?? []
-                            }
                             currentNode={
                                 isHomePage
                                     ? (page.props.currentNode ?? null)
@@ -216,25 +201,6 @@ export default function AppLayout({ children }: AppLayoutProps) {
                     {children}
                 </main>
             </PageSearchProvider>
-            <Dialog
-                open={workspaceManagerOpen}
-                onOpenChange={setWorkspaceManagerOpen}
-            >
-                <DialogContent className="max-h-[85dvh] overflow-y-auto">
-                    <DialogTitle className="text-lg font-semibold">
-                        Manage workspaces
-                    </DialogTitle>
-                    <WorkspacePanel
-                        inline
-                        workspaces={page.props.workspaces ?? []}
-                        trashedWorkspaces={page.props.trashedWorkspaces ?? []}
-                        activeWorkspaceId={page.props.workspace?.id}
-                        onWorkspaceNavigation={() =>
-                            setWorkspaceManagerOpen(false)
-                        }
-                    />
-                </DialogContent>
-            </Dialog>
         </div>
     );
 }

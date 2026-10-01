@@ -5,6 +5,7 @@ namespace App\Actions\Workspaces;
 use App\Models\User;
 use App\Models\Workspace;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class ManageWorkspaces
 {
@@ -27,6 +28,18 @@ class ManageWorkspaces
             $workspace->delete();
             $this->writePositions($workspace->user->workspaces()->orderBy('position')->orderBy('id')->get()->all());
         });
+    }
+
+    public function deletePermanently(Workspace $workspace): void
+    {
+        DB::transaction(function () use ($workspace): void {
+            User::query()->whereKey($workspace->user_id)->lockForUpdate()->firstOrFail();
+            DB::table('nodes')->where('workspace_id', $workspace->id)->update(['parent_id' => null]);
+            $workspace->forceDelete();
+            $this->writePositions($workspace->user->workspaces()->orderBy('position')->orderBy('id')->get()->all());
+        });
+
+        Storage::disk('local')->deleteDirectory('attachments/'.$workspace->id);
     }
 
     public function restore(Workspace $workspace): void

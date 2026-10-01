@@ -19,6 +19,7 @@ type NavigationState = {
     createTab: (location: Location) => void;
     activate: (id: string) => void;
     close: (id: string) => void;
+    forgetWorkspace: (workspaceId: number) => void;
     step: (delta: number) => void;
     saveScroll: () => void;
     updateView: (key: string, value: unknown) => void;
@@ -168,6 +169,34 @@ export const useNavigation = create<NavigationState>((set, get) => ({
                 state.activeId === id
                     ? (tabs.at(-1)?.id ?? '')
                     : state.activeId,
+        });
+        persist(get());
+    },
+    forgetWorkspace(workspaceId) {
+        const workspacePath = `/workspaces/${workspaceId}`;
+        const tabs = get().tabs.flatMap((tab) => {
+            const entries = tab.entries.filter(
+                (entry) =>
+                    entry.url !== workspacePath &&
+                    !entry.url.startsWith(`${workspacePath}/`) &&
+                    !entry.url.startsWith(`${workspacePath}?`),
+            );
+            return entries.length
+                ? [
+                      {
+                          ...tab,
+                          entries,
+                          index: Math.min(tab.index, entries.length - 1),
+                      },
+                  ]
+                : [];
+        });
+        set({
+            tabs,
+            activeId: tabs.some((tab) => tab.id === get().activeId)
+                ? get().activeId
+                : (tabs.at(-1)?.id ?? ''),
+            recent: [],
         });
         persist(get());
     },

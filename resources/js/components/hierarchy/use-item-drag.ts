@@ -13,6 +13,11 @@ function resolvePlacement(event: DragEvent<HTMLElement>): Placement {
     const bounds = event.currentTarget.getBoundingClientRect();
     const horizontal = (event.clientX - bounds.left) / bounds.width;
     const vertical = (event.clientY - bounds.top) / bounds.height;
+    if (event.currentTarget.dataset.view === 'list') {
+        if (vertical < 0.25) return 'before';
+        if (vertical > 0.75) return 'after';
+        return 'inside';
+    }
     if (horizontal < 0.24 || vertical < 0.18) return 'before';
     if (horizontal > 0.76 || vertical > 0.82) return 'after';
     return 'inside';

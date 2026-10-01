@@ -1,5 +1,38 @@
 # Phase 5 — Floating workspace review
 
+## Explorer view correction (2026-10-01)
+
+Removed the explorer switcher's negative bottom margin because the following contents section overlapped its buttons and could intercept clicks. The List layout also now prevents column wrapping so rows stay full width. Folder and database headers are narrower than document headers, with a 62px icon and smaller title; their cover keeps the document crop ratio at a smaller display width. Manual confirmation is still required.
+
+Validation: `./vendor/bin/pint --test`, `npm run types:check`, `npm run lint`, `npm run build`, and `git diff --check` passed on 2026-10-01. The build still reports chunks over 500 kB. Automated and browser tests were not run, per the user's manual-testing instruction. To verify: click each explorer view button and confirm its pressed state and layout change; refresh and revisit the folder to check view retention; inspect folder and database covers/icons beside a document at desktop and phone widths.
+
+## Explorer and container media follow-up (2026-09-30)
+
+Centered the opened-tabs island using balanced outer grid columns. Added Grid, List, and Gallery controls to workspace and folder explorers; Gallery shows a node cover image when available. The selected layout is kept per open app tab and container. Folder and database pages now support image icons and covers through the same menu and crop dialog used by documents. A new node migration stores media attachment IDs, while JSON endpoints validate attachment ownership and serve only visible container images. Trash workspace rows have a 15px avatar/name gap.
+
+The existing Radix Toggle Group gives the three-view control keyboard and selection behavior without another dependency. Its limitation is that Orbium still supplies the responsive layout and accessible labels. Reusing the existing crop dialog avoids adding react-easy-crop; that library provides richer gestures but would add a second crop implementation and more modal sizing work. No automated tests were written or run, per the user's instruction.
+
+Checks for this follow-up: `./vendor/bin/pint --test`, `npm run types:check`, `npm run lint`, `npm run build`, and `git diff --check` passed. Build emitted its existing warning for chunks over 500 kB. Manual browser validation remains pending.
+
+Migration status could not be checked because the configured PostgreSQL instance at `127.0.0.1:54329` was unavailable. Once it is running, apply `php artisan migrate` before checking folder or database media.
+
+Manual review for this follow-up:
+
+1. Open Settings → Workspaces → Trash with a trashed workspace. Its avatar and title should have visible separation at desktop and phone widths.
+2. Open a workspace at desktop width. The opened-tabs island should sit at the horizontal center of the viewport; resize below 1000px and confirm it stays centered on its own row.
+3. Create a folder, database, and document. Switch the workspace explorer between Grid, List, and Gallery. Items should remain clickable, with List using full-width rows and Gallery using cover previews or a type icon.
+4. Open a folder and switch its view. Return to the workspace root and back to the folder. Each container should keep its own view within the open app tab.
+5. From a folder or database header, add an icon and cover using PNG or JPEG files. Crop an image when prompted. Refresh and confirm the header and explorer item retain the images; Gallery should show the cover.
+6. Change and remove both images. Confirm the header and explorer update after refresh and the default folder/database icon returns. Edit the title and confirm the breadcrumb and explorer title update.
+7. In List view, drag an item near the top or bottom of another row and use Alt+Up/Down while focused. The order should persist after refresh. Verify context menus, opening items, and nested containment still work.
+8. Repeat in light and dark mode at desktop and phone widths. Confirm no header controls overlap and the three view buttons remain usable with keyboard focus.
+
+## Workspace management follow-up (2026-09-30)
+
+The workspace selector exposes Manage workspaces and routes to a dedicated Workspaces section in Settings. The page now uses a compact expanding create form, floating workspace rows with handle-based drag reordering and Radix overflow menus, and a collapsible Trash. Permanent deletion is available from each trashed row's overflow menu. Its warning dialog requires an exact-name confirmation, verified again on the server. It removes active and trashed nodes, document and database records, tags, mentions, and the workspace attachment directory; browser tabs pointing to the deleted workspace are discarded. Search fields, the document title, and the editor no longer show a native black input border or focus frame.
+
+This follow-up has not been manually tested. Follow the manual checklist in the response before approving the phase.
+
 ## Result and scope
 
 Replaced the active home/workspace/folder orbital explorer with a neutral, continuous open workspace. Independent control groups float above compact icon/name items. The workspace and user name controls each have a subtle surface, border, and elevation. A separate breadcrumb-path island sits immediately to the right of the workspace selector and replaces the Back button. On the explorer there is no sidebar, hero, content panel, heading, count, instructional copy, footer, or main-screen Trash shortcut. Search expands into an inline current-page input. Document, database, and settings bodies each sit in one spacious island below the same controls. Empty workspaces retain only the controls.

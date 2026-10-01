@@ -2,6 +2,9 @@
 @import './orbital-explorer.css';
 @import './orbital-explorer-content.css';
 @import './floating-workspace.css';
+@import './workspace-manager.css';
+@import './node-media.css';
+@import './explorer-views.css';
 @import 'tw-animate-css';
 
 .orbium-editor {
@@ -10,6 +13,11 @@
     line-height: 1.75;
     overflow-wrap: anywhere;
     min-width: 0;
+    border: 0;
+    outline: none;
+}
+.orbium-editor:focus-visible {
+    outline: none;
 }
 
 .orbium-editor > * + * {

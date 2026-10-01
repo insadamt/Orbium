@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Actions\Nodes\ManageHierarchy;
+use App\Models\Attachment;
 use App\Models\Node;
 use App\Models\Workspace;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
@@ -30,6 +32,30 @@ class NodeController extends Controller
         $node->update($data);
 
         return back();
+    }
+
+    public function updateHeader(Request $request, int $workspace, int $node): JsonResponse
+    {
+        $container = $this->visibleNode($request, $workspace, $node);
+        abort_unless(in_array($container->type, ['folder', 'database'], true), 404);
+        $data = $request->validate([
+            'title' => ['sometimes', 'required', 'string', 'max:255'],
+            'icon' => ['sometimes', 'nullable', 'string', 'max:16'],
+            'cover_attachment_id' => ['sometimes', 'nullable', 'integer'],
+            'icon_attachment_id' => ['sometimes', 'nullable', 'integer'],
+        ]);
+        foreach (['cover_attachment_id', 'icon_attachment_id'] as $field) {
+            if (! isset($data[$field])) {
+                continue;
+            }
+            $validImage = Attachment::query()->where('workspace_id', $container->workspace_id)
+                ->where('owner_node_id', $container->id)->where('purpose', 'image')
+                ->whereKey($data[$field])->exists();
+            abort_unless($validImage, 422);
+        }
+        $container->update($data);
+
+        return response()->json($container->only(['title', 'icon', 'cover_attachment_id', 'icon_attachment_id']));
     }
 
     public function move(Request $request, int $workspace, int $node, ManageHierarchy $hierarchy): RedirectResponse
