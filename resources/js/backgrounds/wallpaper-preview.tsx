@@ -48,16 +48,14 @@ export function WallpaperPreview({
     draft,
     imageUrl,
     active,
-    compact = false,
 }: {
     draft: BackgroundDraft;
     imageUrl: string | null;
     active: boolean;
-    compact?: boolean;
 }) {
     return (
         <div
-            className={`wallpaper-preview ${compact ? 'wallpaper-preview-compact' : ''}`}
+            className="wallpaper-preview"
             style={
                 draft.kind === 'image' && imageUrl
                     ? {

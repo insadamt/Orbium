@@ -190,3 +190,41 @@ Reviewed Radix Dialog and React's deferred update option. Used the already-insta
 Suggested commit message: `feat(appearance): add searchable wallpaper preview dialog`.
 
 Validation: `npm run check:fix`, `npm run types:check`, `npm run lint`, `npm run build`, `./vendor/bin/pint --test`, and `git diff --check` passed. The production build still reports its large-chunk warning. No automated tests were written or run, per project instructions. The local Docker app was rebuilt; app and PostgreSQL reported healthy, nginx remained running, and unauthenticated `/settings/appearance` returned the expected HTTP 302. Authenticated visual behavior awaits the user's manual review.
+
+## Manual review correction — Autoplay gallery miniatures (2026-10-01)
+
+The user requested live miniature playback without hover. Visible animated wallpaper tiles now start automatically when the dialog opens or the gallery is scrolled; tiles stop their renderers when they leave the scroll area. The page background remains paused while the dialog is open. Miniature effects use a lower resolution and frame rate where supported, while the editor preview keeps its normal settings. Reduced motion, the browser-local Pause animated wallpapers preference, and a hidden browser tab keep thumbnails still.
+
+### Library decision and limits
+
+Reviewed `react-intersection-observer` and the browser's Intersection Observer API. A shared native observer covers this single gallery without adding a dependency. The React library offers reusable hooks and observer management, but those benefits are limited here. Each visible React Bits tile can still create a WebGL context; on low-end hardware, many visible effects may render slowly or a browser may limit simultaneous contexts. Offscreen unmounting and smaller preview quality reduce the cost but cannot eliminate that upstream limitation.
+
+### Manual test checklist
+
+1. Open Appearance → Wallpaper without moving the pointer. Expected: visible animated miniatures begin moving automatically.
+2. Scroll through the gallery. Expected: newly visible miniatures start, and effects that leave the visible area stop consuming a renderer. Scroll back and expect them to resume.
+3. Search for an effect. Expected: matching visible tiles animate without hovering; filtering out an effect removes its renderer.
+4. Enable Pause animated wallpapers, then reopen the gallery. Expected: miniatures stay still. Disable it and reopen; expected: visible miniatures autoplay.
+5. Enable system reduced motion and hide the browser tab while the dialog is open. Expected: animations stop or remain still until motion is allowed and the tab is visible.
+6. On a slower device, scroll through the gallery and open a heavy effect. Expected: the dialog remains usable and the large editor preview still responds to controls.
+
+Suggested commit message: `feat(appearance): autoplay visible wallpaper miniatures`.
+
+Validation: `npm run check:fix`, `npm run types:check`, `npm run lint`, `npm run build`, `./vendor/bin/pint --test`, and `git diff --check` passed. The production build still reports its large-chunk warning. No automated tests were written or run, per project instructions. The local Docker app was rebuilt; app and PostgreSQL reported healthy, nginx remained running, and unauthenticated `/settings/appearance` returned the expected HTTP 302. Authenticated visual behavior awaits the user's manual review.
+
+## Manual review correction — Remove miniatures (2026-10-01)
+
+The user removed the miniature requirement. The Wallpaper control and searchable gallery now use text labels only, with a Current marker for the selected wallpaper. The gallery no longer mounts preview renderers or observes tile visibility. The full editor preview remains available after selecting an option, and Apply still commits the draft. No library was needed for this simplification; keeping the existing Radix dialog avoids a new dependency.
+
+### Manual test checklist
+
+1. Open Settings → Appearance. Expected: the Wallpaper control names the current wallpaper without a thumbnail.
+2. Open Wallpaper. Expected: all choices appear as text rows with no miniature images or animation; the saved choice says Current.
+3. Search by name or description. Expected: matching choices remain and an unmatched query shows the empty message.
+4. Select an animated wallpaper. Expected: its controls appear on the left and one large live preview appears on the right.
+5. Select a different wallpaper, then Cancel. Expected: the saved wallpaper remains unchanged. Repeat and Apply; expected: the chosen wallpaper becomes the app background.
+6. Upload an image. Expected: the editor displays the uploaded image in the large preview and applies it only after Apply.
+
+Suggested commit message: `refactor(appearance): replace wallpaper miniatures with text choices`.
+
+Validation: `npm run check:fix`, `npm run types:check`, `npm run lint`, `npm run build`, `./vendor/bin/pint --test`, and `git diff --check` passed. The build still reports a large-chunk warning. No automated tests were written or run, per project instructions. The local Docker app was rebuilt; app and PostgreSQL reported healthy, nginx remained running, and unauthenticated `/settings/appearance` returned the expected HTTP 302. Authenticated visual behavior awaits the user's manual review.

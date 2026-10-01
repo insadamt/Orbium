@@ -17,7 +17,6 @@ import { ReactBitsSettings } from './react-bits-settings';
 import { WallpaperLegacyControls } from './wallpaper-legacy-controls';
 import { createWallpaperDraft, wallpaperOptions } from './wallpaper-options';
 import { WallpaperPreview } from './wallpaper-preview';
-import { previewStyle } from './wallpaper-palette';
 
 export function WallpaperDialog() {
     const { preferences, applyBackgroundDraft } = useBackgroundPreferences();
@@ -28,14 +27,12 @@ export function WallpaperDialog() {
     const [draft, setDraft] = useState(() =>
         createWallpaperDraft(preferences.kind, preferences),
     );
-    const [liveKind, setLiveKind] = useState<BackgroundKind | null>(null);
     const [pendingImage, setPendingImage] = useState<File | null>(null);
     const [pendingImageUrl, setPendingImageUrl] = useState<string | null>(null);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState('');
     const fileInput = useRef<HTMLInputElement>(null);
     const uploadRequest = useRef(0);
-    const liveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const selectedOption =
         wallpaperOptions.find(({ kind }) => kind === preferences.kind) ??
         wallpaperOptions[0];
@@ -61,41 +58,27 @@ export function WallpaperDialog() {
 
     useEffect(() => {
         return () => {
-            if (liveTimer.current) clearTimeout(liveTimer.current);
             if (pendingImageUrl) URL.revokeObjectURL(pendingImageUrl);
         };
     }, [pendingImageUrl]);
 
     function changeOpen(nextOpen: boolean, afterApply = false) {
         if (!nextOpen && saving && !afterApply) return;
-        if (liveTimer.current) clearTimeout(liveTimer.current);
         if (nextOpen) {
             setDraft(createWallpaperDraft(preferences.kind, preferences));
             setStage('gallery');
             setQuery('');
             setError('');
-            setLiveKind(preferences.kind);
         } else {
             uploadRequest.current += 1;
             setPendingImage(null);
             setPendingImageUrl(null);
-            setLiveKind(null);
         }
         setOpen(nextOpen);
     }
 
-    function queueLivePreview(kind: BackgroundKind | null) {
-        if (liveTimer.current) clearTimeout(liveTimer.current);
-        if (!kind) {
-            setLiveKind(null);
-            return;
-        }
-        liveTimer.current = setTimeout(() => setLiveKind(kind), 180);
-    }
-
     function chooseWallpaper(kind: BackgroundKind) {
         setDraft(createWallpaperDraft(kind, preferences));
-        setLiveKind(null);
         setError('');
         setStage('editor');
     }
@@ -175,20 +158,8 @@ export function WallpaperDialog() {
                 <Dialog.Trigger asChild>
                     <button
                         type="button"
-                        className="appearance-choice flex w-full items-center gap-4 rounded-2xl p-3 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                        className="appearance-choice flex w-full items-center gap-4 rounded-2xl p-4 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
                     >
-                        <span
-                            className="size-14 shrink-0 rounded-xl border border-border"
-                            style={
-                                preferences.kind === 'image' && imageUrl
-                                    ? {
-                                          backgroundImage: `url(${imageUrl})`,
-                                          backgroundSize: 'cover',
-                                          backgroundPosition: 'center',
-                                      }
-                                    : previewStyle(preferences.kind)
-                            }
-                        />
                         <span className="min-w-0 flex-1">
                             <span className="block text-sm font-semibold">
                                 {selectedOption.title}
@@ -269,10 +240,6 @@ export function WallpaperDialog() {
                                         <ImagePlus size={17} /> Upload image
                                     </button>
                                 </div>
-                                <p className="text-xs text-muted-foreground">
-                                    Hover or focus a miniature to see it move.
-                                    Only one live preview runs at a time.
-                                </p>
                                 <div className="wallpaper-gallery-grid">
                                     {visibleOptions.map((option) => (
                                         <BackgroundChoice
@@ -281,24 +248,8 @@ export function WallpaperDialog() {
                                             selected={
                                                 preferences.kind === option.kind
                                             }
-                                            live={
-                                                liveKind === option.kind &&
-                                                !preferences.pauseAnimations
-                                            }
-                                            imageUrl={
-                                                pendingImageUrl ?? imageUrl
-                                            }
-                                            draft={createWallpaperDraft(
-                                                option.kind,
-                                                preferences,
-                                            )}
                                             onSelect={() =>
                                                 chooseWallpaper(option.kind)
-                                            }
-                                            onLiveChange={(active) =>
-                                                queueLivePreview(
-                                                    active ? option.kind : null,
-                                                )
                                             }
                                         />
                                     ))}

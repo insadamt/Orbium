@@ -20,6 +20,10 @@
 
 > Wallpaper dialog update (2026-10-01): Every Settings category now uses the same island width. Appearance has one Wallpaper control that opens a searchable gallery with image upload. Wallpaper miniatures animate on hover or keyboard focus, with only one live thumbnail renderer active at a time. Selecting a wallpaper opens draft controls on the left and a live preview on the right. Apply commits the selection and settings; closing the dialog discards drafts. The dialog uses restrained entry, exit, hover, and preview motion, all disabled for reduced motion.
 
+> Wallpaper gallery autoplay update (2026-10-01): Animated miniatures start automatically when visible in the dialog; scrolling out stops their renderer, and scrolling back restarts it. Hover and keyboard focus are no longer required. Where supported, miniature renderers use lower resolution and frame rate than the full editor preview. Reduced motion and the Pause animated wallpapers preference keep them still.
+
+> Wallpaper gallery simplification (2026-10-01): The Wallpaper control and searchable gallery show text choices without miniature images or animation. A selected choice is marked Current. Selecting a choice opens its controls and one large live preview; Apply still commits the draft. This supersedes the thumbnail behavior described above.
+
 
 ## Design direction
 
