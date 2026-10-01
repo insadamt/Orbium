@@ -14,6 +14,12 @@
 
 > Expanded backgrounds update (2026-10-01): Appearance also offers 17 React Bits animated wallpapers, each with saved effect controls and Reset. The selected effect loads on demand, including after a page refresh. Animated wallpapers keep their own colors across Light/Dark mode. Reduce Motion pauses effects that expose a pause control; the remaining upstream effects still need a source-level motion adaptation.
 
+> Appearance selection update (2026-10-01): Backgrounds are grouped into still and animated choices with static palette previews and a visible loading state. Common React Bits controls remain visible; advanced controls are disclosed on demand. An explicit browser-local Pause animated wallpapers preference and the operating system's reduced-motion preference show a still color background instead of mounting animated renderers. Slider changes remain live and browser storage writes settle after interaction.
+
+> Appearance review correction (2026-10-01): The settings island gives Appearance the full content width. Background options use compact rows with small palette swatches, while the selected controls occupy a separate readable column. Controls use the same neutral surface and focus colors as the rest of the app. Image actions sit with the image choice; Frosted settings surfaces use a stronger tint so wallpapers do not overwhelm the form.
+
+> Wallpaper dialog update (2026-10-01): Every Settings category now uses the same island width. Appearance has one Wallpaper control that opens a searchable gallery with image upload. Wallpaper miniatures animate on hover or keyboard focus, with only one live thumbnail renderer active at a time. Selecting a wallpaper opens draft controls on the left and a live preview on the right. Apply commits the selection and settings; closing the dialog discards drafts. The dialog uses restrained entry, exit, hover, and preview motion, all disabled for reduced motion.
+
 
 ## Design direction
 

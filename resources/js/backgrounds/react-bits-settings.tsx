@@ -67,6 +67,18 @@ function numericBounds(
 }
 
 function settingLabel(key: string): string {
+    const friendlyNames: Record<string, string> = {
+        dpr: 'Resolution',
+        maxDpr: 'Maximum resolution',
+        targetFps: 'Frame rate',
+        iterationsPoisson: 'Fluid smoothness',
+        iterationsViscous: 'Fluid detail',
+        dt: 'Simulation step',
+        fov: 'Field of view',
+        mouseInteraction: 'Pointer interaction',
+        mouseStrength: 'Pointer strength',
+    };
+    if (friendlyNames[key]) return friendlyNames[key];
     return key
         .replace(/([a-z])([A-Z])/g, '$1 $2')
         .replace(/^./, (letter) => letter.toUpperCase());
@@ -111,7 +123,7 @@ function SettingControl({
                                         ),
                                     )
                                 }
-                                className="h-9 w-12 cursor-pointer rounded border border-border bg-transparent"
+                                className="appearance-color-input"
                             />
                         </label>
                     ))}
@@ -121,11 +133,12 @@ function SettingControl({
     }
     if (typeof value === 'boolean') {
         return (
-            <label className="flex items-center gap-2 text-sm">
+            <label className="flex items-center gap-2.5 text-sm">
                 <input
                     type="checkbox"
                     checked={value}
                     onChange={(event) => onChange(event.target.checked)}
+                    className="appearance-checkbox"
                 />
                 {label}
             </label>
@@ -137,7 +150,7 @@ function SettingControl({
             Number(defaultValue),
         );
         return (
-            <label className="grid gap-1.5 text-sm">
+            <label className="grid gap-2 text-sm">
                 <span className="flex justify-between gap-3">
                     <span>{label}</span>
                     <output className="text-muted-foreground tabular-nums">
@@ -151,7 +164,7 @@ function SettingControl({
                     step={step}
                     value={value}
                     onChange={(event) => onChange(Number(event.target.value))}
-                    className="w-full accent-foreground"
+                    className="appearance-range"
                 />
             </label>
         );
@@ -163,7 +176,7 @@ function SettingControl({
                 <select
                     value={value}
                     onChange={(event) => onChange(event.target.value)}
-                    className="rounded-lg border border-border bg-background p-2"
+                    className="appearance-select"
                 >
                     {choices.map((choice) => (
                         <option key={choice} value={choice}>
@@ -184,7 +197,7 @@ function SettingControl({
                         type="color"
                         value={value}
                         onChange={(event) => onChange(event.target.value)}
-                        className="h-9 w-12 cursor-pointer rounded border border-border bg-transparent"
+                        className="appearance-color-input"
                     />
                 </span>
             </label>
@@ -196,7 +209,7 @@ function SettingControl({
             <input
                 value={value}
                 onChange={(event) => onChange(event.target.value)}
-                className="rounded-lg border border-border bg-background p-2"
+                className="appearance-select"
             />
         </label>
     );
@@ -213,32 +226,62 @@ export function ReactBitsSettings({
     onChange: (values: EffectSettings) => void;
     onReset: () => void;
 }) {
+    const entries = Object.entries(settings);
+    const color = entries.find(
+        ([key, value]) =>
+            key.toLowerCase().includes('color') &&
+            typeof value === 'string' &&
+            value.startsWith('#'),
+    );
+    const basicKeys = new Set(
+        [color?.[0], 'speed', 'brightness', 'intensity'].filter(Boolean),
+    );
+    const basicEntries = entries.filter(([key]) => basicKeys.has(key));
+    const advancedEntries = entries.filter(([key]) => !basicKeys.has(key));
+    const renderControl = ([settingKey, value]: [string, EffectValue]) => (
+        <SettingControl
+            key={settingKey}
+            settingKey={settingKey}
+            value={value}
+            defaultValue={effect.defaults[settingKey]}
+            choices={effect.choices?.[settingKey]}
+            onChange={(nextValue) => onChange({ [settingKey]: nextValue })}
+        />
+    );
     return (
-        <div className="space-y-5 rounded-xl border border-border bg-background/75 p-5">
+        <div className="appearance-control-panel space-y-5 rounded-2xl p-5">
             <div className="flex items-center justify-between gap-3">
                 <h3 className="font-medium">{effect.title} controls</h3>
                 <button
                     type="button"
                     onClick={onReset}
-                    className="text-sm underline underline-offset-4"
+                    className="appearance-text-button"
                 >
                     Reset
                 </button>
             </div>
-            <div className="grid gap-x-6 gap-y-4 md:grid-cols-2">
-                {Object.entries(settings).map(([settingKey, value]) => (
-                    <SettingControl
-                        key={settingKey}
-                        settingKey={settingKey}
-                        value={value}
-                        defaultValue={effect.defaults[settingKey]}
-                        choices={effect.choices?.[settingKey]}
-                        onChange={(nextValue) =>
-                            onChange({ [settingKey]: nextValue })
-                        }
+            {basicEntries.length > 0 && (
+                <div className="grid gap-4">
+                    {basicEntries.map(renderControl)}
+                </div>
+            )}
+            <Collapsible.Root>
+                <Collapsible.Trigger className="appearance-disclosure flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-sm font-medium focus-visible:outline-2 focus-visible:outline-ring [&[data-state=open]>svg]:rotate-180">
+                    Customize all settings
+                    <ChevronDown
+                        aria-hidden="true"
+                        size={16}
+                        className="transition-transform"
                     />
-                ))}
-            </div>
+                </Collapsible.Trigger>
+                <Collapsible.Content className="pt-4">
+                    <div className="grid gap-4">
+                        {advancedEntries.map(renderControl)}
+                    </div>
+                </Collapsible.Content>
+            </Collapsible.Root>
         </div>
     );
 }
+import * as Collapsible from '@radix-ui/react-collapsible';
+import { ChevronDown } from 'lucide-react';

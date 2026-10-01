@@ -51,6 +51,19 @@ export function AppBackground() {
     const { preferences } = useBackgroundPreferences();
     const { imageUrl } = useBackgroundImage();
     const reducedMotion = useReducedMotion();
+    const [wallpaperEditorOpen, setWallpaperEditorOpen] = useState(false);
+    const pauseAnimations =
+        reducedMotion || preferences.pauseAnimations || wallpaperEditorOpen;
+    useEffect(() => {
+        const updateEditorState = (event: Event) =>
+            setWallpaperEditorOpen((event as CustomEvent<boolean>).detail);
+        window.addEventListener('orbium:wallpaper-editor', updateEditorState);
+        return () =>
+            window.removeEventListener(
+                'orbium:wallpaper-editor',
+                updateEditorState,
+            );
+    }, []);
     const [displayedBackground, setDisplayedBackground] = useState(() => ({
         kind: preferences.kind,
         imageUrl: null as string | null,
@@ -98,7 +111,14 @@ export function AppBackground() {
                                   ?.backgroundColor ?? '#0d1012',
                           ),
                       }
-                    : undefined
+                    : displayedBackground.kind === 'ghost'
+                      ? { backgroundColor: '#101019' }
+                      : displayedBackground.kind === 'molten'
+                        ? {
+                              backgroundColor:
+                                  preferences.molten.backgroundColor,
+                          }
+                        : undefined
             }
         >
             {displayedBackground.kind === 'image' &&
@@ -112,19 +132,21 @@ export function AppBackground() {
                 )}
             <BackgroundErrorBoundary key={displayedBackground.kind}>
                 <Suspense fallback={null}>
-                    {displayedBackground.kind === 'ghost' && (
-                        <GhostFibers
-                            {...preferences.ghost}
-                            paused={reducedMotion}
-                        />
-                    )}
-                    {displayedBackground.kind === 'molten' && (
-                        <MoltenMetal
-                            {...preferences.molten}
-                            paused={reducedMotion}
-                        />
-                    )}
-                    {activeEffect && (
+                    {!pauseAnimations &&
+                        displayedBackground.kind === 'ghost' && (
+                            <GhostFibers
+                                {...preferences.ghost}
+                                paused={reducedMotion}
+                            />
+                        )}
+                    {!pauseAnimations &&
+                        displayedBackground.kind === 'molten' && (
+                            <MoltenMetal
+                                {...preferences.molten}
+                                paused={reducedMotion}
+                            />
+                        )}
+                    {!pauseAnimations && activeEffect && (
                         <ReactBitsBackground
                             kind={activeEffect.kind}
                             settings={preferences.effects[activeEffect.kind]}

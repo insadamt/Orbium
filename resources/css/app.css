@@ -6,6 +6,8 @@
 @import './node-media.css';
 @import './explorer-views.css';
 @import './appearance-surfaces.css';
+@import './appearance-settings.css';
+@import './wallpaper-dialog.css';
 @import 'tw-animate-css';
 
 .orbium-editor {

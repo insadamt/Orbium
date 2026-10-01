@@ -66,15 +66,23 @@ export type GhostSettings = typeof ghostDefaults;
 export type MoltenSettings = typeof moltenDefaults;
 export type BackgroundPreferences = {
     kind: BackgroundKind;
+    pauseAnimations: boolean;
     ghost: GhostSettings;
     molten: MoltenSettings;
     effects: Record<string, EffectSettings>;
+};
+export type BackgroundDraft = {
+    kind: BackgroundKind;
+    ghost: GhostSettings;
+    molten: MoltenSettings;
+    effect?: EffectSettings;
 };
 
 const storageKey = 'orbium.backgrounds.v1';
 const listeners = new Set<() => void>();
 const defaultPreferences: BackgroundPreferences = {
     kind: 'default',
+    pauseAnimations: false,
     ghost: ghostDefaults,
     molten: moltenDefaults,
     effects: defaultReactBitsSettings(),
@@ -92,6 +100,7 @@ function readPreferences(): BackgroundPreferences {
                 : 'default';
         return {
             kind,
+            pauseAnimations: saved.pauseAnimations === true,
             ghost: { ...ghostDefaults, ...saved.ghost },
             molten: { ...moltenDefaults, ...saved.molten },
             effects: readReactBitsSettings(saved.effects),
@@ -102,16 +111,37 @@ function readPreferences(): BackgroundPreferences {
 }
 
 let preferences = readPreferences();
+let persistenceTimer: ReturnType<typeof setTimeout> | null = null;
 
 function subscribe(listener: () => void) {
     listeners.add(listener);
     return () => listeners.delete(listener);
 }
 
-function savePreferences(next: BackgroundPreferences): void {
-    localStorage.setItem(storageKey, JSON.stringify(next));
+function persistPreferences(): void {
+    if (persistenceTimer) clearTimeout(persistenceTimer);
+    persistenceTimer = null;
+    localStorage.setItem(storageKey, JSON.stringify(preferences));
+}
+
+function savePreferences(
+    next: BackgroundPreferences,
+    delayPersistence = false,
+): void {
     preferences = next;
     listeners.forEach((listener) => listener());
+    if (delayPersistence) {
+        if (persistenceTimer) clearTimeout(persistenceTimer);
+        persistenceTimer = setTimeout(persistPreferences, 250);
+    } else {
+        persistPreferences();
+    }
+}
+
+if (typeof window !== 'undefined') {
+    window.addEventListener('pagehide', () => {
+        if (persistenceTimer) persistPreferences();
+    });
 }
 
 export function useBackgroundPreferences() {
@@ -122,30 +152,55 @@ export function useBackgroundPreferences() {
     );
     return {
         preferences: current,
+        pauseAnimations: current.pauseAnimations,
+        setPauseAnimations: (pauseAnimations: boolean) =>
+            savePreferences({ ...preferences, pauseAnimations }),
+        applyBackgroundDraft: (draft: BackgroundDraft) =>
+            savePreferences({
+                ...preferences,
+                kind: draft.kind,
+                ghost: draft.ghost,
+                molten: draft.molten,
+                effects: draft.effect
+                    ? {
+                          ...preferences.effects,
+                          [draft.kind]: draft.effect,
+                      }
+                    : preferences.effects,
+            }),
         selectBackground: (kind: BackgroundKind) =>
             savePreferences({ ...preferences, kind }),
         updateGhost: (values: Partial<GhostSettings>) =>
-            savePreferences({
-                ...preferences,
-                ghost: { ...preferences.ghost, ...values },
-            }),
+            savePreferences(
+                {
+                    ...preferences,
+                    ghost: { ...preferences.ghost, ...values },
+                },
+                true,
+            ),
         updateMolten: (values: Partial<MoltenSettings>) =>
-            savePreferences({
-                ...preferences,
-                molten: { ...preferences.molten, ...values },
-            }),
+            savePreferences(
+                {
+                    ...preferences,
+                    molten: { ...preferences.molten, ...values },
+                },
+                true,
+            ),
         resetGhost: () =>
             savePreferences({ ...preferences, ghost: ghostDefaults }),
         resetMolten: () =>
             savePreferences({ ...preferences, molten: moltenDefaults }),
         updateEffect: (kind: string, values: EffectSettings) =>
-            savePreferences({
-                ...preferences,
-                effects: {
-                    ...preferences.effects,
-                    [kind]: { ...preferences.effects[kind], ...values },
+            savePreferences(
+                {
+                    ...preferences,
+                    effects: {
+                        ...preferences.effects,
+                        [kind]: { ...preferences.effects[kind], ...values },
+                    },
                 },
-            }),
+                true,
+            ),
         resetEffect: (kind: string) => {
             const effect = findReactBitsEffect(kind);
             if (!effect) return;

@@ -134,3 +134,59 @@ Manual check: select Gradient Waves, Silk, Liquid Ether, Hyperspeed, and a simpl
 Suggested commit message: `fix(appearance): restore wallpapers on reload and reduce GPU load`.
 
 Validation: `npm run check:fix`, `npm run types:check`, `npm run lint`, `npm run build`, `./vendor/bin/pint --test`, and `git diff --check` passed. The build still reports large chunks. No automated tests were written or run, per project instructions. The Docker app was rebuilt; the app and database containers are healthy, nginx is running, and `/settings/appearance` returns the expected unauthenticated HTTP 302. Authenticated visual refresh and performance remain for the user's manual review.
+
+## Manual review extension — Appearance selection UX (2026-10-01)
+
+Grouped the original and uploaded image under Still backgrounds and the shader wallpapers under Animated backgrounds. Choices now have static palette previews, a selected mark, and a loading indicator while a selected effect is imported. On wide screens the selected effect's controls remain in a sticky column beside the catalog. The image choice opens upload when no image is saved, and the page explains browser-only storage and reports saved-image load failure. React Bits controls show a small set of common controls first and place the remaining controls in a keyboard-accessible disclosure. Ghost Fibers and Molten Metal controls also start collapsed. A browser-local Pause animated wallpapers preference, as well as the operating system's reduced-motion preference, now avoids mounting animated renderers and displays a still color. Live control changes remain immediate while local-storage writes are deferred for 250 ms and flushed when the page is closed or reloaded.
+
+### Library decision and limits
+
+Reviewed Radix Collapsible and Tabs and the existing React Bits catalog. Used the already installed Radix Collapsible for advanced controls; native details is sufficient for the two legacy effects. No new dependency is needed. The cards show representative palette gradients, not captured frames from each shader. Paused animations show a solid fallback color rather than a frozen frame. This pass does not add the separate 3D Orbit quality preference from Phase 7. Wallpaper settings and uploaded images remain browser-local.
+
+### Manual test checklist
+
+1. Open Settings → Appearance at desktop and narrow widths. Expected: Still and Animated groups, readable palette cards, no sideways overflow, and a visible mark on the current choice.
+2. Select a React Bits effect, then rapidly select another while the first loads. Expected: the last choice wins, the loading indicator clears, and the selected effect fills the background.
+3. Change a common control, open Customize all settings with mouse and keyboard, then change an advanced control and Reset. Expected: live effect updates, advanced controls stay reachable, and Reset restores defaults.
+4. Select Ghost Fibers and Molten Metal. Open each Customize disclosure, change a color and speed, then Reset. Expected: controls respond and restore defaults.
+5. Select an animated background and turn Pause animated wallpapers on and off. Repeat with the operating system's reduced-motion setting. Expected: the animated renderer is replaced by a still color and resumes when both pause sources are off.
+6. Upload, replace, and remove a PNG or JPEG. Expected: the image card shows the saved image, upload selects it, removing an active image restores Orbium default, and an invalid file gives a clear error.
+7. Drag a slider, reload immediately, and reload after a brief pause. Expected: the final value persists in both cases. Navigate away and back; the selected background and pause preference remain.
+8. Switch Light and Dark over bright and dark wallpapers. Expected: wallpaper palettes remain unchanged while interface text and surfaces remain readable.
+
+Suggested commit message: `feat(appearance): simplify wallpaper selection and customization`.
+
+Validation: `npm run check:fix`, `npm run lint`, `npm run types:check`, `npm run build`, and `git diff --check` passed. The build retains its existing large-chunk warning. No automated tests were written or run. Authenticated visual behavior awaits the user's manual review.
+
+## Manual review correction — Appearance layout and controls (2026-10-01)
+
+The user's screenshot showed that the 680px settings content limit squeezed a second two-column layout and three wallpaper cards into too little width. Appearance now uses the full settings island width. Wallpaper choices are compact neutral rows with small palette swatches in two columns; the chosen effect's controls have a wider, single-column panel. Theme and surface choices use the app's neutral selection treatment. Numeric sliders, color inputs, checkboxes, select fields, and the pause switch share Appearance-specific styling and visible focus. Image actions are beside the still-background choices. Frosted settings panels have a stronger tint for readable controls over colorful wallpapers.
+
+Manual check: compare Appearance in Normal and Frosted surfaces at desktop, tablet, and narrow widths. Expected: no tiny three-across cards, no clipped control labels, clear selection, and no horizontal overflow. Open every advanced control panel and check keyboard focus, slider operation, select menus, color inputs, and reset actions. Switch among light and dark themes and colorful wallpapers; text and controls should remain readable.
+
+Suggested commit message: `fix(appearance): align wallpaper settings with the app shell`.
+
+Validation: `npm run check:fix`, `npm run types:check`, `npm run lint`, `npm run build`, `./vendor/bin/pint --test`, and `git diff --check` passed. The local Docker app was rebuilt; app and PostgreSQL reported healthy, nginx remained running, and the Appearance route returned the expected unauthenticated HTTP 302. The build retains its existing large-chunk warning. No automated tests were run. Authenticated visual review remains for the user.
+
+## Manual review correction — Wallpaper dialog (2026-10-01)
+
+All Settings categories now use an 1100px outer island. Profile, Security, and Appearance keep their form controls at a readable width inside it. Appearance replaces the long wallpaper grid with one Wallpaper control. The dialog provides search, upload, a gallery, and an editor with draft controls on the left and a live preview on the right. Apply writes the chosen wallpaper and settings; Cancel and Escape leave the existing background unchanged. A selected gallery miniature becomes live on open, and hover or keyboard focus moves the live miniature to another wallpaper after a brief delay. Only one miniature renderer runs at a time, and the main app wallpaper renderer pauses while the dialog is open. Uploaded images are validated and decoded for preview before saving on Apply. Dialog transitions, card hover, and preview fade respect reduced motion.
+
+### Library decision and limits
+
+Reviewed Radix Dialog and React's deferred update option. Used the already-installed Radix Dialog for focus trapping, Escape, and accessible title/description; simple local filtering needs no search library or deferred rendering. Reused Orbium's existing React Bits wallpaper modules. Running all 19 animated miniatures at once would create too many WebGL scenes, so only the current hover/focus miniature runs live. A few upstream effects may frame differently in the small thumbnail because their shaders use viewport measurements; the larger editor preview is the place to judge the final appearance. No new dependency or persistent format was added.
+
+### Manual test checklist
+
+1. Open Profile, Security, Appearance, and Workspaces. Expected: the outer Settings island has the same width on each route; forms remain readable and Workspaces can use the wider area.
+2. On Appearance, select Wallpaper. Expected: a centered dialog opens with a search field, upload button, and wallpaper gallery. Tab through controls and press Escape; focus returns to Wallpaper.
+3. Search for a wallpaper by name and a word in its description. Expected: matching tiles remain; an unmatched query shows a no-results message.
+4. Hover or focus several animated miniatures, including a heavy effect. Expected: the active miniature animates after a brief delay, the previous one stops, and the gallery remains responsive. With system reduced motion, thumbnails remain still.
+5. Select Ghost Fibers, Molten Metal, and a React Bits wallpaper. Expected: draft controls appear on the left and the live preview on the right. Adjust a color and speed. Expected: only the preview changes while the page background stays as it was.
+6. Select Cancel, close, or press Escape after changing controls. Reopen Wallpaper. Expected: the previous applied wallpaper and values remain. Repeat and choose Apply wallpaper. Expected: the new wallpaper appears behind the app and survives reload.
+7. Upload a valid image. Expected: it appears in the editor preview but is not applied until Apply. Cancel leaves the previous wallpaper. Try an invalid file or corrupt image; expect a clear error.
+8. Open the dialog at narrow widths and with Light, Dark, Normal, and Frosted styles. Expected: gallery and editor remain usable without horizontal overflow. Modal and hover transitions stop with reduced motion.
+
+Suggested commit message: `feat(appearance): add searchable wallpaper preview dialog`.
+
+Validation: `npm run check:fix`, `npm run types:check`, `npm run lint`, `npm run build`, `./vendor/bin/pint --test`, and `git diff --check` passed. The production build still reports its large-chunk warning. No automated tests were written or run, per project instructions. The local Docker app was rebuilt; app and PostgreSQL reported healthy, nginx remained running, and unauthenticated `/settings/appearance` returned the expected HTTP 302. Authenticated visual behavior awaits the user's manual review.

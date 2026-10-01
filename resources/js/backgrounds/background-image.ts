@@ -43,7 +43,7 @@ export async function readBackgroundImage(): Promise<Blob | undefined> {
     return useImageStore('readonly', (store) => store.get(imageKey));
 }
 
-export async function saveBackgroundImage(file: File): Promise<void> {
+export function validateBackgroundImage(file: File): void {
     if (
         !['image/png', 'image/jpeg', 'image/webp', 'image/gif'].includes(
             file.type,
@@ -54,6 +54,10 @@ export async function saveBackgroundImage(file: File): Promise<void> {
     if (file.size > 10 * 1024 * 1024) {
         throw new Error('Choose an image smaller than 10 MB.');
     }
+}
+
+export async function saveBackgroundImage(file: File): Promise<void> {
+    validateBackgroundImage(file);
     await useImageStore('readwrite', (store) => store.put(file, imageKey));
     window.dispatchEvent(new Event(imageChangedEvent));
 }
@@ -66,6 +70,7 @@ export async function removeBackgroundImage(): Promise<void> {
 export function useBackgroundImage() {
     const [imageUrl, setImageUrl] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState(false);
 
     useEffect(() => {
         let currentUrl: string | null = null;
@@ -73,6 +78,7 @@ export function useBackgroundImage() {
         let requestVersion = 0;
         async function refreshImage() {
             const version = ++requestVersion;
+            setLoadError(false);
             try {
                 const image = await readBackgroundImage();
                 if (!active || version !== requestVersion) return;
@@ -95,7 +101,10 @@ export function useBackgroundImage() {
                 if (currentUrl) URL.revokeObjectURL(currentUrl);
                 currentUrl = nextUrl;
             } catch {
-                if (active && version === requestVersion) setImageUrl(null);
+                if (active && version === requestVersion) {
+                    setImageUrl(null);
+                    setLoadError(true);
+                }
             } finally {
                 if (active && version === requestVersion) setLoading(false);
             }
@@ -110,5 +119,5 @@ export function useBackgroundImage() {
         };
     }, []);
 
-    return { imageUrl, loading };
+    return { imageUrl, loading, loadError };
 }

@@ -43,7 +43,7 @@ export function SurfaceSettings() {
                 </p>
             </div>
             <div
-                className="grid gap-3 sm:grid-cols-2"
+                className="grid gap-2 sm:grid-cols-2"
                 role="group"
                 aria-label="Surface style"
             >
@@ -57,9 +57,13 @@ export function SurfaceSettings() {
                                 selectSurfaceStyle(style),
                             )
                         }
-                        className="flex items-center gap-3 rounded-xl border border-border bg-background/75 p-4 text-left transition-colors hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring aria-pressed:border-foreground"
+                        className="appearance-choice flex min-h-16 items-center gap-3 rounded-xl px-4 py-3 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
                     >
-                        <Icon size={20} aria-hidden="true" />
+                        <Icon
+                            size={19}
+                            aria-hidden="true"
+                            className="shrink-0 text-muted-foreground"
+                        />
                         <span>
                             <span className="block font-medium">{title}</span>
                             <span className="mt-1 block text-sm text-muted-foreground">

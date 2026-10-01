@@ -33,7 +33,6 @@ const settingsSections = [
 
 export default function SettingsLayout({ children }: PropsWithChildren) {
     const { isCurrentOrParentUrl } = useCurrentUrl();
-    const isWorkspaceSection = isCurrentOrParentUrl('/settings/workspaces');
     const search = usePageSearch();
     const normalizedQuery = search.query.trim().toLocaleLowerCase();
     const visibleSections = settingsSections.filter((section) =>
@@ -50,9 +49,7 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
     }, [normalizedQuery, visibleSections.length, search.setResultCount]);
 
     return (
-        <div
-            className={`floating-body-island floating-settings-island mx-auto ${isWorkspaceSection ? 'max-w-[1100px]' : 'max-w-[980px]'}`}
-        >
+        <div className="floating-body-island floating-settings-island mx-auto max-w-[1100px]">
             <h1 className="mb-7 text-2xl font-semibold tracking-tight">
                 Settings
             </h1>
@@ -78,9 +75,7 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
                 </p>
             )}
             {(!normalizedQuery || currentSectionMatches) && (
-                <div
-                    className={`floating-settings-content ${isWorkspaceSection ? 'max-w-none' : ''}`}
-                >
+                <div className="floating-settings-content max-w-none">
                     {children}
                 </div>
             )}

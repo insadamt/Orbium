@@ -110,7 +110,7 @@ export function NumberControls<T extends object>({
     onChange: (key: NumericKey<T>, value: number) => void;
 }) {
     return (
-        <div className="grid gap-x-6 gap-y-4 md:grid-cols-2">
+        <div className="grid gap-4">
             {controls.map(({ key, label, min, max, step }) => (
                 <label key={String(key)} className="grid gap-1.5 text-sm">
                     <span className="flex justify-between gap-3">
@@ -128,7 +128,7 @@ export function NumberControls<T extends object>({
                         onChange={(event) =>
                             onChange(key, Number(event.target.value))
                         }
-                        className="w-full accent-foreground"
+                        className="appearance-range"
                     />
                 </label>
             ))}
@@ -154,7 +154,7 @@ export function ColorControl({
                     type="color"
                     value={value}
                     onChange={(event) => onChange(event.target.value)}
-                    className="h-9 w-12 cursor-pointer rounded border border-border bg-transparent"
+                    className="appearance-color-input"
                 />
             </span>
         </label>
