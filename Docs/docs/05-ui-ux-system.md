@@ -8,6 +8,10 @@
 
 > Explorer review update (2026-10-01): The opened-tabs island is centered in the viewport. Workspace and folder explorers offer Grid, List, and Gallery layouts, with the selected layout kept per open app tab and container. Gallery displays a node's cover when present. Folders and databases use compact image icon and cover headers, managed like document media. Trash rows keep clear space between their avatar and name.
 
+> Backgrounds update (2026-10-01): Appearance offers the original background, Ghost Fibers, Molten Metal, and a user image. The selected background sits behind app surfaces on all authenticated pages. Both animations expose their effect parameters, pause for reduced motion, and fall back to the original surface if WebGL 2 is unavailable. This first pass stores the selection and uploaded image in the current browser.
+
+> Surface and appearance update (2026-10-01): Appearance offers Normal solid surfaces and Frosted glass panels. Theme, surface, and background changes reveal from a centered expanding circle when same-document View Transitions are available; reduced motion and unsupported browsers switch immediately. Surface style is stored in this browser.
+
 
 ## Design direction
 

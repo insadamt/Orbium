@@ -1,0 +1,131 @@
+.surface-normal .glass-surface,
+:root[data-surface-style='normal'] .glass-surface,
+.surface-normal .floating-surface,
+.surface-normal .floating-body-island,
+.surface-normal .floating-menu,
+.surface-normal .floating-context-menu {
+    background-color: var(--card);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+}
+
+.surface-normal :is([class*='bg-background/'], [class*='bg-card/']) {
+    background-color: var(--card);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+}
+
+.surface-normal .floating-workspace {
+    background-color: #f8fafa;
+}
+
+.dark .surface-normal .floating-workspace {
+    background-color: #0d1012;
+}
+
+.surface-normal:has(.orbium-background) .floating-workspace {
+    background-color: transparent;
+}
+
+.surface-frosted,
+:root[data-surface-style='frosted'] {
+    --frosted-panel: rgb(239 244 247 / 61%);
+    --frosted-raised: rgb(248 250 252 / 73%);
+    --frosted-inset: rgb(230 237 242 / 48%);
+}
+
+.dark .surface-frosted,
+:root.dark[data-surface-style='frosted'] {
+    --frosted-panel: rgb(17 22 27 / 53%);
+    --frosted-raised: rgb(27 33 39 / 67%);
+    --frosted-inset: rgb(18 24 30 / 43%);
+}
+
+.surface-frosted .floating-workspace {
+    background: transparent;
+}
+
+.surface-frosted
+    :is(
+        .glass-surface,
+        .floating-surface,
+        .floating-body-island,
+        .floating-menu,
+        .floating-context-menu
+    ) {
+    border-color: transparent;
+    background: var(--frosted-panel);
+    box-shadow: none;
+    -webkit-backdrop-filter: blur(26px) saturate(140%);
+    backdrop-filter: blur(26px) saturate(140%);
+}
+
+.surface-frosted :is(.floating-menu, .floating-context-menu, [role='dialog']) {
+    background: var(--frosted-raised);
+}
+
+:root[data-surface-style='frosted'] .glass-surface {
+    border-color: transparent;
+    background: var(--frosted-panel);
+    box-shadow: none;
+    -webkit-backdrop-filter: blur(26px) saturate(140%);
+    backdrop-filter: blur(26px) saturate(140%);
+}
+
+.surface-frosted
+    :is(.bg-card, .bg-popover, [class*='bg-background/'], [class*='bg-card/']) {
+    background-color: var(--frosted-inset);
+    -webkit-backdrop-filter: blur(18px) saturate(130%);
+    backdrop-filter: blur(18px) saturate(130%);
+}
+
+@supports not
+((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .surface-frosted,
+    :root[data-surface-style='frosted'] {
+        --frosted-panel: rgb(239 244 247 / 96%);
+        --frosted-raised: rgb(248 250 252 / 98%);
+        --frosted-inset: rgb(230 237 242 / 92%);
+    }
+    .dark .surface-frosted,
+    :root.dark[data-surface-style='frosted'] {
+        --frosted-panel: rgb(17 22 27 / 95%);
+        --frosted-raised: rgb(27 33 39 / 97%);
+        --frosted-inset: rgb(18 24 30 / 91%);
+    }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+    .surface-frosted,
+    :root[data-surface-style='frosted'] {
+        --frosted-panel: #eff4f7;
+        --frosted-raised: #f8fafc;
+        --frosted-inset: #e6edf2;
+    }
+    .dark .surface-frosted,
+    :root.dark[data-surface-style='frosted'] {
+        --frosted-panel: #11161b;
+        --frosted-raised: #1b2127;
+        --frosted-inset: #12181e;
+    }
+    .surface-frosted
+        :is(
+            .glass-surface,
+            .floating-surface,
+            .floating-body-island,
+            .floating-menu,
+            .floating-context-menu,
+            .bg-card,
+            .bg-popover,
+            [class*='bg-background/'],
+            [class*='bg-card/']
+        ) {
+        -webkit-backdrop-filter: none;
+        backdrop-filter: none;
+    }
+
+    :root[data-surface-style='frosted'] .glass-surface {
+        -webkit-backdrop-filter: none;
+        backdrop-filter: none;
+    }
+}

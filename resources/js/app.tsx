@@ -1,4 +1,5 @@
 import { createInertiaApp } from '@inertiajs/react';
+import { initializeSurfaceStyle } from '@/backgrounds/surface-preferences';
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { initializeTheme } from '@/hooks/use-appearance';
@@ -36,3 +37,4 @@ void createInertiaApp({
 
 // This will set light / dark mode on load...
 initializeTheme();
+initializeSurfaceStyle();

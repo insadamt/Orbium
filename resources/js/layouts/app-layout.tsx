@@ -2,6 +2,8 @@ import { Link, router, usePage } from '@inertiajs/react';
 import { ChevronDown, Search } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 import AppearanceTabs from '@/components/appearance-tabs';
+import { AppBackground } from '@/backgrounds/app-background';
+import { useSurfaceStyle } from '@/backgrounds/surface-preferences';
 import { FloatingTopControls } from '@/components/hierarchy/floating-top-controls';
 import type { TrashedNode } from '@/components/hierarchy/node-browser';
 import type { WorkspaceSummary } from '@/components/hierarchy/workspace-panel';
@@ -92,13 +94,17 @@ export default function AppLayout({ children }: AppLayoutProps) {
             ]
           : breadcrumbLinks;
     const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+    const surfaceStyle = useSurfaceStyle();
 
     function signOut(): void {
         router.post('/logout');
     }
 
     return (
-        <div className="orbium-shell min-h-screen bg-background text-foreground">
+        <div
+            className={`orbium-shell surface-${surfaceStyle} min-h-screen bg-background text-foreground`}
+        >
+            <AppBackground />
             <NavigationEvents />
             {!isFloatingPage && (
                 <header className="glass-surface sticky top-0 z-20 border-b border-border/70">

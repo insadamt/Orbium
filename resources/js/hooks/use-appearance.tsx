@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react';
+import { revealAppearanceFromCenter } from '@/backgrounds/appearance-reveal';
 
 export type ResolvedAppearance = 'light' | 'dark';
 export type Appearance = ResolvedAppearance | 'system';
@@ -69,8 +70,15 @@ const mediaQuery = (): MediaQueryList | null => {
 };
 
 const handleSystemThemeChange = (): void => {
-    applyTheme(currentAppearance);
-    notify();
+    const applySystemTheme = () => {
+        applyTheme(currentAppearance);
+        notify();
+    };
+    const resolvedThemeChanged =
+        currentAppearance === 'system' &&
+        document.documentElement.classList.contains('dark') !== prefersDark();
+    if (resolvedThemeChanged) revealAppearanceFromCenter(applySystemTheme);
+    else applySystemTheme();
 };
 
 export function initializeTheme(): void {
@@ -106,14 +114,18 @@ export function useAppearance(): UseAppearanceReturn {
     );
 
     const updateAppearance = (mode: Appearance): void => {
-        currentAppearance = mode;
-
-        localStorage.setItem('appearance', mode);
-
-        setCookie('appearance', mode);
-
-        applyTheme(mode);
-        notify();
+        if (mode === currentAppearance) return;
+        const changesResolvedTheme =
+            isDarkMode(mode) !== isDarkMode(currentAppearance);
+        const applyAppearance = () => {
+            currentAppearance = mode;
+            localStorage.setItem('appearance', mode);
+            setCookie('appearance', mode);
+            applyTheme(mode);
+            notify();
+        };
+        if (changesResolvedTheme) revealAppearanceFromCenter(applyAppearance);
+        else applyAppearance();
     };
 
     return { appearance, resolvedAppearance, updateAppearance } as const;
