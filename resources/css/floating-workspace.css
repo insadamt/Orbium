@@ -12,7 +12,10 @@
     grid-template-columns: minmax(0, 1fr) minmax(0, 720px) minmax(0, 1fr);
     align-items: center;
     gap: 24px;
-    position: relative;
+    position: fixed;
+    top: 28px;
+    right: 48px;
+    left: 48px;
     z-index: 20;
 }
 .floating-surface {
@@ -533,6 +536,11 @@
     .floating-workspace {
         padding: 24px;
     }
+    .floating-top-controls {
+        top: 24px;
+        right: 24px;
+        left: 24px;
+    }
     .floating-contents {
         padding-top: 64px;
     }
@@ -550,6 +558,11 @@
 @media (max-width: 480px) {
     .floating-workspace {
         padding: 20px 16px 48px;
+    }
+    .floating-top-controls {
+        top: 20px;
+        right: 16px;
+        left: 16px;
     }
     .floating-workspace-controls,
     .floating-account-controls {

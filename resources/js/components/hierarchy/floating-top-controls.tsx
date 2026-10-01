@@ -1,7 +1,7 @@
 import { Link, router, usePage } from '@inertiajs/react';
 import * as Menu from '@radix-ui/react-dropdown-menu';
 import { Check, ChevronDown, Plus, Settings2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import AppLogoIcon from '@/components/app-logo-icon';
 import AppearanceTabs from '@/components/appearance-tabs';
@@ -52,6 +52,25 @@ export function FloatingTopControls({
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState('');
     const [rootDropActive, setRootDropActive] = useState(false);
+    const topControlsRef = useRef<HTMLElement>(null);
+    const [topControlsHeight, setTopControlsHeight] = useState(0);
+
+    useLayoutEffect(() => {
+        const topControls = topControlsRef.current;
+        if (!topControls) return;
+
+        const updateTopControlsHeight = () => {
+            setTopControlsHeight(
+                Math.ceil(topControls.getBoundingClientRect().height),
+            );
+        };
+        const resizeObserver = new ResizeObserver(updateTopControlsHeight);
+        resizeObserver.observe(topControls);
+        updateTopControlsHeight();
+
+        return () => resizeObserver.disconnect();
+    }, []);
+
     useEffect(() => {
         if (!workspace || pageType === 'settings') return;
         try {
@@ -65,7 +84,7 @@ export function FloatingTopControls({
     }, [workspace, pageType]);
     return (
         <>
-            <header className="floating-top-controls">
+            <header ref={topControlsRef} className="floating-top-controls">
                 <div className="floating-workspace-controls">
                     <Link
                         href={
@@ -277,6 +296,7 @@ export function FloatingTopControls({
                     </Menu.Root>
                 </div>
             </header>
+            <div aria-hidden="true" style={{ height: topControlsHeight }} />
             <Dialog open={newWorkspaceOpen} onOpenChange={setNewWorkspaceOpen}>
                 <DialogContent>
                     <DialogTitle>New workspace</DialogTitle>

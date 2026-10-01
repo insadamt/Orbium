@@ -16,6 +16,8 @@ The user replaced the earlier orbital home brief with a continuous, neutral work
 
 The floating shell now also wraps document, database, and settings pages. Settings categories sit horizontally inside one floating island. Their editor, database views, and controls sit inside a single spacious island; data behavior remains unchanged. The original 3D tasks below remain suspended. Stop after this explorer review; do not start another phase.
 
+The floating top controls stay fixed at the viewport top while pages scroll. Their space in the page adapts to wrapped rows and the expanded search field so content starts below the controls.
+
 ## Goal
 
 Implement Orbium's signature spatial hierarchy navigator using the stable domain/navigation systems from previous phases.
