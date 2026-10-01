@@ -1,6 +1,7 @@
 import { Head, usePage } from '@inertiajs/react';
 import { useRef, useState } from 'react';
 import DocumentEditor from '@/components/editor/document-editor';
+import { useNavigation } from '@/components/navigation/navigation-store';
 import type { EditorDocument } from '@/components/editor/editor-api';
 import {
     attachmentUrl,
@@ -121,7 +122,24 @@ function DocumentPage({
                     body: JSON.stringify(changes),
                 },
             );
-            if (response.ok) return true;
+            if (response.ok) {
+                if ('icon' in changes || 'icon_attachment_id' in changes) {
+                    const attachmentId = changes.icon_attachment_id ?? null;
+                    useNavigation
+                        .getState()
+                        .updateCurrentIcon(
+                            changes.icon ?? null,
+                            attachmentId
+                                ? attachmentUrl(
+                                      workspace.id,
+                                      node.id,
+                                      attachmentId,
+                                  )
+                                : null,
+                        );
+                }
+                return true;
+            }
         } catch {}
         setHeaderError('Could not save the document header.');
         return false;

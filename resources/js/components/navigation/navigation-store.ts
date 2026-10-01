@@ -6,8 +6,15 @@ export type Location = {
     kind: 'workspace' | 'document' | 'database' | 'settings';
     scroll: number;
     viewState?: Record<string, unknown>;
+    icon?: string | null;
+    iconUrl?: string | null;
 };
-type Tab = { id: string; entries: Location[]; index: number };
+export type Tab = {
+    id: string;
+    entries: Location[];
+    index: number;
+    pinned?: boolean;
+};
 type NavigationState = {
     tabs: Tab[];
     activeId: string;
@@ -19,6 +26,9 @@ type NavigationState = {
     createTab: (location: Location) => void;
     activate: (id: string) => void;
     close: (id: string) => void;
+    moveTab: (activeId: string, overId: string) => void;
+    setPinned: (id: string, pinned: boolean) => void;
+    updateCurrentIcon: (icon: string | null, iconUrl: string | null) => void;
     forgetWorkspace: (workspaceId: number) => void;
     step: (delta: number) => void;
     saveScroll: () => void;
@@ -80,6 +90,7 @@ export const useNavigation = create<NavigationState>((set, get) => ({
                 saved = {
                     tabs: value.tabs.map((tab: Tab) => ({
                         ...tab,
+                        pinned: tab.pinned === true,
                         entries: tab.entries.map((entry) => ({
                             ...entry,
                             kind: ['document', 'database', 'settings'].includes(
@@ -121,7 +132,12 @@ export const useNavigation = create<NavigationState>((set, get) => ({
                 active.entries[active.index].url === location.url
                     ? active.entries.map((entry, index) =>
                           index === active.index
-                              ? { ...entry, title: location.title }
+                              ? {
+                                    ...entry,
+                                    title: location.title,
+                                    icon: location.icon,
+                                    iconUrl: location.iconUrl,
+                                }
                               : entry,
                       )
                     : [
@@ -169,6 +185,53 @@ export const useNavigation = create<NavigationState>((set, get) => ({
                 state.activeId === id
                     ? (tabs.at(-1)?.id ?? '')
                     : state.activeId,
+        });
+        persist(get());
+    },
+    moveTab(activeId, overId) {
+        const tabs = get().tabs;
+        const from = tabs.findIndex((tab) => tab.id === activeId);
+        const to = tabs.findIndex((tab) => tab.id === overId);
+        if (
+            from < 0 ||
+            to < 0 ||
+            Boolean(tabs[from].pinned) !== Boolean(tabs[to].pinned)
+        )
+            return;
+        const reordered = [...tabs];
+        reordered.splice(to, 0, ...reordered.splice(from, 1));
+        set({ tabs: reordered });
+        persist(get());
+    },
+    setPinned(id, pinned) {
+        const tabs = get().tabs;
+        const tab = tabs.find((item) => item.id === id);
+        if (!tab) return;
+        const others = tabs.filter((item) => item.id !== id);
+        const firstUnpinned = others.findIndex((item) => !item.pinned);
+        const insertAt = pinned
+            ? firstUnpinned < 0
+                ? others.length
+                : firstUnpinned
+            : others.length;
+        others.splice(insertAt, 0, { ...tab, pinned });
+        set({ tabs: others });
+        persist(get());
+    },
+    updateCurrentIcon(icon, iconUrl) {
+        set({
+            tabs: get().tabs.map((tab) =>
+                tab.id === get().activeId
+                    ? {
+                          ...tab,
+                          entries: tab.entries.map((entry, index) =>
+                              index === tab.index
+                                  ? { ...entry, icon, iconUrl }
+                                  : entry,
+                          ),
+                      }
+                    : tab,
+            ),
         });
         persist(get());
     },

@@ -1,13 +1,27 @@
 import { router } from '@inertiajs/react';
 import type { Page } from '@inertiajs/core';
+import { attachmentUrl } from '@/components/editor/editor-api';
+import { nodeImageUrl } from '@/components/hierarchy/node-media-api';
 import { useNavigation, type Location } from './navigation-store';
 
 type PageContext = {
     [key: string]: unknown;
     workspace?: { id: number; name: string };
-    node?: { id: number; title: string };
-    database?: { id: number; title: string };
-    currentNode?: { id: number; title: string } | null;
+    node?: { id: number; title: string; icon?: string | null };
+    document?: { icon_attachment_id?: number | null };
+    database?: {
+        id: number;
+        title: string;
+        icon?: string | null;
+        icon_attachment_id?: number | null;
+    };
+    currentNode?: {
+        id: number;
+        title: string;
+        type: 'folder' | 'document' | 'database';
+        icon?: string | null;
+        icon_attachment_id?: number | null;
+    } | null;
 };
 export function locationKind(url: string): Location['kind'] {
     if (url.includes('/documents/')) return 'document';
@@ -18,6 +32,19 @@ export function locationKind(url: string): Location['kind'] {
 export function recordPage(page: { url: string; props: PageContext }) {
     const context =
         page.props.node ?? page.props.database ?? page.props.currentNode;
+    const workspaceId = page.props.workspace?.id;
+    const attachmentId =
+        page.props.document?.icon_attachment_id ??
+        page.props.database?.icon_attachment_id ??
+        page.props.currentNode?.icon_attachment_id;
+    const isDocument =
+        Boolean(page.props.node) || page.props.currentNode?.type === 'document';
+    const iconUrl =
+        workspaceId && context && attachmentId
+            ? isDocument
+                ? attachmentUrl(workspaceId, context.id, attachmentId)
+                : nodeImageUrl(workspaceId, context.id, attachmentId)
+            : null;
     useNavigation.getState().record(
         {
             url: page.url,
@@ -27,6 +54,8 @@ export function recordPage(page: { url: string; props: PageContext }) {
                 (page.url.startsWith('/settings') ? 'Settings' : 'Home'),
             kind: locationKind(page.url),
             scroll: 0,
+            icon: context?.icon ?? null,
+            iconUrl,
         },
         context?.id,
     );
@@ -84,6 +113,7 @@ export function stepHistory(delta: number) {
 }
 export function closeTab(id: string) {
     const state = useNavigation.getState();
+    if (state.tabs.find((tab) => tab.id === id)?.pinned) return;
     if (state.tabs.length <= 1) return;
     if (state.activeId !== id) {
         state.close(id);

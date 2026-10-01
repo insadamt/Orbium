@@ -1,5 +1,13 @@
 # Phase 5 — Floating workspace review
 
+## Tab ordering, pinning, and icons (2026-10-01)
+
+The shared tab strip now has a drag handle on each tab. Mouse, touch, and keyboard sorting use the project's installed `@dnd-kit` packages; tab order persists in the existing browser-local navigation state. Pinned tabs move to the start, cannot close until unpinned, and retain their pin state after reload. Sorting stays within the pinned or unpinned group. The current page's uploaded icon or legacy emoji appears in its tab, falling back to the page-type icon. Document icon changes update the active tab immediately; folder and database header saves already reload the page.
+
+Library choice: `@dnd-kit/sortable` is already installed and used by workspace management. Its horizontal strategy and keyboard sensor fit this strip without adding a dependency. It still requires Orbium to decide group boundaries and persistence, so those rules remain in the navigation store. Native HTML drag and drop would require separate keyboard and touch behavior. See the [sortable preset](https://dndkit.com/legacy/presets/sortable/overview/) and [drag-handle guidance](https://dndkit.com/legacy/presets/sortable/use-sortable/).
+
+Manual review: open at least three tabs, drag a handle to reorder, then refresh; the order should remain. Focus a handle, press Space, Left or Right, then Space to drop; the order should change. Pin two tabs; they should move to the front and have no Close button. Try dragging a pinned tab across another pinned tab, then across an unpinned tab; only the first move should apply. Unpin a tab; it should move after the pinned group and become closable. Open a document, folder, and database with uploaded icons, plus one with an emoji icon; the matching icons should appear in their tabs. Change and remove a document icon; its active tab should update immediately. Refresh and confirm icons and pins remain. Repeat at narrow widths and in light and dark modes.
+
 ## Explorer view correction (2026-10-01)
 
 Removed the explorer switcher's negative bottom margin because the following contents section overlapped its buttons and could intercept clicks. The List layout also now prevents column wrapping so rows stay full width. Folder and database headers are narrower than document headers, with a 62px icon and smaller title; their cover keeps the document crop ratio at a smaller display width. Manual confirmation is still required.

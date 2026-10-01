@@ -151,6 +151,18 @@
 .floating-tab [role='tab'] {
     font-size: 12px;
 }
+.floating-tab[data-dragging='true'] {
+    opacity: 0.55;
+    z-index: 1;
+}
+.tab-drag-handle {
+    cursor: grab;
+    touch-action: none;
+    color: var(--muted-foreground);
+}
+.tab-drag-handle:active {
+    cursor: grabbing;
+}
 .floating-add-tab {
     display: flex;
     align-items: center;
