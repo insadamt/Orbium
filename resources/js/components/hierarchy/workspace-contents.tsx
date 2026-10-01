@@ -53,6 +53,7 @@ export function WorkspaceContents({
     const [newTitle, setNewTitle] = useState('');
     const [saving, setSaving] = useState(false);
     const [moving, setMoving] = useState(false);
+    const [parentDropActive, setParentDropActive] = useState(false);
     const [announcement, setAnnouncement] = useState('');
     const search = usePageSearch();
     const normalizedQuery = search.query.trim().toLocaleLowerCase();
@@ -89,12 +90,19 @@ export function WorkspaceContents({
             },
         );
     }
-    const { draggedId, dropHint, dragHandlers } = useItemDrag(
+    const { draggedId, dropHint, dragHandlers, dropIntoParent } = useItemDrag(
         nodes,
         workspaceId,
         move,
         moving,
     );
+    const currentFolder = nodes.find((node) => node.id === parentId);
+    const parentDestination = currentFolder?.parent_id ?? null;
+    const parentName =
+        parentDestination === null
+            ? 'workspace root'
+            : (nodes.find((node) => node.id === parentDestination)?.title ??
+              'parent folder');
     function openNode(node: TreeNode, newTab: boolean) {
         openLocation(nodeUrl(workspaceId, node), newTab);
     }
@@ -165,6 +173,7 @@ export function WorkspaceContents({
                 aria-label="Current container contents"
                 aria-busy={moving}
                 tabIndex={0}
+                onDragEndCapture={() => setParentDropActive(false)}
                 onContextMenu={(event) => {
                     event.preventDefault();
                     const item = (
@@ -188,6 +197,36 @@ export function WorkspaceContents({
                     openActionsAt(null, event.currentTarget);
                 }}
             >
+                {draggedId !== null && currentFolder?.type === 'folder' && (
+                    <div
+                        className="floating-parent-drop-zone"
+                        data-active={parentDropActive}
+                        onDragOver={(event) => {
+                            event.preventDefault();
+                            event.dataTransfer.dropEffect = 'move';
+                            setParentDropActive(true);
+                        }}
+                        onDragLeave={(event) => {
+                            if (
+                                !(event.relatedTarget instanceof Node) ||
+                                !event.currentTarget.contains(
+                                    event.relatedTarget,
+                                )
+                            )
+                                setParentDropActive(false);
+                        }}
+                        onDrop={(event) => {
+                            setParentDropActive(false);
+                            dropIntoParent(
+                                event,
+                                currentFolder.id,
+                                parentDestination,
+                            );
+                        }}
+                    >
+                        Move to {parentName}
+                    </div>
+                )}
                 {children.map((node, index) => (
                     <FloatingItem
                         key={node.id}

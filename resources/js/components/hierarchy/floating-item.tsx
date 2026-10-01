@@ -94,7 +94,7 @@ export function FloatingItem({
                     {node.cover_attachment_id ? (
                         <img src={imageUrl(node.cover_attachment_id)} alt="" />
                     ) : (
-                        <Icon size={34} strokeWidth={1.3} aria-hidden="true" />
+                        <Icon size={48} strokeWidth={1.3} aria-hidden="true" />
                     )}
                 </div>
             )}
@@ -114,7 +114,7 @@ export function FloatingItem({
                     </span>
                 ) : (
                     <Icon
-                        size={21}
+                        size={32}
                         strokeWidth={1.5}
                         aria-hidden="true"
                         className="shrink-0 text-muted-foreground"

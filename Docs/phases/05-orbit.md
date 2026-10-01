@@ -18,6 +18,8 @@ The floating shell now also wraps document, database, and settings pages. Settin
 
 The floating top controls stay fixed at the viewport top while pages scroll. Their space in the page adapts to wrapped rows and the expanded search field so content starts below the controls.
 
+The 2026-10-01 explorer follow-up enlarges item icons in Grid, List, and Gallery. While dragging an item in a nested folder, a drop area appears above the items; dropping there moves the item to that folder's immediate parent and appends it to that parent's contents.
+
 ## Goal
 
 Implement Orbium's signature spatial hierarchy navigator using the stable domain/navigation systems from previous phases.

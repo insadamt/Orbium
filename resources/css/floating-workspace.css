@@ -317,6 +317,7 @@
 }
 .floating-contents {
     display: flex;
+    position: relative;
     min-height: calc(100dvh - 128px);
     flex-wrap: wrap;
     align-content: flex-start;

@@ -98,6 +98,21 @@ export function useItemDrag(
         onMove(source.id, parentId, position);
     }
 
+    function dropIntoParent(
+        event: DragEvent<HTMLElement>,
+        currentFolderId: number,
+        destinationParentId: number | null,
+    ) {
+        event.preventDefault();
+        const source = nodes.find((node) => node.id === draggedId);
+        clearDrag();
+        if (disabled || !source || source.parent_id !== currentFolderId) return;
+        const siblings = nodes.filter(
+            (node) => node.parent_id === destinationParentId,
+        );
+        onMove(source.id, destinationParentId, siblings.length);
+    }
+
     function dragHandlers(node: TreeNode) {
         return {
             draggable: !disabled,
@@ -132,5 +147,5 @@ export function useItemDrag(
             },
         };
     }
-    return { draggedId, dropHint, dragHandlers };
+    return { draggedId, dropHint, dragHandlers, dropIntoParent };
 }

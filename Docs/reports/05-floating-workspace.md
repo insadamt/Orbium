@@ -1,5 +1,13 @@
 # Phase 5 — Floating workspace review
 
+## Explorer icon and parent drop follow-up (2026-10-01)
+
+Item icons are larger in Grid, List, and Gallery, including uploaded images, emoji, and type fallbacks. During a drag inside a folder, an area above its items accepts a drop and moves the item to that folder's immediate parent, appending it there. Workspace root has no parent area. The existing native drag implementation and move endpoint are reused; touch drag availability still depends on the browser. The installed dnd-kit library offers sortable contexts and drag overlays, but adopting it for this small addition would require replacing the explorer's existing drop resolution and containment handling.
+
+Manual review exposed a drag failure inside folders: mounting the parent drop area in the item flow moved the drag source as soon as dragging started. The area now overlays reserved space above the items, so its appearance does not shift the source or sibling targets.
+
+Manual review: open a nested folder, drag a child, and check that a labeled area appears above the items. Drop there, then open the parent and confirm the item appears at the end. Repeat from a top-level folder and confirm the item moves to workspace root. Cancel a drag and confirm the area disappears. Check Grid, List, and Gallery icons for default type icons, uploaded images, and emoji.
+
 ## Tab ordering, pinning, and icons (2026-10-01)
 
 Follow-up: tab dragging clamps the dragged tab to the visible horizontal strip. A dnd-kit DragOverlay renders the dragged tab outside the scrollable list, while its original slot remains in place. The preview keeps the source tab's measured width and disables horizontal scaling. Pickup and drop pop animations were removed at the user's request. This removes scroll-width changes from the dragged tab's transform and makes movement smooth as the list scrolls underneath it. Edge scrolling runs at a faster frame-matched rate and is allowed only on the tab list; native left and right bounds stop it at the first or last tab. The surrounding page cannot be auto-scrolled by tab dragging. Manual check: create enough tabs to overflow, drag a visible tab toward each edge, and confirm that its width stays fixed and more tabs come into view smoothly until the true first or last tab. Release it and confirm that no pop animation plays.
