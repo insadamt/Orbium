@@ -223,13 +223,14 @@ export function FloatingTopControls({
                     data-search-open={pageSearch.open}
                 >
                     <FloatingPageSearch pageType={pageType} />
-                    <Link
-                        href="/settings/profile"
+                    <button
+                        type="button"
+                        onClick={() => openLocation('/settings/profile')}
                         className="floating-icon-button floating-surface"
                         aria-label="Settings"
                     >
                         <Settings2 size={18} />
-                    </Link>
+                    </button>
                     <Menu.Root>
                         <Menu.Trigger
                             className="floating-user-trigger floating-surface"

@@ -1,4 +1,4 @@
-import { Link, router, usePage } from '@inertiajs/react';
+import { router, usePage } from '@inertiajs/react';
 import { ChevronDown, Search } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 import AppearanceTabs from '@/components/appearance-tabs';
@@ -11,20 +11,31 @@ import { NavigationEvents } from '@/components/navigation/navigation-events';
 import { NavigationTabStrip } from '@/components/navigation/navigation-tab-strip';
 import { PageSearchProvider } from '@/components/navigation/page-search';
 import { SplitWorkspace } from '@/components/navigation/split-workspace';
-import { locationKind } from '@/components/navigation/tab-navigation';
+import {
+    locationForPage,
+    notifyPaneLocation,
+    openLocation,
+} from '@/components/navigation/tab-navigation';
 import { WorkspaceSelector } from '@/components/navigation/workspace-selector';
 import type { TreeNode } from '@/components/navigation/navigation-types';
 import type { Auth, BreadcrumbItem } from '@/types';
 
 type ShellPageProps = {
+    [key: string]: unknown;
     auth: Auth;
     workspace?: { id: number; name: string };
     workspaces?: WorkspaceSummary[];
     nodes?: TreeNode[];
     trashedNodes?: TrashedNode[];
     currentNode?: TreeNode | null;
-    node?: { title: string };
-    database?: { title: string };
+    node?: { id: number; title: string; icon?: string | null };
+    document?: { icon_attachment_id?: number | null };
+    database?: {
+        id: number;
+        title: string;
+        icon?: string | null;
+        icon_attachment_id?: number | null;
+    };
     breadcrumbs?: BreadcrumbItem[];
 };
 
@@ -38,22 +49,8 @@ export default function AppLayout({ children }: AppLayoutProps) {
     const { auth } = page.props;
     const isPane = window.self !== window.top;
     useEffect(() => {
-        if (!isPane || !window.name.startsWith('orbium-pane:')) return;
-        window.parent.postMessage(
-            {
-                type: 'orbium:pane-location',
-                tabId: window.name.slice('orbium-pane:'.length),
-                url: page.url,
-                title:
-                    page.props.node?.title ??
-                    page.props.database?.title ??
-                    page.props.currentNode?.title ??
-                    page.props.workspace?.name ??
-                    'Settings',
-                kind: locationKind(page.url),
-            },
-            window.location.origin,
-        );
+        if (!isPane) return;
+        notifyPaneLocation(locationForPage(page));
     }, [isPane, page.url, page.props]);
     const isHomePage = page.component === 'dashboard';
     const isFloatingPage =
@@ -169,18 +166,24 @@ export default function AppLayout({ children }: AppLayoutProps) {
                                     <p className="truncate px-3 py-2 text-xs text-muted-foreground">
                                         {auth.user.email}
                                     </p>
-                                    <Link
-                                        href="/settings/profile"
-                                        className="block rounded-md px-3 py-2 text-sm hover:bg-accent"
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            openLocation('/settings/profile')
+                                        }
+                                        className="block w-full rounded-md px-3 py-2 text-left text-sm hover:bg-accent"
                                     >
                                         Profile settings
-                                    </Link>
-                                    <Link
-                                        href="/settings/security"
-                                        className="block rounded-md px-3 py-2 text-sm hover:bg-accent"
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            openLocation('/settings/security')
+                                        }
+                                        className="block w-full rounded-md px-3 py-2 text-left text-sm hover:bg-accent"
                                     >
                                         Password
-                                    </Link>
+                                    </button>
                                     <div className="border-t border-border px-2 py-3">
                                         <p className="mb-2 px-1 text-xs text-muted-foreground">
                                             Appearance
@@ -200,7 +203,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                     </div>
                 </header>
             )}
-            <PageSearchProvider key={page.url.split('?')[0]}>
+            <PageSearchProvider routePath={page.url.split('?')[0]}>
                 <main
                     className={`orbium-main w-full ${isFloatingPage ? 'floating-workspace' : 'mx-auto max-w-[1600px] px-5 py-10 md:px-8 md:py-14'}`}
                 >

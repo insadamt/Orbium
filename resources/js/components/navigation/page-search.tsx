@@ -1,4 +1,10 @@
-import { createContext, useContext, useState, type ReactNode } from 'react';
+import {
+    createContext,
+    useContext,
+    useEffect,
+    useState,
+    type ReactNode,
+} from 'react';
 
 type SearchStep = { id: number; previous: boolean; query: string };
 type PageSearchState = {
@@ -15,7 +21,13 @@ type PageSearchState = {
 
 const PageSearchContext = createContext<PageSearchState | null>(null);
 
-export function PageSearchProvider({ children }: { children: ReactNode }) {
+export function PageSearchProvider({
+    children,
+    routePath,
+}: {
+    children: ReactNode;
+    routePath: string;
+}) {
     const [open, setOpen] = useState(false);
     const [query, setQuery] = useState('');
     const [resultCount, setResultCount] = useState<number | null>(null);
@@ -24,6 +36,13 @@ export function PageSearchProvider({ children }: { children: ReactNode }) {
         previous: false,
         query: '',
     });
+
+    useEffect(() => {
+        setOpen(false);
+        setQuery('');
+        setResultCount(null);
+        setSearchStep({ id: 0, previous: false, query: '' });
+    }, [routePath]);
 
     function closeSearch() {
         setOpen(false);

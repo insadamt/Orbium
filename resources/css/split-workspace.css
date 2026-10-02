@@ -2,38 +2,73 @@
     position: fixed;
     inset: 0;
     z-index: 75;
-    display: flex;
-    justify-content: space-between;
     pointer-events: none;
 }
 .split-edge-zone {
+    position: absolute;
+    top: 90px;
+    bottom: 18px;
     display: grid;
     place-items: center;
-    width: 72px;
-    height: 100%;
-    background: color-mix(in srgb, var(--accent) 25%, transparent);
-    border: 1px solid color-mix(in srgb, var(--ring) 35%, transparent);
+    width: calc(50% - 20px);
+    border: 1px solid transparent;
+    border-radius: 22px;
+    background: transparent;
     color: var(--foreground);
     font-size: 12px;
-    writing-mode: vertical-rl;
-    opacity: 0.55;
     transition:
-        width 220ms ease,
-        opacity 220ms ease,
-        background 220ms ease;
+        background 140ms ease-out,
+        border-color 140ms ease-out,
+        box-shadow 140ms ease-out;
+}
+.split-edge-zone:first-child {
+    left: 12px;
+}
+.split-edge-zone:last-child {
+    right: 12px;
+}
+.split-edge-zone::before {
+    position: absolute;
+    top: calc(50% - 40px);
+    width: 5px;
+    height: 80px;
+    border-radius: 99px;
+    background: color-mix(in srgb, var(--ring) 75%, var(--foreground));
+    box-shadow: 0 0 18px color-mix(in srgb, var(--ring) 45%, transparent);
+    content: '';
+    transition: opacity 120ms ease-out;
+}
+.split-edge-zone:first-child::before {
+    left: 0;
+}
+.split-edge-zone:last-child::before {
+    right: 0;
 }
 .split-edge-zone.is-active {
-    width: 50vw;
-    border-color: var(--ring);
-    background: color-mix(in srgb, var(--accent) 55%, transparent);
-    opacity: 1;
+    border-color: color-mix(in srgb, var(--ring) 70%, transparent);
+    background: color-mix(in srgb, var(--accent) 24%, transparent);
+    box-shadow: inset 0 0 0 1px
+        color-mix(in srgb, var(--background) 25%, transparent);
+}
+.split-edge-zone.is-active::before {
+    opacity: 0;
 }
 .split-edge-zone span {
-    display: block;
-    padding: 12px;
-    border-radius: 12px;
-    background: var(--background);
-    writing-mode: horizontal-tb;
+    padding: 9px 13px;
+    border: 1px solid color-mix(in srgb, var(--ring) 45%, transparent);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--background) 90%, transparent);
+    box-shadow: 0 8px 24px
+        color-mix(in srgb, var(--foreground) 12%, transparent);
+    opacity: 0;
+    transform: translateY(5px);
+    transition:
+        opacity 140ms ease-out,
+        transform 140ms ease-out;
+}
+.split-edge-zone.is-active span {
+    opacity: 1;
+    transform: translateY(0);
 }
 .split-navigation-tab {
     display: flex;
@@ -67,6 +102,12 @@
 .split-navigation-page:hover {
     color: var(--foreground);
 }
+.split-navigation-page.is-focused {
+    color: var(--foreground);
+}
+.split-navigation-page.is-focused span {
+    font-weight: 600;
+}
 .split-navigation-close {
     flex: 0 0 auto;
     margin-right: 5px;
@@ -78,20 +119,20 @@
     background: var(--background);
     color: var(--foreground);
 }
-.orbium-main:has(.split-workspace) {
+.orbium-main:has(.split-workspace.is-active) {
     display: flex;
     flex-direction: column;
     height: 100dvh;
     overflow: hidden;
     padding-bottom: 16px;
 }
-html:has(.split-workspace),
-body:has(.split-workspace) {
+html:has(.split-workspace.is-active),
+body:has(.split-workspace.is-active) {
     overflow: hidden;
     scrollbar-width: none;
 }
-html:has(.split-workspace)::-webkit-scrollbar,
-body:has(.split-workspace)::-webkit-scrollbar {
+html:has(.split-workspace.is-active)::-webkit-scrollbar,
+body:has(.split-workspace.is-active)::-webkit-scrollbar {
     display: none;
 }
 .split-workspace {
@@ -101,6 +142,16 @@ body:has(.split-workspace)::-webkit-scrollbar {
     flex: 1 1 auto;
     min-height: 0;
     margin-top: 12px;
+}
+.split-workspace.is-dormant {
+    position: fixed;
+    top: 0;
+    left: -200vw;
+    width: 100vw;
+    height: 100dvh;
+    margin: 0;
+    visibility: hidden;
+    pointer-events: none;
 }
 .split-pane-position {
     min-width: 0;
@@ -133,6 +184,21 @@ html:has(.orbium-embedded-pane) *::-webkit-scrollbar {
     height: 100%;
     border: 0;
     background: transparent;
+    visibility: hidden;
+}
+.split-pane iframe.is-ready {
+    visibility: visible;
+}
+.split-pane-framed {
+    position: relative;
+}
+.split-pane-loading {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    color: var(--muted-foreground);
+    font-size: 12px;
 }
 .split-pane .floating-body-island,
 .orbium-embedded-pane .floating-body-island {
@@ -152,41 +218,6 @@ html:has(.orbium-embedded-pane) body,
 html:has(.orbium-embedded-pane) .orbium-embedded-pane .floating-workspace {
     background: transparent;
     background-image: none;
-}
-.split-pane-new {
-    animation: split-pane-pop 360ms cubic-bezier(0.18, 0.85, 0.3, 1) both;
-}
-.split-pane-existing {
-    animation: split-pane-shift 360ms cubic-bezier(0.18, 0.85, 0.3, 1) both;
-}
-@keyframes split-pane-pop {
-    from {
-        opacity: 0;
-        transform: scale(0.92);
-    }
-    to {
-        opacity: 1;
-        transform: scale(1);
-    }
-}
-@keyframes split-pane-shift {
-    from {
-        transform: translateX(-16%);
-    }
-    to {
-        transform: translateX(0);
-    }
-}
-.split-pane-position-left.split-pane-existing {
-    animation-name: split-pane-shift-left;
-}
-@keyframes split-pane-shift-left {
-    from {
-        transform: translateX(16%);
-    }
-    to {
-        transform: translateX(0);
-    }
 }
 @media (max-width: 700px) {
     .split-workspace {
@@ -244,11 +275,9 @@ html:has(.orbium-embedded-pane) .orbium-embedded-pane .floating-workspace {
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .split-pane-new,
-    .split-pane-existing {
-        animation: none;
-    }
-    .split-edge-zone {
+    .split-edge-zone,
+    .split-edge-zone::before,
+    .split-edge-zone span {
         transition: none;
     }
 }

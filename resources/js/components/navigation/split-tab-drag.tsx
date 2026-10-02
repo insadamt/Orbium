@@ -21,9 +21,9 @@ export function useSplitTabDrag(
         if (!eligible) return;
         const detectEdge = (clientX: number) => {
             setEdge(
-                clientX <= 72
+                clientX <= 88
                     ? 'left'
-                    : clientX >= window.innerWidth - 72
+                    : clientX >= window.innerWidth - 88
                       ? 'right'
                       : null,
             );
@@ -56,12 +56,12 @@ export function SplitEdgePreview({
             <div
                 className={`split-edge-zone ${edge === 'left' ? 'is-active' : ''}`}
             >
-                <span>Release to split left</span>
+                <span>Place on left</span>
             </div>
             <div
                 className={`split-edge-zone ${edge === 'right' ? 'is-active' : ''}`}
             >
-                <span>Release to split right</span>
+                <span>Place on right</span>
             </div>
         </div>,
         portalHost,

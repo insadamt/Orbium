@@ -2,6 +2,7 @@ import { Head, usePage } from '@inertiajs/react';
 import { useRef, useState } from 'react';
 import DocumentEditor from '@/components/editor/document-editor';
 import { useNavigation } from '@/components/navigation/navigation-store';
+import { notifyPaneLocation } from '@/components/navigation/tab-navigation';
 import type { EditorDocument } from '@/components/editor/editor-api';
 import {
     attachmentUrl,
@@ -123,6 +124,30 @@ function DocumentPage({
                 },
             );
             if (response.ok) {
+                if (
+                    'title' in changes ||
+                    'icon' in changes ||
+                    'icon_attachment_id' in changes
+                ) {
+                    const iconChanged =
+                        'icon' in changes || 'icon_attachment_id' in changes;
+                    notifyPaneLocation({
+                        title: changes.title ?? title,
+                        kind: 'document',
+                        ...(iconChanged
+                            ? {
+                                  icon: changes.icon ?? null,
+                                  iconUrl: changes.icon_attachment_id
+                                      ? attachmentUrl(
+                                            workspace.id,
+                                            node.id,
+                                            changes.icon_attachment_id,
+                                        )
+                                      : null,
+                              }
+                            : {}),
+                    });
+                }
                 if ('icon' in changes || 'icon_attachment_id' in changes) {
                     const attachmentId = changes.icon_attachment_id ?? null;
                     useNavigation

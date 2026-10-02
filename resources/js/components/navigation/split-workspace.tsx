@@ -4,14 +4,27 @@ import { openLocation } from './tab-navigation';
 
 function PaneFrame({ tab }: { tab: Tab }) {
     const [initialUrl] = useState(() => tab.entries[tab.index].url);
+    const [isReady, setIsReady] = useState(false);
     const location = tab.entries[tab.index];
 
     return (
-        <section className="split-pane" aria-label={`${location.title} pane`}>
+        <section
+            className="split-pane split-pane-framed"
+            data-split-pane-id={tab.id}
+            aria-label={`${location.title} pane`}
+        >
+            {!isReady && (
+                <div className="split-pane-loading" role="status">
+                    Loading {location.title}…
+                </div>
+            )}
             <iframe
                 title={`${location.title} pane`}
                 name={`orbium-pane:${tab.id}`}
                 src={initialUrl}
+                loading="eager"
+                className={isReady ? 'is-ready' : ''}
+                onLoad={() => setIsReady(true)}
             />
         </section>
     );
@@ -47,10 +60,15 @@ export function SplitWorkspace({ children }: { children: ReactNode }) {
                 return;
             const navigation = useNavigation.getState();
             const tab = navigation.tabs.find((item) => item.id === data.tabId);
+            const currentLocation = tab?.entries[tab.index];
             if (
-                !tab ||
-                (tab.entries[tab.index].url === data.url &&
-                    tab.entries[tab.index].title === data.title)
+                !currentLocation ||
+                (currentLocation.url === data.url &&
+                    currentLocation.title === data.title &&
+                    (data.icon === undefined ||
+                        currentLocation.icon === data.icon) &&
+                    (data.iconUrl === undefined ||
+                        currentLocation.iconUrl === data.iconUrl))
             )
                 return;
             navigation.recordPane(data.tabId, {
@@ -58,6 +76,8 @@ export function SplitWorkspace({ children }: { children: ReactNode }) {
                 title: data.title,
                 kind: data.kind,
                 scroll: 0,
+                icon: data.icon,
+                iconUrl: data.iconUrl,
             });
         }
         window.addEventListener('message', receivePaneNavigation);
@@ -65,39 +85,30 @@ export function SplitWorkspace({ children }: { children: ReactNode }) {
             window.removeEventListener('message', receivePaneNavigation);
     }, [splitTabs]);
 
-    if (
-        !splitTabs ||
-        (activeId !== splitTabs.leftId && activeId !== splitTabs.rightId)
-    )
-        return <>{children}</>;
+    if (!splitTabs) return <>{children}</>;
 
-    const otherId =
-        activeId === splitTabs.leftId ? splitTabs.rightId : splitTabs.leftId;
-    const otherTab = tabs.find((tab) => tab.id === otherId);
-    if (!otherTab) return <>{children}</>;
+    const leftTab = tabs.find((tab) => tab.id === splitTabs.leftId);
+    const rightTab = tabs.find((tab) => tab.id === splitTabs.rightId);
+    if (!leftTab || !rightTab) return <>{children}</>;
 
-    const activePane = (
-        <section className="split-pane split-pane-active">{children}</section>
-    );
-    const otherPane = <PaneFrame key={otherId} tab={otherTab} />;
+    const isGroupActive =
+        activeId === splitTabs.leftId || activeId === splitTabs.rightId;
 
     return (
-        <div
-            className="split-workspace"
-            data-placed-side={
-                splitTabs.placedId === splitTabs.leftId ? 'left' : 'right'
-            }
-        >
+        <>
+            {!isGroupActive && children}
             <div
-                className={`split-pane-position split-pane-position-left ${splitTabs.placedId === splitTabs.leftId ? 'split-pane-new' : 'split-pane-existing'}`}
+                key="persistent-split"
+                className={`split-workspace ${isGroupActive ? 'is-active' : 'is-dormant'}`}
+                aria-hidden={!isGroupActive}
             >
-                {activeId === splitTabs.leftId ? activePane : otherPane}
+                <div className="split-pane-position split-pane-position-left">
+                    <PaneFrame key={leftTab.id} tab={leftTab} />
+                </div>
+                <div className="split-pane-position split-pane-position-right">
+                    <PaneFrame key={rightTab.id} tab={rightTab} />
+                </div>
             </div>
-            <div
-                className={`split-pane-position split-pane-position-right ${splitTabs.placedId === splitTabs.rightId ? 'split-pane-new' : 'split-pane-existing'}`}
-            >
-                {activeId === splitTabs.rightId ? activePane : otherPane}
-            </div>
-        </div>
+        </>
     );
 }

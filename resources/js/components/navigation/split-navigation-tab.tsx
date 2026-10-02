@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 import type { Tab } from './navigation-store';
 import { useNavigation } from './navigation-store';
@@ -12,9 +13,31 @@ type Props = {
 };
 
 export function SplitNavigationTab({ left, right, activeId, floating }: Props) {
+    const isGroupActive = activeId === left.id || activeId === right.id;
+    const [focusedId, setFocusedId] = useState(activeId);
+
+    useEffect(() => {
+        if (!isGroupActive) setFocusedId(activeId);
+    }, [activeId, isGroupActive]);
+
+    function selectPane(tabId: string) {
+        if (!isGroupActive) {
+            activateTab(tabId);
+            setFocusedId(tabId);
+            return;
+        }
+        setFocusedId(tabId);
+        const pane = Array.from(
+            document.querySelectorAll<HTMLElement>('[data-split-pane-id]'),
+        ).find((element) => element.dataset.splitPaneId === tabId);
+        const frame = pane?.querySelector('iframe');
+        if (frame) frame.focus();
+        else pane?.focus({ preventScroll: true });
+    }
+
     return (
         <div
-            className={`split-navigation-tab ${floating ? 'floating-tab' : 'my-1.5 rounded-lg'} ${activeId === left.id || activeId === right.id ? 'bg-accent text-foreground' : 'text-muted-foreground hover:bg-accent/60'}`}
+            className={`split-navigation-tab ${floating ? 'floating-tab' : 'my-1.5 rounded-lg'} ${isGroupActive ? 'bg-accent text-foreground' : 'text-muted-foreground hover:bg-accent/60'}`}
             data-split-tab-ids={`${left.id} ${right.id}`}
             aria-label="Split tab"
         >
@@ -25,10 +48,10 @@ export function SplitNavigationTab({ left, right, activeId, floating }: Props) {
                         key={tab.id}
                         type="button"
                         role="tab"
-                        aria-selected={tab.id === activeId}
+                        aria-selected={isGroupActive && tab.id === focusedId}
                         title={entry.title}
-                        onClick={() => activateTab(tab.id)}
-                        className="split-navigation-page"
+                        onClick={() => selectPane(tab.id)}
+                        className={`split-navigation-page ${isGroupActive && tab.id === focusedId ? 'is-focused' : ''}`}
                     >
                         <NavigationTabIcon entry={entry} />
                         <span className="truncate">{entry.title}</span>

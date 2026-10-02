@@ -168,8 +168,6 @@ export const useNavigation = create<NavigationState>((set, get) => ({
                         typeof value.splitTabs.leftId === 'string' &&
                         typeof value.splitTabs.rightId === 'string' &&
                         value.splitTabs.leftId !== value.splitTabs.rightId &&
-                        (value.activeId === value.splitTabs.leftId ||
-                            value.activeId === value.splitTabs.rightId) &&
                         canSplitTabs(
                             value.tabs.find(
                                 (tab: Tab) => tab.id === value.splitTabs.leftId,
@@ -407,7 +405,16 @@ export const useNavigation = create<NavigationState>((set, get) => ({
                               ...tab,
                               entries: tab.entries.map((entry, index) =>
                                   index === tab.index
-                                      ? { ...entry, title: location.title }
+                                      ? {
+                                            ...entry,
+                                            title: location.title,
+                                            ...(location.icon !== undefined
+                                                ? { icon: location.icon }
+                                                : {}),
+                                            ...(location.iconUrl !== undefined
+                                                ? { iconUrl: location.iconUrl }
+                                                : {}),
+                                        }
                                       : entry,
                               ),
                           }

@@ -29,7 +29,10 @@ export function locationKind(url: string): Location['kind'] {
     if (url.startsWith('/settings/')) return 'settings';
     return 'workspace';
 }
-export function recordPage(page: { url: string; props: PageContext }) {
+export function locationForPage(page: {
+    url: string;
+    props: PageContext;
+}): Location {
     const context =
         page.props.node ?? page.props.database ?? page.props.currentNode;
     const workspaceId = page.props.workspace?.id;
@@ -45,29 +48,61 @@ export function recordPage(page: { url: string; props: PageContext }) {
                 ? attachmentUrl(workspaceId, context.id, attachmentId)
                 : nodeImageUrl(workspaceId, context.id, attachmentId)
             : null;
-    useNavigation.getState().record(
+    return {
+        url: page.url,
+        title:
+            context?.title ??
+            page.props.workspace?.name ??
+            (page.url.startsWith('/settings') ? 'Settings' : 'Home'),
+        kind: locationKind(page.url),
+        scroll: 0,
+        icon: context?.icon ?? null,
+        iconUrl,
+    };
+}
+export function notifyPaneLocation(
+    details: Pick<Location, 'title' | 'kind' | 'icon' | 'iconUrl'>,
+) {
+    if (window.self === window.top || !window.name.startsWith('orbium-pane:'))
+        return;
+    window.parent.postMessage(
         {
-            url: page.url,
-            title:
-                context?.title ??
-                page.props.workspace?.name ??
-                (page.url.startsWith('/settings') ? 'Settings' : 'Home'),
-            kind: locationKind(page.url),
-            scroll: 0,
-            icon: context?.icon ?? null,
-            iconUrl,
+            type: 'orbium:pane-location',
+            tabId: window.name.slice('orbium-pane:'.length),
+            url: window.location.pathname + window.location.search,
+            ...details,
         },
-        context?.id,
+        window.location.origin,
     );
+}
+export function recordPage(page: { url: string; props: PageContext }) {
+    const location = locationForPage(page);
+    const context =
+        page.props.node ?? page.props.database ?? page.props.currentNode;
+    useNavigation.getState().record(location, context?.id);
 }
 function visitTab(
     url: string,
     commit: (page: Page) => void,
-    options: { scroll?: number; onRecorded?: (page: Page) => void } = {},
+    options: {
+        scroll?: number;
+        onRecorded?: (page: Page) => void;
+        activateBeforeVisit?: string;
+    } = {},
 ) {
     const state = useNavigation.getState();
     if (state.pending) return;
+    const previousActiveId = state.activeId;
     state.saveScroll();
+    if (options.activateBeforeVisit)
+        useNavigation.getState().activate(options.activateBeforeVisit);
+    const restorePreviousTab = () => {
+        if (
+            options.activateBeforeVisit &&
+            useNavigation.getState().activeId === options.activateBeforeVisit
+        )
+            useNavigation.getState().activate(previousActiveId);
+    };
     router.visit(url, {
         preserveScroll: true,
         onStart: () => useNavigation.setState({ pending: true }),
@@ -80,12 +115,15 @@ function visitTab(
                 window.scrollTo(0, options.scroll ?? 0),
             );
         },
+        onError: restorePreviousTab,
+        onCancel: restorePreviousTab,
         onFinish: () => useNavigation.setState({ pending: false }),
     });
 }
 export function openLocation(url: string, newTab = false) {
+    const shouldOpenNewTab = newTab || locationKind(url) === 'settings';
     if (window.self !== window.top) {
-        if (newTab) {
+        if (shouldOpenNewTab) {
             window.parent.postMessage(
                 { type: 'orbium:pane-new-tab', url },
                 window.location.origin,
@@ -96,7 +134,7 @@ export function openLocation(url: string, newTab = false) {
         return;
     }
     visitTab(url, (page) => {
-        if (newTab)
+        if (shouldOpenNewTab)
             useNavigation.getState().createTab({
                 url: page.url,
                 title: 'Loading…',
@@ -106,11 +144,16 @@ export function openLocation(url: string, newTab = false) {
     });
 }
 export function activateTab(id: string) {
-    const tab = useNavigation.getState().tabs.find((item) => item.id === id);
+    const navigation = useNavigation.getState();
+    const tab = navigation.tabs.find((item) => item.id === id);
     if (!tab) return;
     const location = tab.entries[tab.index];
+    const isSplitTab =
+        navigation.splitTabs?.leftId === id ||
+        navigation.splitTabs?.rightId === id;
     visitTab(location.url, () => useNavigation.getState().activate(id), {
         scroll: location.scroll,
+        activateBeforeVisit: isSplitTab ? id : undefined,
     });
 }
 export function stepHistory(delta: number) {
