@@ -1,5 +1,11 @@
 # Phase 5 — Floating workspace review
 
+## Reuse an open Settings tab (2026-10-02)
+
+Settings entry points now activate an existing Settings tab instead of creating another one. A destination such as Manage workspaces or Password opens that section within the reused tab; an ordinary Settings entry opens Profile there. The change uses the existing Inertia visit and Zustand navigation store. No new library is needed. Inertia handles the route but does not choose which Orbium tab owns it, so the local navigation flow selects the Settings tab before recording the destination. Tabs that once showed Settings but currently show another kind of page are not reclaimed.
+
+Manual check: open Settings, then switch to a document or split group and click the top Settings button. Expected: the existing Settings tab becomes active and no tab is added. Open Manage workspaces from the workspace selector and Password from the account menu. Expected: each requested section opens in that same tab. Try the Search Master Open Settings command and refresh, then repeat; the tab count should stay unchanged. Close the Settings tab and open Settings again. Expected: one new Settings tab appears.
+
 ## Split theme and grouped tab reorder correction (2026-10-02)
 
 Appearance changes now reach the already mounted split page frames through the browser's same-origin storage event, so their UI updates without refreshing. Grouped split tabs are sortable by dragging either title. Reordering moves both underlying tabs as one unit, keeps their left/right pane placement, and persists the order in the existing browser-local navigation state. Ordinary tabs can also move around a grouped tab without separating its members.

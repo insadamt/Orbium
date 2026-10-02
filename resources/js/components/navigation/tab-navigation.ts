@@ -122,7 +122,8 @@ function visitTab(
     });
 }
 export function openLocation(url: string, newTab = false) {
-    const shouldOpenNewTab = newTab || locationKind(url) === 'settings';
+    const isSettingsLocation = locationKind(url) === 'settings';
+    const shouldOpenNewTab = newTab || isSettingsLocation;
     if (window.self !== window.top) {
         if (shouldOpenNewTab) {
             window.parent.postMessage(
@@ -133,6 +134,32 @@ export function openLocation(url: string, newTab = false) {
         }
         router.visit(url);
         return;
+    }
+    if (isSettingsLocation) {
+        const navigation = useNavigation.getState();
+        const settingsTab =
+            navigation.tabs.find(
+                (tab) =>
+                    tab.id === navigation.activeId &&
+                    locationKind(tab.entries[tab.index].url) === 'settings',
+            ) ??
+            navigation.tabs.find(
+                (tab) =>
+                    locationKind(tab.entries[tab.index].url) === 'settings',
+            );
+        if (settingsTab) {
+            const currentLocation = settingsTab.entries[settingsTab.index];
+            if (currentLocation.url === url) {
+                activateTab(settingsTab.id);
+                return;
+            }
+            visitTab(
+                url,
+                () => useNavigation.getState().activate(settingsTab.id),
+                { activateBeforeVisit: settingsTab.id },
+            );
+            return;
+        }
     }
     visitTab(url, (page) => {
         if (shouldOpenNewTab)
