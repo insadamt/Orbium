@@ -3,11 +3,13 @@ import type { HierarchyNode } from '@/components/hierarchy/node-browser';
 import { NodeMediaHeader } from '@/components/hierarchy/node-media-header';
 import { WorkspaceContents } from '@/components/hierarchy/workspace-contents';
 import type { WorkspaceSummary } from '@/components/hierarchy/workspace-panel';
+import type { GalleryAppearance } from '@/components/hierarchy/cover-presentation';
 
 type DashboardProps = {
     workspace?: WorkspaceSummary;
     nodes?: HierarchyNode[];
     currentNode?: HierarchyNode | null;
+    galleryConfig?: (GalleryAppearance & { legacy_preview?: boolean }) | null;
     errors: Record<string, string>;
 };
 
@@ -17,6 +19,7 @@ export default function Dashboard() {
         nodes = [],
         currentNode = null,
         errors,
+        galleryConfig,
     } = usePage<DashboardProps>().props;
     return (
         <>
@@ -40,6 +43,8 @@ export default function Dashboard() {
                                     icon: currentNode.icon ?? null,
                                     cover_attachment_id:
                                         currentNode.cover_attachment_id ?? null,
+                                    cover_aspect_ratio:
+                                        currentNode.cover_aspect_ratio ?? null,
                                     icon_attachment_id:
                                         currentNode.icon_attachment_id ?? null,
                                 }}
@@ -51,6 +56,7 @@ export default function Dashboard() {
                         workspaceId={workspace.id}
                         nodes={nodes}
                         parentId={currentNode?.id ?? null}
+                        initialGalleryConfig={galleryConfig}
                     />
                 </>
             )}

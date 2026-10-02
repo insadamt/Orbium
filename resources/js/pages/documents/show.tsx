@@ -18,6 +18,10 @@ import {
     type DocumentImageKind,
 } from './document-image-crop';
 import DocumentMediaMenu from './document-media-menu';
+import {
+    ratioNumber,
+    type CoverRatio,
+} from '@/components/hierarchy/cover-presentation';
 import DatabasePropertyHeader from './database-property-header';
 import type { Candidate, FileReference, Property } from '../databases/types';
 
@@ -33,6 +37,7 @@ type Props = {
         content: EditorDocument;
         revision: number;
         cover_attachment_id: number | null;
+        cover_aspect_ratio: CoverRatio | null;
         icon_attachment_id: number | null;
     };
     databaseProperties: Property[];
@@ -45,6 +50,7 @@ type DocumentHeaderChanges = Partial<{
     title: string;
     icon: string | null;
     cover_attachment_id: number | null;
+    cover_aspect_ratio: CoverRatio | null;
     icon_attachment_id: number | null;
 }>;
 
@@ -96,6 +102,9 @@ function DocumentPage({
         savedDocument.icon_attachment_id,
     );
     const [coverId, setCoverId] = useState(savedDocument.cover_attachment_id);
+    const [coverRatio, setCoverRatio] = useState(
+        savedDocument.cover_aspect_ratio,
+    );
     const [headerError, setHeaderError] = useState('');
     const [iconUploading, setIconUploading] = useState(false);
     const [coverUploading, setCoverUploading] = useState(false);
@@ -170,7 +179,7 @@ function DocumentPage({
         return false;
     }
 
-    async function addCover(file: File) {
+    async function addCover(file: File, ratio: CoverRatio) {
         setHeaderError('');
         setCoverUploading(true);
         try {
@@ -185,8 +194,15 @@ function DocumentPage({
                 );
                 return;
             }
-            if (await saveHeader({ cover_attachment_id: attachment.id }))
+            if (
+                await saveHeader({
+                    cover_attachment_id: attachment.id,
+                    cover_aspect_ratio: ratio,
+                })
+            ) {
                 setCoverId(attachment.id);
+                setCoverRatio(ratio);
+            }
         } catch (error) {
             setHeaderError(
                 error instanceof Error
@@ -240,6 +256,10 @@ function DocumentPage({
             return;
         }
         try {
+            if (kind === 'cover') {
+                setPendingCrop({ file, kind });
+                return;
+            }
             const dimensions = await getDocumentImageDimensions(file);
             const target = documentImageTargets[kind];
             if (
@@ -248,7 +268,6 @@ function DocumentPage({
                 file.size <= 10 * 1024 * 1024
             ) {
                 if (kind === 'icon') void addIcon(file);
-                else void addCover(file);
             } else {
                 setPendingCrop({ file, kind });
             }
@@ -259,11 +278,11 @@ function DocumentPage({
         }
     }
 
-    function uploadCroppedImage(file: File) {
+    function uploadCroppedImage(file: File, ratio: CoverRatio | null) {
         const kind = pendingCrop?.kind;
         setPendingCrop(null);
         if (kind === 'icon') void addIcon(file);
-        if (kind === 'cover') void addCover(file);
+        if (kind === 'cover' && ratio) void addCover(file, ratio);
     }
 
     async function removeIcon() {
@@ -274,7 +293,10 @@ function DocumentPage({
     }
 
     async function removeCover() {
-        if (await saveHeader({ cover_attachment_id: null })) setCoverId(null);
+        if (await saveHeader({ cover_attachment_id: null })) {
+            setCoverId(null);
+            setCoverRatio(null);
+        }
     }
 
     return (
@@ -283,7 +305,9 @@ function DocumentPage({
             <div className="floating-body-island floating-document-island mx-auto max-w-[1120px]">
                 <div className="relative">
                     {coverId && (
-                        <div className="aspect-[980/288] overflow-hidden rounded-2xl">
+                        <div
+                            className={`flex justify-center ${coverRatio ? '' : 'aspect-[980/288]'}`}
+                        >
                             <img
                                 src={attachmentUrl(
                                     workspace.id,
@@ -291,7 +315,19 @@ function DocumentPage({
                                     coverId,
                                 )}
                                 alt="Document cover"
-                                className="h-full w-full object-cover"
+                                className={
+                                    coverRatio
+                                        ? 'block h-auto max-h-[min(480px,55dvh)] max-w-full rounded-2xl object-contain'
+                                        : 'h-full w-full rounded-2xl object-cover'
+                                }
+                                style={
+                                    coverRatio
+                                        ? {
+                                              aspectRatio:
+                                                  ratioNumber(coverRatio),
+                                          }
+                                        : undefined
+                                }
                             />
                         </div>
                     )}
@@ -310,7 +346,7 @@ function DocumentPage({
                     <div className="mx-auto flow-root max-w-[780px]">
                         {(iconAttachmentId || legacyIcon) && (
                             <div
-                                className={`relative z-10 mb-5 ml-4 flex size-24 items-center justify-center overflow-hidden rounded-2xl border-4 border-background bg-muted shadow-md ${coverId ? '-mt-12' : ''}`}
+                                className={`relative z-10 mb-5 ml-4 flex size-24 items-center justify-center overflow-hidden rounded-2xl border-4 border-background bg-muted shadow-md ${coverId && !coverRatio ? '-mt-12' : ''}`}
                             >
                                 {iconAttachmentId ? (
                                     <img

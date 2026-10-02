@@ -11,7 +11,12 @@ class Workspace extends Model
 {
     use SoftDeletes;
 
-    protected $fillable = ['name', 'icon', 'position'];
+    protected $fillable = ['name', 'icon', 'position', 'gallery_config'];
+
+    protected function casts(): array
+    {
+        return ['gallery_config' => 'array'];
+    }
 
     /** @return BelongsTo<User, $this> */
     public function user(): BelongsTo

@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Actions\Workspaces\ManageWorkspaces;
 use App\Models\Node;
 use App\Models\Workspace;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -25,6 +27,26 @@ class WorkspaceController extends Controller
     public function show(Request $request, int $workspace): Response
     {
         return $this->renderWorkspace($request, $workspace, null);
+    }
+
+    public function saveGallery(Request $request, int $workspace, ?int $node = null): JsonResponse
+    {
+        $workspaceModel = $this->ownedWorkspace($request, $workspace);
+        $container = $node === null ? $workspaceModel : $workspaceModel->nodes()->where('type', 'folder')->findOrFail($node);
+        if ($container instanceof Node) {
+            $ancestor = $container;
+            while ($ancestor->parent_id !== null) {
+                $ancestor = $workspaceModel->nodes()->findOrFail($ancestor->parent_id);
+            }
+        }
+        $data = $request->validate([
+            'layout' => ['required', Rule::in(['natural', 'uniform'])],
+            'ratio' => ['required', Rule::in(['16:9', '9:16', '3:2', '4:3', '1:1', '4:5'])],
+            'fit' => ['required', Rule::in(['contain', 'crop'])],
+        ]);
+        $container->update(['gallery_config' => $data]);
+
+        return response()->json(['gallery_config' => $data]);
     }
 
     public function showNode(Request $request, int $workspace, int $node): RedirectResponse|Response
@@ -106,7 +128,7 @@ class WorkspaceController extends Controller
     {
         $workspace = $this->ownedWorkspace($request, $workspaceId);
         $nodes = $workspace->nodes()
-            ->with('document:node_id,cover_attachment_id,icon_attachment_id')
+            ->with('document:node_id,cover_attachment_id,cover_aspect_ratio,icon_attachment_id')
             ->orderBy('position')->orderBy('id')->get();
         $nodesById = $nodes->keyBy('id');
         $visibleNodes = $nodes->filter(function (Node $node) use ($nodesById): bool {
@@ -137,7 +159,8 @@ class WorkspaceController extends Controller
         }
 
         return Inertia::render('dashboard', [
-            'workspace' => $workspace->only(['id', 'name', 'position']),
+            'workspace' => $workspace->only(['id', 'name', 'position', 'gallery_config']),
+            'galleryConfig' => $currentNode !== null ? $currentNode->gallery_config : $workspace->gallery_config,
             'nodes' => $visibleNodes->map(fn (Node $node) => $this->explorerNode($node))->values(),
             'trashedNodes' => Node::query()->onlyTrashed()->where('workspace_id', $workspace->id)->orderByDesc('deleted_at')->get(['id', 'parent_id', 'type', 'title', 'deleted_at']),
             'currentNode' => $currentNode ? $this->explorerNode($currentNode) : null,
@@ -156,6 +179,8 @@ class WorkspaceController extends Controller
             ...$node->only(['id', 'parent_id', 'type', 'title', 'position', 'icon']),
             'cover_attachment_id' => $node->type === 'document'
                 ? $node->document?->cover_attachment_id : $node->cover_attachment_id,
+            'cover_aspect_ratio' => $node->type === 'document'
+                ? $node->document?->cover_aspect_ratio : $node->cover_aspect_ratio,
             'icon_attachment_id' => $node->type === 'document'
                 ? $node->document?->icon_attachment_id : $node->icon_attachment_id,
         ];

@@ -13,8 +13,10 @@ import DatabaseDialog from './database-dialog';
 import DatabaseFilterEditor from './database-filter-editor';
 import { propertyTypes } from './property-presentation';
 import type { Property, ViewConfig } from './types';
+import { GalleryAppearanceEditor } from '@/components/hierarchy/gallery-appearance-editor';
+import { galleryAppearance } from '@/components/hierarchy/cover-presentation';
 
-export type SettingsSection = 'properties' | 'filters' | 'sorts';
+export type SettingsSection = 'properties' | 'filters' | 'sorts' | 'appearance';
 type Props = {
     properties: Property[];
     config: ViewConfig;
@@ -84,7 +86,16 @@ export default function DatabaseViewSettings({
             description={`Customize how your ${view} view displays documents.`}
         >
             <div className="flex gap-1 border-b border-border/60 px-6">
-                {(['properties', 'filters', 'sorts'] as const).map((item) => (
+                {(
+                    [
+                        'properties',
+                        'filters',
+                        'sorts',
+                        ...(view === 'gallery'
+                            ? (['appearance'] as const)
+                            : []),
+                    ] as SettingsSection[]
+                ).map((item) => (
                     <button
                         type="button"
                         key={item}
@@ -97,6 +108,24 @@ export default function DatabaseViewSettings({
                 ))}
             </div>
             <div className="min-h-52 overflow-y-auto px-6 py-5">
+                {section === 'appearance' && view === 'gallery' && (
+                    <GalleryAppearanceEditor
+                        value={galleryAppearance({
+                            layout: draft.gallery_layout,
+                            ratio: draft.gallery_ratio,
+                            fit: draft.gallery_fit,
+                        })}
+                        onChange={(appearance) =>
+                            setDraft({
+                                ...draft,
+                                gallery_layout: appearance.layout,
+                                gallery_ratio: appearance.ratio,
+                                gallery_fit: appearance.fit,
+                                gallery_legacy_preview: false,
+                            })
+                        }
+                    />
+                )}
                 {section === 'properties' && (
                     <div className="space-y-4">
                         {view === 'gallery' && (

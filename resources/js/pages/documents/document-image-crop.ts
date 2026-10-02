@@ -1,9 +1,29 @@
+import type { CoverRatio } from '@/components/hierarchy/cover-presentation';
+
 export type DocumentImageKind = 'icon' | 'cover';
 
 export const documentImageTargets = {
     icon: { width: 512, height: 512, label: 'icon' },
     cover: { width: 1470, height: 432, label: 'cover' },
 } as const;
+
+const coverImageTargets: Record<
+    CoverRatio,
+    { width: number; height: number; label: string }
+> = {
+    '16:9': { width: 1200, height: 675, label: 'cover' },
+    '9:16': { width: 675, height: 1200, label: 'cover' },
+    '3:2': { width: 1200, height: 800, label: 'cover' },
+    '4:3': { width: 1200, height: 900, label: 'cover' },
+    '1:1': { width: 1200, height: 1200, label: 'cover' },
+    '4:5': { width: 960, height: 1200, label: 'cover' },
+};
+
+export function imageTarget(kind: DocumentImageKind, ratio: CoverRatio) {
+    return kind === 'cover'
+        ? coverImageTargets[ratio]
+        : documentImageTargets.icon;
+}
 
 export const supportedDocumentImageTypes = new Set([
     'image/png',
@@ -17,10 +37,11 @@ type CropPosition = { x: number; y: number };
 export function clampCropPosition(
     image: HTMLImageElement,
     kind: DocumentImageKind,
+    ratio: CoverRatio,
     zoom: number,
     position: CropPosition,
 ): CropPosition {
-    const target = documentImageTargets[kind];
+    const target = imageTarget(kind, ratio);
     const scale =
         Math.max(
             target.width / image.naturalWidth,
@@ -44,13 +65,14 @@ export function drawDocumentImageCrop(
     canvas: HTMLCanvasElement,
     image: HTMLImageElement,
     kind: DocumentImageKind,
+    ratio: CoverRatio,
     zoom: number,
     position: CropPosition,
     preserveTransparency: boolean,
 ): void {
     const context = canvas.getContext('2d');
     if (!context) return;
-    const target = documentImageTargets[kind];
+    const target = imageTarget(kind, ratio);
     const scale =
         Math.max(
             target.width / image.naturalWidth,
@@ -58,7 +80,7 @@ export function drawDocumentImageCrop(
         ) * zoom;
     const drawnWidth = image.naturalWidth * scale;
     const drawnHeight = image.naturalHeight * scale;
-    const cropPosition = clampCropPosition(image, kind, zoom, position);
+    const cropPosition = clampCropPosition(image, kind, ratio, zoom, position);
     context.clearRect(0, 0, target.width, target.height);
     if (!preserveTransparency) {
         context.fillStyle = '#ffffff';

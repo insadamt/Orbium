@@ -12,11 +12,11 @@ class Node extends Model
 {
     use SoftDeletes;
 
-    protected $fillable = ['parent_id', 'type', 'title', 'icon', 'icon_attachment_id', 'cover_attachment_id', 'position', 'is_favorite'];
+    protected $fillable = ['parent_id', 'type', 'title', 'icon', 'icon_attachment_id', 'cover_attachment_id', 'cover_aspect_ratio', 'gallery_config', 'position', 'is_favorite'];
 
     protected function casts(): array
     {
-        return ['is_favorite' => 'boolean'];
+        return ['is_favorite' => 'boolean', 'gallery_config' => 'array'];
     }
 
     /** @return BelongsTo<Workspace, $this> */

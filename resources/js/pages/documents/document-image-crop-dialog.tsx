@@ -8,16 +8,20 @@ import {
 } from 'react';
 import {
     clampCropPosition,
-    documentImageTargets,
     drawDocumentImageCrop,
+    imageTarget,
     type DocumentImageKind,
 } from './document-image-crop';
+import {
+    coverRatios,
+    type CoverRatio,
+} from '@/components/hierarchy/cover-presentation';
 
 type Props = {
     file: File;
     kind: DocumentImageKind;
     onCancel: () => void;
-    onConfirm: (file: File) => void;
+    onConfirm: (file: File, ratio: CoverRatio | null) => void;
 };
 type CropPosition = { x: number; y: number };
 type DragSession = {
@@ -33,7 +37,8 @@ export default function DocumentImageCropDialog({
     onCancel,
     onConfirm,
 }: Props) {
-    const target = documentImageTargets[kind];
+    const [ratio, setRatio] = useState<CoverRatio>('16:9');
+    const target = imageTarget(kind, ratio);
     const outputMimeType =
         file.type === 'image/png' || file.type === 'image/webp'
             ? file.type
@@ -77,15 +82,16 @@ export default function DocumentImageCropDialog({
                 canvasRef.current,
                 image,
                 kind,
+                ratio,
                 zoom,
                 position,
                 outputMimeType !== 'image/jpeg',
             );
-    }, [image, kind, outputMimeType, zoom, position]);
+    }, [image, kind, ratio, outputMimeType, zoom, position]);
 
     function moveImage(nextPosition: CropPosition) {
         if (!image) return;
-        setPosition(clampCropPosition(image, kind, zoom, nextPosition));
+        setPosition(clampCropPosition(image, kind, ratio, zoom, nextPosition));
     }
 
     function beginDrag(event: PointerEvent<HTMLCanvasElement>) {
@@ -141,7 +147,7 @@ export default function DocumentImageCropDialog({
         setZoom(nextZoom);
         if (image)
             setPosition((current) =>
-                clampCropPosition(image, kind, nextZoom, current),
+                clampCropPosition(image, kind, ratio, nextZoom, current),
             );
     }
 
@@ -155,6 +161,7 @@ export default function DocumentImageCropDialog({
                 canvas,
                 image,
                 kind,
+                ratio,
                 zoom,
                 position,
                 outputMimeType !== 'image/jpeg',
@@ -169,6 +176,9 @@ export default function DocumentImageCropDialog({
                     0.9,
                 );
             });
+            if (blob.size > 10 * 1024 * 1024) {
+                throw new Error('Cropped image exceeds 10 MB.');
+            }
             if (!active.current) return;
             const extension =
                 outputMimeType === 'image/png'
@@ -177,10 +187,17 @@ export default function DocumentImageCropDialog({
                       ? 'webp'
                       : 'jpg';
             const name = `${file.name.replace(/\.[^.]+$/, '')}-cropped.${extension}`;
-            onConfirm(new File([blob], name, { type: outputMimeType }));
-        } catch {
+            onConfirm(
+                new File([blob], name, { type: outputMimeType }),
+                kind === 'cover' ? ratio : null,
+            );
+        } catch (error) {
             if (!active.current) return;
-            setError('Could not crop this image. Please choose another image.');
+            setError(
+                error instanceof Error && error.message.includes('10 MB')
+                    ? error.message
+                    : 'Could not crop this image. Please choose another image.',
+            );
             setSaving(false);
         }
     }
@@ -203,6 +220,29 @@ export default function DocumentImageCropDialog({
                         saved {target.label} will be {target.width} ×{' '}
                         {target.height} pixels.
                     </Dialog.Description>
+                    {kind === 'cover' && (
+                        <div
+                            className="mt-5 grid grid-cols-3 gap-2 sm:grid-cols-6"
+                            role="group"
+                            aria-label="Cover aspect ratio"
+                        >
+                            {coverRatios.map((choice) => (
+                                <button
+                                    key={choice}
+                                    type="button"
+                                    aria-pressed={ratio === choice}
+                                    onClick={() => {
+                                        setRatio(choice);
+                                        setZoom(1);
+                                        setPosition({ x: 0, y: 0 });
+                                    }}
+                                    className={`rounded-lg border px-2 py-2 text-sm ${ratio === choice ? 'border-foreground bg-muted text-foreground' : 'border-border text-muted-foreground hover:bg-muted/50'}`}
+                                >
+                                    {choice}
+                                </button>
+                            ))}
+                        </div>
+                    )}
                     <div className="mt-5 flex justify-center overflow-hidden rounded-xl bg-muted p-3 sm:p-5">
                         <canvas
                             ref={canvasRef}
@@ -219,7 +259,7 @@ export default function DocumentImageCropDialog({
                                 dragSession.current = null;
                             }}
                             onKeyDown={moveWithKeyboard}
-                            className={`block h-auto touch-none rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring ${kind === 'icon' ? 'w-full max-w-80' : 'w-full max-w-[600px]'} ${image ? 'cursor-grab active:cursor-grabbing' : ''}`}
+                            className={`block h-auto max-h-[min(45vh,440px)] w-auto max-w-full touch-none rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring ${kind === 'icon' ? 'max-w-80' : ''} ${image ? 'cursor-grab active:cursor-grabbing' : ''}`}
                         />
                     </div>
                     <label className="mt-5 flex items-center gap-3 text-sm">

@@ -4,7 +4,6 @@ import {
     ReactNodeViewRenderer,
     type NodeViewProps,
 } from '@tiptap/react';
-import DOMPurify from 'dompurify';
 import { Eye, Pencil } from 'lucide-react';
 import ImageView from './image-view';
 import { useEffect, useRef, useState } from 'react';
@@ -55,7 +54,8 @@ function MermaidView({ node, updateAttributes }: NodeViewProps) {
         let active = true;
         const render = async () => {
             try {
-                const { default: mermaid } = await import('mermaid');
+                const [{ default: mermaid }, { default: DOMPurify }] =
+                    await Promise.all([import('mermaid'), import('dompurify')]);
                 if (!active) return;
                 mermaid.initialize({
                     startOnLoad: false,

@@ -25,7 +25,7 @@ Body...
 
 The document image menu opens pickers for PNG, JPEG, GIF, or WebP icons and covers. A selected icon overlaps the cover edge by half its height and sits beside the title column. Existing text icons remain visible until replaced or removed.
 
-Images that do not match the icon's 512×512 or cover's 1470×432 target open a crop dialog before upload. The user can position and zoom the crop or cancel without changing the current image.
+Icons that do not match 512×512 open a crop dialog. Every new cover opens the crop dialog with 16:9, 9:16, 3:2, 4:3, 1:1, and 4:5 choices. The user can change ratio, position and zoom the crop, or cancel without changing the current image. Opened pages show the entire saved crop centered with a height limit; covers saved before this feature retain their wide banner layout.
 
 No permanent formatting toolbar.
 
@@ -300,11 +300,15 @@ Requirements:
 
 `Ctrl + S` may force/flush save without becoming the primary workflow.
 
+The autosave queue retains the latest immutable ProseMirror document snapshot and serializes it only when a save starts. An in-flight save owns its snapshot; later edits replace only the pending snapshot. Failed requests retain the pending content for retry, and revision checks and navigation guards remain active.
+
 ## Current-document search
 
 `Ctrl + F` searches inside the active document.
 
 `Ctrl + Space` remains global Search Master.
+
+The floating page finder's match count settles after 150 ms of inactivity while typing or editing. Enter/Shift+Enter uses the current document immediately. Match positions are cached only for the latest document snapshot and query per editor, so content changes invalidate them without rescanning on every selection change.
 
 ## Focus/read state
 

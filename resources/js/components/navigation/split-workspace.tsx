@@ -42,6 +42,15 @@ function SplitPairWorkspace({
     rightTab: Tab;
     active: boolean;
 }) {
+    const [hasActivated, setHasActivated] = useState(active);
+
+    useEffect(() => {
+        if (active) setHasActivated(true);
+    }, [active]);
+
+    // Keep visited frames alive for unsaved edits, but do not boot every restored group at startup.
+    if (!active && !hasActivated) return null;
+
     return (
         <div
             className={`split-workspace ${active ? 'is-active' : 'is-dormant'}`}

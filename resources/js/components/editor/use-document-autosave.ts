@@ -1,4 +1,4 @@
-import type { JSONContent } from '@tiptap/core';
+import type { Node as DocumentSnapshot } from '@tiptap/pm/model';
 import { router } from '@inertiajs/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { csrfToken, documentUrl } from './editor-api';
@@ -13,7 +13,7 @@ export function useDocumentAutosave(
     const [status, setStatus] = useState<SaveStatus>('saved');
     const [error, setError] = useState('');
     const [navigationNotice, setNavigationNotice] = useState('');
-    const pendingContent = useRef<JSONContent | null>(null);
+    const pendingContent = useRef<DocumentSnapshot | null>(null);
     const revision = useRef(initialRevision);
     const activeRequest = useRef(false);
     const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -39,7 +39,10 @@ export function useDocumentAutosave(
                     'X-CSRF-TOKEN': csrfToken(),
                     Accept: 'application/json',
                 },
-                body: JSON.stringify({ content, revision: revision.current }),
+                body: JSON.stringify({
+                    content: content.toJSON(),
+                    revision: revision.current,
+                }),
             });
             if (!response.ok) {
                 const body = await response.json().catch(() => ({}));
@@ -76,7 +79,8 @@ export function useDocumentAutosave(
     }, [workspaceId, nodeId]);
 
     const queueSave = useCallback(
-        (content: JSONContent) => {
+        (content: DocumentSnapshot) => {
+            // ProseMirror nodes are immutable, so retries keep the exact snapshot without per-keystroke serialization.
             pendingContent.current = content;
             setStatus('unsaved');
             setNavigationNotice('');

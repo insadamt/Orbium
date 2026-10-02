@@ -1,6 +1,6 @@
 import { router } from '@inertiajs/react';
 import * as ToggleGroup from '@radix-ui/react-toggle-group';
-import { Images, LayoutGrid, List } from 'lucide-react';
+import { Images, LayoutGrid, List, SlidersHorizontal } from 'lucide-react';
 import { useEffect, useState, type FormEvent } from 'react';
 import { toast } from 'sonner';
 import {
@@ -22,16 +22,41 @@ import {
     type ExplorerMenuPosition,
 } from './explorer-context-menu';
 import { useItemDrag } from './use-item-drag';
+import {
+    galleryAppearance,
+    ratioNumber,
+    type GalleryAppearance,
+} from './cover-presentation';
+import { GalleryAppearanceEditor } from './gallery-appearance-editor';
+import { MasonryLayout } from './masonry-layout';
+import { csrfToken } from '@/components/editor/editor-api';
 
 export function WorkspaceContents({
     workspaceId,
     nodes,
     parentId,
+    initialGalleryConfig,
 }: {
     workspaceId: number;
     nodes: TreeNode[];
     parentId: number | null;
+    initialGalleryConfig?:
+        | (GalleryAppearance & { legacy_preview?: boolean })
+        | null;
 }) {
+    const [appearance, setAppearance] = useState(() =>
+        galleryAppearance(initialGalleryConfig),
+    );
+    const [legacyPreview, setLegacyPreview] = useState(
+        Boolean(initialGalleryConfig?.legacy_preview),
+    );
+    useEffect(() => {
+        setAppearance(galleryAppearance(initialGalleryConfig));
+        setLegacyPreview(Boolean(initialGalleryConfig?.legacy_preview));
+    }, [initialGalleryConfig]);
+    const [appearanceDraft, setAppearanceDraft] =
+        useState<GalleryAppearance | null>(null);
+    const [savingAppearance, setSavingAppearance] = useState(false);
     const [savedView, setView] = useContainerView<'grid' | 'list' | 'gallery'>(
         `explorer.${workspaceId}.${parentId ?? 'root'}.view`,
         'grid',
@@ -134,42 +159,112 @@ export function WorkspaceContents({
             onFinish: () => setSaving(false),
         });
     }
+    async function saveAppearance() {
+        if (!appearanceDraft || savingAppearance) return;
+        setSavingAppearance(true);
+        const path =
+            parentId === null
+                ? `/workspaces/${workspaceId}/gallery`
+                : `/workspaces/${workspaceId}/nodes/${parentId}/gallery`;
+        try {
+            const response = await fetch(path, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken(),
+                    Accept: 'application/json',
+                },
+                body: JSON.stringify(appearanceDraft),
+            });
+            if (!response.ok)
+                throw new Error('Could not save Gallery appearance.');
+            setAppearance(appearanceDraft);
+            setLegacyPreview(false);
+            setAppearanceDraft(null);
+        } catch {
+            toast.error('Could not save Gallery appearance.');
+        } finally {
+            setSavingAppearance(false);
+        }
+    }
+    function renderChild(node: TreeNode, index: number) {
+        return (
+            <FloatingItem
+                key={node.id}
+                workspaceId={workspaceId}
+                view={view}
+                appearance={appearance}
+                legacyPreview={legacyPreview}
+                node={node}
+                selected={selectedId === node.id}
+                dragging={draggedId === node.id}
+                placement={
+                    dropHint?.targetId === node.id
+                        ? dropHint.placement
+                        : undefined
+                }
+                dragHandlers={dragHandlers(node)}
+                onSelect={() => setSelectedId(node.id)}
+                onOpen={(newTab) => openNode(node, newTab)}
+                onActions={(target) => openActionsAt(node.id, target)}
+                onReorder={(direction) => {
+                    const position = index + direction;
+                    if (position >= 0 && position < children.length)
+                        move(node.id, parentId, position);
+                }}
+            />
+        );
+    }
     return (
         <>
-            <ToggleGroup.Root
-                type="single"
-                value={view}
-                onValueChange={(next) => {
-                    if (next) setView(next as typeof view);
-                }}
-                aria-label="Explorer view"
-                className="explorer-view-switcher"
-            >
-                <ToggleGroup.Item
-                    value="grid"
-                    aria-label="Grid view"
-                    title="Grid view"
+            <div className="explorer-view-controls">
+                <ToggleGroup.Root
+                    type="single"
+                    value={view}
+                    onValueChange={(next) => {
+                        if (next) setView(next as typeof view);
+                    }}
+                    aria-label="Explorer view"
+                    className="explorer-view-switcher"
                 >
-                    <LayoutGrid size={17} />
-                </ToggleGroup.Item>
-                <ToggleGroup.Item
-                    value="list"
-                    aria-label="List view"
-                    title="List view"
-                >
-                    <List size={18} />
-                </ToggleGroup.Item>
-                <ToggleGroup.Item
-                    value="gallery"
-                    aria-label="Gallery view"
-                    title="Gallery view"
-                >
-                    <Images size={17} />
-                </ToggleGroup.Item>
-            </ToggleGroup.Root>
+                    <ToggleGroup.Item
+                        value="grid"
+                        aria-label="Grid view"
+                        title="Grid view"
+                    >
+                        <LayoutGrid size={17} />
+                    </ToggleGroup.Item>
+                    <ToggleGroup.Item
+                        value="list"
+                        aria-label="List view"
+                        title="List view"
+                    >
+                        <List size={18} />
+                    </ToggleGroup.Item>
+                    <ToggleGroup.Item
+                        value="gallery"
+                        aria-label="Gallery view"
+                        title="Gallery view"
+                    >
+                        <Images size={17} />
+                    </ToggleGroup.Item>
+                </ToggleGroup.Root>
+                {view === 'gallery' && (
+                    <button
+                        type="button"
+                        className="explorer-gallery-settings"
+                        onClick={() => setAppearanceDraft(appearance)}
+                        aria-label="Gallery appearance"
+                        title="Gallery appearance"
+                    >
+                        <SlidersHorizontal size={17} />
+                    </button>
+                )}
+            </div>
             <section
                 className="floating-contents"
                 data-view={view}
+                data-layout={view === 'gallery' ? appearance.layout : undefined}
                 aria-label="Current container contents"
                 aria-busy={moving}
                 tabIndex={0}
@@ -227,30 +322,32 @@ export function WorkspaceContents({
                         Move to {parentName}
                     </div>
                 )}
-                {children.map((node, index) => (
-                    <FloatingItem
-                        key={node.id}
-                        workspaceId={workspaceId}
-                        view={view}
-                        node={node}
-                        selected={selectedId === node.id}
-                        dragging={draggedId === node.id}
-                        placement={
-                            dropHint?.targetId === node.id
-                                ? dropHint.placement
-                                : undefined
+                {view === 'gallery' && appearance.layout === 'natural' ? (
+                    <MasonryLayout
+                        items={children.map((node) => ({
+                            ...node,
+                            estimatedHeight: (width: number) =>
+                                width /
+                                    ratioNumber(
+                                        node.cover_attachment_id
+                                            ? node.cover_aspect_ratio
+                                            : '16:9',
+                                    ) +
+                                70,
+                        }))}
+                        render={(node) =>
+                            renderChild(
+                                node,
+                                children.findIndex(
+                                    (child) => child.id === node.id,
+                                ),
+                            )
                         }
-                        dragHandlers={dragHandlers(node)}
-                        onSelect={() => setSelectedId(node.id)}
-                        onOpen={(newTab) => openNode(node, newTab)}
-                        onActions={(target) => openActionsAt(node.id, target)}
-                        onReorder={(direction) => {
-                            const position = index + direction;
-                            if (position >= 0 && position < children.length)
-                                move(node.id, parentId, position);
-                        }}
+                        minimumWidth={252}
                     />
-                ))}
+                ) : (
+                    children.map(renderChild)
+                )}
             </section>
             {normalizedQuery && children.length === 0 && (
                 <p className="floating-no-results" role="status">
@@ -273,6 +370,40 @@ export function WorkspaceContents({
                 }}
                 onDelete={() => menuNode && setDeleteId(menuNode.id)}
             />
+            <Dialog
+                open={appearanceDraft !== null}
+                onOpenChange={(open) => {
+                    if (!open && !savingAppearance) setAppearanceDraft(null);
+                }}
+            >
+                <DialogContent>
+                    <DialogTitle>Gallery appearance</DialogTitle>
+                    {appearanceDraft && (
+                        <GalleryAppearanceEditor
+                            value={appearanceDraft}
+                            onChange={setAppearanceDraft}
+                        />
+                    )}
+                    <div className="flex justify-end gap-2">
+                        <button
+                            type="button"
+                            onClick={() => setAppearanceDraft(null)}
+                            disabled={savingAppearance}
+                            className="rounded-lg px-4 py-2 text-sm hover:bg-muted"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => void saveAppearance()}
+                            disabled={savingAppearance}
+                            className="rounded-lg bg-primary px-4 py-2 text-sm text-primary-foreground disabled:opacity-50"
+                        >
+                            {savingAppearance ? 'Saving…' : 'Apply'}
+                        </button>
+                    </div>
+                </DialogContent>
+            </Dialog>
             <Dialog
                 open={createType !== null}
                 onOpenChange={(open) => {

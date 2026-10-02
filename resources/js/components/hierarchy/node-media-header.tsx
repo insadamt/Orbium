@@ -11,6 +11,7 @@ import {
 } from '@/pages/documents/document-image-crop';
 import DocumentMediaMenu from '@/pages/documents/document-media-menu';
 import { nodeImageUrl, uploadNodeImage } from './node-media-api';
+import { ratioNumber, type CoverRatio } from './cover-presentation';
 
 export type MediaContainer = {
     id: number;
@@ -18,13 +19,18 @@ export type MediaContainer = {
     type: 'folder' | 'database';
     icon: string | null;
     cover_attachment_id: number | null;
+    cover_aspect_ratio: CoverRatio | null;
     icon_attachment_id: number | null;
 };
 
 type HeaderChanges = Partial<
     Pick<
         MediaContainer,
-        'title' | 'icon' | 'cover_attachment_id' | 'icon_attachment_id'
+        | 'title'
+        | 'icon'
+        | 'cover_attachment_id'
+        | 'cover_aspect_ratio'
+        | 'icon_attachment_id'
     >
 >;
 
@@ -43,6 +49,7 @@ export function NodeMediaHeader({
     const [legacyIcon, setLegacyIcon] = useState(node.icon);
     const [iconId, setIconId] = useState(node.icon_attachment_id);
     const [coverId, setCoverId] = useState(node.cover_attachment_id);
+    const [coverRatio, setCoverRatio] = useState(node.cover_aspect_ratio);
     const [error, setError] = useState('');
     const [iconUploading, setIconUploading] = useState(false);
     const [coverUploading, setCoverUploading] = useState(false);
@@ -79,7 +86,11 @@ export function NodeMediaHeader({
         return false;
     }
 
-    async function uploadImage(file: File, kind: DocumentImageKind) {
+    async function uploadImage(
+        file: File,
+        kind: DocumentImageKind,
+        ratio: CoverRatio | null = null,
+    ) {
         const setUploading =
             kind === 'icon' ? setIconUploading : setCoverUploading;
         setUploading(true);
@@ -101,9 +112,13 @@ export function NodeMediaHeader({
                     setLegacyIcon(null);
                 }
             } else if (
-                await saveHeader({ cover_attachment_id: attachment.id })
+                await saveHeader({
+                    cover_attachment_id: attachment.id,
+                    cover_aspect_ratio: ratio,
+                })
             ) {
                 setCoverId(attachment.id);
+                setCoverRatio(ratio);
             }
         } catch (error) {
             setError(
@@ -123,6 +138,10 @@ export function NodeMediaHeader({
             return;
         }
         try {
+            if (kind === 'cover') {
+                setPendingCrop({ file, kind });
+                return;
+            }
             const size = await getDocumentImageDimensions(file);
             const target = documentImageTargets[kind];
             if (
@@ -147,7 +166,10 @@ export function NodeMediaHeader({
     }
 
     async function removeCover() {
-        if (await saveHeader({ cover_attachment_id: null })) setCoverId(null);
+        if (await saveHeader({ cover_attachment_id: null })) {
+            setCoverId(null);
+            setCoverRatio(null);
+        }
     }
 
     function saveTitle() {
@@ -165,6 +187,12 @@ export function NodeMediaHeader({
             {coverId && (
                 <img
                     className="node-media-cover"
+                    data-ratio={coverRatio ?? 'legacy'}
+                    style={
+                        coverRatio
+                            ? { aspectRatio: ratioNumber(coverRatio) }
+                            : undefined
+                    }
                     src={nodeImageUrl(workspaceId, node.id, coverId)}
                     alt={`${label} cover`}
                 />
@@ -184,7 +212,7 @@ export function NodeMediaHeader({
             </div>
             <div className="node-media-body">
                 <div
-                    className={`node-media-icon ${coverId ? 'node-media-icon-overlap' : ''}`}
+                    className={`node-media-icon ${coverId && !coverRatio ? 'node-media-icon-overlap' : ''}`}
                 >
                     {iconId ? (
                         <img
@@ -251,10 +279,10 @@ export function NodeMediaHeader({
                     file={pendingCrop.file}
                     kind={pendingCrop.kind}
                     onCancel={() => setPendingCrop(null)}
-                    onConfirm={(file) => {
+                    onConfirm={(file, ratio) => {
                         const kind = pendingCrop.kind;
                         setPendingCrop(null);
-                        void uploadImage(file, kind);
+                        void uploadImage(file, kind, ratio);
                     }}
                 />
             )}

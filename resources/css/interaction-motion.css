@@ -11,6 +11,8 @@
         .floating-add-tab,
         .floating-search-trigger,
         .floating-search-close,
+        .db-icon-button,
+        .db-toolbar-button,
         .orbium-shell [data-slot='button']
     ) {
         transition:
@@ -25,12 +27,15 @@
             .floating-add-tab,
             .floating-search-trigger,
             .floating-search-close,
+            .db-icon-button,
+            .db-toolbar-button,
             .orbium-shell [data-slot='button']
         ):active:not(:disabled):not([aria-disabled='true']) {
         scale: 0.96;
     }
 
     .floating-menu-item,
+    .db-menu-item,
     .floating-context-menu button {
         transition:
             background-color var(--motion-feedback) ease,
@@ -38,7 +43,8 @@
     }
 
     .orbium-dialog-overlay[data-state='open'],
-    .orbium-dialog-content[data-state='open'] {
+    .orbium-dialog-content[data-state='open'],
+    .db-menu[data-state='open'] {
         animation: orbium-feedback-enter var(--motion-enter) var(--motion-ease);
     }
 

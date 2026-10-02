@@ -1,3 +1,5 @@
+import type { CoverRatio } from '@/components/hierarchy/cover-presentation';
+
 export type TreeNode = {
     id: number;
     parent_id: number | null;
@@ -6,6 +8,7 @@ export type TreeNode = {
     position: number;
     icon?: string | null;
     cover_attachment_id?: number | null;
+    cover_aspect_ratio?: CoverRatio | null;
     icon_attachment_id?: number | null;
     tags?: string[];
 };

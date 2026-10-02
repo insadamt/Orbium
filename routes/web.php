@@ -23,6 +23,8 @@ Route::middleware('auth')->group(function () {
     Route::delete('workspaces/{workspace}', [WorkspaceController::class, 'destroy'])->name('workspaces.destroy');
     Route::delete('workspaces/{workspace}/permanent', [WorkspaceController::class, 'destroyPermanently'])->name('workspaces.destroy-permanently');
     Route::get('workspaces/{workspace}', [WorkspaceController::class, 'show'])->name('workspaces.show');
+    Route::put('workspaces/{workspace}/gallery', [WorkspaceController::class, 'saveGallery'])->name('workspaces.gallery.update');
+    Route::put('workspaces/{workspace}/nodes/{node}/gallery', [WorkspaceController::class, 'saveGallery'])->name('nodes.gallery.update');
     Route::get('workspaces/{workspace}/mentions', [MentionCandidateController::class, 'index'])->name('mentions.candidates');
     Route::post('workspaces/{workspace}/nodes', [NodeController::class, 'store'])->name('nodes.store');
     Route::get('workspaces/{workspace}/nodes/{node}', [WorkspaceController::class, 'showNode'])->name('nodes.show');

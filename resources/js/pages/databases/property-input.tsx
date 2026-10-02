@@ -46,7 +46,9 @@ export default function PropertyInput({
     const cancelBlur = useRef(false);
     useEffect(() => setDraft(value), [value]);
     const selected = selectedValues(draft);
-    const knownFiles = [...files, ...uploadedFiles];
+    const knownFiles = uploadedFiles.length
+        ? [...files, ...uploadedFiles]
+        : files;
 
     async function save(next: unknown) {
         setDraft(next);
@@ -110,20 +112,22 @@ export default function PropertyInput({
         'files',
         'date',
     ].includes(property.type);
-    const choices =
-        property.type === 'mention'
-            ? candidates.map((candidate) => ({
-                  id: candidate.id,
-                  label: candidate.title,
-                  kind: candidate.type,
-              }))
-            : (property.config.options ?? []).map((option) => ({
-                  id: option,
-                  label: option,
-                  kind: '',
-              }));
+    const choices = !open
+        ? []
+        : property.type === 'mention'
+          ? candidates.map((candidate) => ({
+                id: candidate.id,
+                label: candidate.title,
+                kind: candidate.type,
+            }))
+          : (property.config.options ?? []).map((option) => ({
+                id: option,
+                label: option,
+                kind: '',
+            }));
+    const normalizedQuery = query.toLocaleLowerCase();
     const filteredChoices = choices.filter((choice) =>
-        choice.label.toLocaleLowerCase().includes(query.toLocaleLowerCase()),
+        choice.label.toLocaleLowerCase().includes(normalizedQuery),
     );
 
     return (

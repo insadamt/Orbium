@@ -1,13 +1,17 @@
 import { Database, FileText, Folder, MoreHorizontal } from 'lucide-react';
 import type { HTMLAttributes } from 'react';
+import { useState } from 'react';
 import type { TreeNode } from '@/components/navigation/navigation-types';
 import { attachmentUrl } from '@/components/editor/editor-api';
 import { nodeImageUrl } from './node-media-api';
+import { ratioNumber, type GalleryAppearance } from './cover-presentation';
 
 const icons = { folder: Folder, document: FileText, database: Database };
 type Props = {
     workspaceId: number;
     view: 'grid' | 'list' | 'gallery';
+    appearance?: GalleryAppearance;
+    legacyPreview?: boolean;
     node: TreeNode;
     selected: boolean;
     dragging: boolean;
@@ -22,6 +26,8 @@ type Props = {
 export function FloatingItem({
     workspaceId,
     view,
+    appearance,
+    legacyPreview,
     node,
     selected,
     dragging,
@@ -33,6 +39,10 @@ export function FloatingItem({
     onReorder,
 }: Props) {
     const Icon = icons[node.type];
+    const [unavailableCoverId, setUnavailableCoverId] = useState<number | null>(
+        null,
+    );
+    const natural = appearance?.layout === 'natural';
     const imageUrl = (attachmentId: number) =>
         node.type === 'document'
             ? attachmentUrl(workspaceId, node.id, attachmentId)
@@ -90,9 +100,42 @@ export function FloatingItem({
             }}
         >
             {view === 'gallery' && (
-                <div className="floating-item-preview">
-                    {node.cover_attachment_id ? (
-                        <img src={imageUrl(node.cover_attachment_id)} alt="" />
+                <div
+                    className="floating-item-preview"
+                    style={
+                        appearance && !legacyPreview
+                            ? {
+                                  aspectRatio: natural
+                                      ? ratioNumber(
+                                            node.cover_attachment_id
+                                                ? node.cover_aspect_ratio
+                                                : '16:9',
+                                        )
+                                      : ratioNumber(appearance.ratio),
+                                  height: 'auto',
+                              }
+                            : undefined
+                    }
+                >
+                    {node.cover_attachment_id &&
+                    unavailableCoverId !== node.cover_attachment_id ? (
+                        <img
+                            src={imageUrl(node.cover_attachment_id)}
+                            alt=""
+                            loading="lazy"
+                            decoding="async"
+                            onError={() =>
+                                setUnavailableCoverId(
+                                    node.cover_attachment_id ?? null,
+                                )
+                            }
+                            style={{
+                                objectFit:
+                                    natural || appearance?.fit === 'contain'
+                                        ? 'contain'
+                                        : 'cover',
+                            }}
+                        />
                     ) : (
                         <Icon size={48} strokeWidth={1.3} aria-hidden="true" />
                     )}

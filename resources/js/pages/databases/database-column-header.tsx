@@ -8,7 +8,7 @@ import {
     EyeOff,
     Settings2,
 } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { propertyTypes } from './property-presentation';
 import type { Property, ViewConfig } from './types';
 
@@ -41,7 +41,38 @@ export default function DatabaseColumnHeader({
         initial: number;
         width: number;
     } | null>(null);
+    const resizeFrame = useRef<number | null>(null);
     const [resizing, setResizing] = useState(false);
+
+    useEffect(
+        () => () => {
+            if (resizeFrame.current !== null)
+                cancelAnimationFrame(resizeFrame.current);
+        },
+        [],
+    );
+
+    function cancelScheduledResize() {
+        if (resizeFrame.current !== null)
+            cancelAnimationFrame(resizeFrame.current);
+        resizeFrame.current = null;
+    }
+
+    function scheduleResize() {
+        if (resizeFrame.current !== null) return;
+        resizeFrame.current = requestAnimationFrame(() => {
+            resizeFrame.current = null;
+            if (drag.current) onResize(drag.current.width);
+        });
+    }
+
+    function cancelColumnResize() {
+        cancelScheduledResize();
+        if (drag.current) onResize(drag.current.initial);
+        drag.current = null;
+        setResizing(false);
+    }
+
     function move(direction: number) {
         const next = [...visibleIds];
         [next[index], next[index + direction]] = [
@@ -175,21 +206,20 @@ export default function DatabaseColumnHeader({
                                 drag.current.start,
                         ),
                     );
-                    onResize(drag.current.width);
+                    scheduleResize();
                 }}
                 onPointerUp={(event) => {
                     if (!drag.current) return;
+                    cancelScheduledResize();
                     const next = drag.current.width;
                     drag.current = null;
                     setResizing(false);
                     event.currentTarget.releasePointerCapture(event.pointerId);
+                    onResize(next);
                     onCommitWidth(Math.round(next));
                 }}
-                onPointerCancel={() => {
-                    if (drag.current) onResize(drag.current.initial);
-                    drag.current = null;
-                    setResizing(false);
-                }}
+                onPointerCancel={cancelColumnResize}
+                onLostPointerCapture={cancelColumnResize}
                 onKeyDown={(event) => {
                     if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight')
                         return;

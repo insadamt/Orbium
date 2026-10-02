@@ -59,13 +59,13 @@ export default function PropertyValue({
         );
     }
     if (property.type === 'mention' || property.type === 'files') {
-        const labels = selected.map((id) =>
+        const firstId = selected[0];
+        const firstLabel =
             property.type === 'mention'
-                ? (candidates.find((candidate) => candidate.id === id)?.title ??
-                  'Unavailable reference')
-                : (files.find((file) => file.id === id)?.original_name ??
-                  'Attachment'),
-        );
+                ? (candidates.find((candidate) => candidate.id === firstId)
+                      ?.title ?? 'Unavailable reference')
+                : (files.find((file) => file.id === firstId)?.original_name ??
+                  'Attachment');
         return (
             <span className="flex min-w-0 items-center gap-1.5">
                 {property.type === 'files' && (
@@ -77,11 +77,11 @@ export default function PropertyValue({
                 <span
                     className={`truncate ${property.type === 'mention' ? 'underline decoration-border underline-offset-4' : ''}`}
                 >
-                    {labels[0]}
+                    {selected.length > 0 ? firstLabel : undefined}
                 </span>
-                {labels.length > 1 && (
+                {selected.length > 1 && (
                     <span className="shrink-0 text-xs text-muted-foreground">
-                        +{labels.length - 1}
+                        +{selected.length - 1}
                     </span>
                 )}
             </span>

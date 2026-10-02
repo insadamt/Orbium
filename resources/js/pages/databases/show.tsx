@@ -14,7 +14,11 @@ import { usePageSearch } from '@/components/navigation/page-search';
 import { useContainerView } from '@/components/navigation/use-container-view';
 import { NodeMediaHeader } from '@/components/hierarchy/node-media-header';
 import { csrfToken, uploadAttachment } from '@/components/editor/editor-api';
-import { visibleDocuments, valueFor } from './database-data';
+import {
+    indexDatabaseValues,
+    visibleDocuments,
+    valueFor,
+} from './database-data';
 import DatabaseGallery from './database-gallery';
 import DatabasePropertyManager from './database-property-manager';
 import DatabaseTable from './database-table';
@@ -73,21 +77,25 @@ function DatabasePage({ page }: { page: DatabasePageProps }) {
             (left, right) =>
                 visibleIds.indexOf(left.id) - visibleIds.indexOf(right.id),
         );
-    const shownDocuments = useMemo(
+    const valueIndex = useMemo(() => indexDatabaseValues(values), [values]);
+    const filteredDocuments = useMemo(
         () =>
             visibleDocuments(
                 documents,
                 properties,
-                values,
+                valueIndex,
                 config.filters ?? [],
                 config.sorts ?? [],
-            ).filter((document) =>
-                document.title
-                    .toLocaleLowerCase()
-                    .includes(query.toLocaleLowerCase()),
             ),
-        [documents, properties, values, config.filters, config.sorts, query],
+        [documents, properties, valueIndex, config.filters, config.sorts],
     );
+    const shownDocuments = useMemo(() => {
+        if (!query) return filteredDocuments;
+        const normalizedQuery = query.toLocaleLowerCase();
+        return filteredDocuments.filter((document) =>
+            document.title.toLocaleLowerCase().includes(normalizedQuery),
+        );
+    }, [filteredDocuments, query]);
     useEffect(() => {
         pageSearch.setResultCount(query.trim() ? shownDocuments.length : null);
     }, [pageSearch.setResultCount, query, shownDocuments.length]);
@@ -155,7 +163,7 @@ function DatabasePage({ page }: { page: DatabasePageProps }) {
                 property={property}
                 workspaceId={workspace.id}
                 documentId={documentId}
-                value={valueFor(values, documentId, property.id)}
+                value={valueFor(valueIndex, documentId, property.id)}
                 candidates={candidates}
                 files={fileReferences}
                 onSave={(value) => saveValue(documentId, property.id, value)}
@@ -249,7 +257,13 @@ function DatabasePage({ page }: { page: DatabasePageProps }) {
                             type="button"
                             aria-label="View settings"
                             title="View settings"
-                            onClick={() => setSettingsSection('properties')}
+                            onClick={() =>
+                                setSettingsSection(
+                                    view === 'gallery'
+                                        ? 'appearance'
+                                        : 'properties',
+                                )
+                            }
                             className="db-icon-button"
                         >
                             <SlidersHorizontal size={16} />
@@ -288,7 +302,7 @@ function DatabasePage({ page }: { page: DatabasePageProps }) {
                         workspaceId={workspace.id}
                         documents={shownDocuments}
                         properties={visibleProperties}
-                        values={values}
+                        values={valueIndex}
                         candidates={candidates}
                         files={fileReferences}
                         config={config}

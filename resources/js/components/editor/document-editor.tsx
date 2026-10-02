@@ -154,7 +154,7 @@ export default function DocumentEditor({
                 },
             },
             onUpdate: ({ editor: updatedEditor }) =>
-                queueSave(updatedEditor.getJSON()),
+                queueSave(updatedEditor.state.doc),
         },
         [extensions],
     );
@@ -167,20 +167,25 @@ export default function DocumentEditor({
     }, [editor, searchTerm]);
 
     useEffect(() => {
-        if (!editor) {
+        if (!editor || !pageSearch.query.trim()) {
             pageSearch.setResultCount(null);
             return;
         }
+        let timer: ReturnType<typeof setTimeout> | null = null;
         const refreshMatchCount = () =>
             pageSearch.setResultCount(
-                pageSearch.query.trim()
-                    ? countDocumentMatches(editor, pageSearch.query)
-                    : null,
+                countDocumentMatches(editor, pageSearch.query),
             );
-        refreshMatchCount();
-        editor.on('update', refreshMatchCount);
+        const scheduleMatchCount = () => {
+            if (timer !== null) clearTimeout(timer);
+            timer = setTimeout(refreshMatchCount, 150);
+        };
+        pageSearch.setResultCount(null);
+        scheduleMatchCount();
+        editor.on('update', scheduleMatchCount);
         return () => {
-            editor.off('update', refreshMatchCount);
+            if (timer !== null) clearTimeout(timer);
+            editor.off('update', scheduleMatchCount);
         };
     }, [editor, pageSearch.query, pageSearch.setResultCount]);
 
@@ -191,12 +196,14 @@ export default function DocumentEditor({
             pageSearch.searchStep.id === 0
         )
             return;
-        selectNextMatch(
-            editor,
-            pageSearch.searchStep.query,
-            pageSearch.searchStep.previous,
+        pageSearch.setResultCount(
+            selectNextMatch(
+                editor,
+                pageSearch.searchStep.query,
+                pageSearch.searchStep.previous,
+            ),
         );
-    }, [editor, pageSearch.searchStep]);
+    }, [editor, pageSearch.searchStep, pageSearch.setResultCount]);
 
     async function addFiles(files: FileList | File[]) {
         if (!editor) return;

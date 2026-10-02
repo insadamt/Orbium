@@ -9,6 +9,8 @@ use App\Models\Workspace;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class NodeController extends Controller
 {
@@ -42,8 +44,15 @@ class NodeController extends Controller
             'title' => ['sometimes', 'required', 'string', 'max:255'],
             'icon' => ['sometimes', 'nullable', 'string', 'max:16'],
             'cover_attachment_id' => ['sometimes', 'nullable', 'integer'],
+            'cover_aspect_ratio' => ['sometimes', 'nullable', Rule::in(['16:9', '9:16', '3:2', '4:3', '1:1', '4:5'])],
             'icon_attachment_id' => ['sometimes', 'nullable', 'integer'],
         ]);
+        if (isset($data['cover_attachment_id']) && $data['cover_attachment_id'] !== $container->cover_attachment_id && empty($data['cover_aspect_ratio'])) {
+            throw ValidationException::withMessages(['cover_aspect_ratio' => 'Choose a cover aspect ratio.']);
+        }
+        if (array_key_exists('cover_aspect_ratio', $data) && ! array_key_exists('cover_attachment_id', $data)) {
+            throw ValidationException::withMessages(['cover_attachment_id' => 'Select a cover with its aspect ratio.']);
+        }
         foreach (['cover_attachment_id', 'icon_attachment_id'] as $field) {
             if (! isset($data[$field])) {
                 continue;
@@ -53,9 +62,12 @@ class NodeController extends Controller
                 ->whereKey($data[$field])->exists();
             abort_unless($validImage, 422);
         }
+        if (array_key_exists('cover_attachment_id', $data) && $data['cover_attachment_id'] === null) {
+            $data['cover_aspect_ratio'] = null;
+        }
         $container->update($data);
 
-        return response()->json($container->only(['title', 'icon', 'cover_attachment_id', 'icon_attachment_id']));
+        return response()->json($container->only(['title', 'icon', 'cover_attachment_id', 'cover_aspect_ratio', 'icon_attachment_id']));
     }
 
     public function move(Request $request, int $workspace, int $node, ManageHierarchy $hierarchy): RedirectResponse

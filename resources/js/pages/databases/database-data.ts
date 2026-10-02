@@ -1,5 +1,26 @@
 import type { DatabaseDocument, Filter, Property, Sort, Value } from './types';
 
+export type DatabaseValueIndex = ReadonlyMap<
+    number,
+    ReadonlyMap<number, unknown>
+>;
+
+const valueCollator = new Intl.Collator(undefined, { numeric: true });
+
+export function indexDatabaseValues(values: Value[]): DatabaseValueIndex {
+    const valuesByDocument = new Map<number, Map<number, unknown>>();
+    for (const item of values) {
+        let properties = valuesByDocument.get(item.document_node_id);
+        if (!properties) {
+            properties = new Map();
+            valuesByDocument.set(item.document_node_id, properties);
+        }
+        if (!properties.has(item.property_id))
+            properties.set(item.property_id, item.value);
+    }
+    return valuesByDocument;
+}
+
 export function displayValue(value: unknown): string {
     if (value === null || value === undefined) return '';
     if (
@@ -13,29 +34,26 @@ export function displayValue(value: unknown): string {
 }
 
 export function valueFor(
-    values: Value[],
+    values: DatabaseValueIndex,
     documentId: number,
     propertyId: number,
 ): unknown {
-    return values.find(
-        (item) =>
-            item.document_node_id === documentId &&
-            item.property_id === propertyId,
-    )?.value;
+    return values.get(documentId)?.get(propertyId);
 }
 
 export function visibleDocuments(
     documents: DatabaseDocument[],
     properties: Property[],
-    values: Value[],
+    values: DatabaseValueIndex,
     filters: Filter[],
     sorts: Sort[],
 ): DatabaseDocument[] {
+    const propertiesById = new Map(
+        properties.map((property) => [property.id, property]),
+    );
     const filtered = documents.filter((document) =>
         filters.every((filter) => {
-            const property = properties.find(
-                (item) => item.id === filter.property_id,
-            );
+            const property = propertiesById.get(filter.property_id);
             if (!property) return true;
             const value = valueFor(values, document.id, property.id);
             if (filter.operator === 'is_empty')
@@ -71,10 +89,9 @@ export function visibleDocuments(
                 sort.field === 'title'
                     ? right.title
                     : valueFor(values, right.id, Number(sort.field));
-            const comparison = displayValue(leftValue).localeCompare(
+            const comparison = valueCollator.compare(
+                displayValue(leftValue),
                 displayValue(rightValue),
-                undefined,
-                { numeric: true },
             );
             if (comparison !== 0)
                 return sort.direction === 'asc' ? comparison : -comparison;

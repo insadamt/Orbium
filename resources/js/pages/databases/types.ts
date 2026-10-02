@@ -20,6 +20,7 @@ export type DatabaseDocument = {
     id: number;
     title: string;
     cover_attachment_id: number | null;
+    cover_aspect_ratio: CoverRatio | null;
     plain_text: string;
 };
 export type Value = {
@@ -39,6 +40,10 @@ export type ViewConfig = {
     visible_property_ids?: number[];
     widths?: Record<string, number>;
     preview?: 'cover' | 'body' | 'none';
+    gallery_layout?: 'natural' | 'uniform';
+    gallery_ratio?: CoverRatio;
+    gallery_fit?: 'contain' | 'crop';
+    gallery_legacy_preview?: boolean;
     filters?: Filter[];
     sorts?: Sort[];
 };
@@ -50,6 +55,7 @@ export type DatabasePageProps = {
         parent_id: number | null;
         icon: string | null;
         cover_attachment_id: number | null;
+        cover_aspect_ratio: CoverRatio | null;
         icon_attachment_id: number | null;
     };
     properties: Property[];
@@ -60,3 +66,4 @@ export type DatabasePageProps = {
     fileReferences: FileReference[];
     errors: Record<string, string>;
 };
+import type { CoverRatio } from '@/components/hierarchy/cover-presentation';

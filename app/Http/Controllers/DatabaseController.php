@@ -24,7 +24,7 @@ class DatabaseController extends Controller
         $properties = DatabaseProperty::query()->where('database_node_id', $node)->orderBy('position')->orderBy('id')->get();
         $documents = $database->children()->where('type', 'document')
             ->with(['document' => fn ($query) => $query
-                ->select(['node_id', 'cover_attachment_id'])
+                ->select(['node_id', 'cover_attachment_id', 'cover_aspect_ratio'])
                 ->selectRaw('LEFT(plain_text, 240) AS plain_text')])
             ->orderBy('position')->orderBy('id')->get();
         $values = DatabaseValue::query()->whereIn('document_node_id', $documents->pluck('id'))->get();
@@ -38,12 +38,13 @@ class DatabaseController extends Controller
 
         return Inertia::render('databases/show', [
             'workspace' => $database->workspace->only(['id', 'name']),
-            'database' => $database->only(['id', 'title', 'parent_id', 'icon', 'cover_attachment_id', 'icon_attachment_id']),
+            'database' => $database->only(['id', 'title', 'parent_id', 'icon', 'cover_attachment_id', 'cover_aspect_ratio', 'icon_attachment_id']),
             'properties' => $properties->map(fn (DatabaseProperty $property) => $property->only(['id', 'name', 'type', 'position', 'config']))->values(),
             'documents' => $documents->map(fn (Node $document) => [
                 'id' => $document->id,
                 'title' => $document->title,
                 'cover_attachment_id' => $document->document?->cover_attachment_id,
+                'cover_aspect_ratio' => $document->document?->cover_aspect_ratio,
                 'plain_text' => mb_substr($document->document?->plain_text ?? '', 0, 240),
             ]),
             'values' => $values->map(fn (DatabaseValue $value) => $value->only(['document_node_id', 'property_id', 'value'])),
@@ -120,6 +121,10 @@ class DatabaseController extends Controller
             'visible_property_ids.*' => ['integer'],
             'widths' => ['sometimes', 'array'],
             'preview' => ['sometimes', Rule::in(['cover', 'body', 'none'])],
+            'gallery_layout' => ['sometimes', Rule::in(['natural', 'uniform'])],
+            'gallery_ratio' => ['sometimes', Rule::in(['16:9', '9:16', '3:2', '4:3', '1:1', '4:5'])],
+            'gallery_fit' => ['sometimes', Rule::in(['contain', 'crop'])],
+            'gallery_legacy_preview' => ['sometimes', 'boolean'],
             'filters' => ['sometimes', 'array', 'max:10'],
             'filters.*.property_id' => ['required', 'integer'],
             'filters.*.operator' => ['required', Rule::in(['is', 'is_not', 'contains', 'is_empty'])],

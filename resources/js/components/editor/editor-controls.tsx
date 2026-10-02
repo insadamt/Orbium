@@ -1,4 +1,5 @@
 import type { Editor } from '@tiptap/core';
+import type { Node as DocumentSnapshot } from '@tiptap/pm/model';
 import { TextSelection } from '@tiptap/pm/state';
 import { BubbleMenu } from '@tiptap/react/menus';
 import {
@@ -40,19 +41,29 @@ export function changeBlockOrder(
     editor.view.dispatch(tr.scrollIntoView());
 }
 
+const documentMatchCache = new WeakMap<
+    Editor,
+    { document: DocumentSnapshot; query: string; positions: number[] }
+>();
+
 function findDocumentMatches(editor: Editor, query: string): number[] {
     if (!query) return [];
+    const document = editor.state.doc;
+    const cached = documentMatchCache.get(editor);
+    if (cached?.document === document && cached.query === query)
+        return cached.positions;
     const matches: number[] = [];
-    editor.state.doc.descendants((node, pos) => {
+    const needle = query.toLocaleLowerCase();
+    document.descendants((node, pos) => {
         if (!node.isText || !node.text) return;
         const text = node.text.toLocaleLowerCase();
-        const needle = query.toLocaleLowerCase();
         let start = 0;
         while ((start = text.indexOf(needle, start)) !== -1) {
             matches.push(pos + start);
             start += needle.length;
         }
     });
+    documentMatchCache.set(editor, { document, query, positions: matches });
     return matches;
 }
 
@@ -68,8 +79,7 @@ export function selectNextMatch(
     const matches = findDocumentMatches(editor, query);
     const current = editor.state.selection.from;
     const found = previous
-        ? ([...matches].reverse().find((pos) => pos < current) ??
-          matches.at(-1))
+        ? (matches.findLast((pos) => pos < current) ?? matches.at(-1))
         : (matches.find((pos) => pos > current) ?? matches[0]);
     if (found !== undefined)
         editor

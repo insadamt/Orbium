@@ -18,6 +18,8 @@ Database
 
 Views never own data.
 
+Table, Gallery, filters, and sorts share a derived in-memory index of the current server-supplied values by document/property ID. Partial value reloads rebuild this index. Title search filters the existing sorted result without repeating property filtering and sorting for each keypress. All matching rows are still rendered; virtualization is not implemented.
+
 ## Built-in title
 
 Every child document's Node title is the database title column.
@@ -113,6 +115,8 @@ Header menu may contain:
 - delete.
 
 ## Gallery view
+
+Gallery appearance offers natural masonry using each document's saved cover ratio, or uniform cards with a selected ratio and whole-image or fill-crop fit. Appearance changes previews only and is saved in the database Gallery view configuration. Existing Gallery views keep their uniform cropped presentation; newly created databases default to natural masonry. Documents retain their saved cover and ratio when moved to another database.
 
 Card-based browse surface.
 

@@ -19,6 +19,7 @@ type NavigationPageProps = {
     node?: { id: number; title: string; parent_id: number | null };
     currentNode?: TreeNode | null;
     database?: { id: number; title: string; parent_id: number | null };
+    nodes?: TreeNode[];
 };
 
 export function NavigationEvents() {
@@ -26,7 +27,9 @@ export function NavigationEvents() {
     const { auth, workspace, node, currentNode, database } = page.props;
     const workspaceId = workspace?.id;
     const [searchOpen, setSearchOpen] = useState(false);
-    const [nodes, setNodes] = useState<TreeNode[]>([]);
+    const [fetchedNodes, setFetchedNodes] = useState<TreeNode[]>([]);
+    const pageNodes = page.props.nodes;
+    const nodes = pageNodes ?? fetchedNodes;
     const currentId = node?.id ?? database?.id ?? currentNode?.id;
     const title =
         node?.title ??
@@ -65,23 +68,22 @@ export function NavigationEvents() {
     }, []);
 
     useEffect(() => {
-        if (!workspaceId) {
-            setNodes([]);
-            return;
-        }
+        setFetchedNodes([]);
+        if (!workspaceId || pageNodes !== undefined || !searchOpen) return;
         const controller = new AbortController();
-        setNodes([]);
         fetch(`/workspaces/${workspaceId}/tree`, {
             signal: controller.signal,
             headers: { Accept: 'application/json' },
         })
             .then((response) => (response.ok ? response.json() : []))
-            .then(setNodes)
+            .then((loadedNodes: TreeNode[]) => {
+                if (!controller.signal.aborted) setFetchedNodes(loadedNodes);
+            })
             .catch(() => {
-                if (!controller.signal.aborted) setNodes([]);
+                if (!controller.signal.aborted) setFetchedNodes([]);
             });
         return () => controller.abort();
-    }, [workspaceId, page.version, page.props]);
+    }, [workspaceId, page.version, page.props, pageNodes, searchOpen]);
 
     useEffect(() => {
         const openSearch = () => setSearchOpen(true);

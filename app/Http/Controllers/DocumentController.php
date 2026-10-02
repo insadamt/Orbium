@@ -9,6 +9,8 @@ use App\Models\DatabaseValue;
 use App\Models\Node;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -30,7 +32,7 @@ class DocumentController extends Controller
         return Inertia::render('documents/show', [
             'workspace' => $workspaceModel->only(['id', 'name']),
             'node' => $documentNode->only(['id', 'title', 'icon', 'parent_id']),
-            'document' => $document->only(['content', 'revision', 'cover_attachment_id', 'icon_attachment_id']),
+            'document' => $document->only(['content', 'revision', 'cover_attachment_id', 'cover_aspect_ratio', 'icon_attachment_id']),
             'databaseProperties' => $documentNode->parent?->type === 'database'
                 ? DatabaseProperty::query()->where('database_node_id', $documentNode->parent_id)->orderBy('position')->get(['id', 'name', 'type', 'position', 'config']) : [],
             'databaseValues' => $documentNode->parent?->type === 'database'
@@ -64,8 +66,15 @@ class DocumentController extends Controller
             'title' => ['sometimes', 'required', 'string', 'max:255'],
             'icon' => ['sometimes', 'nullable', 'string', 'max:16'],
             'cover_attachment_id' => ['sometimes', 'nullable', 'integer'],
+            'cover_aspect_ratio' => ['sometimes', 'nullable', Rule::in(['16:9', '9:16', '3:2', '4:3', '1:1', '4:5'])],
             'icon_attachment_id' => ['sometimes', 'nullable', 'integer'],
         ]);
+        if (isset($data['cover_attachment_id']) && $data['cover_attachment_id'] !== $documentNode->document->cover_attachment_id && empty($data['cover_aspect_ratio'])) {
+            throw ValidationException::withMessages(['cover_aspect_ratio' => 'Choose a cover aspect ratio.']);
+        }
+        if (array_key_exists('cover_aspect_ratio', $data) && ! array_key_exists('cover_attachment_id', $data)) {
+            throw ValidationException::withMessages(['cover_attachment_id' => 'Select a cover with its aspect ratio.']);
+        }
         foreach (['cover_attachment_id', 'icon_attachment_id'] as $attachmentField) {
             if (! array_key_exists($attachmentField, $data) || $data[$attachmentField] === null) {
                 continue;
@@ -76,7 +85,10 @@ class DocumentController extends Controller
             abort_unless($validImage, 422);
         }
         $documentNode->update(collect($data)->only(['title', 'icon'])->all());
-        $documentChanges = collect($data)->only(['cover_attachment_id', 'icon_attachment_id'])->all();
+        $documentChanges = collect($data)->only(['cover_attachment_id', 'cover_aspect_ratio', 'icon_attachment_id'])->all();
+        if (array_key_exists('cover_attachment_id', $data) && $data['cover_attachment_id'] === null) {
+            $documentChanges['cover_aspect_ratio'] = null;
+        }
         if ($documentChanges !== []) {
             $documentNode->document()->update($documentChanges);
         }
@@ -85,6 +97,7 @@ class DocumentController extends Controller
             'title' => $documentNode->title,
             'icon' => $documentNode->icon,
             'cover_attachment_id' => $documentNode->document->cover_attachment_id,
+            'cover_aspect_ratio' => $documentNode->document->cover_aspect_ratio,
             'icon_attachment_id' => $documentNode->document->icon_attachment_id,
         ]);
     }

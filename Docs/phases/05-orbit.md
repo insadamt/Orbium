@@ -1,5 +1,7 @@
 # Phase 5 — Explorer review
 
+The 2026-10-02 cover review adds six cropped cover ratios and per-container Gallery appearance settings to the active floating workspace pass. Existing wide covers and Gallery configurations retain their prior appearance until replaced or edited. Manual review and quality-gate results belong in the phase report; do not start a later phase.
+
 ## Current floating workspace pass (2026-09-30)
 
 The workspace selector now includes **Manage workspaces**, which opens the Workspaces section in Settings. Its floating manager offers compact creation, drag reorder, row menus for Rename and Move to Trash, and a collapsible Trash with Restore and permanent deletion. Permanent deletion is reached from a trashed workspace's menu and requires the exact workspace name; the server repeats that check and removes the workspace hierarchy, related records, and attachment directory. Search and document text fields use borderless surfaces without a black native focus frame.
