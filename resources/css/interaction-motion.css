@@ -1,0 +1,67 @@
+:root {
+    --motion-feedback: 100ms;
+    --motion-enter: 160ms;
+    --motion-exit: 100ms;
+    --motion-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    :is(
+        .floating-icon-button,
+        .floating-add-tab,
+        .floating-search-trigger,
+        .floating-search-close,
+        .orbium-shell [data-slot='button']
+    ) {
+        transition:
+            scale var(--motion-feedback) var(--motion-ease),
+            background-color var(--motion-feedback) ease,
+            color var(--motion-feedback) ease,
+            box-shadow var(--motion-feedback) ease;
+    }
+
+    :is(
+            .floating-icon-button,
+            .floating-add-tab,
+            .floating-search-trigger,
+            .floating-search-close,
+            .orbium-shell [data-slot='button']
+        ):active:not(:disabled):not([aria-disabled='true']) {
+        scale: 0.96;
+    }
+
+    .floating-menu-item,
+    .floating-context-menu button {
+        transition:
+            background-color var(--motion-feedback) ease,
+            color var(--motion-feedback) ease;
+    }
+
+    .orbium-dialog-overlay[data-state='open'],
+    .orbium-dialog-content[data-state='open'] {
+        animation: orbium-feedback-enter var(--motion-enter) var(--motion-ease);
+    }
+
+    .orbium-dialog-overlay[data-state='closed'],
+    .orbium-dialog-content[data-state='closed'] {
+        animation: orbium-feedback-exit var(--motion-exit) ease-in;
+    }
+}
+
+@keyframes orbium-feedback-enter {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes orbium-feedback-exit {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0;
+    }
+}

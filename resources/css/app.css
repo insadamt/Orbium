@@ -10,6 +10,7 @@
 @import './appearance-settings.css';
 @import './wallpaper-dialog.css';
 @import 'tw-animate-css';
+@import './interaction-motion.css';
 
 .orbium-editor {
     color: var(--foreground);

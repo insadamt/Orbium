@@ -105,14 +105,19 @@ class WorkspaceController extends Controller
     private function renderWorkspace(Request $request, int $workspaceId, ?int $nodeId): Response
     {
         $workspace = $this->ownedWorkspace($request, $workspaceId);
-        $nodes = $workspace->nodes()->with('document')->orderBy('position')->orderBy('id')->get();
-        $visibleNodes = $nodes->filter(function (Node $node) use ($nodes): bool {
+        $nodes = $workspace->nodes()
+            ->with('document:node_id,cover_attachment_id,icon_attachment_id')
+            ->orderBy('position')->orderBy('id')->get();
+        $nodesById = $nodes->keyBy('id');
+        $visibleNodes = $nodes->filter(function (Node $node) use ($nodesById): bool {
             $ancestorId = $node->parent_id;
+            $visited = [$node->id => true];
             while ($ancestorId !== null) {
-                $ancestor = $nodes->firstWhere('id', $ancestorId);
-                if ($ancestor === null) {
+                $ancestor = $nodesById->get($ancestorId);
+                if ($ancestor === null || isset($visited[$ancestorId])) {
                     return false;
                 }
+                $visited[$ancestorId] = true;
                 $ancestorId = $ancestor->parent_id;
             }
 
@@ -128,7 +133,7 @@ class WorkspaceController extends Controller
         $nodeCrumbs = [];
         while ($ancestor !== null) {
             array_unshift($nodeCrumbs, ['title' => $ancestor->title, 'href' => route('nodes.show', [$workspace, $ancestor])]);
-            $ancestor = $visibleNodes->firstWhere('id', $ancestor->parent_id);
+            $ancestor = $nodesById->get($ancestor->parent_id);
         }
 
         return Inertia::render('dashboard', [

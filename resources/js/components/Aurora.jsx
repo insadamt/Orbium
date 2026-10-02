@@ -188,6 +188,7 @@ export default function Aurora(props) {
         ctn.appendChild(gl.canvas);
 
         let animateId = 0;
+        let previousColorStops = colorStops;
         const update = (t) => {
             animateId = requestAnimationFrame(update);
             const { time = t * 0.01, speed = 1.0 } = propsRef.current;
@@ -198,18 +199,28 @@ export default function Aurora(props) {
             program.uniforms.uLightMode.value =
                 (propsRef.current.lightMode ?? lightMode) ? 1 : 0;
             const stops = propsRef.current.colorStops ?? colorStops;
-            program.uniforms.uColorStops.value = stops.map((hex) => {
-                const c = new Color(hex);
-                return [c.r, c.g, c.b];
-            });
+            if (stops !== previousColorStops) {
+                previousColorStops = stops;
+                program.uniforms.uColorStops.value = stops.map((hex) => {
+                    const c = new Color(hex);
+                    return [c.r, c.g, c.b];
+                });
+            }
             renderer.render({ scene: mesh });
         };
-        animateId = requestAnimationFrame(update);
+        function updateVisibility() {
+            cancelAnimationFrame(animateId);
+            animateId = 0;
+            if (!document.hidden) animateId = requestAnimationFrame(update);
+        }
+        document.addEventListener('visibilitychange', updateVisibility);
+        updateVisibility();
 
         resize();
 
         return () => {
             cancelAnimationFrame(animateId);
+            document.removeEventListener('visibilitychange', updateVisibility);
             window.removeEventListener('resize', resize);
             if (ctn && gl.canvas.parentNode === ctn) {
                 ctn.removeChild(gl.canvas);
@@ -217,7 +228,7 @@ export default function Aurora(props) {
             gl.getExtension('WEBGL_lose_context')?.loseContext();
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [amplitude, blend, lightMode]);
+    }, []);
 
     return <div ref={ctnDom} className="aurora-container" />;
 }

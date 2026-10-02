@@ -90,6 +90,59 @@ export default function EditorBlockGutter({
     const visibleBlock = menuBlock ?? hoveredBlock;
 
     useEffect(() => {
+        const surface = surfaceRef.current;
+        if (!surface || menuBlock) return;
+        let frame: number | null = null;
+        let pointer: { target: EventTarget; y: number } | null = null;
+
+        function cancelHoverMeasurement() {
+            if (frame !== null) cancelAnimationFrame(frame);
+            frame = null;
+            pointer = null;
+        }
+
+        function scheduleHoverMeasurement(event: globalThis.MouseEvent) {
+            if (
+                draggedBlock.current !== null ||
+                (event.target instanceof Element &&
+                    event.target.closest('[data-block-controls]'))
+            ) {
+                cancelHoverMeasurement();
+                return;
+            }
+            if (!event.target) return;
+            pointer = { target: event.target, y: event.clientY };
+            if (frame !== null) return;
+            frame = requestAnimationFrame(() => {
+                frame = null;
+                if (!pointer || !surface || draggedBlock.current !== null)
+                    return;
+                const block = findHoveredBlock(
+                    editor,
+                    surface,
+                    pointer.target,
+                    pointer.y,
+                );
+                if (block)
+                    setHoveredBlock((current) =>
+                        current?.index === block.index &&
+                        current.top === block.top
+                            ? current
+                            : block,
+                    );
+            });
+        }
+
+        surface.addEventListener('mousemove', scheduleHoverMeasurement);
+        surface.addEventListener('mouseleave', cancelHoverMeasurement);
+        return () => {
+            cancelHoverMeasurement();
+            surface.removeEventListener('mousemove', scheduleHoverMeasurement);
+            surface.removeEventListener('mouseleave', cancelHoverMeasurement);
+        };
+    }, [editor, menuBlock]);
+
+    useEffect(() => {
         if (!menuBlock) return;
         const closeOutside = (event: PointerEvent) => {
             if (!surfaceRef.current?.contains(event.target as Node))
@@ -153,23 +206,6 @@ export default function EditorBlockGutter({
         <div
             ref={surfaceRef}
             className="relative pl-10 sm:pl-0"
-            onMouseMove={(event) => {
-                if (menuBlock || draggedBlock.current !== null) return;
-                if (
-                    (event.target as HTMLElement).closest(
-                        '[data-block-controls]',
-                    )
-                )
-                    return;
-                const block = locateBlock(event.target, event.clientY);
-                if (block)
-                    setHoveredBlock((current) =>
-                        current?.index === block.index &&
-                        current.top === block.top
-                            ? current
-                            : block,
-                    );
-            }}
             onMouseLeave={() => {
                 if (draggedBlock.current === null) setHoveredBlock(null);
             }}

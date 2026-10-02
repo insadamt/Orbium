@@ -22,7 +22,11 @@ class DatabaseController extends Controller
     {
         $database = $this->ownedDatabase($request, $workspace, $node);
         $properties = DatabaseProperty::query()->where('database_node_id', $node)->orderBy('position')->orderBy('id')->get();
-        $documents = $database->children()->where('type', 'document')->with('document')->orderBy('position')->orderBy('id')->get();
+        $documents = $database->children()->where('type', 'document')
+            ->with(['document' => fn ($query) => $query
+                ->select(['node_id', 'cover_attachment_id'])
+                ->selectRaw('LEFT(plain_text, 240) AS plain_text')])
+            ->orderBy('position')->orderBy('id')->get();
         $values = DatabaseValue::query()->whereIn('document_node_id', $documents->pluck('id'))->get();
         $views = DatabaseViewSetting::query()->where('database_node_id', $node)->get()->pluck('config', 'view_type');
         $ancestors = [];

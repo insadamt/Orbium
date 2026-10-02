@@ -11,11 +11,11 @@ export function DialogContent({
 }: ComponentProps<typeof DialogPrimitive.Content>) {
     return (
         <DialogPrimitive.Portal>
-            <DialogPrimitive.Overlay className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm" />
+            <DialogPrimitive.Overlay className="orbium-dialog-overlay fixed inset-0 z-40 bg-black/30 backdrop-blur-sm" />
             <DialogPrimitive.Content
                 aria-describedby={undefined}
                 className={cn(
-                    'fixed top-[15%] left-1/2 z-50 flex w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 flex-col gap-3 rounded-xl border border-border bg-background/95 p-5 shadow-xl',
+                    'orbium-dialog-content fixed top-[15%] left-1/2 z-50 flex w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 flex-col gap-3 rounded-xl border border-border bg-background/95 p-5 shadow-xl',
                     className,
                 )}
                 {...props}

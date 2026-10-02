@@ -56,6 +56,7 @@ function MermaidView({ node, updateAttributes }: NodeViewProps) {
         const render = async () => {
             try {
                 const { default: mermaid } = await import('mermaid');
+                if (!active) return;
                 mermaid.initialize({
                     startOnLoad: false,
                     securityLevel: 'strict',
@@ -85,9 +86,10 @@ function MermaidView({ node, updateAttributes }: NodeViewProps) {
                 }
             }
         };
-        void render();
+        const timer = window.setTimeout(() => void render(), 200);
         return () => {
             active = false;
+            window.clearTimeout(timer);
         };
     }, [source]);
 
