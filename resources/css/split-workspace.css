@@ -91,6 +91,14 @@
     padding: 0 8px;
     text-align: left;
     font-size: 12px;
+    cursor: grab;
+    touch-action: manipulation;
+}
+.split-navigation-page:active {
+    cursor: grabbing;
+}
+.floating-tab-drag-preview.is-split > span + span {
+    border-left: 1px solid var(--border);
 }
 .split-navigation-page span {
     min-width: 0;

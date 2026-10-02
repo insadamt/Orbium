@@ -81,6 +81,13 @@ const handleSystemThemeChange = (): void => {
     else applySystemTheme();
 };
 
+const handleStoredAppearanceChange = (event: StorageEvent): void => {
+    if (event.key !== 'appearance') return;
+    currentAppearance = getStoredAppearance();
+    applyTheme(currentAppearance);
+    notify();
+};
+
 export function initializeTheme(): void {
     if (typeof window === 'undefined') {
         return;
@@ -95,6 +102,7 @@ export function initializeTheme(): void {
     applyTheme(currentAppearance);
 
     mediaQuery()?.addEventListener('change', handleSystemThemeChange);
+    window.addEventListener('storage', handleStoredAppearanceChange);
 }
 
 export function useAppearance(): UseAppearanceReturn {

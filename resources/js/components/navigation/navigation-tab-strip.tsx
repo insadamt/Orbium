@@ -189,6 +189,16 @@ export function NavigationTabStrip({
         (tab) =>
             !groupForTab(splitGroups, tab.id) || firstSplitTabIds.has(tab.id),
     );
+    const draggedGroup = draggedTab
+        ? groupForTab(splitGroups, draggedTab.id)
+        : undefined;
+    const dragPreviewTabs = draggedGroup
+        ? [draggedGroup.leftId, draggedGroup.rightId]
+              .map((id) => tabs.find((tab) => tab.id === id))
+              .filter((tab): tab is Tab => Boolean(tab))
+        : draggedTab
+          ? [draggedTab]
+          : [];
     const sensors = useSensors(
         useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
         useSensor(TouchSensor, {
@@ -286,10 +296,15 @@ export function NavigationTabStrip({
                     if (tab) {
                         const tabElement = Array.from(
                             tabListRef.current?.children ?? [],
-                        ).find(
-                            (child) =>
-                                (child as HTMLElement).dataset.tabId === tab.id,
-                        );
+                        ).find((child) => {
+                            const element = child as HTMLElement;
+                            return (
+                                element.dataset.tabId === tab.id ||
+                                element.dataset.splitTabIds
+                                    ?.split(' ')
+                                    .includes(tab.id)
+                            );
+                        });
                         setDragPreviewWidth(
                             tabElement?.getBoundingClientRect().width ??
                                 active.rect.current.initial?.width,
@@ -304,9 +319,7 @@ export function NavigationTabStrip({
                 }}
             >
                 <SortableContext
-                    items={displayedTabs
-                        .filter((tab) => !groupForTab(splitGroups, tab.id))
-                        .map((tab) => tab.id)}
+                    items={displayedTabs.map((tab) => tab.id)}
                     strategy={horizontalListSortingStrategy}
                 >
                     <div
@@ -333,6 +346,7 @@ export function NavigationTabStrip({
                                         key={`split-${left.id}-${right.id}`}
                                         left={left}
                                         right={right}
+                                        sortId={tab.id}
                                         activeId={activeId}
                                         floating={floating}
                                     />
@@ -367,25 +381,22 @@ export function NavigationTabStrip({
                         >
                             {draggedTab && (
                                 <div
-                                    className={`floating-tab-drag-preview ${draggedTab.id === activeId ? 'bg-accent text-foreground' : 'text-muted-foreground'}`}
+                                    className={`floating-tab-drag-preview ${draggedGroup ? 'is-split' : ''} ${draggedTab.id === activeId || (draggedGroup && [draggedGroup.leftId, draggedGroup.rightId].includes(activeId)) ? 'bg-accent text-foreground' : 'text-muted-foreground'}`}
                                 >
-                                    <span className="flex min-w-0 flex-1 items-center gap-2 py-2 pr-1 pl-3 text-left text-xs">
-                                        <NavigationTabIcon
-                                            entry={
-                                                draggedTab.entries[
-                                                    draggedTab.index
-                                                ]
-                                            }
-                                        />
-                                        <span className="truncate">
-                                            {
-                                                draggedTab.entries[
-                                                    draggedTab.index
-                                                ].title
-                                            }
+                                    {dragPreviewTabs.map((tab) => (
+                                        <span
+                                            key={tab.id}
+                                            className="flex min-w-0 flex-1 items-center gap-2 py-2 pr-1 pl-3 text-left text-xs"
+                                        >
+                                            <NavigationTabIcon
+                                                entry={tab.entries[tab.index]}
+                                            />
+                                            <span className="truncate">
+                                                {tab.entries[tab.index].title}
+                                            </span>
                                         </span>
-                                    </span>
-                                    {draggedTab.pinned ? (
+                                    ))}
+                                    {draggedGroup ? null : draggedTab.pinned ? (
                                         <Pin
                                             size={12}
                                             fill="currentColor"

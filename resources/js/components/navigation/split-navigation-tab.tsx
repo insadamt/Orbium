@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { X } from 'lucide-react';
 import type { Tab } from './navigation-store';
 import { useNavigation } from './navigation-store';
@@ -8,13 +10,29 @@ import { activateTab } from './tab-navigation';
 type Props = {
     left: Tab;
     right: Tab;
+    sortId: string;
     activeId: string;
     floating: boolean;
 };
 
-export function SplitNavigationTab({ left, right, activeId, floating }: Props) {
+export function SplitNavigationTab({
+    left,
+    right,
+    sortId,
+    activeId,
+    floating,
+}: Props) {
     const isGroupActive = activeId === left.id || activeId === right.id;
     const [focusedId, setFocusedId] = useState(activeId);
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        setActivatorNodeRef,
+        transform,
+        transition,
+        isDragging,
+    } = useSortable({ id: sortId });
 
     useEffect(() => {
         if (!isGroupActive) setFocusedId(activeId);
@@ -37,6 +55,14 @@ export function SplitNavigationTab({ left, right, activeId, floating }: Props) {
 
     return (
         <div
+            ref={setNodeRef}
+            style={{
+                transform: isDragging
+                    ? undefined
+                    : CSS.Transform.toString(transform),
+                transition,
+                opacity: isDragging ? 0 : undefined,
+            }}
             className={`split-navigation-tab ${floating ? 'floating-tab' : 'my-1.5 rounded-lg'} ${isGroupActive ? 'bg-accent text-foreground' : 'text-muted-foreground hover:bg-accent/60'}`}
             data-split-tab-ids={`${left.id} ${right.id}`}
             aria-label="Split tab"
@@ -46,6 +72,11 @@ export function SplitNavigationTab({ left, right, activeId, floating }: Props) {
                 return (
                     <button
                         key={tab.id}
+                        ref={
+                            tab.id === sortId ? setActivatorNodeRef : undefined
+                        }
+                        {...attributes}
+                        {...listeners}
                         type="button"
                         role="tab"
                         aria-selected={isGroupActive && tab.id === focusedId}

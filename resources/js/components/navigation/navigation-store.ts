@@ -1,5 +1,9 @@
 import { create } from 'zustand';
-import { groupForTab, restoreSplitGroups } from './split-group-state';
+import {
+    groupForTab,
+    reorderTabGroups,
+    restoreSplitGroups,
+} from './split-group-state';
 import { canSplitTabs } from './split-tab-rules';
 
 export type Location = {
@@ -250,17 +254,14 @@ export const useNavigation = create<NavigationState>((set, get) => ({
         persist(get());
     },
     moveTab(activeId, overId) {
-        const tabs = get().tabs;
-        const from = tabs.findIndex((tab) => tab.id === activeId);
-        const to = tabs.findIndex((tab) => tab.id === overId);
-        if (
-            from < 0 ||
-            to < 0 ||
-            Boolean(tabs[from].pinned) !== Boolean(tabs[to].pinned)
-        )
-            return;
-        const reordered = [...tabs];
-        reordered.splice(to, 0, ...reordered.splice(from, 1));
+        const state = get();
+        const reordered = reorderTabGroups(
+            state.tabs,
+            state.splitGroups,
+            activeId,
+            overId,
+        );
+        if (!reordered) return;
         set({ tabs: reordered });
         persist(get());
     },
