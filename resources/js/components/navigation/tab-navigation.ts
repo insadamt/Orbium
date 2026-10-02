@@ -191,6 +191,26 @@ export function stepHistory(delta: number) {
         scroll: location.scroll,
     });
 }
+export function restoreBrowserHistory(url: string) {
+    const state = useNavigation.getState();
+    const tab = state.tabs.find((item) => item.id === state.activeId);
+    if (!tab || tab.entries[tab.index].url === url) return;
+
+    const previousIndex = tab.entries.findLastIndex(
+        (entry, index) => index < tab.index && entry.url === url,
+    );
+    const nextIndex = tab.entries.findIndex(
+        (entry, index) => index > tab.index && entry.url === url,
+    );
+    const closestIndex =
+        previousIndex < 0
+            ? nextIndex
+            : nextIndex < 0 ||
+                tab.index - previousIndex <= nextIndex - tab.index
+              ? previousIndex
+              : nextIndex;
+    if (closestIndex >= 0) state.step(closestIndex - tab.index);
+}
 export function closeTab(id: string) {
     const state = useNavigation.getState();
     if (state.tabs.find((tab) => tab.id === id)?.pinned) return;

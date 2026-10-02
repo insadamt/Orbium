@@ -12,6 +12,7 @@ import {
     DialogTitle,
 } from '@/components/navigation/navigation-dialog';
 import { NavigationTabStrip } from '@/components/navigation/navigation-tab-strip';
+import { NavigationBackButton } from '@/components/navigation/navigation-back-button';
 import { FloatingPageSearch } from '@/components/navigation/floating-navigation-buttons';
 import { FloatingBreadcrumbs } from '@/components/navigation/floating-breadcrumbs';
 import { usePageSearch } from '@/components/navigation/page-search';
@@ -86,6 +87,7 @@ export function FloatingTopControls({
         <>
             <header ref={topControlsRef} className="floating-top-controls">
                 <div className="floating-workspace-controls">
+                    <NavigationBackButton className="floating-icon-button floating-surface" />
                     <Link
                         href={
                             workspace

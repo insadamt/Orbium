@@ -10,7 +10,7 @@ The review also centers the tab island, adds Grid/List/Gallery explorer layouts,
 
 The user replaced the earlier orbital home brief with a continuous, neutral workspace of independent floating controls and compact items. This pass supersedes the carousel/half-orb explorer, while leaving document/database work surfaces and the backend unchanged.
 
-- Independent floating top groups: logo, custom workspace selector, a separate breadcrumb-path island immediately to its right, a centered opened-tabs island whose plus button opens workspace home in a new tab, and settings/account controls. The former floating Back button is removed; breadcrumb ancestors open their hierarchy location. Search expands into an inline, current-page field; Ctrl+Space still opens Search Master.
+- Independent floating top groups: logo, custom workspace selector, a separate breadcrumb-path island immediately to its right, a centered opened-tabs island whose plus button opens workspace home in a new tab, and settings/account controls. Breadcrumb ancestors open their hierarchy location. Search expands into an inline, current-page field; Ctrl+Space still opens Search Master.
 - Show only direct children, in persisted order, without a sidebar, headings, counts, hero, footer, or visible Trash shortcut.
 - Click/Enter opens an entity in the current tab; Ctrl+click or Ctrl+Enter opens it in a new app tab. Space can select a focused item. Native drag/drop supports reorder and validated containment. Right-clicking empty explorer space offers document, folder, and database creation; right-clicking an item offers Open, Open in new tab, Rename, and Delete. The item menu does not expose Move.
 - Use short CSS transitions and honor reduced motion.
@@ -19,6 +19,8 @@ The user replaced the earlier orbital home brief with a continuous, neutral work
 The floating shell now also wraps document, database, and settings pages. Settings categories sit horizontally inside one floating island. Their editor, database views, and controls sit inside a single spacious island; data behavior remains unchanged. The original 3D tasks below remain suspended. Stop after this explorer review; do not start another phase.
 
 The floating top controls stay fixed at the viewport top while pages scroll. Their space in the page adapts to wrapped rows and the expanded search field so content starts below the controls.
+
+The 2026-10-02 navigation review restores an in-app Back button in the floating top controls at the user's request. Browser Back and Forward refresh restored Inertia pages from the server so edited document titles, covers, and database properties appear in parent views without a manual refresh.
 
 The 2026-10-01 explorer follow-up enlarges item icons in Grid, List, and Gallery. While dragging an item in a nested folder, a drop area appears above the items; dropping there moves the item to that folder's immediate parent and appends it to that parent's contents.
 

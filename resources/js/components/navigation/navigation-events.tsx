@@ -10,6 +10,7 @@ import {
     locationKind,
     openLocation,
     recordPage,
+    restoreBrowserHistory,
     stepHistory,
 } from './tab-navigation';
 
@@ -64,6 +65,41 @@ export function NavigationEvents() {
         return () => {
             removeStart();
             window.removeEventListener('pagehide', saveScroll);
+        };
+    }, []);
+
+    useEffect(() => {
+        let restoredUrl: string | null = null;
+        const markHistoryRestoration = () => {
+            restoredUrl = window.location.pathname + window.location.search;
+        };
+        const refreshRestoredPage = router.on('navigate', (event) => {
+            if (restoredUrl === null) return;
+            const shouldRefresh = event.detail.page.url === restoredUrl;
+            restoredUrl = null;
+            if (shouldRefresh) {
+                restoreBrowserHistory(event.detail.page.url);
+                refreshCurrentPage();
+            }
+        });
+        const refreshCachedDocument = (event: PageTransitionEvent) => {
+            if (event.persisted) {
+                refreshCurrentPage();
+            }
+        };
+        function refreshCurrentPage() {
+            router.visit(window.location.pathname + window.location.search, {
+                replace: true,
+                preserveState: false,
+                preserveScroll: true,
+            });
+        }
+        window.addEventListener('popstate', markHistoryRestoration);
+        window.addEventListener('pageshow', refreshCachedDocument);
+        return () => {
+            refreshRestoredPage();
+            window.removeEventListener('popstate', markHistoryRestoration);
+            window.removeEventListener('pageshow', refreshCachedDocument);
         };
     }, []);
 

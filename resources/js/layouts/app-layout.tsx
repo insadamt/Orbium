@@ -8,6 +8,7 @@ import { FloatingTopControls } from '@/components/hierarchy/floating-top-control
 import type { TrashedNode } from '@/components/hierarchy/node-browser';
 import type { WorkspaceSummary } from '@/components/hierarchy/workspace-panel';
 import { NavigationEvents } from '@/components/navigation/navigation-events';
+import { NavigationBackButton } from '@/components/navigation/navigation-back-button';
 import { NavigationTabStrip } from '@/components/navigation/navigation-tab-strip';
 import { PageSearchProvider } from '@/components/navigation/page-search';
 import { SplitWorkspace } from '@/components/navigation/split-workspace';
@@ -127,6 +128,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
             {!isPane && !isFloatingPage && (
                 <header className="glass-surface sticky top-0 z-20 border-b border-border/70">
                     <div className="flex h-14 items-center gap-2 px-3 md:gap-3 md:px-5">
+                        <NavigationBackButton className="flex size-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring disabled:opacity-40" />
                         <WorkspaceSelector />
                         <NavigationTabStrip />
                         <button
