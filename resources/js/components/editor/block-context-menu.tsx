@@ -13,6 +13,7 @@ import { useLayoutEffect, useRef, type ReactNode } from 'react';
 import { blockFormatting, setBlockAlignment } from './block-formatting';
 import { changeBlockOrder } from './editor-controls';
 import { findBlockCommands } from './editor-commands';
+import { AppSelect } from '@/components/ui/app-select';
 
 type Props = {
     editor: Editor;
@@ -65,7 +66,7 @@ export default function BlockContextMenu({
         menu.style.left = `${Math.max(8, Math.min(anchor.x, window.innerWidth - bounds.width - 8))}px`;
         menu.style.top = `${Math.max(8, Math.min(anchor.y, window.innerHeight - bounds.height - 8))}px`;
         menu.style.visibility = 'visible';
-        menu.querySelector<HTMLSelectElement>('select')?.focus({
+        menu.querySelector<HTMLButtonElement>('[role="combobox"]')?.focus({
             preventScroll: true,
         });
     }, [anchor]);
@@ -84,7 +85,13 @@ export default function BlockContextMenu({
             className="glass-surface fixed z-50 max-h-[calc(100vh-16px)] w-64 overflow-y-auto rounded-xl border border-border p-2 text-sm text-foreground shadow-xl"
             style={{ left: anchor.x, top: anchor.y, visibility: 'hidden' }}
             onKeyDown={(event) => {
-                if (event.key === 'Escape') {
+                if (
+                    event.key === 'Escape' &&
+                    !(
+                        event.target instanceof Element &&
+                        event.target.closest('.block-context-select-content')
+                    )
+                ) {
                     event.preventDefault();
                     onClose();
                     editor.commands.focus();
@@ -92,15 +99,17 @@ export default function BlockContextMenu({
             }}
             onClick={(event) => event.stopPropagation()}
         >
-            <label className="block px-1 text-xs font-medium text-muted-foreground">
-                Block type
-                <select
-                    aria-label="Turn block into"
-                    defaultValue=""
+            <div className="block px-1 text-xs font-medium text-muted-foreground">
+                <span>Block type</span>
+                <AppSelect
+                    label="Turn block into"
+                    value=""
+                    placeholder="Turn into…"
                     className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground"
-                    onChange={(event) => {
+                    contentClassName="block-context-select-content"
+                    onValueChange={(value) => {
                         const command = findBlockCommands('').find(
-                            (item) => item.label === event.target.value,
+                            (item) => item.label === value,
                         );
                         if (!command) return;
                         perform(() => {
@@ -112,17 +121,14 @@ export default function BlockContextMenu({
                             command.run(editor);
                         });
                     }}
-                >
-                    <option value="">Turn into…</option>
-                    {findBlockCommands('')
+                    options={findBlockCommands('')
                         .filter((item) => convertibleBlocks.has(item.label))
-                        .map((item) => (
-                            <option key={item.label} value={item.label}>
-                                {item.label}
-                            </option>
-                        ))}
-                </select>
-            </label>
+                        .map((item) => ({
+                            value: item.label,
+                            label: item.label,
+                        }))}
+                />
+            </div>
 
             <fieldset className="mt-3">
                 <legend className="px-1 text-xs font-medium text-muted-foreground">

@@ -2,6 +2,7 @@ import { usePage } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 import type { WorkspaceSummary } from '@/components/hierarchy/workspace-panel';
 import { openLocation } from './tab-navigation';
+import { AppSelect } from '@/components/ui/app-select';
 
 type WorkspacePageProps = {
     workspace?: { id: number; name: string };
@@ -58,26 +59,20 @@ export function WorkspaceSelector() {
                 aria-hidden="true"
                 className="orbium-mark pointer-events-none absolute top-1/2 left-0 -translate-y-1/2"
             />
-            <select
-                aria-label="Select workspace"
+            <AppSelect
+                label="Select workspace"
                 value={selectedId ? String(selectedId) : ''}
-                onChange={(event) => {
-                    const value = event.currentTarget.value;
-                    event.currentTarget.value = selectedId
-                        ? String(selectedId)
-                        : '';
-                    selectWorkspace(value);
-                }}
-                className="max-w-44 cursor-pointer appearance-auto border-0 bg-transparent py-2 pr-1 pl-9 text-sm font-semibold text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring sm:max-w-60"
-            >
-                {!selectedId && <option value="">Workspaces</option>}
-                {workspaces.map((item) => (
-                    <option key={item.id} value={item.id}>
-                        {item.name}
-                    </option>
-                ))}
-                <option value="manage">Manage workspaces…</option>
-            </select>
+                onValueChange={selectWorkspace}
+                placeholder="Workspaces"
+                className="max-w-44 border-0 bg-transparent py-2 pr-1 pl-9 font-semibold shadow-none sm:max-w-60"
+                options={[
+                    ...workspaces.map((item) => ({
+                        value: String(item.id),
+                        label: item.name,
+                    })),
+                    { value: 'manage', label: 'Manage workspaces…' },
+                ]}
+            />
         </div>
     );
 }

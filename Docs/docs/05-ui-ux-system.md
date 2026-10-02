@@ -29,6 +29,10 @@
 
 ## Design direction
 
+### App select controls (2026-10-02)
+
+Use the shared `AppSelect` component for new single-choice controls. It gives options the same neutral popover surface, focus treatment, and keyboard behavior across editor, database, navigation, and appearance screens. Empty values appear as placeholders; choices passed to the component must have nonempty string values. Use a searchable control only when the interaction requires searching a large option set.
+
 Orbium is:
 
 > minimalist 3D + restrained frosted glass + monochrome identity.

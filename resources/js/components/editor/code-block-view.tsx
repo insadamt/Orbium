@@ -5,6 +5,7 @@ import {
 } from '@tiptap/react';
 import { useEffect, useRef, useState } from 'react';
 import LanguageIcon from './language-icon';
+import { AppSelect } from '@/components/ui/app-select';
 
 const languages = [
     'plaintext',
@@ -69,23 +70,21 @@ export default function CodeBlockView({
                 contentEditable={false}
                 className="flex items-center justify-between border-b border-border px-3 py-2 text-xs text-muted-foreground"
             >
-                <label className="flex items-center gap-2">
+                <div className="flex items-center gap-2">
                     <LanguageIcon language={language} />
-                    <select
-                        aria-label="Code language"
+                    <AppSelect
+                        label="Code language"
                         value={language}
-                        onChange={(event) =>
-                            updateAttributes({ language: event.target.value })
+                        onValueChange={(language) =>
+                            updateAttributes({ language })
                         }
-                        className="bg-transparent uppercase outline-none"
-                    >
-                        {languages.map((name) => (
-                            <option key={name} value={name}>
-                                {name.toUpperCase()}
-                            </option>
-                        ))}
-                    </select>
-                </label>
+                        className="min-h-7 w-auto border-0 bg-transparent px-2 py-1 text-xs uppercase shadow-none"
+                        options={languages.map((name) => ({
+                            value: name,
+                            label: name.toUpperCase(),
+                        }))}
+                    />
+                </div>
                 <button
                     type="button"
                     onClick={() => void copyCode()}

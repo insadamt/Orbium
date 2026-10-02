@@ -11,6 +11,7 @@ import {
 import { useState } from 'react';
 import DatabaseDialog from './database-dialog';
 import DatabaseFilterEditor from './database-filter-editor';
+import { AppSelect } from '@/components/ui/app-select';
 import { propertyTypes } from './property-presentation';
 import type { Property, ViewConfig } from './types';
 import { GalleryAppearanceEditor } from '@/components/hierarchy/gallery-appearance-editor';
@@ -305,11 +306,11 @@ export default function DatabaseViewSettings({
                                 <span className="w-4 text-xs text-muted-foreground">
                                     {index + 1}
                                 </span>
-                                <select
-                                    aria-label={`Sort ${index + 1} property`}
+                                <AppSelect
+                                    label={`Sort ${index + 1} property`}
                                     className="db-field flex-1"
                                     value={sort.field}
-                                    onChange={(event) =>
+                                    onValueChange={(value) =>
                                         setDraft({
                                             ...draft,
                                             sorts: draft.sorts?.map(
@@ -317,29 +318,25 @@ export default function DatabaseViewSettings({
                                                     position === index
                                                         ? {
                                                               ...item,
-                                                              field: event
-                                                                  .target.value,
+                                                              field: value,
                                                           }
                                                         : item,
                                             ),
                                         })
                                     }
-                                >
-                                    <option value="title">Title</option>
-                                    {properties.map((property) => (
-                                        <option
-                                            key={property.id}
-                                            value={property.id}
-                                        >
-                                            {property.name}
-                                        </option>
-                                    ))}
-                                </select>
-                                <select
-                                    aria-label={`Sort ${index + 1} direction`}
+                                    options={[
+                                        { value: 'title', label: 'Title' },
+                                        ...properties.map((property) => ({
+                                            value: String(property.id),
+                                            label: property.name,
+                                        })),
+                                    ]}
+                                />
+                                <AppSelect
+                                    label={`Sort ${index + 1} direction`}
                                     className="db-field !w-28"
                                     value={sort.direction}
-                                    onChange={(event) =>
+                                    onValueChange={(value) =>
                                         setDraft({
                                             ...draft,
                                             sorts: draft.sorts?.map(
@@ -347,20 +344,20 @@ export default function DatabaseViewSettings({
                                                     position === index
                                                         ? {
                                                               ...item,
-                                                              direction: event
-                                                                  .target
-                                                                  .value as
-                                                                  | 'asc'
-                                                                  | 'desc',
+                                                              direction:
+                                                                  value as
+                                                                      | 'asc'
+                                                                      | 'desc',
                                                           }
                                                         : item,
                                             ),
                                         })
                                     }
-                                >
-                                    <option value="asc">Ascending</option>
-                                    <option value="desc">Descending</option>
-                                </select>
+                                    options={[
+                                        { value: 'asc', label: 'Ascending' },
+                                        { value: 'desc', label: 'Descending' },
+                                    ]}
+                                />
                                 <button
                                     type="button"
                                     aria-label={`Remove sort ${index + 1}`}

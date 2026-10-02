@@ -12,6 +12,7 @@ import {
 import { useEffect, useState, type FormEvent } from 'react';
 import { toast } from 'sonner';
 import { csrfToken } from '@/components/editor/editor-api';
+import { AppSelect } from '@/components/ui/app-select';
 import { CreateNodeForm } from './create-node-form';
 import type { TreeNode } from './navigation-types';
 import { nodeUrl } from './navigation-types';
@@ -236,39 +237,36 @@ export function NodeActions({
                     >
                         Move to
                     </label>
-                    <select
+                    <AppSelect
                         id="navigator-move"
-                        defaultValue=""
-                        onChange={(event) => {
+                        label="Move to"
+                        value=""
+                        placeholder="Choose a location"
+                        onValueChange={(value) => {
                             onMove(
                                 node.id,
-                                event.target.value === 'root'
-                                    ? null
-                                    : Number(event.target.value),
+                                value === 'root' ? null : Number(value),
                                 0,
                             );
                             onClose();
                         }}
-                        className="w-full rounded-lg border bg-background px-3 py-2 text-sm"
-                    >
-                        <option value="" disabled>
-                            Choose a location
-                        </option>
-                        <option value="root">Workspace root</option>
-                        {nodes
-                            .filter(
-                                (candidate) =>
-                                    candidate.id !== node.id &&
-                                    (candidate.type === 'folder' ||
-                                        (candidate.type === 'database' &&
-                                            node.type === 'document')),
-                            )
-                            .map((candidate) => (
-                                <option key={candidate.id} value={candidate.id}>
-                                    {candidate.title}
-                                </option>
-                            ))}
-                    </select>
+                        className="w-full bg-background"
+                        options={[
+                            { value: 'root', label: 'Workspace root' },
+                            ...nodes
+                                .filter(
+                                    (candidate) =>
+                                        candidate.id !== node.id &&
+                                        (candidate.type === 'folder' ||
+                                            (candidate.type === 'database' &&
+                                                node.type === 'document')),
+                                )
+                                .map((candidate) => ({
+                                    value: String(candidate.id),
+                                    label: candidate.title,
+                                })),
+                        ]}
+                    />
                     <button
                         onClick={() => setEditor(null)}
                         className="text-sm text-muted-foreground hover:text-foreground"

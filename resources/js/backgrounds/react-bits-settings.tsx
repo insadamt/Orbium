@@ -3,6 +3,7 @@ import type {
     EffectSettings,
     EffectValue,
 } from './react-bits-catalog';
+import { AppSelect } from '@/components/ui/app-select';
 
 const integerKeys = new Set([
     'threadCount',
@@ -171,20 +172,19 @@ function SettingControl({
     }
     if (choices) {
         return (
-            <label className="grid gap-1.5 text-sm">
-                {label}
-                <select
+            <div className="grid gap-1.5 text-sm">
+                <span>{label}</span>
+                <AppSelect
+                    label={label}
                     value={value}
-                    onChange={(event) => onChange(event.target.value)}
+                    onValueChange={onChange}
                     className="appearance-select"
-                >
-                    {choices.map((choice) => (
-                        <option key={choice} value={choice}>
-                            {settingLabel(choice)}
-                        </option>
-                    ))}
-                </select>
-            </label>
+                    options={choices.map((choice) => ({
+                        value: choice,
+                        label: settingLabel(choice),
+                    }))}
+                />
+            </div>
         );
     }
     if (value.startsWith('#')) {

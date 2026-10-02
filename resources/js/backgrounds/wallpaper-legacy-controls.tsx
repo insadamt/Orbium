@@ -4,6 +4,7 @@ import {
     moltenControls,
     NumberControls,
 } from './background-controls';
+import { AppSelect } from '@/components/ui/app-select';
 import {
     ghostDefaults,
     moltenDefaults,
@@ -92,20 +93,20 @@ export function WallpaperLegacyControls({
                     updateMolten({ backgroundColor })
                 }
             />
-            <label className="grid gap-2 text-sm">
-                Color mode
-                <select
+            <div className="grid gap-2 text-sm">
+                <span>Color mode</span>
+                <AppSelect
+                    label="Color mode"
                     value={draft.molten.colorMode}
-                    onChange={(event) =>
-                        updateMolten({ colorMode: event.target.value })
-                    }
+                    onValueChange={(colorMode) => updateMolten({ colorMode })}
                     className="appearance-select"
-                >
-                    <option value="molten">Molten</option>
-                    <option value="ember">Ember</option>
-                    <option value="frost">Frost</option>
-                </select>
-            </label>
+                    options={[
+                        { value: 'molten', label: 'Molten' },
+                        { value: 'ember', label: 'Ember' },
+                        { value: 'frost', label: 'Frost' },
+                    ]}
+                />
+            </div>
             <label className="flex items-center gap-2.5 text-sm">
                 <input
                     type="checkbox"

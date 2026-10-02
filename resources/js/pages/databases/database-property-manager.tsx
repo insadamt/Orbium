@@ -3,6 +3,7 @@ import { Loader2, Plus, Trash2, X } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import DatabaseDialog from './database-dialog';
 import { propertyTypes } from './property-presentation';
+import { AppSelect } from '@/components/ui/app-select';
 import type { Property, PropertyType } from './types';
 
 type Props = { property?: Property; base: string; onClose: () => void };
@@ -116,22 +117,20 @@ export default function DatabasePropertyManager({
                                 size={16}
                                 className="pointer-events-none absolute top-3 left-3 text-muted-foreground"
                             />
-                            <select
-                                aria-label="Property type"
+                            <AppSelect
+                                label="Property type"
                                 className="db-field !pl-10"
                                 value={type}
-                                onChange={(event) =>
-                                    setType(event.target.value as PropertyType)
+                                onValueChange={(value) =>
+                                    setType(value as PropertyType)
                                 }
-                            >
-                                {(
+                                options={(
                                     Object.keys(propertyTypes) as PropertyType[]
-                                ).map((item) => (
-                                    <option key={item} value={item}>
-                                        {propertyTypes[item].label}
-                                    </option>
-                                ))}
-                            </select>
+                                ).map((item) => ({
+                                    value: item,
+                                    label: propertyTypes[item].label,
+                                }))}
+                            />
                         </span>
                         <span className="block text-xs text-muted-foreground">
                             {propertyTypes[type].description}

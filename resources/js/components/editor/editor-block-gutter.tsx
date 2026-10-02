@@ -151,7 +151,9 @@ export default function EditorBlockGutter({
                 !surfaceRef.current?.contains(event.target as Node) &&
                 !(
                     event.target instanceof Element &&
-                    event.target.closest('[data-block-context-menu]')
+                    event.target.closest(
+                        '[data-block-context-menu], .block-context-select-content',
+                    )
                 )
             )
                 setMenuBlock(null);
@@ -162,7 +164,9 @@ export default function EditorBlockGutter({
         function closeMenuOnViewportChange(event: Event) {
             if (
                 event.target instanceof Element &&
-                event.target.closest('[data-block-context-menu]')
+                event.target.closest(
+                    '[data-block-context-menu], .block-context-select-content',
+                )
             )
                 return;
             setMenuBlock(null);

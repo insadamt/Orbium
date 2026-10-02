@@ -1,4 +1,5 @@
 import { Plus, X } from 'lucide-react';
+import { AppSelect } from '@/components/ui/app-select';
 import { displayValue } from './database-data';
 import type { Filter, Property } from './types';
 
@@ -43,23 +44,21 @@ export default function DatabaseFilterEditor({
                             <span className="w-10 text-xs text-muted-foreground">
                                 {index ? 'And' : 'Where'}
                             </span>
-                            <select
-                                aria-label={`Filter ${index + 1} property`}
+                            <AppSelect
+                                label={`Filter ${index + 1} property`}
                                 className="db-field flex-1"
-                                value={filter.property_id}
-                                onChange={(event) =>
+                                value={String(filter.property_id)}
+                                onValueChange={(value) =>
                                     update(index, {
-                                        property_id: Number(event.target.value),
+                                        property_id: Number(value),
                                         value: '',
                                     })
                                 }
-                            >
-                                {properties.map((item) => (
-                                    <option key={item.id} value={item.id}>
-                                        {item.name}
-                                    </option>
-                                ))}
-                            </select>
+                                options={properties.map((item) => ({
+                                    value: String(item.id),
+                                    label: item.name,
+                                }))}
+                            />
                             <button
                                 type="button"
                                 aria-label={`Remove filter ${index + 1}`}
@@ -76,63 +75,66 @@ export default function DatabaseFilterEditor({
                             </button>
                         </div>
                         <div className="flex gap-2 pl-12">
-                            <select
-                                aria-label={`Filter ${index + 1} condition`}
+                            <AppSelect
+                                label={`Filter ${index + 1} condition`}
                                 className="db-field !w-28 shrink-0"
                                 value={filter.operator}
-                                onChange={(event) =>
+                                onValueChange={(value) =>
                                     update(index, {
-                                        operator: event.target
-                                            .value as Filter['operator'],
+                                        operator: value as Filter['operator'],
                                     })
                                 }
-                            >
-                                <option value="is">is</option>
-                                <option value="is_not">is not</option>
-                                <option value="contains">contains</option>
-                                <option value="is_empty">is empty</option>
-                            </select>
+                                options={[
+                                    { value: 'is', label: 'is' },
+                                    { value: 'is_not', label: 'is not' },
+                                    { value: 'contains', label: 'contains' },
+                                    { value: 'is_empty', label: 'is empty' },
+                                ]}
+                            />
                             {filter.operator !== 'is_empty' &&
                                 (property?.type === 'select' ||
                                 property?.type === 'multi_select' ? (
-                                    <select
-                                        aria-label={`Filter ${index + 1} value`}
+                                    <AppSelect
+                                        label={`Filter ${index + 1} value`}
                                         className="db-field"
                                         value={displayValue(filter.value)}
-                                        onChange={(event) =>
+                                        placeholder="Choose an option"
+                                        clearLabel="Clear value"
+                                        onValueChange={(value) =>
                                             update(index, {
-                                                value: event.target.value,
+                                                value,
                                             })
                                         }
-                                    >
-                                        <option value="">
-                                            Choose an option
-                                        </option>
-                                        {(property.config.options ?? []).map(
-                                            (option) => (
-                                                <option key={option}>
-                                                    {option}
-                                                </option>
-                                            ),
-                                        )}
-                                    </select>
+                                        options={(property.config.options ?? [])
+                                            .filter(Boolean)
+                                            .map((option) => ({
+                                                value: option,
+                                                label: option,
+                                            }))}
+                                    />
                                 ) : property?.type === 'checkbox' ? (
-                                    <select
-                                        aria-label={`Filter ${index + 1} value`}
+                                    <AppSelect
+                                        label={`Filter ${index + 1} value`}
                                         className="db-field"
                                         value={displayValue(filter.value)}
-                                        onChange={(event) =>
+                                        placeholder="Choose a value"
+                                        clearLabel="Clear value"
+                                        onValueChange={(value) =>
                                             update(index, {
                                                 value:
-                                                    event.target.value ===
-                                                    'true',
+                                                    value === ''
+                                                        ? ''
+                                                        : value === 'true',
                                             })
                                         }
-                                    >
-                                        <option value="">Choose a value</option>
-                                        <option value="true">Checked</option>
-                                        <option value="false">Unchecked</option>
-                                    </select>
+                                        options={[
+                                            { value: 'true', label: 'Checked' },
+                                            {
+                                                value: 'false',
+                                                label: 'Unchecked',
+                                            },
+                                        ]}
+                                    />
                                 ) : (
                                     <input
                                         aria-label={`Filter ${index + 1} value`}
