@@ -3,6 +3,7 @@ import type { Page } from '@inertiajs/core';
 import { attachmentUrl } from '@/components/editor/editor-api';
 import { nodeImageUrl } from '@/components/hierarchy/node-media-api';
 import { useNavigation, type Location } from './navigation-store';
+import { groupForTab } from './split-group-state';
 
 type PageContext = {
     [key: string]: unknown;
@@ -148,9 +149,7 @@ export function activateTab(id: string) {
     const tab = navigation.tabs.find((item) => item.id === id);
     if (!tab) return;
     const location = tab.entries[tab.index];
-    const isSplitTab =
-        navigation.splitTabs?.leftId === id ||
-        navigation.splitTabs?.rightId === id;
+    const isSplitTab = Boolean(groupForTab(navigation.splitGroups, id));
     visitTab(location.url, () => useNavigation.getState().activate(id), {
         scroll: location.scroll,
         activateBeforeVisit: isSplitTab ? id : undefined,

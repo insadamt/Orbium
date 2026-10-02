@@ -63,7 +63,7 @@ export function SplitNavigationTab({ left, right, activeId, floating }: Props) {
                 aria-label="End split"
                 title="End split"
                 className="split-navigation-close"
-                onClick={() => useNavigation.getState().clearSplit()}
+                onClick={() => useNavigation.getState().clearSplit(left.id)}
             >
                 <X size={14} aria-hidden="true" />
             </button>

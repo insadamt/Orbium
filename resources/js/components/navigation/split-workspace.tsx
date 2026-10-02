@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { useNavigation, type Tab } from './navigation-store';
+import { useNavigation, type SplitTabs, type Tab } from './navigation-store';
+import { groupForTab } from './split-group-state';
 import { openLocation } from './tab-navigation';
 
 function PaneFrame({ tab }: { tab: Tab }) {
@@ -30,14 +31,42 @@ function PaneFrame({ tab }: { tab: Tab }) {
     );
 }
 
+function SplitPairWorkspace({
+    group,
+    leftTab,
+    rightTab,
+    active,
+}: {
+    group: SplitTabs;
+    leftTab: Tab;
+    rightTab: Tab;
+    active: boolean;
+}) {
+    return (
+        <div
+            className={`split-workspace ${active ? 'is-active' : 'is-dormant'}`}
+            data-split-group={group.leftId}
+            aria-hidden={!active}
+        >
+            <div className="split-pane-position split-pane-position-left">
+                <PaneFrame tab={leftTab} />
+            </div>
+            <div className="split-pane-position split-pane-position-right">
+                <PaneFrame tab={rightTab} />
+            </div>
+        </div>
+    );
+}
+
 export function SplitWorkspace({ children }: { children: ReactNode }) {
-    const splitTabs = useNavigation((state) => state.splitTabs);
+    const splitGroups = useNavigation((state) => state.splitGroups);
     const tabs = useNavigation((state) => state.tabs);
     const activeId = useNavigation((state) => state.activeId);
 
     useEffect(() => {
         function receivePaneNavigation(event: MessageEvent) {
-            if (event.origin !== window.location.origin || !splitTabs) return;
+            if (event.origin !== window.location.origin || !splitGroups.length)
+                return;
             const data = event.data;
             if (
                 data?.type === 'orbium:pane-new-tab' &&
@@ -53,11 +82,7 @@ export function SplitWorkspace({ children }: { children: ReactNode }) {
                 typeof data.title !== 'string'
             )
                 return;
-            if (
-                data.tabId !== splitTabs.leftId &&
-                data.tabId !== splitTabs.rightId
-            )
-                return;
+            if (!groupForTab(splitGroups, data.tabId)) return;
             const navigation = useNavigation.getState();
             const tab = navigation.tabs.find((item) => item.id === data.tabId);
             const currentLocation = tab?.entries[tab.index];
@@ -83,32 +108,28 @@ export function SplitWorkspace({ children }: { children: ReactNode }) {
         window.addEventListener('message', receivePaneNavigation);
         return () =>
             window.removeEventListener('message', receivePaneNavigation);
-    }, [splitTabs]);
+    }, [splitGroups]);
 
-    if (!splitTabs) return <>{children}</>;
+    if (!splitGroups.length) return <>{children}</>;
 
-    const leftTab = tabs.find((tab) => tab.id === splitTabs.leftId);
-    const rightTab = tabs.find((tab) => tab.id === splitTabs.rightId);
-    if (!leftTab || !rightTab) return <>{children}</>;
-
-    const isGroupActive =
-        activeId === splitTabs.leftId || activeId === splitTabs.rightId;
+    const activeGroup = groupForTab(splitGroups, activeId);
 
     return (
         <>
-            {!isGroupActive && children}
-            <div
-                key="persistent-split"
-                className={`split-workspace ${isGroupActive ? 'is-active' : 'is-dormant'}`}
-                aria-hidden={!isGroupActive}
-            >
-                <div className="split-pane-position split-pane-position-left">
-                    <PaneFrame key={leftTab.id} tab={leftTab} />
-                </div>
-                <div className="split-pane-position split-pane-position-right">
-                    <PaneFrame key={rightTab.id} tab={rightTab} />
-                </div>
-            </div>
+            {!activeGroup && children}
+            {splitGroups.map((group) => {
+                const leftTab = tabs.find((tab) => tab.id === group.leftId);
+                const rightTab = tabs.find((tab) => tab.id === group.rightId);
+                return leftTab && rightTab ? (
+                    <SplitPairWorkspace
+                        key={`${group.leftId}:${group.rightId}`}
+                        group={group}
+                        leftTab={leftTab}
+                        rightTab={rightTab}
+                        active={group === activeGroup}
+                    />
+                ) : null;
+            })}
         </>
     );
 }

@@ -31,6 +31,7 @@ import {
     type TabMenuPosition,
 } from './navigation-tab-context-menu';
 import { useNavigation, type Tab } from './navigation-store';
+import { groupForTab } from './split-group-state';
 import { NavigationTabIcon } from './navigation-tab-icon';
 import { SplitEdgePreview, useSplitTabDrag } from './split-tab-drag';
 import { SplitNavigationTab } from './split-navigation-tab';
@@ -161,7 +162,7 @@ export function NavigationTabStrip({
 }) {
     const tabs = useNavigation((state) => state.tabs);
     const activeId = useNavigation((state) => state.activeId);
-    const splitTabs = useNavigation((state) => state.splitTabs);
+    const splitGroups = useNavigation((state) => state.splitGroups);
     const [menuPosition, setMenuPosition] = useState<TabMenuPosition | null>(
         null,
     );
@@ -175,18 +176,18 @@ export function NavigationTabStrip({
         edge: splitEdge,
         eligible: draggedCanSplit,
         clearEdge,
-    } = useSplitTabDrag(draggedTab, tabs, activeId);
-    const firstSplitId =
-        splitTabs &&
-        tabs.find(
-            (tab) =>
-                tab.id === splitTabs.leftId || tab.id === splitTabs.rightId,
-        )?.id;
+    } = useSplitTabDrag(draggedTab, tabs, activeId, splitGroups);
+    const firstSplitTabIds = new Set(
+        splitGroups.flatMap((group) => {
+            const firstTab = tabs.find(
+                (tab) => tab.id === group.leftId || tab.id === group.rightId,
+            );
+            return firstTab ? [firstTab.id] : [];
+        }),
+    );
     const displayedTabs = tabs.filter(
         (tab) =>
-            !splitTabs ||
-            (tab.id !== splitTabs.leftId && tab.id !== splitTabs.rightId) ||
-            tab.id === firstSplitId,
+            !groupForTab(splitGroups, tab.id) || firstSplitTabIds.has(tab.id),
     );
     const sensors = useSensors(
         useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
@@ -304,7 +305,7 @@ export function NavigationTabStrip({
             >
                 <SortableContext
                     items={displayedTabs
-                        .filter((tab) => tab.id !== firstSplitId)
+                        .filter((tab) => !groupForTab(splitGroups, tab.id))
                         .map((tab) => tab.id)}
                     strategy={horizontalListSortingStrategy}
                 >
@@ -319,12 +320,13 @@ export function NavigationTabStrip({
                         }
                     >
                         {displayedTabs.map((tab) => {
-                            if (splitTabs && tab.id === firstSplitId) {
+                            const group = groupForTab(splitGroups, tab.id);
+                            if (group) {
                                 const left = tabs.find(
-                                    (item) => item.id === splitTabs.leftId,
+                                    (item) => item.id === group.leftId,
                                 );
                                 const right = tabs.find(
-                                    (item) => item.id === splitTabs.rightId,
+                                    (item) => item.id === group.rightId,
                                 );
                                 return left && right ? (
                                     <SplitNavigationTab

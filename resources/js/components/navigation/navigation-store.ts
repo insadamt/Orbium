@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { groupForTab, restoreSplitGroups } from './split-group-state';
 import { canSplitTabs } from './split-tab-rules';
 
 export type Location = {
@@ -17,15 +18,6 @@ export type Tab = {
     pinned?: boolean;
 };
 export type SplitTabs = { leftId: string; rightId: string; placedId?: string };
-function isSplitValid(tabs: Tab[], splitTabs: SplitTabs | null): boolean {
-    return Boolean(
-        splitTabs &&
-        canSplitTabs(
-            tabs.find((tab) => tab.id === splitTabs.leftId),
-            tabs.find((tab) => tab.id === splitTabs.rightId),
-        ),
-    );
-}
 type NavigationState = {
     tabs: Tab[];
     activeId: string;
@@ -33,7 +25,7 @@ type NavigationState = {
     pending: boolean;
     recent: number[];
     containerViews: Record<string, string>;
-    splitTabs: SplitTabs | null;
+    splitGroups: SplitTabs[];
     initialize: (userId: number) => void;
     record: (location: Location, nodeId?: number) => void;
     createTab: (location: Location) => void;
@@ -47,7 +39,7 @@ type NavigationState = {
     saveScroll: () => void;
     setContainerView: (key: string, value: string) => void;
     splitTab: (id: string, edge: 'left' | 'right') => void;
-    clearSplit: () => void;
+    clearSplit: (tabId: string) => void;
     recordPane: (id: string, location: Location) => void;
 };
 function restoreContainerViews(value: {
@@ -92,7 +84,7 @@ function persist(state: NavigationState) {
                 activeId: state.activeId,
                 recent: state.recent,
                 containerViews: state.containerViews,
-                splitTabs: state.splitTabs,
+                splitGroups: state.splitGroups,
             }),
         );
     } catch {
@@ -106,19 +98,19 @@ export const useNavigation = create<NavigationState>((set, get) => ({
     pending: false,
     recent: [],
     containerViews: {},
-    splitTabs: null,
+    splitGroups: [],
     initialize(userId) {
         const storageKey = `orbium.navigation.v1.${userId}`;
         if (get().storageKey === storageKey) return;
         let saved: Pick<
             NavigationState,
-            'tabs' | 'activeId' | 'recent' | 'containerViews' | 'splitTabs'
+            'tabs' | 'activeId' | 'recent' | 'containerViews' | 'splitGroups'
         > = {
             tabs: [],
             activeId: '',
             recent: [],
             containerViews: {},
-            splitTabs: null,
+            splitGroups: [],
         };
         try {
             const value = JSON.parse(
@@ -163,22 +155,10 @@ export const useNavigation = create<NavigationState>((set, get) => ({
                         ? value.recent.filter(Number.isInteger).slice(0, 40)
                         : [],
                     containerViews: restoreContainerViews(value),
-                    splitTabs:
-                        value.splitTabs &&
-                        typeof value.splitTabs.leftId === 'string' &&
-                        typeof value.splitTabs.rightId === 'string' &&
-                        value.splitTabs.leftId !== value.splitTabs.rightId &&
-                        canSplitTabs(
-                            value.tabs.find(
-                                (tab: Tab) => tab.id === value.splitTabs.leftId,
-                            ),
-                            value.tabs.find(
-                                (tab: Tab) =>
-                                    tab.id === value.splitTabs.rightId,
-                            ),
-                        )
-                            ? value.splitTabs
-                            : null,
+                    splitGroups: restoreSplitGroups(
+                        value.splitGroups ?? value.splitTabs,
+                        value.tabs,
+                    ),
                 };
         } catch {
             /* Corrupt local state must not prevent opening the workspace. */
@@ -237,8 +217,9 @@ export const useNavigation = create<NavigationState>((set, get) => ({
                 recent,
             });
         }
-        if (get().splitTabs && !isSplitValid(get().tabs, get().splitTabs))
-            set({ splitTabs: null });
+        const validGroups = restoreSplitGroups(get().splitGroups, get().tabs);
+        if (validGroups.length !== get().splitGroups.length)
+            set({ splitGroups: validGroups });
         persist(get());
     },
     createTab(location) {
@@ -258,12 +239,9 @@ export const useNavigation = create<NavigationState>((set, get) => ({
         const tabs = state.tabs.filter((tab) => tab.id !== id);
         set({
             tabs,
-            splitTabs:
-                state.splitTabs &&
-                (state.splitTabs.leftId === id ||
-                    state.splitTabs.rightId === id)
-                    ? null
-                    : state.splitTabs,
+            splitGroups: state.splitGroups.filter(
+                (group) => group.leftId !== id && group.rightId !== id,
+            ),
             activeId:
                 state.activeId === id
                     ? (tabs.at(-1)?.id ?? '')
@@ -339,12 +317,7 @@ export const useNavigation = create<NavigationState>((set, get) => ({
         });
         set({
             tabs,
-            splitTabs:
-                get().splitTabs &&
-                tabs.some((tab) => tab.id === get().splitTabs?.leftId) &&
-                tabs.some((tab) => tab.id === get().splitTabs?.rightId)
-                    ? get().splitTabs
-                    : null,
+            splitGroups: restoreSplitGroups(get().splitGroups, tabs),
             activeId: tabs.some((tab) => tab.id === get().activeId)
                 ? get().activeId
                 : (tabs.at(-1)?.id ?? ''),
@@ -378,22 +351,38 @@ export const useNavigation = create<NavigationState>((set, get) => ({
     splitTab(id, edge) {
         const state = get();
         const draggedTab = state.tabs.find((tab) => tab.id === id);
+        if (groupForTab(state.splitGroups, id)) return;
         const companionId =
             id === state.activeId
-                ? state.tabs.find((tab) => canSplitTabs(draggedTab, tab))?.id
+                ? state.tabs.find(
+                      (tab) =>
+                          !groupForTab(state.splitGroups, tab.id) &&
+                          canSplitTabs(draggedTab, tab),
+                  )?.id
                 : state.activeId;
         const companion = state.tabs.find((tab) => tab.id === companionId);
-        if (!companionId || !canSplitTabs(draggedTab, companion)) return;
+        if (
+            !companionId ||
+            groupForTab(state.splitGroups, companionId) ||
+            !canSplitTabs(draggedTab, companion)
+        )
+            return;
         set({
-            splitTabs:
+            splitGroups: [
+                ...state.splitGroups,
                 edge === 'left'
                     ? { leftId: id, rightId: companionId, placedId: id }
                     : { leftId: companionId, rightId: id, placedId: id },
+            ],
         });
         persist(get());
     },
-    clearSplit() {
-        set({ splitTabs: null });
+    clearSplit(tabId) {
+        set({
+            splitGroups: get().splitGroups.filter(
+                (group) => group.leftId !== tabId && group.rightId !== tabId,
+            ),
+        });
         persist(get());
     },
     recordPane(id, location) {
@@ -429,8 +418,9 @@ export const useNavigation = create<NavigationState>((set, get) => ({
                     : tab,
             ),
         });
-        if (get().splitTabs && !isSplitValid(get().tabs, get().splitTabs))
-            set({ splitTabs: null });
+        const validGroups = restoreSplitGroups(get().splitGroups, get().tabs);
+        if (validGroups.length !== get().splitGroups.length)
+            set({ splitGroups: validGroups });
         persist(get());
     },
     saveScroll() {

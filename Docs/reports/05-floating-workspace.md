@@ -1,5 +1,13 @@
 # Phase 5 — Floating workspace review
 
+## Multiple independent split groups (2026-10-02)
+
+Split state is now a list of disjoint document/database tab pairs instead of one replaceable pair. Creating another split appends a group; the tab strip shows one compact grouped tab for each pair. All groups retain their own two mounted page frames, so switching between groups preserves each page's scroll and loaded state. Ending or closing one group removes only that pair. The browser-local restore path accepts the previous saved single-pair shape and writes the new list format on the next state change; it validates that each pair has two distinct eligible pages and that a tab belongs to at most one group. There is no application limit on the number of pairs, though each retained pair consumes two page runtimes and memory.
+
+The existing [dnd-kit sortable/overlay primitives](https://dndkit.com/legacy/presets/sortable/overview/) continue to handle dragging inside the one tab strip; its multiple-container pattern does not help with independent saved pairs. [Zustand persist](https://zustand.docs.pmnd.rs/reference/middlewares/persist.html) offers versioned migration but would replace the store's existing user-scoped restore and validation flow. A small local normalizer handles the old shape without adding a library or changing storage keys.
+
+Manual check: open four distinct documents/databases in four app tabs. Split A+B, activate C, then split C+D. Expect two grouped navigation tabs, each showing its own titles and side placement. Scroll both sides of each group, switch repeatedly between groups and a Settings tab, and expect no page reload or Loading label on return. Refresh while Settings is selected; both groups should still appear. End only A+B; C+D must stay split and A/B must become separate tabs. Try pairing a page with itself, a folder, or a tab already in another group; no new pair should form.
+
 ## Persistent split pages and Settings tabs (2026-10-02)
 
 The two split page frames now stay mounted at their left and right positions while another app tab is active. The hidden pair sits outside the viewport at its normal split size, so returning to the grouped tab reveals the already loaded pages and preserves their independent scroll positions. The grouped tab becomes visible immediately on activation while Inertia updates the parent route. The current-page search provider now resets its fields when the route path changes instead of remounting the entire content tree. A saved split is restored even if a different tab was active when the browser was refreshed. Initial split creation and a full browser refresh still load the pages from the server; hidden split pages also use memory while their group exists.

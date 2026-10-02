@@ -1,19 +1,27 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import type { Tab } from './navigation-store';
+import type { SplitTabs, Tab } from './navigation-store';
+import { groupForTab } from './split-group-state';
 import { canSplitTabs } from './split-tab-rules';
 
 export function useSplitTabDrag(
     draggedTab: Tab | null,
     tabs: Tab[],
     activeId: string,
+    splitGroups: SplitTabs[],
 ) {
     const [edge, setEdge] = useState<'left' | 'right' | null>(null);
     const activeTab = tabs.find((tab) => tab.id === activeId);
     const eligible = Boolean(
         draggedTab &&
+        !groupForTab(splitGroups, draggedTab.id) &&
+        !groupForTab(splitGroups, activeId) &&
         (draggedTab.id === activeId
-            ? tabs.some((tab) => canSplitTabs(draggedTab, tab))
+            ? tabs.some(
+                  (tab) =>
+                      !groupForTab(splitGroups, tab.id) &&
+                      canSplitTabs(draggedTab, tab),
+              )
             : canSplitTabs(draggedTab, activeTab)),
     );
 
