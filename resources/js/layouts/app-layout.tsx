@@ -10,6 +10,8 @@ import type { WorkspaceSummary } from '@/components/hierarchy/workspace-panel';
 import { NavigationEvents } from '@/components/navigation/navigation-events';
 import { NavigationTabStrip } from '@/components/navigation/navigation-tab-strip';
 import { PageSearchProvider } from '@/components/navigation/page-search';
+import { SplitWorkspace } from '@/components/navigation/split-workspace';
+import { locationKind } from '@/components/navigation/tab-navigation';
 import { WorkspaceSelector } from '@/components/navigation/workspace-selector';
 import type { TreeNode } from '@/components/navigation/navigation-types';
 import type { Auth, BreadcrumbItem } from '@/types';
@@ -34,6 +36,25 @@ type AppLayoutProps = {
 export default function AppLayout({ children }: AppLayoutProps) {
     const page = usePage<ShellPageProps>();
     const { auth } = page.props;
+    const isPane = window.self !== window.top;
+    useEffect(() => {
+        if (!isPane || !window.name.startsWith('orbium-pane:')) return;
+        window.parent.postMessage(
+            {
+                type: 'orbium:pane-location',
+                tabId: window.name.slice('orbium-pane:'.length),
+                url: page.url,
+                title:
+                    page.props.node?.title ??
+                    page.props.database?.title ??
+                    page.props.currentNode?.title ??
+                    page.props.workspace?.name ??
+                    'Settings',
+                kind: locationKind(page.url),
+            },
+            window.location.origin,
+        );
+    }, [isPane, page.url, page.props]);
     const isHomePage = page.component === 'dashboard';
     const isFloatingPage =
         isHomePage ||
@@ -102,11 +123,11 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
     return (
         <div
-            className={`orbium-shell surface-${surfaceStyle} min-h-screen bg-background text-foreground`}
+            className={`orbium-shell surface-${surfaceStyle} ${isPane ? 'orbium-embedded-pane' : ''} min-h-screen bg-background text-foreground`}
         >
-            <AppBackground />
-            <NavigationEvents />
-            {!isFloatingPage && (
+            {!isPane && <AppBackground />}
+            {!isPane && <NavigationEvents />}
+            {!isPane && !isFloatingPage && (
                 <header className="glass-surface sticky top-0 z-20 border-b border-border/70">
                     <div className="flex h-14 items-center gap-2 px-3 md:gap-3 md:px-5">
                         <WorkspaceSelector />
@@ -183,7 +204,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                 <main
                     className={`orbium-main w-full ${isFloatingPage ? 'floating-workspace' : 'mx-auto max-w-[1600px] px-5 py-10 md:px-8 md:py-14'}`}
                 >
-                    {isFloatingPage && (
+                    {!isPane && isFloatingPage && (
                         <FloatingTopControls
                             key={shellWorkspace?.id ?? 'home'}
                             workspace={shellWorkspace}
@@ -204,7 +225,11 @@ export default function AppLayout({ children }: AppLayoutProps) {
                             pageType={pageType}
                         />
                     )}
-                    {children}
+                    {isPane ? (
+                        children
+                    ) : (
+                        <SplitWorkspace>{children}</SplitWorkspace>
+                    )}
                 </main>
             </PageSearchProvider>
         </div>

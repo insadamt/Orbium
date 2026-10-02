@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { canSplitTabs } from './split-tab-rules';
 
 export type Location = {
     url: string;
@@ -15,6 +16,16 @@ export type Tab = {
     index: number;
     pinned?: boolean;
 };
+export type SplitTabs = { leftId: string; rightId: string; placedId?: string };
+function isSplitValid(tabs: Tab[], splitTabs: SplitTabs | null): boolean {
+    return Boolean(
+        splitTabs &&
+        canSplitTabs(
+            tabs.find((tab) => tab.id === splitTabs.leftId),
+            tabs.find((tab) => tab.id === splitTabs.rightId),
+        ),
+    );
+}
 type NavigationState = {
     tabs: Tab[];
     activeId: string;
@@ -22,6 +33,7 @@ type NavigationState = {
     pending: boolean;
     recent: number[];
     containerViews: Record<string, string>;
+    splitTabs: SplitTabs | null;
     initialize: (userId: number) => void;
     record: (location: Location, nodeId?: number) => void;
     createTab: (location: Location) => void;
@@ -34,6 +46,9 @@ type NavigationState = {
     step: (delta: number) => void;
     saveScroll: () => void;
     setContainerView: (key: string, value: string) => void;
+    splitTab: (id: string, edge: 'left' | 'right') => void;
+    clearSplit: () => void;
+    recordPane: (id: string, location: Location) => void;
 };
 function restoreContainerViews(value: {
     tabs: Tab[];
@@ -77,6 +92,7 @@ function persist(state: NavigationState) {
                 activeId: state.activeId,
                 recent: state.recent,
                 containerViews: state.containerViews,
+                splitTabs: state.splitTabs,
             }),
         );
     } catch {
@@ -90,17 +106,19 @@ export const useNavigation = create<NavigationState>((set, get) => ({
     pending: false,
     recent: [],
     containerViews: {},
+    splitTabs: null,
     initialize(userId) {
         const storageKey = `orbium.navigation.v1.${userId}`;
         if (get().storageKey === storageKey) return;
         let saved: Pick<
             NavigationState,
-            'tabs' | 'activeId' | 'recent' | 'containerViews'
+            'tabs' | 'activeId' | 'recent' | 'containerViews' | 'splitTabs'
         > = {
             tabs: [],
             activeId: '',
             recent: [],
             containerViews: {},
+            splitTabs: null,
         };
         try {
             const value = JSON.parse(
@@ -145,6 +163,24 @@ export const useNavigation = create<NavigationState>((set, get) => ({
                         ? value.recent.filter(Number.isInteger).slice(0, 40)
                         : [],
                     containerViews: restoreContainerViews(value),
+                    splitTabs:
+                        value.splitTabs &&
+                        typeof value.splitTabs.leftId === 'string' &&
+                        typeof value.splitTabs.rightId === 'string' &&
+                        value.splitTabs.leftId !== value.splitTabs.rightId &&
+                        (value.activeId === value.splitTabs.leftId ||
+                            value.activeId === value.splitTabs.rightId) &&
+                        canSplitTabs(
+                            value.tabs.find(
+                                (tab: Tab) => tab.id === value.splitTabs.leftId,
+                            ),
+                            value.tabs.find(
+                                (tab: Tab) =>
+                                    tab.id === value.splitTabs.rightId,
+                            ),
+                        )
+                            ? value.splitTabs
+                            : null,
                 };
         } catch {
             /* Corrupt local state must not prevent opening the workspace. */
@@ -203,6 +239,8 @@ export const useNavigation = create<NavigationState>((set, get) => ({
                 recent,
             });
         }
+        if (get().splitTabs && !isSplitValid(get().tabs, get().splitTabs))
+            set({ splitTabs: null });
         persist(get());
     },
     createTab(location) {
@@ -222,6 +260,12 @@ export const useNavigation = create<NavigationState>((set, get) => ({
         const tabs = state.tabs.filter((tab) => tab.id !== id);
         set({
             tabs,
+            splitTabs:
+                state.splitTabs &&
+                (state.splitTabs.leftId === id ||
+                    state.splitTabs.rightId === id)
+                    ? null
+                    : state.splitTabs,
             activeId:
                 state.activeId === id
                     ? (tabs.at(-1)?.id ?? '')
@@ -297,6 +341,12 @@ export const useNavigation = create<NavigationState>((set, get) => ({
         });
         set({
             tabs,
+            splitTabs:
+                get().splitTabs &&
+                tabs.some((tab) => tab.id === get().splitTabs?.leftId) &&
+                tabs.some((tab) => tab.id === get().splitTabs?.rightId)
+                    ? get().splitTabs
+                    : null,
             activeId: tabs.some((tab) => tab.id === get().activeId)
                 ? get().activeId
                 : (tabs.at(-1)?.id ?? ''),
@@ -325,6 +375,55 @@ export const useNavigation = create<NavigationState>((set, get) => ({
     },
     setContainerView(key, value) {
         set({ containerViews: { ...get().containerViews, [key]: value } });
+        persist(get());
+    },
+    splitTab(id, edge) {
+        const state = get();
+        const draggedTab = state.tabs.find((tab) => tab.id === id);
+        const companionId =
+            id === state.activeId
+                ? state.tabs.find((tab) => canSplitTabs(draggedTab, tab))?.id
+                : state.activeId;
+        const companion = state.tabs.find((tab) => tab.id === companionId);
+        if (!companionId || !canSplitTabs(draggedTab, companion)) return;
+        set({
+            splitTabs:
+                edge === 'left'
+                    ? { leftId: id, rightId: companionId, placedId: id }
+                    : { leftId: companionId, rightId: id, placedId: id },
+        });
+        persist(get());
+    },
+    clearSplit() {
+        set({ splitTabs: null });
+        persist(get());
+    },
+    recordPane(id, location) {
+        set({
+            tabs: get().tabs.map((tab) =>
+                tab.id === id
+                    ? tab.entries[tab.index].url === location.url
+                        ? {
+                              ...tab,
+                              entries: tab.entries.map((entry, index) =>
+                                  index === tab.index
+                                      ? { ...entry, title: location.title }
+                                      : entry,
+                              ),
+                          }
+                        : {
+                              ...tab,
+                              entries: [
+                                  ...tab.entries.slice(0, tab.index + 1),
+                                  location,
+                              ].slice(-100),
+                              index: Math.min(tab.index + 1, 99),
+                          }
+                    : tab,
+            ),
+        });
+        if (get().splitTabs && !isSplitValid(get().tabs, get().splitTabs))
+            set({ splitTabs: null });
         persist(get());
     },
     saveScroll() {

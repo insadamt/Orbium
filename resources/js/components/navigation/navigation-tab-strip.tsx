@@ -18,17 +18,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { createPortal } from 'react-dom';
-import {
-    ChevronLeft,
-    ChevronRight,
-    Database,
-    FileText,
-    Folder,
-    Home,
-    Pin,
-    Settings2,
-    X,
-} from 'lucide-react';
+import { ChevronLeft, ChevronRight, Pin, X } from 'lucide-react';
 import {
     useEffect,
     useRef,
@@ -40,15 +30,12 @@ import {
     NavigationTabContextMenu,
     type TabMenuPosition,
 } from './navigation-tab-context-menu';
-import { useNavigation, type Location, type Tab } from './navigation-store';
+import { useNavigation, type Tab } from './navigation-store';
+import { NavigationTabIcon } from './navigation-tab-icon';
+import { SplitEdgePreview, useSplitTabDrag } from './split-tab-drag';
+import { SplitNavigationTab } from './split-navigation-tab';
 import { activateTab, closeTab } from './tab-navigation';
 
-const tabIcons = {
-    document: FileText,
-    database: Database,
-    settings: Settings2,
-    workspace: Home,
-};
 const keepTabDragInsideStrip: Modifier = ({
     transform,
     draggingNodeRect,
@@ -69,28 +56,6 @@ const keepTabDragInsideStrip: Modifier = ({
         scaleY: 1,
     };
 };
-function TabIcon({ entry }: { entry: Location }) {
-    if (entry.iconUrl)
-        return (
-            <img
-                src={entry.iconUrl}
-                alt=""
-                className="size-4 shrink-0 rounded-sm object-cover"
-            />
-        );
-    if (entry.icon)
-        return (
-            <span
-                aria-hidden="true"
-                className="shrink-0 text-base leading-none"
-            >
-                {entry.icon}
-            </span>
-        );
-    const Icon = entry.url.includes('/nodes/') ? Folder : tabIcons[entry.kind];
-    return <Icon size={15} className="shrink-0" aria-hidden="true" />;
-}
-
 function SortableTab({
     tab,
     selected,
@@ -164,7 +129,7 @@ function SortableTab({
                 onClick={() => activateTab(tab.id)}
                 className="tab-drag-surface flex min-w-0 flex-1 items-center gap-2 py-2 pr-1 pl-3 text-left text-sm focus-visible:outline-2 focus-visible:outline-ring"
             >
-                <TabIcon entry={entry} />
+                <NavigationTabIcon entry={entry} />
                 <span className="truncate">{entry.title}</span>
             </button>
             {tab.pinned && (
@@ -196,6 +161,7 @@ export function NavigationTabStrip({
 }) {
     const tabs = useNavigation((state) => state.tabs);
     const activeId = useNavigation((state) => state.activeId);
+    const splitTabs = useNavigation((state) => state.splitTabs);
     const [menuPosition, setMenuPosition] = useState<TabMenuPosition | null>(
         null,
     );
@@ -205,6 +171,23 @@ export function NavigationTabStrip({
     const [canScrollLeft, setCanScrollLeft] = useState(false);
     const [canScrollRight, setCanScrollRight] = useState(false);
     const tabListRef = useRef<HTMLDivElement>(null);
+    const {
+        edge: splitEdge,
+        eligible: draggedCanSplit,
+        clearEdge,
+    } = useSplitTabDrag(draggedTab, tabs, activeId);
+    const firstSplitId =
+        splitTabs &&
+        tabs.find(
+            (tab) =>
+                tab.id === splitTabs.leftId || tab.id === splitTabs.rightId,
+        )?.id;
+    const displayedTabs = tabs.filter(
+        (tab) =>
+            !splitTabs ||
+            (tab.id !== splitTabs.leftId && tab.id !== splitTabs.rightId) ||
+            tab.id === firstSplitId,
+    );
     const sensors = useSensors(
         useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
         useSensor(TouchSensor, {
@@ -241,7 +224,11 @@ export function NavigationTabStrip({
     useEffect(() => {
         const tabList = tabListRef.current;
         const activeTab = Array.from(tabList?.children ?? []).find(
-            (child) => (child as HTMLElement).dataset.tabId === activeId,
+            (child) =>
+                (child as HTMLElement).dataset.tabId === activeId ||
+                (child as HTMLElement).dataset.splitTabIds
+                    ?.split(' ')
+                    .includes(activeId),
         );
         if (!tabList || !activeTab) return;
         const listBounds = tabList.getBoundingClientRect();
@@ -254,6 +241,11 @@ export function NavigationTabStrip({
 
     function reorderTabs({ active, over }: DragEndEvent) {
         setDraggedTab(null);
+        clearEdge();
+        if (splitEdge) {
+            useNavigation.getState().splitTab(String(active.id), splitEdge);
+            return;
+        }
         if (over && active.id !== over.id)
             useNavigation
                 .getState()
@@ -287,7 +279,7 @@ export function NavigationTabStrip({
                     acceleration: 12,
                     interval: 16,
                 }}
-                modifiers={[keepTabDragInsideStrip]}
+                modifiers={draggedCanSplit ? [] : [keepTabDragInsideStrip]}
                 onDragStart={({ active }) => {
                     const tab = tabs.find((item) => item.id === active.id);
                     if (tab) {
@@ -307,10 +299,13 @@ export function NavigationTabStrip({
                 onDragEnd={reorderTabs}
                 onDragCancel={() => {
                     setDraggedTab(null);
+                    clearEdge();
                 }}
             >
                 <SortableContext
-                    items={tabs.map((tab) => tab.id)}
+                    items={displayedTabs
+                        .filter((tab) => tab.id !== firstSplitId)
+                        .map((tab) => tab.id)}
                     strategy={horizontalListSortingStrategy}
                 >
                     <div
@@ -323,23 +318,44 @@ export function NavigationTabStrip({
                                 : 'tab-scroll-list flex h-full min-w-0 items-stretch gap-1 overflow-x-auto px-2'
                         }
                     >
-                        {tabs.map((tab) => (
-                            <SortableTab
-                                key={tab.id}
-                                tab={tab}
-                                selected={tab.id === activeId}
-                                floating={floating}
-                                tabCount={tabs.length}
-                                onOpenMenu={setMenuPosition}
-                            />
-                        ))}
+                        {displayedTabs.map((tab) => {
+                            if (splitTabs && tab.id === firstSplitId) {
+                                const left = tabs.find(
+                                    (item) => item.id === splitTabs.leftId,
+                                );
+                                const right = tabs.find(
+                                    (item) => item.id === splitTabs.rightId,
+                                );
+                                return left && right ? (
+                                    <SplitNavigationTab
+                                        key={`split-${left.id}-${right.id}`}
+                                        left={left}
+                                        right={right}
+                                        activeId={activeId}
+                                        floating={floating}
+                                    />
+                                ) : null;
+                            }
+                            return (
+                                <SortableTab
+                                    key={tab.id}
+                                    tab={tab}
+                                    selected={tab.id === activeId}
+                                    floating={floating}
+                                    tabCount={tabs.length}
+                                    onOpenMenu={setMenuPosition}
+                                />
+                            );
+                        })}
                     </div>
                 </SortableContext>
                 {portalHost &&
                     createPortal(
                         <DragOverlay
                             dropAnimation={null}
-                            modifiers={[keepTabDragInsideStrip]}
+                            modifiers={
+                                draggedCanSplit ? [] : [keepTabDragInsideStrip]
+                            }
                             style={{
                                 width: dragPreviewWidth,
                                 minWidth: dragPreviewWidth,
@@ -352,7 +368,7 @@ export function NavigationTabStrip({
                                     className={`floating-tab-drag-preview ${draggedTab.id === activeId ? 'bg-accent text-foreground' : 'text-muted-foreground'}`}
                                 >
                                     <span className="flex min-w-0 flex-1 items-center gap-2 py-2 pr-1 pl-3 text-left text-xs">
-                                        <TabIcon
+                                        <NavigationTabIcon
                                             entry={
                                                 draggedTab.entries[
                                                     draggedTab.index
@@ -386,6 +402,9 @@ export function NavigationTabStrip({
                         portalHost,
                     )}
             </DndContext>
+            {draggedCanSplit && portalHost && (
+                <SplitEdgePreview edge={splitEdge} portalHost={portalHost} />
+            )}
             {canScrollLeft && (
                 <button
                     type="button"

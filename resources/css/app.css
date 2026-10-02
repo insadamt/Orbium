@@ -2,6 +2,7 @@
 @import './orbital-explorer.css';
 @import './orbital-explorer-content.css';
 @import './floating-workspace.css';
+@import './split-workspace.css';
 @import './workspace-manager.css';
 @import './node-media.css';
 @import './explorer-views.css';

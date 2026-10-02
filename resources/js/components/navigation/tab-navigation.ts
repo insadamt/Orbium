@@ -84,6 +84,17 @@ function visitTab(
     });
 }
 export function openLocation(url: string, newTab = false) {
+    if (window.self !== window.top) {
+        if (newTab) {
+            window.parent.postMessage(
+                { type: 'orbium:pane-new-tab', url },
+                window.location.origin,
+            );
+            return;
+        }
+        router.visit(url);
+        return;
+    }
     visitTab(url, (page) => {
         if (newTab)
             useNavigation.getState().createTab({
