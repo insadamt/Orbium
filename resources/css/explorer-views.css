@@ -119,6 +119,7 @@
     min-height: 210px;
     padding: 0;
     overflow: hidden;
+    border: 0;
     border-radius: 16px;
 }
 .floating-contents[data-view='gallery'][data-layout='natural'] {

@@ -20,6 +20,12 @@
 
 > Appearance review correction (2026-10-01): The settings island gives Appearance the full content width. Background options use compact rows with small palette swatches, while the selected controls occupy a separate readable column. Controls use the same neutral surface and focus colors as the rest of the app. Image actions sit with the image choice; Frosted settings surfaces use a stronger tint so wallpapers do not overwhelm the form.
 
+> Frosted contrast review (2026-10-02): Frosted surfaces keep their existing opacity, blur, saturation, borders, and shadows. Only the light and dark color values, including foreground, secondary text, and table metadata, change for better readability. Reduced transparency and missing backdrop blur retain their existing fallback behavior.
+
+> Frosted border review (2026-10-02): Nested frosted cards and controls no longer draw visible outlines. Their backgrounds and spacing distinguish them, while table separators and keyboard focus indicators remain visible.
+
+> Gallery image review (2026-10-02): Explorer and database Gallery cards show cover images without an outer border or image-to-label divider in either surface style. Keyboard focus remains visible.
+
 > Wallpaper dialog update (2026-10-01): Every Settings category now uses the same island width. Appearance has one Wallpaper control that opens a searchable gallery with image upload. Wallpaper miniatures animate on hover or keyboard focus, with only one live thumbnail renderer active at a time. Selecting a wallpaper opens draft controls on the left and a live preview on the right. Apply commits the selection and settings; closing the dialog discards drafts. The dialog uses restrained entry, exit, hover, and preview motion, all disabled for reduced motion.
 
 > Wallpaper gallery autoplay update (2026-10-01): Animated miniatures start automatically when visible in the dialog; scrolling out stops their renderer, and scrolling back restarts it. Hover and keyboard focus are no longer required. Where supported, miniature renderers use lower resolution and frame rate than the full editor preview. Reduced motion and the Pause animated wallpapers preference keep them still.

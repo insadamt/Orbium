@@ -160,20 +160,20 @@
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+    border: 0;
     border-radius: 0.75rem;
     background: color-mix(in srgb, var(--card) 45%, transparent);
-    transition:
-        border-color 160ms ease,
-        box-shadow 160ms ease;
+    transition: box-shadow 160ms ease;
 }
 .db-gallery-card:hover {
-    border-color: var(--ring);
     box-shadow: 0 4px 18px rgb(0 0 0 / 0.04);
+}
+.db-gallery-card:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
 }
 .db-gallery-preview {
     height: 9rem;
     overflow: hidden;
-    border-bottom: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
     background: color-mix(in srgb, var(--muted) 35%, transparent);
 }

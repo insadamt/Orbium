@@ -115,7 +115,7 @@ export default function DatabaseTable({
                                 <div className="flex h-[43px] items-center gap-2 px-3">
                                     <FileText
                                         size={15}
-                                        className="shrink-0 text-muted-foreground/60"
+                                        className="shrink-0 text-muted-foreground"
                                     />
                                     {renamingId === document.id ? (
                                         <input

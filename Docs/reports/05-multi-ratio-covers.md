@@ -42,3 +42,17 @@ The existing crop dialog supports the extra ratios without another dependency. `
 
 - `feat(covers): support selectable cover aspect ratios`
 - `feat(gallery): add per-container cover layout settings`
+
+## Manual review correction — Borderless Gallery images (2026-10-02)
+
+Explorer Gallery cards and database Gallery cards no longer frame their images with an outer border. Database cards also remove the line between preview and label. This applies to Normal and Frosted surfaces; crop ratios, fit settings, spacing, and rounded clipping remain unchanged. Database cards show a temporary focus outline for keyboard navigation. Existing CSS handles this without a library.
+
+### Manual test checklist
+
+1. Open workspace and folder Galleries with covers in natural and uniform layouts. Expected: no visible line around the images or cards; images keep their saved crop and chosen fit.
+2. Open a database Gallery with cover previews. Expected: no outer frame and no line between image and title; cards still open their document.
+3. Repeat in Light and Dark, Normal and Frosted. Tab to a database card. Expected: the default view stays borderless and keyboard focus is visible.
+
+Suggested commit message: `fix(gallery): remove borders around cover previews`.
+
+Validation: `npm run check:fix`, `npm run types:check`, `npm run lint`, `npm run build`, `./vendor/bin/pint --test`, and `git diff --check` passed. The build retains its large-chunk warning. No automated tests were written or run, per project instructions. Browser appearance awaits the user's manual review.

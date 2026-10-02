@@ -29,16 +29,20 @@
 
 .surface-frosted,
 :root[data-surface-style='frosted'] {
-    --frosted-panel: rgb(239 244 247 / 61%);
-    --frosted-raised: rgb(248 250 252 / 73%);
-    --frosted-inset: rgb(230 237 242 / 48%);
+    --frosted-panel: rgb(250 250 251 / 61%);
+    --frosted-raised: rgb(255 255 255 / 73%);
+    --frosted-inset: rgb(245 247 249 / 48%);
+    --foreground: #101316;
+    --muted-foreground: #30383e;
 }
 
 .dark .surface-frosted,
 :root.dark[data-surface-style='frosted'] {
-    --frosted-panel: rgb(17 22 27 / 53%);
-    --frosted-raised: rgb(27 33 39 / 67%);
-    --frosted-inset: rgb(18 24 30 / 43%);
+    --frosted-panel: rgb(3 6 9 / 53%);
+    --frosted-raised: rgb(12 16 20 / 67%);
+    --frosted-inset: rgb(7 11 15 / 43%);
+    --foreground: #ffffff;
+    --muted-foreground: #f1f4f6;
 }
 
 .surface-frosted .floating-workspace {
@@ -79,34 +83,47 @@
     backdrop-filter: blur(18px) saturate(130%);
 }
 
+.surface-frosted
+    :is(
+        .floating-item,
+        .explorer-view-switcher,
+        .explorer-gallery-settings,
+        .db-field,
+        .db-gallery-card
+    ),
+.surface-frosted .db-gallery-card:hover,
+:root[data-surface-style='frosted'] .db-menu {
+    border-color: transparent;
+}
+
 @supports not
 ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
     .surface-frosted,
     :root[data-surface-style='frosted'] {
-        --frosted-panel: rgb(239 244 247 / 96%);
-        --frosted-raised: rgb(248 250 252 / 98%);
-        --frosted-inset: rgb(230 237 242 / 92%);
+        --frosted-panel: rgb(250 250 251 / 96%);
+        --frosted-raised: rgb(255 255 255 / 98%);
+        --frosted-inset: rgb(245 247 249 / 92%);
     }
     .dark .surface-frosted,
     :root.dark[data-surface-style='frosted'] {
-        --frosted-panel: rgb(17 22 27 / 95%);
-        --frosted-raised: rgb(27 33 39 / 97%);
-        --frosted-inset: rgb(18 24 30 / 91%);
+        --frosted-panel: rgb(3 6 9 / 95%);
+        --frosted-raised: rgb(12 16 20 / 97%);
+        --frosted-inset: rgb(7 11 15 / 91%);
     }
 }
 
 @media (prefers-reduced-transparency: reduce) {
     .surface-frosted,
     :root[data-surface-style='frosted'] {
-        --frosted-panel: #eff4f7;
-        --frosted-raised: #f8fafc;
-        --frosted-inset: #e6edf2;
+        --frosted-panel: #fafafb;
+        --frosted-raised: #ffffff;
+        --frosted-inset: #f5f7f9;
     }
     .dark .surface-frosted,
     :root.dark[data-surface-style='frosted'] {
-        --frosted-panel: #11161b;
-        --frosted-raised: #1b2127;
-        --frosted-inset: #12181e;
+        --frosted-panel: #030609;
+        --frosted-raised: #0c1014;
+        --frosted-inset: #070b0f;
     }
     .surface-frosted
         :is(

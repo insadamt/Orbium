@@ -228,3 +228,35 @@ The user removed the miniature requirement. The Wallpaper control and searchable
 Suggested commit message: `refactor(appearance): replace wallpaper miniatures with text choices`.
 
 Validation: `npm run check:fix`, `npm run types:check`, `npm run lint`, `npm run build`, `./vendor/bin/pint --test`, and `git diff --check` passed. The build still reports a large-chunk warning. No automated tests were written or run, per project instructions. The local Docker app was rebuilt; app and PostgreSQL reported healthy, nginx remained running, and unauthenticated `/settings/appearance` returned the expected HTTP 302. Authenticated visual behavior awaits the user's manual review.
+
+## Manual review correction — Frosted contrast (2026-10-02)
+
+The screenshot exposed weak contrast where the wallpaper colored the database island and made secondary text, table icons, and controls hard to read. After the user's correction, this pass changes colors only: neutral light and darker dark glass colors, foreground and secondary text, and table metadata. The original opacity, blur, saturation, borders, shadows, and settings surface treatment remain in place. The existing reduced-transparency and missing-blur fallbacks keep their original opacity behavior with the updated color values.
+
+Apple's [materials guidance](https://developer.apple.com/design/human-interface-guidelines/materials) recommends legibility over varied backgrounds. [WCAG 2.2 text contrast guidance](https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html) sets 4.5:1 for normal text and 3:1 for large text. The [Culori library](https://culorijs.org/api/) was reviewed for its `wcagContrast` calculation, but a static pair of colors cannot represent every blurred wallpaper pixel. This pass uses existing CSS tokens instead of adding a runtime color library. Since the original translucency is preserved, contrast cannot be guaranteed over every uploaded image; browser review is required.
+
+### Manual test checklist
+
+1. Choose Frosted glass and a bright, detailed wallpaper. Open a database Table. Expected: title, document count, view tabs, toolbar, column headers, row names, numbers, and icons are easier to read while the wallpaper remains visible through the island at its original strength.
+2. Switch between Light and Dark on that wallpaper. Expected: the same glass blur and translucency, with improved text and control colors. Check top tabs and buttons in both themes.
+3. Repeat with a mostly dark wallpaper and an animated wallpaper. Expected: the same text and controls stay readable, and Gallery cards, document content, Settings, menus, and dialogs have clear boundaries.
+4. Compare Normal and Frosted. Expected: Normal keeps its solid appearance; Frosted keeps its previous blur, translucency, borders, shadows, and layout.
+5. If available, enable Reduce Transparency or use a browser without backdrop blur. Expected: Frosted surfaces become solid and all text remains readable.
+
+Suggested commit message: `fix(appearance): strengthen frosted glass contrast in both themes`.
+
+Validation: `npm run check:fix`, `npm run types:check`, `npm run lint`, `npm run build`, `./vendor/bin/pint --test`, and `git diff --check` passed. The build reported its existing large-chunk warning. No automated tests were written or run, per project instructions. Authenticated visual contrast awaits the user's manual review.
+
+## Manual review correction — Attached frosted elements (2026-10-02)
+
+The user requested fewer borders so elements feel attached to the Frosted surface. The contrast pass's custom border colors were removed. Frosted explorer items, view controls, database cards and fields, and Appearance cards and controls now hide their outlines. Backgrounds, spacing, table separators, and focus indicators continue to distinguish elements. Normal surfaces and the glass opacity, blur, and saturation are unchanged. This uses scoped CSS without a new library.
+
+### Manual test checklist
+
+1. Select Frosted glass. Open a workspace Grid or Gallery, a database Table and Gallery, and Settings → Appearance. Expected: cards and controls sit against their surfaces without visible outline boxes.
+2. Hover, select, and keyboard-focus an explorer item, Appearance choice, database field, and view control. Expected: selection and focus remain visible without a permanent border.
+3. Switch Light and Dark, then compare with Normal. Expected: Frosted keeps the same glass blur and transparency; Normal retains its original borders. Table row and column separators remain visible.
+
+Suggested commit message: `fix(appearance): remove nested frosted element borders`.
+
+Validation: `npm run check:fix`, `npm run types:check`, `npm run lint`, `npm run build`, `./vendor/bin/pint --test`, and `git diff --check` passed. The build still reports large chunks. No automated tests were written or run, per project instructions. Visual review remains for the user.

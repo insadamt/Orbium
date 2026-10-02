@@ -26,9 +26,7 @@ export default function PropertyValue({
         (Array.isArray(value) && !selected.length)
     )
         return (
-            <span className="truncate text-muted-foreground/45">
-                {emptyLabel}
-            </span>
+            <span className="truncate text-muted-foreground">{emptyLabel}</span>
         );
     if (property.type === 'checkbox')
         return (

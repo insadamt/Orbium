@@ -348,7 +348,7 @@ function DatabasePage({ page }: { page: DatabasePageProps }) {
                     </div>
                 )}
                 {shownDocuments.length > 0 && (
-                    <p className="mt-4 px-3 text-[11px] text-muted-foreground/65">
+                    <p className="mt-4 px-3 text-[11px] text-muted-foreground">
                         {shownDocuments.length}{' '}
                         {shownDocuments.length === 1 ? 'document' : 'documents'}
                         {shownDocuments.length !== documents.length
