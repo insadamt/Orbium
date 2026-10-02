@@ -22,6 +22,27 @@
             box-shadow var(--motion-feedback) ease;
     }
 
+    .navigation-back-button {
+        transition:
+            width 320ms var(--motion-ease),
+            margin-right 320ms var(--motion-ease),
+            opacity 240ms ease,
+            transform 320ms var(--motion-ease),
+            scale var(--motion-feedback) var(--motion-ease),
+            background-color var(--motion-feedback) ease,
+            color var(--motion-feedback) ease,
+            box-shadow var(--motion-feedback) ease;
+    }
+
+    @starting-style {
+        .navigation-back-button[data-visible='true'] {
+            width: 0;
+            margin-right: calc(-1 * var(--navigation-back-gap));
+            opacity: 0;
+            transform: translateX(-16px);
+        }
+    }
+
     :is(
             .floating-icon-button,
             .floating-add-tab,

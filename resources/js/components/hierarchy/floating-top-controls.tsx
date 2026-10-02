@@ -83,6 +83,15 @@ export function FloatingTopControls({
             // Browser storage availability does not affect navigation.
         }
     }, [workspace, pageType]);
+
+    useEffect(() => {
+        setTrashOpen(false);
+        setCreateType(null);
+        setNewWorkspaceOpen(false);
+        setWorkspaceName('');
+        setError('');
+        setRootDropActive(false);
+    }, [workspace?.id]);
     return (
         <>
             <header ref={topControlsRef} className="floating-top-controls">

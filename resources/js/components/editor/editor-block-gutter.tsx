@@ -1,6 +1,7 @@
 import type { Editor } from '@tiptap/core';
 import { EditorContent } from '@tiptap/react';
 import { GripVertical, Plus } from 'lucide-react';
+import { createPortal } from 'react-dom';
 import {
     useEffect,
     useRef,
@@ -17,6 +18,7 @@ import { changeBlockOrder } from './editor-controls';
 import TableControls from './table-controls';
 
 type BlockLocation = { index: number; top: number };
+type OpenBlockMenu = BlockLocation & { anchor: { x: number; y: number } };
 type DropLocation = { index: number; top: number };
 
 type Props = {
@@ -85,7 +87,7 @@ export default function EditorBlockGutter({
     const [hoveredBlock, setHoveredBlock] = useState<BlockLocation | null>(
         null,
     );
-    const [menuBlock, setMenuBlock] = useState<BlockLocation | null>(null);
+    const [menuBlock, setMenuBlock] = useState<OpenBlockMenu | null>(null);
     const [dropLocation, setDropLocation] = useState<DropLocation | null>(null);
     const visibleBlock = menuBlock ?? hoveredBlock;
 
@@ -145,11 +147,35 @@ export default function EditorBlockGutter({
     useEffect(() => {
         if (!menuBlock) return;
         const closeOutside = (event: PointerEvent) => {
-            if (!surfaceRef.current?.contains(event.target as Node))
+            if (
+                !surfaceRef.current?.contains(event.target as Node) &&
+                !(
+                    event.target instanceof Element &&
+                    event.target.closest('[data-block-context-menu]')
+                )
+            )
                 setMenuBlock(null);
         };
         document.addEventListener('pointerdown', closeOutside);
-        return () => document.removeEventListener('pointerdown', closeOutside);
+        window.addEventListener('scroll', closeMenuOnViewportChange, true);
+        window.addEventListener('resize', closeMenuOnViewportChange);
+        function closeMenuOnViewportChange(event: Event) {
+            if (
+                event.target instanceof Element &&
+                event.target.closest('[data-block-context-menu]')
+            )
+                return;
+            setMenuBlock(null);
+        }
+        return () => {
+            document.removeEventListener('pointerdown', closeOutside);
+            window.removeEventListener(
+                'scroll',
+                closeMenuOnViewportChange,
+                true,
+            );
+            window.removeEventListener('resize', closeMenuOnViewportChange);
+        };
     }, [menuBlock]);
 
     function locateBlock(
@@ -199,7 +225,10 @@ export default function EditorBlockGutter({
         if (!block) return;
         event.preventDefault();
         setHoveredBlock(block);
-        setMenuBlock(block);
+        setMenuBlock({
+            ...block,
+            anchor: { x: event.clientX, y: event.clientY },
+        });
     }
 
     return (
@@ -279,7 +308,19 @@ export default function EditorBlockGutter({
                         title="Drag to reorder, click for menu"
                         onClick={(event) => {
                             event.stopPropagation();
-                            setMenuBlock(menuBlock ? null : visibleBlock);
+                            const bounds =
+                                event.currentTarget.getBoundingClientRect();
+                            setMenuBlock(
+                                menuBlock
+                                    ? null
+                                    : {
+                                          ...visibleBlock,
+                                          anchor: {
+                                              x: bounds.right + 8,
+                                              y: bounds.bottom + 4,
+                                          },
+                                      },
+                            );
                         }}
                         onDragStart={(event) => {
                             draggedBlock.current = visibleBlock.index;
@@ -304,22 +345,19 @@ export default function EditorBlockGutter({
                     </button>
                 </div>
             )}
-            {menuBlock && (
-                <div
-                    className="absolute left-0 z-20 sm:-left-12"
-                    style={{ top: menuBlock.top + 32 }}
-                    onClick={(event) => event.stopPropagation()}
-                >
+            {menuBlock &&
+                createPortal(
                     <BlockContextMenu
                         editor={editor}
                         index={menuBlock.index}
+                        anchor={menuBlock.anchor}
                         onClose={() => {
                             setMenuBlock(null);
                             setHoveredBlock(null);
                         }}
-                    />
-                </div>
-            )}
+                    />,
+                    document.body,
+                )}
             {dropLocation && (
                 <div
                     aria-hidden="true"

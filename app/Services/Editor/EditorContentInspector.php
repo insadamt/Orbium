@@ -32,6 +32,15 @@ class EditorContentInspector
                 $this->invalid('A block has invalid attributes.');
             }
             $attrs = $node['attrs'] ?? [];
+            if (isset($attrs['dir']) && ! in_array($attrs['dir'], ['ltr', 'rtl', 'auto'], true)) {
+                $this->invalid('A block direction is invalid.');
+            }
+            if (isset($attrs['directionMode']) && (! in_array($type, ['paragraph', 'heading', 'bulletList', 'orderedList', 'taskList', 'blockquote', 'codeBlock', 'callout', 'table'], true) || ! in_array($attrs['directionMode'], ['auto', 'manual'], true))) {
+                $this->invalid('A block direction mode is invalid.');
+            }
+            if (isset($attrs['textAlign']) && (! in_array($type, ['paragraph', 'heading'], true) || ! in_array($attrs['textAlign'], ['left', 'center', 'right'], true))) {
+                $this->invalid('A block alignment is invalid.');
+            }
             if ($type === 'mention' && ! filter_var($attrs['id'] ?? null, FILTER_VALIDATE_INT)) {
                 $this->invalid('A mention has no target.');
             }

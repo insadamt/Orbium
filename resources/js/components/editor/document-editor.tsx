@@ -13,6 +13,8 @@ import { FileUp, Search } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
 import 'katex/dist/katex.min.css';
 import EditorBlockGutter from './editor-block-gutter';
+import { AutomaticBlockDirection } from './automatic-block-direction';
+import { BlockTextAlignment } from './block-formatting';
 import type { EditorDocument } from './editor-api';
 import { uploadAttachment } from './editor-api';
 import { usePageSearch } from '@/components/navigation/page-search';
@@ -107,6 +109,8 @@ export default function DocumentEditor({
                 dropcursor: false,
                 link: { openOnClick: false, autolink: true },
             }),
+            BlockTextAlignment,
+            AutomaticBlockDirection,
             SelectBlockShortcut,
             CodeBlockLowlight.configure({ lowlight }).extend({
                 addNodeView() {
@@ -148,6 +152,7 @@ export default function DocumentEditor({
             extensions,
             content: content as JSONContent,
             immediatelyRender: false,
+            textDirection: 'auto',
             editorProps: {
                 attributes: {
                     class: 'orbium-editor min-h-[45vh] outline-none',

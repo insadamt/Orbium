@@ -310,6 +310,16 @@ The autosave queue retains the latest immutable ProseMirror document snapshot an
 
 The floating page finder's match count settles after 150 ms of inactivity while typing or editing. Enter/Shift+Enter uses the current document immediately. Match positions are cached only for the latest document snapshot and query per editor, so content changes invalidate them without rescanning on every selection change.
 
+## Block direction and alignment
+
+Text blocks detect direction from their first strongly directional character.
+The compact block menu offers left, center, and right text alignment.
+Empty blocks created with Enter or the add-block control inherit the preceding
+block's direction; typing a different language updates its automatic direction.
+Existing explicit direction choices remain stored in editor content. Direction
+and alignment survive autosave and reload. Alignment applies to
+paragraphs and headings, including those inside lists, quotes, and callouts.
+
 ## Focus/read state
 
 When idle, editor chrome should disappear as much as possible.

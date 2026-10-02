@@ -51,12 +51,24 @@ export function findHoveredBlock(
 
 export function insertParagraphAfterBlock(editor: Editor, index: number): void {
     let insertionPosition = editor.state.doc.content.size;
+    let direction = 'ltr';
     editor.state.doc.forEach((block, offset, blockIndex) => {
-        if (blockIndex === index) insertionPosition = offset + block.nodeSize;
+        if (blockIndex === index) {
+            insertionPosition = offset + block.nodeSize;
+            direction =
+                block.attrs.dir === 'rtl'
+                    ? 'rtl'
+                    : block.attrs.dir === 'auto'
+                      ? 'auto'
+                      : 'ltr';
+        }
     });
     editor
         .chain()
         .focus()
-        .insertContentAt(insertionPosition, { type: 'paragraph' })
+        .insertContentAt(insertionPosition, {
+            type: 'paragraph',
+            attrs: { dir: direction, directionMode: 'auto' },
+        })
         .run();
 }

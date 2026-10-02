@@ -211,7 +211,6 @@ export default function AppLayout({ children }: AppLayoutProps) {
                 >
                     {!isPane && isFloatingPage && (
                         <FloatingTopControls
-                            key={shellWorkspace?.id ?? 'home'}
                             workspace={shellWorkspace}
                             workspaces={page.props.workspaces ?? []}
                             currentNode={

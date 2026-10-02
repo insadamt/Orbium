@@ -20,7 +20,7 @@ The floating shell now also wraps document, database, and settings pages. Settin
 
 The floating top controls stay fixed at the viewport top while pages scroll. Their space in the page adapts to wrapped rows and the expanded search field so content starts below the controls.
 
-The 2026-10-02 navigation review restores an in-app Back button in the floating top controls at the user's request. Browser Back and Forward refresh restored Inertia pages from the server so edited document titles, covers, and database properties appear in parent views without a manual refresh.
+The 2026-10-02 navigation review restores an in-app Back button in the floating top controls at the user's request. It hides on workspace roots or when the active tab has no earlier page; its reveal and removal animate the neighboring controls into place, except under reduced motion. Browser Back and Forward refresh restored Inertia pages from the server so edited document titles, covers, and database properties appear in parent views without a manual refresh.
 
 The 2026-10-01 explorer follow-up enlarges item icons in Grid, List, and Gallery. While dragging an item in a nested folder, a drop area appears above the items; dropping there moves the item to that folder's immediate parent and appends it to that parent's contents.
 
