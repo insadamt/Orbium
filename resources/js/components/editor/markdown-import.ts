@@ -10,7 +10,19 @@ export async function readMarkdownFile(file: File): Promise<JSONContent> {
     if (file.size > maximumMarkdownBytes) {
         throw new Error('Markdown files must be smaller than 400 KB.');
     }
-    const source = await file.text();
+    return parseMarkdownContent(await file.text());
+}
+
+export function isMarkdownPaste(source: string): boolean {
+    return /(^|\n)\s{0,3}(?:#{1,6}\s|>\s|[-*+]\s|\d+[.)]\s|```|~~~|---+\s*$|\|.+\|)|\*\*[^\n*]+\*\*|(?<!\w)[*_][^*_\n]+[*_](?!\w)|~~[^\n~]+~~|`[^\n`]+`|!?\[[^\]\n]+\]\([^)\n]+\)/m.test(
+        source,
+    );
+}
+
+export function parseMarkdownContent(source: string): JSONContent {
+    if (new TextEncoder().encode(source).length > maximumMarkdownBytes) {
+        throw new Error('Markdown content must be smaller than 400 KB.');
+    }
     const content = convertBlocks(
         marked.lexer(source, { gfm: true, breaks: false }),
     );
