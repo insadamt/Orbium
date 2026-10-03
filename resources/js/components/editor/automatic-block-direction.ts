@@ -4,6 +4,23 @@ import { Plugin, PluginKey, type Transaction } from '@tiptap/pm/state';
 
 type ResolvedDirection = 'ltr' | 'rtl';
 
+const directionalBlockTypes = [
+    'paragraph',
+    'heading',
+    'bulletList',
+    'orderedList',
+    'taskList',
+    'blockquote',
+    'codeBlock',
+    'callout',
+    'table',
+    'horizontalRule',
+    'image',
+    'file',
+    'mermaid',
+    'blockMath',
+];
+
 const rtlLetter =
     /[\p{Script=Arabic}\p{Script=Hebrew}\p{Script=Syriac}\p{Script=Thaana}\p{Script=Nko}\p{Script=Samaritan}\p{Script=Mandaic}\p{Script=Adlam}\p{Script=Hanifi_Rohingya}]/u;
 const letter = /\p{Letter}/u;
@@ -26,7 +43,17 @@ function inferredDirection(
 ): { attribute: 'auto' | ResolvedDirection; resolved: ResolvedDirection } {
     let strongDirection = strongDirections.get(block);
     if (strongDirection === undefined) {
-        strongDirection = firstStrongDirection(block.textContent);
+        strongDirection = firstStrongDirection(
+            block.textContent ||
+                String(
+                    block.attrs.caption ||
+                        block.attrs.alt ||
+                        block.attrs.name ||
+                        block.attrs.source ||
+                        block.attrs.latex ||
+                        '',
+                ),
+        );
         strongDirections.set(block, strongDirection);
     }
     return {
@@ -56,17 +83,7 @@ export const AutomaticBlockDirection = Extension.create({
     addGlobalAttributes() {
         return [
             {
-                types: [
-                    'paragraph',
-                    'heading',
-                    'bulletList',
-                    'orderedList',
-                    'taskList',
-                    'blockquote',
-                    'codeBlock',
-                    'callout',
-                    'table',
-                ],
+                types: directionalBlockTypes,
                 attributes: {
                     directionMode: {
                         default: null,

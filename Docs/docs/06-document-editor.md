@@ -145,6 +145,8 @@ Compact floating toolbar:
 - Link
 - More
 
+Selected text also has a color control with preset swatches, a native custom color picker, and a way to return to the default text color. Colors are stored as six-digit hex values in the document content.
+
 Do not make this toolbar permanently visible.
 
 ## Code blocks

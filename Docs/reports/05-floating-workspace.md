@@ -1,5 +1,13 @@
 # Phase 5 — Floating workspace review
 
+## Editor slash menu RTL and frosted correction (2026-10-03)
+
+The `/` suggestion menu now renders in a body portal so its fixed position uses the viewport coordinates supplied by Tiptap. A frosted editor island previously changed the menu's containing block, moving it toward the far right and preventing the menu from blurring the wallpaper behind it. RTL text aligns the menu's right edge with the suggestion anchor; LTR text keeps left-edge alignment. Both directions clamp to the viewport, including narrow windows. The existing Tiptap suggestion plugin supplies the anchor but does not manage this React menu's portal or surface, so a local fix is sufficient.
+
+Manual review: choose Frosted glass and a detailed wallpaper. In a document, type `/` in an RTL paragraph near the right edge. Expected: the command menu opens beside the slash within the viewport, with a tinted blur. Filter commands, use Arrow keys and Enter, then repeat near the left edge and in an LTR paragraph. Switch to Normal and verify the menu is solid. Repeat in Light and Dark modes and a narrow window. Type `@` and verify the mention menu is also positioned and styled correctly.
+
+Suggested commit message: `fix(editor): anchor slash suggestions correctly in RTL`.
+
 ## Context menu placement and frosted surface correction (2026-10-03)
 
 Explorer, tab, and editor block context menus now open toward the left of their anchor for RTL content and stay within the viewport. The empty explorer's keyboard menu opens near the center of the content area instead of its far edge. Explorer and tab menus portal into `document.body`; root surface selectors now give them the selected Normal or Frosted appearance, including the existing reduced-transparency fallback. This corrects the existing menus with local positioning and CSS; the previously reviewed Radix Context Menu would add a dependency and change interaction behavior for a focused visual bug.

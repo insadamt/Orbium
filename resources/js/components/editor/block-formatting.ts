@@ -1,6 +1,7 @@
 import { Extension, type Editor } from '@tiptap/core';
 
 export type BlockAlignment = 'left' | 'center' | 'right';
+export type BlockDirection = 'auto' | 'ltr' | 'rtl';
 
 const alignments = new Set<BlockAlignment>(['left', 'center', 'right']);
 
@@ -47,6 +48,7 @@ export function blockFormatting(
 ): {
     alignment: BlockAlignment | null;
     canAlign: boolean;
+    direction: BlockDirection;
 } {
     const block = editor.state.doc.child(index);
     let alignment: BlockAlignment | null = null;
@@ -69,7 +71,31 @@ export function blockFormatting(
     return {
         alignment,
         canAlign,
+        direction:
+            block.attrs.directionMode === 'manual' ||
+            (block.attrs.directionMode == null && block.attrs.dir === 'rtl')
+                ? block.attrs.dir === 'rtl'
+                    ? 'rtl'
+                    : 'ltr'
+                : 'auto',
     };
+}
+
+export function setBlockDirection(
+    editor: Editor,
+    index: number,
+    direction: BlockDirection,
+): void {
+    const { from } = blockRange(editor, index);
+    const block = editor.state.doc.child(index);
+    editor.view.dispatch(
+        editor.state.tr.setNodeMarkup(from, undefined, {
+            ...block.attrs,
+            dir: direction === 'auto' ? 'auto' : direction,
+            directionMode: direction === 'auto' ? 'auto' : 'manual',
+        }),
+    );
+    editor.commands.focus();
 }
 
 export function setBlockAlignment(

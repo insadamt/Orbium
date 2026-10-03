@@ -12,7 +12,9 @@ import {
     Underline,
 } from 'lucide-react';
 import { useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import type { EditorMenu } from './editor-suggestions';
+import { TextColorPicker } from './text-color-picker';
 
 export function changeBlockOrder(
     editor: Editor,
@@ -190,6 +192,7 @@ export function SelectionToolbar({ editor }: { editor: Editor }) {
             >
                 <Link2 size={16} />
             </FormatButton>
+            <TextColorPicker editor={editor} />
         </BubbleMenu>
     );
 }
@@ -297,6 +300,20 @@ export function SuggestionMenu({
     const expectedHeight = Math.min(288, Math.max(items.length, 1) * 36 + 8);
     const openAbove = spaceBelow < expectedHeight && spaceAbove > spaceBelow;
     const availableHeight = openAbove ? spaceAbove : spaceBelow;
+    const anchorNode = editor.view.domAtPos(menu.from).node;
+    const anchorElement =
+        anchorNode instanceof Element ? anchorNode : anchorNode.parentElement;
+    const isRtl =
+        anchorElement !== null &&
+        getComputedStyle(anchorElement).direction === 'rtl';
+    const menuWidth = Math.min(256, window.innerWidth - 16);
+    const preferredLeft = isRtl
+        ? (menu.rect?.right ?? 50) - menuWidth
+        : (menu.rect?.left ?? 50);
+    const left = Math.max(
+        8,
+        Math.min(preferredLeft, window.innerWidth - menuWidth - 8),
+    );
 
     useEffect(() => {
         const menuElement = menuRef.current;
@@ -316,16 +333,16 @@ export function SuggestionMenu({
         }
     }, [menu]);
 
-    return (
+    return createPortal(
         <div
             ref={menuRef}
             role="listbox"
             aria-label={
                 menu.type === 'slash' ? 'Block commands' : 'Mention items'
             }
-            className="glass-surface fixed z-50 max-h-72 w-64 overflow-auto rounded-xl border border-border p-1 shadow-xl"
+            className="glass-surface fixed z-50 max-h-72 w-64 max-w-[calc(100vw-16px)] overflow-auto rounded-xl border border-border p-1 shadow-xl"
             style={{
-                left: Math.max(8, menu.rect?.left ?? 50),
+                left,
                 maxHeight: Math.max(48, Math.min(288, availableHeight)),
                 ...(openAbove
                     ? { bottom: viewportHeight - anchorTop + 8 }
@@ -348,6 +365,7 @@ export function SuggestionMenu({
                     {item.label}
                 </button>
             ))}
-        </div>
+        </div>,
+        document.body,
     );
 }

@@ -10,7 +10,11 @@ import {
     Trash2,
 } from 'lucide-react';
 import { useLayoutEffect, useRef, type ReactNode } from 'react';
-import { blockFormatting, setBlockAlignment } from './block-formatting';
+import {
+    blockFormatting,
+    setBlockAlignment,
+    setBlockDirection,
+} from './block-formatting';
 import { changeBlockOrder } from './editor-controls';
 import { findBlockCommands } from './editor-commands';
 import { AppSelect } from '@/components/ui/app-select';
@@ -173,6 +177,27 @@ export default function BlockContextMenu({
                             )
                         }
                     />
+                </div>
+            </fieldset>
+
+            <fieldset className="mt-3">
+                <legend className="px-1 text-xs font-medium text-muted-foreground">
+                    Text direction
+                </legend>
+                <div className="mt-1 grid grid-cols-3 gap-1">
+                    {(['auto', 'ltr', 'rtl'] as const).map((direction) => (
+                        <ChoiceButton
+                            key={direction}
+                            label={direction === 'auto' ? 'Auto' : direction.toUpperCase()}
+                            title={`Set ${direction === 'auto' ? 'automatic' : direction.toUpperCase()} block direction`}
+                            active={formatting.direction === direction}
+                            onClick={() =>
+                                perform(() =>
+                                    setBlockDirection(editor, index, direction),
+                                )
+                            }
+                        />
+                    ))}
                 </div>
             </fieldset>
 

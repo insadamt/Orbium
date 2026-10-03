@@ -45,7 +45,7 @@ export default function ImageView({
     const attachmentId = Number(node.attrs.attachmentId);
     const savedWidth = Number(node.attrs.width) || 720;
     const imageWidth = previewWidth ?? savedWidth;
-    const alignment = String(node.attrs.alignment || 'left');
+    const alignment = String(node.attrs.alignment || 'start');
     const caption = String(node.attrs.caption ?? '');
     const imageUrl = attachmentUrl(
         context.workspaceId,
@@ -121,14 +121,22 @@ export default function ImageView({
     }
 
     return (
-        <NodeViewWrapper className="editor-image my-5">
+        <NodeViewWrapper className="editor-image my-5" dir={node.attrs.dir}>
             <div ref={imageContainer} contentEditable={false}>
                 <figure
                     className="max-w-full"
                     style={{
                         width: imageWidth,
-                        marginLeft: alignment === 'left' ? 0 : 'auto',
-                        marginRight: alignment === 'right' ? 0 : 'auto',
+                        marginLeft:
+                            alignment === 'left' ||
+                            (alignment === 'start' && node.attrs.dir !== 'rtl')
+                                ? 0
+                                : 'auto',
+                        marginRight:
+                            alignment === 'right' ||
+                            (alignment === 'start' && node.attrs.dir === 'rtl')
+                                ? 0
+                                : 'auto',
                     }}
                 >
                     <div

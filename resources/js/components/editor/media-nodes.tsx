@@ -19,6 +19,7 @@ function FileView({
         <NodeViewWrapper
             className="my-4 rounded-xl border border-border p-4"
             data-drag-handle
+            dir={node.attrs.dir}
         >
             <a
                 href={attachmentUrl(
@@ -31,7 +32,7 @@ function FileView({
             >
                 {String(node.attrs.name || 'Download file')}
             </a>
-            <span className="ml-3 text-xs text-muted-foreground">
+            <span className="ms-3 text-xs text-muted-foreground">
                 {Math.ceil(Number(node.attrs.sizeBytes || 0) / 1024)} KB
             </span>
         </NodeViewWrapper>
@@ -97,6 +98,7 @@ function MermaidView({ node, updateAttributes }: NodeViewProps) {
         <NodeViewWrapper
             className="my-4 rounded-xl border border-border p-4"
             data-drag-handle
+            dir={node.attrs.dir}
         >
             <div
                 className="mb-2 flex justify-between text-xs text-muted-foreground"
@@ -135,6 +137,7 @@ function MermaidView({ node, updateAttributes }: NodeViewProps) {
                         updateAttributes({ source: event.target.value })
                     }
                     rows={6}
+                    dir="ltr"
                     className="w-full rounded-md bg-muted p-3 font-mono text-sm"
                 />
             ) : renderedSource !== source ? (
@@ -167,7 +170,7 @@ export function createMediaExtensions(context: MediaContext) {
                 alt: { default: '' },
                 caption: { default: '' },
                 width: { default: 720 },
-                alignment: { default: 'left' },
+                alignment: { default: 'start' },
             };
         },
         parseHTML() {

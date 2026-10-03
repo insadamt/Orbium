@@ -22,7 +22,19 @@ export const TextColor = Mark.create({
     },
 
     parseHTML() {
-        return [{ tag: 'span[data-text-color]' }];
+        return [
+            {
+                tag: 'span[data-text-color]',
+                getAttrs: (element) =>
+                    /^#[0-9a-fA-F]{6}$/.test(
+                        (element as HTMLElement).getAttribute(
+                            'data-text-color',
+                        ) ?? '',
+                    )
+                        ? {}
+                        : false,
+            },
+        ];
     },
 
     renderHTML({ HTMLAttributes }) {

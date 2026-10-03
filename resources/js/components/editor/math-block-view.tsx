@@ -30,7 +30,7 @@ export default function MathBlockView({
     }, [isEditing]);
 
     return (
-        <NodeViewWrapper className="my-4 rounded-xl border border-border p-4">
+        <NodeViewWrapper className="my-4 rounded-xl border border-border p-4" dir={node.attrs.dir}>
             <div
                 className="mb-2 flex items-center justify-between text-xs text-muted-foreground"
                 contentEditable={false}
@@ -68,6 +68,7 @@ export default function MathBlockView({
                         updateAttributes({ latex: event.target.value })
                     }
                     rows={4}
+                    dir="ltr"
                     className="w-full rounded-md bg-muted p-3 font-mono text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 />
             ) : renderedMath.error ? (
