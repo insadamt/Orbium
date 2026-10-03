@@ -9,6 +9,7 @@ type TableLocation = {
     height: number;
     left: number;
     top: number;
+    direction: 'ltr' | 'rtl';
 };
 
 function activeTable(
@@ -22,8 +23,9 @@ function activeTable(
     if (tableDepth === 0) return null;
 
     const position = $from.before(tableDepth);
+    const tableNode = editor.state.doc.nodeAt(position);
     const tableWrapper = editor.view.nodeDOM(position);
-    if (!(tableWrapper instanceof HTMLElement)) return null;
+    if (!(tableWrapper instanceof HTMLElement) || !tableNode) return null;
 
     const tableBounds = tableWrapper.getBoundingClientRect();
     const surfaceBounds = surface.getBoundingClientRect();
@@ -33,6 +35,11 @@ function activeTable(
         height: tableBounds.height,
         left: tableBounds.left - surfaceBounds.left,
         top: tableBounds.top - surfaceBounds.top,
+        direction:
+            getComputedStyle(tableWrapper).direction === 'rtl' ||
+            tableNode.attrs.dir === 'rtl'
+                ? 'rtl'
+                : 'ltr',
     };
 }
 
@@ -143,7 +150,10 @@ export default function TableControls({
                 onClick={addColumn}
                 className="table-edge-control"
                 style={{
-                    left: table.left + table.width + 5,
+                    left:
+                        table.direction === 'rtl'
+                            ? table.left - 27
+                            : table.left + table.width + 5,
                     top: table.top,
                     width: 22,
                     height: table.height,

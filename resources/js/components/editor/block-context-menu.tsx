@@ -188,7 +188,11 @@ export default function BlockContextMenu({
                     {(['auto', 'ltr', 'rtl'] as const).map((direction) => (
                         <ChoiceButton
                             key={direction}
-                            label={direction === 'auto' ? 'Auto' : direction.toUpperCase()}
+                            label={
+                                direction === 'auto'
+                                    ? 'Auto'
+                                    : direction.toUpperCase()
+                            }
                             title={`Set ${direction === 'auto' ? 'automatic' : direction.toUpperCase()} block direction`}
                             active={formatting.direction === direction}
                             onClick={() =>

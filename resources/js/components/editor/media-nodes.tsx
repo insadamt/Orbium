@@ -213,7 +213,9 @@ export function createMediaExtensions(context: MediaContext) {
         renderHTML({ HTMLAttributes }) {
             return [
                 'div',
-                { 'data-file-id': HTMLAttributes.attachmentId },
+                mergeAttributes(HTMLAttributes, {
+                    'data-file-id': HTMLAttributes.attachmentId,
+                }),
                 HTMLAttributes.name,
             ];
         },
@@ -235,7 +237,11 @@ export function createMediaExtensions(context: MediaContext) {
             return [{ tag: 'div[data-mermaid]' }];
         },
         renderHTML({ HTMLAttributes }) {
-            return ['div', { 'data-mermaid': '' }, HTMLAttributes.source];
+            return [
+                'div',
+                mergeAttributes(HTMLAttributes, { 'data-mermaid': '' }),
+                HTMLAttributes.source,
+            ];
         },
         addNodeView() {
             return ReactNodeViewRenderer(MermaidView);
@@ -249,10 +255,13 @@ export function createMediaExtensions(context: MediaContext) {
         parseHTML() {
             return [{ tag: 'aside[data-callout]' }];
         },
-        renderHTML() {
+        renderHTML({ HTMLAttributes }) {
             return [
                 'aside',
-                { 'data-callout': '', class: 'editor-callout' },
+                mergeAttributes(HTMLAttributes, {
+                    'data-callout': '',
+                    class: 'editor-callout',
+                }),
                 0,
             ];
         },

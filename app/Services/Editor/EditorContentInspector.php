@@ -35,7 +35,7 @@ class EditorContentInspector
             if (isset($attrs['dir']) && ! in_array($attrs['dir'], ['ltr', 'rtl', 'auto'], true)) {
                 $this->invalid('A block direction is invalid.');
             }
-            if (isset($attrs['directionMode']) && (! in_array($type, ['paragraph', 'heading', 'bulletList', 'orderedList', 'taskList', 'blockquote', 'codeBlock', 'callout', 'table'], true) || ! in_array($attrs['directionMode'], ['auto', 'manual'], true))) {
+            if (isset($attrs['directionMode']) && (! in_array($type, ['paragraph', 'heading', 'bulletList', 'orderedList', 'taskList', 'blockquote', 'codeBlock', 'callout', 'table', 'horizontalRule', 'image', 'file', 'mermaid', 'blockMath'], true) || ! in_array($attrs['directionMode'], ['auto', 'manual'], true))) {
                 $this->invalid('A block direction mode is invalid.');
             }
             if (isset($attrs['textAlign']) && (! in_array($type, ['paragraph', 'heading'], true) || ! in_array($attrs['textAlign'], ['left', 'center', 'right'], true))) {

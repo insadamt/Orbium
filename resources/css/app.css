@@ -174,7 +174,7 @@
 }
 .orbium-editor th {
     background: var(--muted);
-    text-align: left;
+    text-align: start;
 }
 .table-edge-control {
     pointer-events: auto;

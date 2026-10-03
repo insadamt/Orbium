@@ -30,7 +30,10 @@ export default function MathBlockView({
     }, [isEditing]);
 
     return (
-        <NodeViewWrapper className="my-4 rounded-xl border border-border p-4" dir={node.attrs.dir}>
+        <NodeViewWrapper
+            className="my-4 rounded-xl border border-border p-4"
+            dir={node.attrs.dir}
+        >
             <div
                 className="mb-2 flex items-center justify-between text-xs text-muted-foreground"
                 contentEditable={false}
