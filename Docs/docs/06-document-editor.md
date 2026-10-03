@@ -352,7 +352,12 @@ coloring catches up. Highlight-only transactions do not change content or create
 undo/save entries. A single large code block still requires synchronous highlighting
 within its scheduled job.
 
-Math and Mermaid previews activate near the viewport and remain active afterward.
+Math previews activate within 600 pixels of the viewport. Mermaid previews begin
+preparing within the larger of 600 pixels or one and a half document-pane heights.
+Visible diagrams render first without a scroll delay; nearby diagrams prepare after
+scrolling settles briefly. Mermaid's rendering code loads during browser idle time
+when the document contains diagrams. Previews stay active after first activation,
+and Mermaid rendering remains limited to one diagram at a time.
 Images use native lazy loading and asynchronous decoding. The complete editable
 document remains mounted; these optimizations do not virtualize selection or blocks.
 

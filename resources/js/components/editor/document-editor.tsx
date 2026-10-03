@@ -51,7 +51,6 @@ type Props = {
 };
 
 const lowlight = createLowlight(common);
-const LARGE_DOCUMENT_BLOCK_THRESHOLD = 500;
 
 function insertAttachment(
     editor: Editor,
@@ -191,9 +190,6 @@ export default function DocumentEditor({
             ...createMediaExtensions({
                 workspaceId,
                 nodeId,
-                deferMermaidPreview:
-                    (content.content?.length ?? 0) >
-                    LARGE_DOCUMENT_BLOCK_THRESHOLD,
             }),
             ...createSuggestionExtensions({
                 workspaceId,
