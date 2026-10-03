@@ -17,6 +17,7 @@ import {
     siJson,
     siYaml,
 } from 'simple-icons';
+import { normalizeCodeLanguage } from './code-languages';
 
 const iconPaths: Record<string, string> = {
     php: siPhp.path,
@@ -38,7 +39,7 @@ const iconPaths: Record<string, string> = {
 };
 
 export default function LanguageIcon({ language }: { language: string }) {
-    const path = iconPaths[language];
+    const path = iconPaths[normalizeCodeLanguage(language)];
     return path ? (
         <svg
             width="15"

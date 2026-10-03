@@ -18,7 +18,7 @@ import { AppSelect } from '@/components/ui/app-select';
 type Props = {
     editor: Editor;
     index: number;
-    anchor: { x: number; y: number };
+    anchor: { x: number; y: number; direction: 'ltr' | 'rtl' };
     onClose: () => void;
 };
 
@@ -63,7 +63,9 @@ export default function BlockContextMenu({
         const menu = menuRef.current;
         if (!menu) return;
         const bounds = menu.getBoundingClientRect();
-        menu.style.left = `${Math.max(8, Math.min(anchor.x, window.innerWidth - bounds.width - 8))}px`;
+        const preferredLeft =
+            anchor.x - (anchor.direction === 'rtl' ? bounds.width : 0);
+        menu.style.left = `${Math.max(8, Math.min(preferredLeft, window.innerWidth - bounds.width - 8))}px`;
         menu.style.top = `${Math.max(8, Math.min(anchor.y, window.innerHeight - bounds.height - 8))}px`;
         menu.style.visibility = 'visible';
         menu.querySelector<HTMLButtonElement>('[role="combobox"]')?.focus({

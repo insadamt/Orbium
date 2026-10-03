@@ -18,7 +18,9 @@ import { changeBlockOrder } from './editor-controls';
 import TableControls from './table-controls';
 
 type BlockLocation = { index: number; top: number };
-type OpenBlockMenu = BlockLocation & { anchor: { x: number; y: number } };
+type OpenBlockMenu = BlockLocation & {
+    anchor: { x: number; y: number; direction: 'ltr' | 'rtl' };
+};
 type DropLocation = { index: number; top: number };
 
 type Props = {
@@ -231,7 +233,13 @@ export default function EditorBlockGutter({
         setHoveredBlock(block);
         setMenuBlock({
             ...block,
-            anchor: { x: event.clientX, y: event.clientY },
+            anchor: {
+                x: event.clientX,
+                y: event.clientY,
+                direction: getComputedStyle(
+                    editor.view.dom.children[block.index],
+                ).direction as 'ltr' | 'rtl',
+            },
         });
     }
 
@@ -322,6 +330,11 @@ export default function EditorBlockGutter({
                                           anchor: {
                                               x: bounds.right + 8,
                                               y: bounds.bottom + 4,
+                                              direction: getComputedStyle(
+                                                  editor.view.dom.children[
+                                                      visibleBlock.index
+                                                  ],
+                                              ).direction as 'ltr' | 'rtl',
                                           },
                                       },
                             );

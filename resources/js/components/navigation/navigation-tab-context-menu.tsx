@@ -7,6 +7,7 @@ export type TabMenuPosition = {
     pinned: boolean;
     x: number;
     y: number;
+    direction: 'ltr' | 'rtl';
 };
 
 export function NavigationTabContextMenu({
@@ -38,7 +39,13 @@ export function NavigationTabContextMenu({
 
     if (!position) return null;
     const top = Math.max(8, Math.min(position.y, window.innerHeight - 52));
-    const left = Math.max(8, Math.min(position.x, window.innerWidth - 228));
+    const left = Math.max(
+        8,
+        Math.min(
+            position.x - (position.direction === 'rtl' ? 220 : 0),
+            window.innerWidth - 228,
+        ),
+    );
 
     return createPortal(
         <div

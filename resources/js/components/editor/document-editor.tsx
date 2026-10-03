@@ -28,6 +28,7 @@ import {
 } from './editor-controls';
 import { createMediaExtensions } from './media-nodes';
 import { SelectBlockShortcut } from './select-block-shortcut';
+import { TextColor } from './text-color';
 import {
     createSuggestionExtensions,
     type EditorMenu,
@@ -158,6 +159,7 @@ export default function DocumentEditor({
                 link: { openOnClick: false, autolink: true },
             }),
             BlockTextAlignment,
+            TextColor,
             AutomaticBlockDirection,
             SelectBlockShortcut,
             CodeBlockLowlight.configure({ lowlight }).extend({

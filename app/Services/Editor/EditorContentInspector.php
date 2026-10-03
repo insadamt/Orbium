@@ -8,7 +8,7 @@ class EditorContentInspector
 {
     private const NODE_TYPES = ['doc', 'paragraph', 'heading', 'bulletList', 'orderedList', 'listItem', 'taskList', 'taskItem', 'blockquote', 'horizontalRule', 'codeBlock', 'hardBreak', 'text', 'table', 'tableRow', 'tableCell', 'tableHeader', 'image', 'file', 'mention', 'callout', 'mermaid', 'blockMath', 'inlineMath'];
 
-    private const MARK_TYPES = ['bold', 'italic', 'strike', 'underline', 'code', 'link'];
+    private const MARK_TYPES = ['bold', 'italic', 'strike', 'underline', 'code', 'link', 'textColor'];
 
     /** @param array<string, mixed> $content */
     public function validateContentShape(array $content): void
@@ -62,6 +62,9 @@ class EditorContentInspector
                 }
                 if ($mark['type'] === 'link' && ! $this->isSafeUrl($mark['attrs']['href'] ?? null)) {
                     $this->invalid('A link has an unsafe URL.');
+                }
+                if ($mark['type'] === 'textColor' && (! is_string($mark['attrs']['color'] ?? null) || ! preg_match('/^#[0-9a-fA-F]{6}$/', $mark['attrs']['color']))) {
+                    $this->invalid('A text color is invalid.');
                 }
             }
         });

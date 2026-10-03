@@ -133,7 +133,13 @@ export function WorkspaceContents({
     }
     function openActionsAt(nodeId: number | null, target: HTMLElement) {
         const bounds = target.getBoundingClientRect();
-        setMenuPosition({ nodeId, x: bounds.right, y: bounds.bottom });
+        const direction = getComputedStyle(target).direction as 'ltr' | 'rtl';
+        setMenuPosition({
+            nodeId,
+            x: nodeId === null ? bounds.left + bounds.width / 2 : bounds.right,
+            y: bounds.bottom,
+            direction,
+        });
     }
     function rename(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
@@ -279,6 +285,8 @@ export function WorkspaceContents({
                         nodeId,
                         x: event.clientX,
                         y: event.clientY,
+                        direction: getComputedStyle(event.target as Element)
+                            .direction as 'ltr' | 'rtl',
                     });
                 }}
                 onKeyDown={(event) => {

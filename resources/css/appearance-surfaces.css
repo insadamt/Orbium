@@ -3,7 +3,7 @@
 .surface-normal .floating-surface,
 .surface-normal .floating-body-island,
 .surface-normal .floating-menu,
-.surface-normal .floating-context-menu {
+:root[data-surface-style='normal'] .floating-context-menu {
     background-color: var(--card);
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
@@ -66,6 +66,14 @@
 
 .surface-frosted :is(.floating-menu, .floating-context-menu, [role='dialog']) {
     background: var(--frosted-raised);
+}
+
+:root[data-surface-style='frosted'] .floating-context-menu {
+    border-color: transparent;
+    background: var(--frosted-raised);
+    box-shadow: none;
+    -webkit-backdrop-filter: blur(26px) saturate(140%);
+    backdrop-filter: blur(26px) saturate(140%);
 }
 
 :root[data-surface-style='frosted'] .glass-surface {
@@ -142,6 +150,11 @@
     }
 
     :root[data-surface-style='frosted'] .glass-surface {
+        -webkit-backdrop-filter: none;
+        backdrop-filter: none;
+    }
+
+    :root[data-surface-style='frosted'] .floating-context-menu {
         -webkit-backdrop-filter: none;
         backdrop-filter: none;
     }

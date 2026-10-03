@@ -6,32 +6,15 @@ import {
 import { useEffect, useRef, useState } from 'react';
 import LanguageIcon from './language-icon';
 import { AppSelect } from '@/components/ui/app-select';
+import { codeLanguages, normalizeCodeLanguage } from './code-languages';
 
-const languages = [
-    'plaintext',
-    'php',
-    'javascript',
-    'typescript',
-    'python',
-    'rust',
-    'go',
-    'java',
-    'c',
-    'cpp',
-    'csharp',
-    'html',
-    'css',
-    'sql',
-    'bash',
-    'json',
-    'yaml',
-];
-
-export default function CodeBlockView({
-    node,
-    updateAttributes,
-}: NodeViewProps) {
-    const language = String(node.attrs.language || 'plaintext');
+export default function CodeBlockView({ editor, getPos, node }: NodeViewProps) {
+    const language = normalizeCodeLanguage(
+        String(node.attrs.language || 'plaintext'),
+    );
+    const languageOptions = codeLanguages.includes(language)
+        ? codeLanguages
+        : [...codeLanguages, language];
     const [copyStatus, setCopyStatus] = useState<'idle' | 'copied' | 'failed'>(
         'idle',
     );
@@ -64,6 +47,17 @@ export default function CodeBlockView({
         }
     }
 
+    function selectLanguage(selectedLanguage: string) {
+        const position = getPos();
+        if (typeof position !== 'number') return;
+
+        editor
+            .chain()
+            .setTextSelection(position + 1)
+            .updateAttributes('codeBlock', { language: selectedLanguage })
+            .run();
+    }
+
     return (
         <NodeViewWrapper className="my-5 overflow-hidden rounded-xl border border-border bg-muted">
             <div
@@ -75,11 +69,9 @@ export default function CodeBlockView({
                     <AppSelect
                         label="Code language"
                         value={language}
-                        onValueChange={(language) =>
-                            updateAttributes({ language })
-                        }
+                        onValueChange={selectLanguage}
                         className="min-h-7 w-auto border-0 bg-transparent px-2 py-1 text-xs uppercase shadow-none"
-                        options={languages.map((name) => ({
+                        options={languageOptions.map((name) => ({
                             value: name,
                             label: name.toUpperCase(),
                         }))}

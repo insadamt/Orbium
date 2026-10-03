@@ -1,5 +1,6 @@
 import type { JSONContent } from '@tiptap/core';
 import { Lexer, marked, type Token, type Tokens } from 'marked';
+import { normalizeCodeLanguage } from './code-languages';
 
 const maximumMarkdownBytes = 400_000;
 
@@ -137,8 +138,9 @@ function convertTable(table: Tokens.Table): JSONContent {
 }
 
 function convertCodeBlock(token: Tokens.Code): JSONContent {
-    const language =
-        token.lang?.trim().split(/\s+/)[0]?.toLowerCase() || 'plaintext';
+    const language = normalizeCodeLanguage(
+        token.lang?.trim().split(/\s+/)[0] || 'plaintext',
+    );
     if (language === 'mermaid') {
         return { type: 'mermaid', attrs: { source: token.text } };
     }

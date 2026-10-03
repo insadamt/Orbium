@@ -5,6 +5,7 @@ export type ExplorerMenuPosition = {
     nodeId: number | null;
     x: number;
     y: number;
+    direction: 'ltr' | 'rtl';
 };
 
 type MenuAction = { label: string; run: () => void; destructive?: boolean };
@@ -66,7 +67,13 @@ export function ExplorerContextMenu({
         8,
         Math.min(position.y, window.innerHeight - actions.length * 40 - 24),
     );
-    const left = Math.max(8, Math.min(position.x, window.innerWidth - 228));
+    const left = Math.max(
+        8,
+        Math.min(
+            position.x - (position.direction === 'rtl' ? 220 : 0),
+            window.innerWidth - 228,
+        ),
+    );
 
     function moveFocus(event: React.KeyboardEvent<HTMLDivElement>) {
         if (event.key === 'Escape') {

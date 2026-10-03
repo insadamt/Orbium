@@ -102,6 +102,8 @@ function SortableTab({
                     pinned: Boolean(tab.pinned),
                     x: event.clientX,
                     y: event.clientY,
+                    direction: getComputedStyle(event.currentTarget)
+                        .direction as 'ltr' | 'rtl',
                 });
             }}
             onKeyDown={(event: KeyboardEvent<HTMLDivElement>) => {
@@ -112,8 +114,14 @@ function SortableTab({
                         tabId: tab.id,
                         title: entry.title,
                         pinned: Boolean(tab.pinned),
-                        x: bounds.left,
+                        x:
+                            getComputedStyle(event.currentTarget).direction ===
+                            'rtl'
+                                ? bounds.right
+                                : bounds.left,
                         y: bounds.bottom,
+                        direction: getComputedStyle(event.currentTarget)
+                            .direction as 'ltr' | 'rtl',
                     });
                 }
             }}

@@ -1,5 +1,13 @@
 # Phase 5 — Floating workspace review
 
+## Context menu placement and frosted surface correction (2026-10-03)
+
+Explorer, tab, and editor block context menus now open toward the left of their anchor for RTL content and stay within the viewport. The empty explorer's keyboard menu opens near the center of the content area instead of its far edge. Explorer and tab menus portal into `document.body`; root surface selectors now give them the selected Normal or Frosted appearance, including the existing reduced-transparency fallback. This corrects the existing menus with local positioning and CSS; the previously reviewed Radix Context Menu would add a dependency and change interaction behavior for a focused visual bug.
+
+Manual review: choose Frosted glass and a detailed wallpaper, then right-click empty explorer space, an item, and a tab. Expected: each menu has a tinted, blurred surface and remains beside the pointer. Repeat in Normal mode; menus should be solid. In a document, right-click an RTL block near both viewport edges and use its gutter menu; the block menu should open on the RTL side, stay visible, and keep its frosted surface. Repeat with an LTR block. Press Shift+F10 on focused explorer space and a tab; their menus should stay in view. Check Light, Dark, narrow widths, and reduced transparency if available.
+
+Suggested commit message: `fix(context-menus): respect RTL anchors and frosted surfaces`.
+
 ## Reuse an open Settings tab (2026-10-02)
 
 Settings entry points now activate an existing Settings tab instead of creating another one. A destination such as Manage workspaces or Password opens that section within the reused tab; an ordinary Settings entry opens Profile there. The change uses the existing Inertia visit and Zustand navigation store. No new library is needed. Inertia handles the route but does not choose which Orbium tab owns it, so the local navigation flow selects the Settings tab before recording the destination. Tabs that once showed Settings but currently show another kind of page are not reclaimed.
