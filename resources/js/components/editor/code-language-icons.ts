@@ -1,4 +1,3 @@
-import { Code2 } from 'lucide-react';
 import {
     siPhp,
     siJavascript,
@@ -38,19 +37,6 @@ const iconPaths: Record<string, string> = {
     yaml: siYaml.path,
 };
 
-export default function LanguageIcon({ language }: { language: string }) {
-    const path = iconPaths[normalizeCodeLanguage(language)];
-    return path ? (
-        <svg
-            width="15"
-            height="15"
-            viewBox="0 0 24 24"
-            fill="currentColor"
-            aria-hidden="true"
-        >
-            <path d={path} />
-        </svg>
-    ) : (
-        <Code2 size={15} aria-hidden="true" />
-    );
+export function codeLanguageIconPath(language: string): string | undefined {
+    return iconPaths[normalizeCodeLanguage(language)];
 }

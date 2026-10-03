@@ -1,6 +1,5 @@
 import { Head, usePage } from '@inertiajs/react';
 import { useRef, useState } from 'react';
-import DocumentEditor from '@/components/editor/document-editor';
 import { useNavigation } from '@/components/navigation/navigation-store';
 import { notifyPaneLocation } from '@/components/navigation/tab-navigation';
 import type { EditorDocument } from '@/components/editor/editor-api';
@@ -23,6 +22,7 @@ import {
     type CoverRatio,
 } from '@/components/hierarchy/cover-presentation';
 import DatabasePropertyHeader from './database-property-header';
+import DocumentEditorLoader from './document-editor-loader';
 import type { Candidate, FileReference, Property } from '../databases/types';
 
 type Props = {
@@ -405,7 +405,7 @@ function DocumentPage({
                                     files={databaseFiles}
                                 />
                             )}
-                        <DocumentEditor
+                        <DocumentEditorLoader
                             workspaceId={workspace.id}
                             nodeId={node.id}
                             content={savedDocument.content}

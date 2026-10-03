@@ -8,9 +8,14 @@ import { Eye, Pencil } from 'lucide-react';
 import ImageView from './image-view';
 import { useEffect, useRef, useState } from 'react';
 import { attachmentUrl } from './editor-api';
-import { usePreviewActivation } from './use-preview-activation';
+import { queueMermaidPreview } from './mermaid-preview-queue';
+import { getMermaidPreview } from './mermaid-preview-renderer';
 
-type MediaContext = { workspaceId: number; nodeId: number };
+type MediaContext = {
+    workspaceId: number;
+    nodeId: number;
+    deferMermaidPreview: boolean;
+};
 
 function FileView({
     node,
@@ -40,12 +45,17 @@ function FileView({
     );
 }
 
-function MermaidView({ node, updateAttributes }: NodeViewProps) {
-    const { previewContainer, activated } = usePreviewActivation();
+function MermaidView({
+    node,
+    updateAttributes,
+    deferPreview,
+}: NodeViewProps & { deferPreview: boolean }) {
+    const previewContainer = useRef<HTMLDivElement>(null);
     const [preview, setPreview] = useState('');
     const [error, setError] = useState('');
-    const [renderedSource, setRenderedSource] = useState('');
+    const [renderedSource, setRenderedSource] = useState<string | null>(null);
     const [isEditing, setIsEditing] = useState(false);
+    const [renderRequested, setRenderRequested] = useState(!deferPreview);
     const sourceInput = useRef<HTMLTextAreaElement>(null);
     const source = String(node.attrs.source ?? '');
 
@@ -54,29 +64,13 @@ function MermaidView({ node, updateAttributes }: NodeViewProps) {
     }, [isEditing]);
 
     useEffect(() => {
-        if (!activated) return;
+        if (!renderRequested || renderedSource === source) return;
         let active = true;
         const render = async () => {
             try {
-                const [{ default: mermaid }, { default: DOMPurify }] =
-                    await Promise.all([import('mermaid'), import('dompurify')]);
-                if (!active) return;
-                mermaid.initialize({
-                    startOnLoad: false,
-                    securityLevel: 'strict',
-                    htmlLabels: false,
-                    theme: 'neutral',
-                });
-                const result = await mermaid.render(
-                    `orbium-mermaid-${crypto.randomUUID()}`,
-                    source,
-                );
+                const previewSvg = await getMermaidPreview(source);
                 if (active) {
-                    setPreview(
-                        DOMPurify.sanitize(result.svg, {
-                            USE_PROFILES: { svg: true, svgFilters: true },
-                        }),
-                    );
+                    setPreview(previewSvg);
                     setError('');
                     setRenderedSource(source);
                 }
@@ -90,12 +84,23 @@ function MermaidView({ node, updateAttributes }: NodeViewProps) {
                 }
             }
         };
-        const timer = window.setTimeout(() => void render(), 200);
+        const cancel = queueMermaidPreview({
+            render,
+            isVisible: () => {
+                const bounds =
+                    previewContainer.current?.getBoundingClientRect();
+                return Boolean(
+                    bounds &&
+                    bounds.bottom >= -150 &&
+                    bounds.top <= window.innerHeight + 150,
+                );
+            },
+        });
         return () => {
             active = false;
-            window.clearTimeout(timer);
+            cancel();
         };
-    }, [source, activated]);
+    }, [source, renderedSource, renderRequested]);
 
     return (
         <NodeViewWrapper
@@ -144,7 +149,15 @@ function MermaidView({ node, updateAttributes }: NodeViewProps) {
                         dir="ltr"
                         className="w-full rounded-md bg-muted p-3 font-mono text-sm"
                     />
-                ) : !activated || renderedSource !== source ? (
+                ) : !renderRequested ? (
+                    <button
+                        type="button"
+                        onClick={() => setRenderRequested(true)}
+                        className="rounded-md border border-border px-3 py-1.5 text-sm text-muted-foreground hover:bg-accent hover:text-foreground"
+                    >
+                        Render diagram
+                    </button>
+                ) : renderedSource !== source ? (
                     <p className="text-sm text-muted-foreground">
                         Rendering diagram…
                     </p>
@@ -249,7 +262,12 @@ export function createMediaExtensions(context: MediaContext) {
             ];
         },
         addNodeView() {
-            return ReactNodeViewRenderer(MermaidView);
+            return ReactNodeViewRenderer((props) => (
+                <MermaidView
+                    {...props}
+                    deferPreview={context.deferMermaidPreview}
+                />
+            ));
         },
     });
     const CalloutNode = Node.create({

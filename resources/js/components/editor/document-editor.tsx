@@ -34,7 +34,7 @@ import {
     type EditorMenu,
 } from './editor-suggestions';
 import { useDocumentAutosave } from './use-document-autosave';
-import CodeBlockView from './code-block-view';
+import { createCodeBlockNodeView } from './code-block-node-view';
 import MathBlockView from './math-block-view';
 import MathInlineView from './math-inline-view';
 import {
@@ -51,6 +51,7 @@ type Props = {
 };
 
 const lowlight = createLowlight(common);
+const LARGE_DOCUMENT_BLOCK_THRESHOLD = 500;
 
 function insertAttachment(
     editor: Editor,
@@ -164,7 +165,7 @@ export default function DocumentEditor({
             SelectBlockShortcut,
             IncrementalCodeBlockLowlight.configure({ lowlight }).extend({
                 addNodeView() {
-                    return ReactNodeViewRenderer(CodeBlockView);
+                    return createCodeBlockNodeView;
                 },
             }),
             TableKit,
@@ -187,14 +188,20 @@ export default function DocumentEditor({
             Placeholder.configure({
                 placeholder: 'Write something, or press / for commands…',
             }),
-            ...createMediaExtensions({ workspaceId, nodeId }),
+            ...createMediaExtensions({
+                workspaceId,
+                nodeId,
+                deferMermaidPreview:
+                    (content.content?.length ?? 0) >
+                    LARGE_DOCUMENT_BLOCK_THRESHOLD,
+            }),
             ...createSuggestionExtensions({
                 workspaceId,
                 onMenuChange: setMenu,
                 onUpload: () => fileInput.current?.click(),
             }),
         ],
-        [workspaceId, nodeId],
+        [workspaceId, nodeId, content.content?.length],
     );
 
     const editor = useEditor(
