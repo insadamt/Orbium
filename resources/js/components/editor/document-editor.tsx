@@ -9,7 +9,7 @@ import TaskItem from '@tiptap/extension-task-item';
 import { ReactNodeViewRenderer, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { common, createLowlight } from 'lowlight';
-import { FileUp, Search } from 'lucide-react';
+import { FileInput, FileUp, Search } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
 import 'katex/dist/katex.min.css';
 import EditorBlockGutter from './editor-block-gutter';
@@ -35,6 +35,7 @@ import { useDocumentAutosave } from './use-document-autosave';
 import CodeBlockView from './code-block-view';
 import MathBlockView from './math-block-view';
 import MathInlineView from './math-inline-view';
+import { readMarkdownFile } from './markdown-import';
 
 type Props = {
     workspaceId: number;
@@ -98,7 +99,9 @@ export default function DocumentEditor({
     const [searchQuery, setSearchQuery] = useState('');
     const [matchCount, setMatchCount] = useState(0);
     const [uploadError, setUploadError] = useState('');
+    const [importError, setImportError] = useState('');
     const fileInput = useRef<HTMLInputElement>(null);
+    const markdownInput = useRef<HTMLInputElement>(null);
     const { status, error, navigationNotice, queueSave, saveNow } =
         useDocumentAutosave(workspaceId, nodeId, revision);
 
@@ -231,6 +234,31 @@ export default function DocumentEditor({
         }
     }
 
+    async function importMarkdown(file: File) {
+        if (!editor) return;
+        if (!editor.isEmpty) {
+            setImportError(
+                'Markdown import is available only in an empty document.',
+            );
+            return;
+        }
+        setImportError('');
+        try {
+            const imported = await readMarkdownFile(file);
+            if (!editor.isEmpty) {
+                setImportError('The document changed before import finished.');
+                return;
+            }
+            editor.commands.setContent(imported);
+        } catch (failure) {
+            setImportError(
+                failure instanceof Error
+                    ? failure.message
+                    : 'Could not import the Markdown file.',
+            );
+        }
+    }
+
     useEffect(() => {
         const onKeyDown = (event: KeyboardEvent) => {
             if (!editor) return;
@@ -277,6 +305,15 @@ export default function DocumentEditor({
                     )}
                 </div>
                 <div className="flex items-center gap-3">
+                    {editor?.isEmpty && (
+                        <button
+                            type="button"
+                            onClick={() => markdownInput.current?.click()}
+                            className="flex items-center gap-1 rounded p-1 hover:bg-accent"
+                        >
+                            <FileInput size={16} /> Import Markdown
+                        </button>
+                    )}
                     <button
                         type="button"
                         onClick={() => setSearchOpen(true)}
@@ -294,11 +331,23 @@ export default function DocumentEditor({
                     </button>
                 </div>
             </div>
-            {(error || uploadError || navigationNotice) && (
+            {(error || uploadError || importError || navigationNotice) && (
                 <p role="alert" className="mb-4 text-sm text-destructive">
-                    {error || uploadError || navigationNotice}
+                    {error || uploadError || importError || navigationNotice}
                 </p>
             )}
+            <input
+                ref={markdownInput}
+                aria-label="Import Markdown file"
+                type="file"
+                accept=".md,.markdown,text/markdown"
+                className="hidden"
+                onChange={(event: ChangeEvent<HTMLInputElement>) => {
+                    const file = event.target.files?.[0];
+                    if (file) void importMarkdown(file);
+                    event.target.value = '';
+                }}
+            />
             <input
                 ref={fileInput}
                 aria-label="Upload document file"
