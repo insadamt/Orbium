@@ -144,6 +144,8 @@ export default function ImageView({
                     >
                         <img
                             src={imageUrl}
+                            loading="lazy"
+                            decoding="async"
                             alt={String(node.attrs.alt ?? '')}
                             draggable={false}
                             className="block h-auto w-full rounded-lg"

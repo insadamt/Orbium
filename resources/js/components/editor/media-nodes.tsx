@@ -8,6 +8,7 @@ import { Eye, Pencil } from 'lucide-react';
 import ImageView from './image-view';
 import { useEffect, useRef, useState } from 'react';
 import { attachmentUrl } from './editor-api';
+import { usePreviewActivation } from './use-preview-activation';
 
 type MediaContext = { workspaceId: number; nodeId: number };
 
@@ -40,6 +41,7 @@ function FileView({
 }
 
 function MermaidView({ node, updateAttributes }: NodeViewProps) {
+    const { previewContainer, activated } = usePreviewActivation();
     const [preview, setPreview] = useState('');
     const [error, setError] = useState('');
     const [renderedSource, setRenderedSource] = useState('');
@@ -52,6 +54,7 @@ function MermaidView({ node, updateAttributes }: NodeViewProps) {
     }, [isEditing]);
 
     useEffect(() => {
+        if (!activated) return;
         let active = true;
         const render = async () => {
             try {
@@ -92,7 +95,7 @@ function MermaidView({ node, updateAttributes }: NodeViewProps) {
             active = false;
             window.clearTimeout(timer);
         };
-    }, [source]);
+    }, [source, activated]);
 
     return (
         <NodeViewWrapper
@@ -100,60 +103,62 @@ function MermaidView({ node, updateAttributes }: NodeViewProps) {
             data-drag-handle
             dir={node.attrs.dir}
         >
-            <div
-                className="mb-2 flex justify-between text-xs text-muted-foreground"
-                contentEditable={false}
-            >
-                <span>Mermaid</span>
+            <div ref={previewContainer}>
                 <div
-                    role="group"
-                    aria-label="Mermaid mode"
-                    className="inline-flex rounded-lg border border-border bg-muted/60 p-0.5"
+                    className="mb-2 flex justify-between text-xs text-muted-foreground"
+                    contentEditable={false}
                 >
-                    <button
-                        type="button"
-                        aria-pressed={isEditing}
-                        onClick={() => setIsEditing(true)}
-                        className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 transition-colors focus-visible:outline-2 focus-visible:outline-ring ${isEditing ? 'bg-background text-foreground shadow-sm' : 'hover:bg-accent hover:text-foreground'}`}
+                    <span>Mermaid</span>
+                    <div
+                        role="group"
+                        aria-label="Mermaid mode"
+                        className="inline-flex rounded-lg border border-border bg-muted/60 p-0.5"
                     >
-                        <Pencil size={13} aria-hidden="true" /> Edit
-                    </button>
-                    <button
-                        type="button"
-                        aria-pressed={!isEditing}
-                        onClick={() => setIsEditing(false)}
-                        className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 transition-colors focus-visible:outline-2 focus-visible:outline-ring ${!isEditing ? 'bg-background text-foreground shadow-sm' : 'hover:bg-accent hover:text-foreground'}`}
-                    >
-                        <Eye size={14} aria-hidden="true" /> Preview
-                    </button>
+                        <button
+                            type="button"
+                            aria-pressed={isEditing}
+                            onClick={() => setIsEditing(true)}
+                            className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 transition-colors focus-visible:outline-2 focus-visible:outline-ring ${isEditing ? 'bg-background text-foreground shadow-sm' : 'hover:bg-accent hover:text-foreground'}`}
+                        >
+                            <Pencil size={13} aria-hidden="true" /> Edit
+                        </button>
+                        <button
+                            type="button"
+                            aria-pressed={!isEditing}
+                            onClick={() => setIsEditing(false)}
+                            className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 transition-colors focus-visible:outline-2 focus-visible:outline-ring ${!isEditing ? 'bg-background text-foreground shadow-sm' : 'hover:bg-accent hover:text-foreground'}`}
+                        >
+                            <Eye size={14} aria-hidden="true" /> Preview
+                        </button>
+                    </div>
                 </div>
+                {isEditing ? (
+                    <textarea
+                        ref={sourceInput}
+                        aria-label="Mermaid source"
+                        value={source}
+                        onChange={(event) =>
+                            updateAttributes({ source: event.target.value })
+                        }
+                        rows={6}
+                        dir="ltr"
+                        className="w-full rounded-md bg-muted p-3 font-mono text-sm"
+                    />
+                ) : !activated || renderedSource !== source ? (
+                    <p className="text-sm text-muted-foreground">
+                        Rendering diagram…
+                    </p>
+                ) : error ? (
+                    <p role="alert" className="text-sm text-destructive">
+                        {error}
+                    </p>
+                ) : preview ? (
+                    <div
+                        className="overflow-auto"
+                        dangerouslySetInnerHTML={{ __html: preview }}
+                    />
+                ) : null}
             </div>
-            {isEditing ? (
-                <textarea
-                    ref={sourceInput}
-                    aria-label="Mermaid source"
-                    value={source}
-                    onChange={(event) =>
-                        updateAttributes({ source: event.target.value })
-                    }
-                    rows={6}
-                    dir="ltr"
-                    className="w-full rounded-md bg-muted p-3 font-mono text-sm"
-                />
-            ) : renderedSource !== source ? (
-                <p className="text-sm text-muted-foreground">
-                    Rendering diagram…
-                </p>
-            ) : error ? (
-                <p role="alert" className="text-sm text-destructive">
-                    {error}
-                </p>
-            ) : preview ? (
-                <div
-                    className="overflow-auto"
-                    dangerouslySetInnerHTML={{ __html: preview }}
-                />
-            ) : null}
         </NodeViewWrapper>
     );
 }

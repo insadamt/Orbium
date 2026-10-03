@@ -29,6 +29,8 @@ Icons that do not match 512×512 open a crop dialog. Every new cover opens the c
 
 No permanent formatting toolbar.
 
+Every block supports automatic text direction and an Auto/LTR/RTL choice in its block menu. Automatic direction follows the first strong character and inherits the preceding block's direction when the block has no directional text. RTL layouts use logical edges for lists, quotes, tables, attachments, and media; code and diagram source fields remain left-to-right for editing.
+
 Preferred text column:
 
 - roughly 700–900 px;
@@ -145,7 +147,7 @@ Compact floating toolbar:
 - Link
 - More
 
-Selected text also has a color control with preset swatches, a native custom color picker, and a way to return to the default text color. Colors are stored as six-digit hex values in the document content.
+Selected text also has a color control with seven preset swatches, a native custom color picker, and a way to return to the default text color. The preset colors are red (`#eb2424`), blue (`#75a1ff`), green (`#24eb4b`), cyan (`#24c9eb`), magenta (`#eb24e4`), a theme-dependent swatch (yellow `#ebe424` in dark mode and violet `#3700ff` in light mode), and orange (`#eb8424`). These colors are the same on normal and frosted surfaces. Presets are stored by name so the theme-dependent swatch adapts when the theme changes. Custom colors are stored as six-digit hex values.
 
 Do not make this toolbar permanently visible.
 
@@ -335,6 +337,24 @@ paragraphs and headings, including those inside lists, quotes, and callouts.
 When idle, editor chrome should disappear as much as possible.
 
 A future dedicated focus mode may exist, but is not required for v0.1.0.
+
+## Long-document rendering
+
+Direction normalization inspects the changed top-level range and continues into
+following blocks only while inherited direction needs updating. Unchanged nested
+subtrees reuse their normalized results. Initial normalization builds one content
+replacement, preserving selection and avoiding one transaction step per block.
+
+Syntax highlighting keeps the existing Lowlight grammars and language detection.
+It skips selection-only transactions, maps unchanged decorations through edits,
+and queues changed code blocks for short idle batches. Code remains editable while
+coloring catches up. Highlight-only transactions do not change content or create
+undo/save entries. A single large code block still requires synchronous highlighting
+within its scheduled job.
+
+Math and Mermaid previews activate near the viewport and remain active afterward.
+Images use native lazy loading and asynchronous decoding. The complete editable
+document remains mounted; these optimizations do not virtualize selection or blocks.
 
 ## Editor reference remapping
 

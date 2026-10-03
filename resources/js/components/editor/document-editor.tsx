@@ -1,6 +1,6 @@
 import type { Editor, JSONContent } from '@tiptap/core';
 import { router, usePage } from '@inertiajs/react';
-import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
+import { IncrementalCodeBlockLowlight } from './incremental-code-highlighting';
 import { BlockMath, InlineMath } from '@tiptap/extension-mathematics';
 import Placeholder from '@tiptap/extension-placeholder';
 import { TableKit } from '@tiptap/extension-table';
@@ -162,7 +162,7 @@ export default function DocumentEditor({
             TextColor,
             AutomaticBlockDirection,
             SelectBlockShortcut,
-            CodeBlockLowlight.configure({ lowlight }).extend({
+            IncrementalCodeBlockLowlight.configure({ lowlight }).extend({
                 addNodeView() {
                     return ReactNodeViewRenderer(CodeBlockView);
                 },

@@ -3,17 +3,23 @@ import { Check, Palette } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
 const PRESET_COLORS = [
-    { name: 'Charcoal', value: '#374151' },
-    { name: 'Gray', value: '#6b7280' },
-    { name: 'Red', value: '#dc2626' },
-    { name: 'Orange', value: '#ea580c' },
-    { name: 'Amber', value: '#b45309' },
-    { name: 'Green', value: '#15803d' },
-    { name: 'Teal', value: '#0f766e' },
-    { name: 'Blue', value: '#2563eb' },
-    { name: 'Purple', value: '#7c3aed' },
-    { name: 'Pink', value: '#db2777' },
+    { name: 'Red', value: 'preset:red' },
+    { name: 'Blue', value: 'preset:blue' },
+    { name: 'Green', value: 'preset:green' },
+    { name: 'Cyan', value: 'preset:teal' },
+    { name: 'Magenta', value: 'preset:pink' },
+    {
+        name: 'Yellow in dark mode, violet in light mode',
+        value: 'preset:purple',
+    },
+    { name: 'Orange', value: 'preset:orange' },
 ];
+
+function displayedTextColor(color: string | undefined): string {
+    return color?.startsWith('preset:')
+        ? `var(--editor-text-color-${color.slice(7)})`
+        : (color ?? 'currentColor');
+}
 
 export function TextColorPicker({ editor }: { editor: Editor }) {
     const [open, setOpen] = useState(false);
@@ -72,7 +78,9 @@ export function TextColorPicker({ editor }: { editor: Editor }) {
                 <span
                     aria-hidden="true"
                     className="h-1 w-3 rounded-full"
-                    style={{ backgroundColor: currentColor ?? 'currentColor' }}
+                    style={{
+                        backgroundColor: displayedTextColor(currentColor),
+                    }}
                 />
             </button>
             {open && (
@@ -84,7 +92,7 @@ export function TextColorPicker({ editor }: { editor: Editor }) {
                     <p className="mb-2 text-xs font-medium text-muted-foreground">
                         Text color
                     </p>
-                    <div className="grid grid-cols-5 gap-2">
+                    <div className="grid grid-cols-4 gap-2">
                         {PRESET_COLORS.map(({ name, value }) => (
                             <button
                                 key={value}
@@ -95,10 +103,15 @@ export function TextColorPicker({ editor }: { editor: Editor }) {
                                 onMouseDown={(event) => event.preventDefault()}
                                 onClick={() => chooseColor(value)}
                                 className="flex size-7 items-center justify-center rounded-full border border-border/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-                                style={{ backgroundColor: value }}
+                                style={{
+                                    backgroundColor: displayedTextColor(value),
+                                }}
                             >
                                 {currentColor === value && (
-                                    <Check size={14} className="text-white" />
+                                    <Check
+                                        size={14}
+                                        className="text-background"
+                                    />
                                 )}
                             </button>
                         ))}
@@ -112,7 +125,7 @@ export function TextColorPicker({ editor }: { editor: Editor }) {
                                 currentColor &&
                                 /^#[0-9a-fA-F]{6}$/.test(currentColor)
                                     ? currentColor
-                                    : '#2563eb'
+                                    : '#75a1ff'
                             }
                             onChange={(event) =>
                                 chooseColor(event.currentTarget.value, true)

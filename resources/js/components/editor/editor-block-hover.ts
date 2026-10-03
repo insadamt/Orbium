@@ -26,6 +26,20 @@ function blockControlTop(block: Element, editorArea: HTMLElement): number {
     );
 }
 
+export function findFirstBlockIndex(
+    blocks: HTMLCollection,
+    matches: (block: Element) => boolean,
+): number {
+    let lower = 0;
+    let upper = blocks.length;
+    while (lower < upper) {
+        const middle = Math.floor((lower + upper) / 2);
+        if (matches(blocks[middle])) upper = middle;
+        else lower = middle + 1;
+    }
+    return lower;
+}
+
 export function findHoveredBlock(
     editor: Editor,
     editorArea: HTMLElement,
@@ -34,13 +48,26 @@ export function findHoveredBlock(
 ): { index: number; top: number } | null {
     const element = target instanceof Node ? target : null;
     if (!element) return null;
-    const blocks = Array.from(editor.view.dom.children);
-    let index = blocks.findIndex((block) => block.contains(element));
+    const editorElement = editor.view.dom;
+    const blocks = editorElement.children;
+    let block: Node | null = element;
+    while (block && block.parentNode !== editorElement)
+        block = block.parentNode;
+    let index =
+        block instanceof Element
+            ? editor.state.doc.resolve(editor.view.posAtDOM(block, 0)).index(0)
+            : -1;
     if (index < 0 && pointerY !== undefined) {
-        index = blocks.findIndex((block) => {
-            const bounds = block.getBoundingClientRect();
-            return pointerY >= bounds.top - 8 && pointerY <= bounds.bottom + 8;
-        });
+        index = findFirstBlockIndex(
+            blocks,
+            (candidate) =>
+                candidate.getBoundingClientRect().bottom + 8 >= pointerY,
+        );
+        if (
+            index >= blocks.length ||
+            blocks[index].getBoundingClientRect().top - 8 > pointerY
+        )
+            return null;
     }
     if (index < 0) return null;
     return {

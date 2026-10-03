@@ -63,11 +63,24 @@ class EditorContentInspector
                 if ($mark['type'] === 'link' && ! $this->isSafeUrl($mark['attrs']['href'] ?? null)) {
                     $this->invalid('A link has an unsafe URL.');
                 }
-                if ($mark['type'] === 'textColor' && (! is_string($mark['attrs']['color'] ?? null) || ! preg_match('/^#[0-9a-fA-F]{6}$/', $mark['attrs']['color']))) {
+                if ($mark['type'] === 'textColor' && ! $this->isSafeTextColor($mark['attrs']['color'] ?? null)) {
                     $this->invalid('A text color is invalid.');
                 }
             }
         });
+    }
+
+    private function isSafeTextColor(mixed $color): bool
+    {
+        if (! is_string($color)) {
+            return false;
+        }
+
+        if (preg_match('/^#[0-9a-fA-F]{6}$/', $color)) {
+            return true;
+        }
+
+        return in_array($color, ['preset:charcoal', 'preset:gray', 'preset:red', 'preset:orange', 'preset:amber', 'preset:green', 'preset:teal', 'preset:blue', 'preset:purple', 'preset:pink'], true);
     }
 
     /** @param array<string, mixed> $content */

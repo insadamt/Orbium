@@ -12,6 +12,7 @@ import {
 import BlockContextMenu from './block-context-menu';
 import {
     findHoveredBlock,
+    findFirstBlockIndex,
     insertParagraphAfterBlock,
 } from './editor-block-hover';
 import { changeBlockOrder } from './editor-controls';
@@ -35,13 +36,13 @@ function findDropLocation(
     draggedIndex: number,
     pointerY: number,
 ): DropLocation | null {
-    const blocks = Array.from(editor.view.dom.children);
+    const blocks = editor.view.dom.children;
     if (blocks.length === 0) return null;
-    const insertionIndex = blocks.findIndex((block) => {
+    const insertionIndex = findFirstBlockIndex(blocks, (block) => {
         const bounds = block.getBoundingClientRect();
         return pointerY < (bounds.top + bounds.bottom) / 2;
     });
-    const beforeIndex = insertionIndex < 0 ? blocks.length : insertionIndex;
+    const beforeIndex = insertionIndex;
     const destinationIndex =
         beforeIndex > draggedIndex ? beforeIndex - 1 : beforeIndex;
     if (destinationIndex === draggedIndex) return null;

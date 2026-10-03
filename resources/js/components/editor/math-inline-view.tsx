@@ -1,16 +1,19 @@
 import { NodeViewWrapper, type NodeViewProps } from '@tiptap/react';
 import katex from 'katex';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { usePreviewActivation } from './use-preview-activation';
 
 export default function MathInlineView({
     node,
     updateAttributes,
 }: NodeViewProps) {
     const [isEditing, setIsEditing] = useState(false);
-    const container = useRef<HTMLSpanElement>(null);
+    const { previewContainer: container, activated } =
+        usePreviewActivation<HTMLSpanElement>();
     const sourceInput = useRef<HTMLInputElement>(null);
     const latex = String(node.attrs.latex ?? '');
     const renderedMath = useMemo(() => {
+        if (!activated) return null;
         try {
             return katex.renderToString(latex, {
                 throwOnError: true,
@@ -19,7 +22,7 @@ export default function MathInlineView({
         } catch {
             return null;
         }
-    }, [latex]);
+    }, [latex, activated]);
 
     useEffect(() => {
         if (!isEditing) return;
@@ -51,7 +54,9 @@ export default function MathInlineView({
                             dangerouslySetInnerHTML={{ __html: renderedMath }}
                         />
                     ) : (
-                        <span className="font-mono text-sm text-destructive">
+                        <span
+                            className={`font-mono text-sm ${activated ? 'text-destructive' : 'text-muted-foreground'}`}
+                        >
                             {latex || 'Math'}
                         </span>
                     )}
