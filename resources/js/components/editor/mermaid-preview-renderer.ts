@@ -1,8 +1,11 @@
-type CachedPreview = { svg: string; renderId: string };
+export type CachedPreview = { svg: string; renderId: string };
+
+export const mermaidRendererVersion = 'mermaid-12.0.0-neutral-strict-v1';
 
 const previewCache = new Map<string, Promise<CachedPreview>>();
 let mermaidInitialized = false;
 let preloadScheduled = false;
+let renderChain: Promise<void> = Promise.resolve();
 
 function importMermaidDependencies() {
     return Promise.all([import('mermaid'), import('dompurify')]);
@@ -47,7 +50,12 @@ async function renderMermaidPreview(source: string): Promise<CachedPreview> {
         mermaidInitialized = true;
     }
     const renderId = `orbium-mermaid-${crypto.randomUUID()}`;
-    const result = await mermaid.render(renderId, source);
+    const render = renderChain.then(() => mermaid.render(renderId, source));
+    renderChain = render.then(
+        () => undefined,
+        () => undefined,
+    );
+    const result = await render;
     return {
         renderId,
         svg: DOMPurify.sanitize(result.svg, {
@@ -56,23 +64,37 @@ async function renderMermaidPreview(source: string): Promise<CachedPreview> {
     };
 }
 
-export async function getMermaidPreview(source: string): Promise<string> {
+export async function getMermaidPreviewEntry(
+    source: string,
+): Promise<CachedPreview> {
     let cached = previewCache.get(source);
     if (!cached) {
         cached = renderMermaidPreview(source);
         previewCache.set(source, cached);
-        if (previewCache.size > 50) {
+        if (previewCache.size > 200) {
             previewCache.delete(previewCache.keys().next().value!);
         }
     }
     try {
-        const { svg, renderId } = await cached;
-        return svg.replaceAll(
-            renderId,
-            `orbium-mermaid-${crypto.randomUUID()}`,
-        );
+        return await cached;
     } catch (error) {
         previewCache.delete(source);
         throw error;
     }
+}
+
+export async function getMermaidPreview(
+    source: string,
+    savedPreview?: CachedPreview,
+): Promise<string> {
+    const { svg, renderId } =
+        savedPreview ?? (await getMermaidPreviewEntry(source));
+    const { default: DOMPurify } = await import('dompurify');
+    const safeSvg = DOMPurify.sanitize(svg, {
+        USE_PROFILES: { svg: true, svgFilters: true },
+    });
+    return safeSvg.replaceAll(
+        renderId,
+        `orbium-mermaid-${crypto.randomUUID()}`,
+    );
 }

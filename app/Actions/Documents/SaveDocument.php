@@ -6,12 +6,13 @@ use App\Models\Attachment;
 use App\Models\Document;
 use App\Models\Node;
 use App\Services\Editor\EditorContentInspector;
+use App\Services\Editor\MermaidPreviewCache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class SaveDocument
 {
-    public function __construct(private EditorContentInspector $inspector) {}
+    public function __construct(private EditorContentInspector $inspector, private MermaidPreviewCache $mermaidPreviewCache) {}
 
     /** @param array<string, mixed> $content */
     public function save(Node $node, array $content, int $revision): Document
@@ -34,6 +35,8 @@ class SaveDocument
                 'plain_text' => $this->inspector->extractPlainText($content),
                 'revision' => $revision + 1,
             ]);
+
+            $this->mermaidPreviewCache->removeObsoletePreviews($node->id, $content);
 
             DB::table('mentions')->where('source_document_node_id', $node->id)->delete();
             foreach ($mentions as $targetId => $label) {

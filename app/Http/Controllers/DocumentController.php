@@ -7,6 +7,7 @@ use App\Models\Attachment;
 use App\Models\DatabaseProperty;
 use App\Models\DatabaseValue;
 use App\Models\Node;
+use App\Services\Editor\MermaidPreviewCache;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -16,7 +17,7 @@ use Inertia\Response;
 
 class DocumentController extends Controller
 {
-    public function show(Request $request, int $workspace, int $node): Response
+    public function show(Request $request, int $workspace, int $node, MermaidPreviewCache $mermaidPreviewCache): Response
     {
         $documentNode = $this->ownedDocument($request, $workspace, $node);
         $document = $documentNode->document()->firstOrFail();
@@ -33,6 +34,7 @@ class DocumentController extends Controller
             'workspace' => $workspaceModel->only(['id', 'name']),
             'node' => $documentNode->only(['id', 'title', 'icon', 'parent_id']),
             'document' => $document->only(['content', 'revision', 'cover_attachment_id', 'cover_aspect_ratio', 'icon_attachment_id']),
+            'cachedMermaidPreviews' => $mermaidPreviewCache->previewsForDocument($documentNode->id, $document->content),
             'databaseProperties' => $documentNode->parent?->type === 'database'
                 ? DatabaseProperty::query()->where('database_node_id', $documentNode->parent_id)->orderBy('position')->get(['id', 'name', 'type', 'position', 'config']) : [],
             'databaseValues' => $documentNode->parent?->type === 'database'
@@ -57,6 +59,22 @@ class DocumentController extends Controller
         $document = $save->save($documentNode, $data['content'], $data['revision']);
 
         return response()->json(['revision' => $document->revision, 'saved_at' => $document->updated_at?->toIso8601String()]);
+    }
+
+    public function storeMermaidPreview(Request $request, int $workspace, int $node, MermaidPreviewCache $mermaidPreviewCache): JsonResponse
+    {
+        $documentNode = $this->ownedDocument($request, $workspace, $node);
+        $data = $request->validate([
+            'source' => ['required', 'string', 'max:50000'],
+            'renderId' => ['required', 'string', 'max:100', 'regex:/^orbium-mermaid-[a-f0-9-]+$/'],
+            'svg' => ['required', 'string', 'max:524288'],
+            'rendererVersion' => ['required', 'string', Rule::in([MermaidPreviewCache::RENDERER_VERSION])],
+        ]);
+        abort_unless(str_starts_with(ltrim($data['svg']), '<svg'), 422);
+
+        $mermaidPreviewCache->storeForSavedSource($documentNode->id, $data['source'], $data['renderId'], $data['svg']);
+
+        return response()->json(['stored' => true]);
     }
 
     public function updateHeader(Request $request, int $workspace, int $node): JsonResponse

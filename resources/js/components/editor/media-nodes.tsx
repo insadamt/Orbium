@@ -17,10 +17,12 @@ import {
     getMermaidPreview,
     preloadMermaidRenderer,
 } from './mermaid-preview-renderer';
+import type { SavedMermaidPreviews } from './use-mermaid-cache-preparation';
 
 type MediaContext = {
     workspaceId: number;
     nodeId: number;
+    cachedMermaidPreviews: SavedMermaidPreviews;
 };
 
 function FileView({
@@ -52,7 +54,11 @@ function FileView({
     );
 }
 
-function MermaidView({ node, updateAttributes }: NodeViewProps) {
+function MermaidView({
+    node,
+    updateAttributes,
+    context,
+}: NodeViewProps & { context: MediaContext }) {
     const { previewContainer, activated } = useMermaidPreviewActivation();
     const [preview, setPreview] = useState('');
     const [error, setError] = useState('');
@@ -71,15 +77,18 @@ function MermaidView({ node, updateAttributes }: NodeViewProps) {
     }, [isEditing]);
 
     useEffect(() => {
-        preloadMermaidRenderer();
-    }, []);
+        if (!context.cachedMermaidPreviews[source]) preloadMermaidRenderer();
+    }, [context.cachedMermaidPreviews, source]);
 
     useEffect(() => {
         if (!activated || isEditing || renderedSource === source) return;
         let active = true;
         const render = async () => {
             try {
-                const previewSvg = await getMermaidPreview(source);
+                const previewSvg = await getMermaidPreview(
+                    source,
+                    context.cachedMermaidPreviews[source],
+                );
                 if (active) {
                     setPreview(previewSvg);
                     setError('');
@@ -104,7 +113,14 @@ function MermaidView({ node, updateAttributes }: NodeViewProps) {
             active = false;
             cancel();
         };
-    }, [source, renderedSource, activated, isEditing, previewContainer]);
+    }, [
+        source,
+        renderedSource,
+        activated,
+        isEditing,
+        previewContainer,
+        context.cachedMermaidPreviews,
+    ]);
 
     return (
         <NodeViewWrapper
@@ -260,7 +276,9 @@ export function createMediaExtensions(context: MediaContext) {
             ];
         },
         addNodeView() {
-            return ReactNodeViewRenderer(MermaidView);
+            return ReactNodeViewRenderer((props) => (
+                <MermaidView {...props} context={context} />
+            ));
         },
     });
     const CalloutNode = Node.create({

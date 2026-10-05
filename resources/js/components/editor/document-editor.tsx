@@ -6,7 +6,6 @@ import Placeholder from '@tiptap/extension-placeholder';
 import { TableKit } from '@tiptap/extension-table';
 import TaskList from '@tiptap/extension-task-list';
 import TaskItem from '@tiptap/extension-task-item';
-import type { EditorView } from '@tiptap/pm/view';
 import { ReactNodeViewRenderer, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { common, createLowlight } from 'lowlight';
@@ -34,14 +33,15 @@ import {
     type EditorMenu,
 } from './editor-suggestions';
 import { useDocumentAutosave } from './use-document-autosave';
+import {
+    useMermaidCachePreparation,
+    type SavedMermaidPreviews,
+} from './use-mermaid-cache-preparation';
 import { createCodeBlockNodeView } from './code-block-node-view';
 import MathBlockView from './math-block-view';
 import MathInlineView from './math-inline-view';
-import {
-    isMarkdownPaste,
-    parseMarkdownContent,
-    readMarkdownFile,
-} from './markdown-import';
+import { readMarkdownFile } from './markdown-import';
+import { pasteMarkdownIntoEmptyDocument } from './markdown-paste';
 import {
     downloadMarkdown,
     serializeDocumentAsMarkdown,
@@ -53,6 +53,7 @@ type Props = {
     title: string;
     content: EditorDocument;
     revision: number;
+    cachedMermaidPreviews: SavedMermaidPreviews;
 };
 
 const lowlight = createLowlight(common);
@@ -95,52 +96,13 @@ function insertAttachment(
     }
 }
 
-function pasteMarkdownIntoEmptyDocument(
-    view: EditorView,
-    event: ClipboardEvent,
-    reportError: (message: string) => void,
-): boolean {
-    const clipboard = event.clipboardData;
-    const source = clipboard?.getData('text/plain') ?? '';
-    const hasEmptyParagraph =
-        view.state.doc.childCount === 1 &&
-        view.state.doc.firstChild?.type.name === 'paragraph' &&
-        view.state.doc.firstChild.content.size === 0;
-    if (
-        !hasEmptyParagraph ||
-        !clipboard ||
-        clipboard.files.length > 0 ||
-        !isMarkdownPaste(source)
-    ) {
-        return false;
-    }
-    try {
-        const content = parseMarkdownContent(source);
-        const importedDocument = view.state.schema.nodeFromJSON(content);
-        view.dispatch(
-            view.state.tr.replaceWith(
-                0,
-                view.state.doc.content.size,
-                importedDocument.content,
-            ),
-        );
-        reportError('');
-    } catch (failure) {
-        reportError(
-            failure instanceof Error
-                ? failure.message
-                : 'Could not paste the Markdown content.',
-        );
-    }
-    return true;
-}
-
 export default function DocumentEditor({
     workspaceId,
     nodeId,
     title,
     content,
     revision,
+    cachedMermaidPreviews,
 }: Props) {
     const searchTerm =
         new URLSearchParams(usePage().url.split('?')[1] ?? '').get('find') ??
@@ -197,6 +159,7 @@ export default function DocumentEditor({
             ...createMediaExtensions({
                 workspaceId,
                 nodeId,
+                cachedMermaidPreviews,
             }),
             ...createSuggestionExtensions({
                 workspaceId,
@@ -204,7 +167,7 @@ export default function DocumentEditor({
                 onUpload: () => fileInput.current?.click(),
             }),
         ],
-        [workspaceId, nodeId, content.content?.length],
+        [workspaceId, nodeId, content.content?.length, cachedMermaidPreviews],
     );
 
     const editor = useEditor(
@@ -230,6 +193,14 @@ export default function DocumentEditor({
         },
         [extensions],
     );
+    const { beginImport, cancelImport, progress, cacheError } =
+        useMermaidCachePreparation(
+            editor,
+            status,
+            cachedMermaidPreviews,
+            workspaceId,
+            nodeId,
+        );
 
     useEffect(() => {
         if (!editor || !searchTerm) return;
@@ -313,8 +284,23 @@ export default function DocumentEditor({
                 setImportError('The document changed before import finished.');
                 return;
             }
+            const diagramCount =
+                imported.content?.filter((block) => block.type === 'mermaid')
+                    .length ?? 0;
+            if (diagramCount > 0) {
+                beginImport(diagramCount);
+                await new Promise<void>((resolve) =>
+                    window.setTimeout(resolve, 0),
+                );
+            }
+            if (!editor.isEmpty) {
+                cancelImport();
+                setImportError('The document changed before import finished.');
+                return;
+            }
             editor.commands.setContent(imported);
         } catch (failure) {
+            cancelImport();
             setImportError(
                 failure instanceof Error
                     ? failure.message
@@ -426,12 +412,14 @@ export default function DocumentEditor({
                 uploadError ||
                 importError ||
                 exportError ||
+                cacheError ||
                 navigationNotice) && (
                 <p role="alert" className="mb-4 text-sm text-destructive">
                     {error ||
                         uploadError ||
                         importError ||
                         exportError ||
+                        cacheError ||
                         navigationNotice}
                 </p>
             )}
@@ -482,6 +470,20 @@ export default function DocumentEditor({
                         )
                     }
                 />
+            )}
+            {progress && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-background/85 backdrop-blur-sm"
+                    role="status"
+                    aria-live="polite"
+                >
+                    <div className="rounded-xl border border-border bg-background px-8 py-6 text-center shadow-lg">
+                        <p className="font-medium">Preparing diagrams…</p>
+                        <p className="mt-2 text-sm text-muted-foreground">
+                            {progress.completed} of {progress.total}
+                        </p>
+                    </div>
+                </div>
             )}
             {menu && editor && (
                 <SuggestionMenu

@@ -1,5 +1,6 @@
 import { Component, lazy, Suspense, type ReactNode } from 'react';
 import type { EditorDocument } from '@/components/editor/editor-api';
+import type { SavedMermaidPreviews } from '@/components/editor/use-mermaid-cache-preparation';
 import DocumentOpeningPreview from './document-opening-preview';
 
 type Props = {
@@ -8,6 +9,7 @@ type Props = {
     title: string;
     content: EditorDocument;
     revision: number;
+    cachedMermaidPreviews: SavedMermaidPreviews;
 };
 
 const DocumentEditor = lazy(

@@ -358,8 +358,16 @@ Math previews activate within 600 pixels of the viewport. Mermaid previews begin
 preparing within the larger of 600 pixels or one and a half document-pane heights.
 Visible diagrams render first without a scroll delay; nearby diagrams prepare after
 scrolling settles briefly. Mermaid's rendering code loads during browser idle time
-when the document contains diagrams. Previews stay active after first activation,
+when the document contains uncached diagrams. Previews stay active after first activation,
 and Mermaid rendering remains limited to one diagram at a time.
+Rendered Mermaid SVGs are disposable document-scoped cache entries in PostgreSQL,
+keyed by the source hash and renderer version. Saved previews are returned with
+the document so reopening does not run Mermaid layout again. Markdown import
+shows preparation progress while uncached diagrams render and save. An edit
+rerenders after the document autosaves; obsolete SVGs are removed when the new
+source is saved. The Mermaid source in document JSON remains authoritative.
+Cached SVG is sanitized again before insertion into the editor. A renderer
+version or configuration change requires a cache version bump.
 Images use native lazy loading and asynchronous decoding. The complete editable
 document remains mounted; these optimizations do not virtualize selection or blocks.
 
