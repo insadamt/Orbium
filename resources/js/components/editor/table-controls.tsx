@@ -2,6 +2,7 @@ import type { Editor } from '@tiptap/core';
 import { TableMap } from '@tiptap/pm/tables';
 import { Plus } from 'lucide-react';
 import { useEffect, useState, type RefObject } from 'react';
+import { measureEditorWork } from '@/lib/editor-performance';
 
 type TableLocation = {
     position: number;
@@ -72,18 +73,23 @@ export default function TableControls({
     useEffect(() => {
         const surface = surfaceRef.current;
         if (!surface) return;
-        const updateLocation = () => {
-            const editorLeft = editor.view.dom.getBoundingClientRect().left;
-            const availableWidth = Math.max(
-                0,
-                window.innerWidth - editorLeft - 40,
-            );
-            surface.style.setProperty(
-                '--table-available-width',
-                `${availableWidth}px`,
-            );
-            setTable(activeTable(editor, surface));
-        };
+        const updateLocation = () =>
+            measureEditorWork('table-controls.geometry', () => {
+                const editorLeft = editor.view.dom.getBoundingClientRect().left;
+                const availableWidth = Math.max(
+                    0,
+                    window.innerWidth - editorLeft - 40,
+                );
+                const width = `${availableWidth}px`;
+                // Avoid unchanged inherited style writes during scrolling.
+                if (
+                    surface.style.getPropertyValue(
+                        '--table-available-width',
+                    ) !== width
+                )
+                    surface.style.setProperty('--table-available-width', width);
+                setTable(activeTable(editor, surface));
+            });
         const resizeObserver = new ResizeObserver(updateLocation);
         resizeObserver.observe(surface);
         editor.on('selectionUpdate', updateLocation);

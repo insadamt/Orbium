@@ -176,14 +176,14 @@ body:has(.split-workspace.is-active)::-webkit-scrollbar {
 }
 .split-pane,
 .split-pane *,
-html:has(.orbium-embedded-pane),
-html:has(.orbium-embedded-pane) * {
+html.orbium-embedded-document,
+html.orbium-embedded-document * {
     scrollbar-width: none;
 }
 .split-pane::-webkit-scrollbar,
 .split-pane *::-webkit-scrollbar,
-html:has(.orbium-embedded-pane)::-webkit-scrollbar,
-html:has(.orbium-embedded-pane) *::-webkit-scrollbar {
+html.orbium-embedded-document::-webkit-scrollbar,
+html.orbium-embedded-document *::-webkit-scrollbar {
     display: none;
 }
 .split-pane iframe {
@@ -220,10 +220,10 @@ html:has(.orbium-embedded-pane) *::-webkit-scrollbar {
     min-height: 100dvh;
     padding: 0;
 }
-html:has(.orbium-embedded-pane),
-html:has(.orbium-embedded-pane) body,
+html.orbium-embedded-document,
+html.orbium-embedded-document body,
 .orbium-shell.orbium-embedded-pane,
-html:has(.orbium-embedded-pane) .orbium-embedded-pane .floating-workspace {
+html.orbium-embedded-document .orbium-embedded-pane .floating-workspace {
     background: transparent;
     background-image: none;
 }

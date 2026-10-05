@@ -1,6 +1,6 @@
 import { router, usePage } from '@inertiajs/react';
 import { ChevronDown, Search } from 'lucide-react';
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useState, type ReactNode } from 'react';
 import AppearanceTabs from '@/components/appearance-tabs';
 import { AppBackground } from '@/backgrounds/app-background';
 import { useSurfaceStyle } from '@/backgrounds/surface-preferences';
@@ -49,6 +49,16 @@ export default function AppLayout({ children }: AppLayoutProps) {
     const page = usePage<ShellPageProps>();
     const { auth } = page.props;
     const isPane = window.self !== window.top;
+    useLayoutEffect(() => {
+        if (!isPane) return;
+        // Explicit frame state avoids rescanning the document after editor mutations.
+        document.documentElement.classList.add('orbium-embedded-document');
+        return () => {
+            document.documentElement.classList.remove(
+                'orbium-embedded-document',
+            );
+        };
+    }, [isPane]);
     useEffect(() => {
         if (!isPane) return;
         notifyPaneLocation(locationForPage(page));

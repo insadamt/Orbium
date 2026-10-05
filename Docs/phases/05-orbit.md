@@ -6,6 +6,8 @@ The same-day [scroll preparation follow-up](../reports/05-mermaid-scroll-prepara
 
 The [layout stability follow-up](../reports/05-mermaid-layout-stability.md) reserves prepared diagram dimensions for all copies before SVG mounting, preventing tall prepared previews from pushing following blocks when reached.
 
+The [document scroll follow-up](../reports/05-document-scroll-layout.md) replaces broad embedded-pane CSS searches with explicit frame state and separates SVG writes from subsequent scheduler geometry reads. It records diagnostic limitations and the foreground manual scroll checklist.
+
 The 2026-10-02 cover review adds six cropped cover ratios and per-container Gallery appearance settings to the active floating workspace pass. Existing wide covers and Gallery configurations retain their prior appearance until replaced or edited. Manual review and quality-gate results belong in the phase report; do not start a later phase.
 
 ## Current floating workspace pass (2026-09-30)

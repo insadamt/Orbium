@@ -7,9 +7,9 @@ import {
     showMermaidRenderError,
 } from './mermaid-preview-display';
 import { readMermaidPreviewDimensions } from './mermaid-preview-layout';
+import { rankMermaidPreparationEntries } from './mermaid-preparation-priority';
 import {
     findEditorScrollContainer,
-    rankMermaidElements,
     mermaidPreparationViewports,
 } from './mermaid-viewport';
 import {
@@ -54,6 +54,7 @@ export class MermaidPreviewSession {
     private cancelPreparation?: () => void;
     private scheduledPriority = Infinity;
     private viewportTimer?: number;
+    private rescheduleFrame?: number;
     private warmTimer?: number;
     private warmIdle?: number;
     private rendering = false;
@@ -243,45 +244,13 @@ export class MermaidPreviewSession {
     }
 
     private rankedEntries() {
-        const root = this.scrollContainer?.getBoundingClientRect();
-        const ranked: { entry: Entry; rank: number; distance: number }[] = [];
-        for (const entry of this.entries.values()) {
-            if (
-                entry.subscribers.size === 0 ||
-                !['pending', 'cached', 'render', 'reserve', 'display'].includes(
-                    entry.state,
-                )
-            )
-                continue;
-            if (
-                [...entry.subscribers.keys()].every(
-                    (element) => element.dataset.mermaidEditing === 'true',
-                )
-            )
-                continue;
-            const priority = rankMermaidElements(
-                [...entry.subscribers.keys()].filter(
-                    (element) =>
-                        element.dataset.mermaidEditing !== 'true' &&
-                        (entry.state !== 'display' ||
-                            !entry.displayed.has(element)),
-                ),
-                this.near,
-                !!this.observer,
-                root,
-                this.direction,
-            );
-            if (entry.state === 'display' && priority.rank === 3) continue;
-            ranked.push({ entry, ...priority });
-        }
-        return ranked.sort(
-            (a, b) =>
-                a.rank - b.rank ||
-                Number(b.entry.state === 'display') -
-                    Number(a.entry.state === 'display') ||
-                a.distance - b.distance ||
-                a.entry.queuedAt - b.entry.queuedAt,
-        );
+        return rankMermaidPreparationEntries({
+            entries: this.entries.values(),
+            near: this.near,
+            observed: !!this.observer,
+            scrollContainer: this.scrollContainer,
+            direction: this.direction,
+        });
     }
 
     private cancelScheduledJob() {
@@ -307,7 +276,12 @@ export class MermaidPreviewSession {
     }
 
     private schedule() {
-        if (!this.started || this.destroyed) return;
+        if (
+            !this.started ||
+            this.destroyed ||
+            this.rescheduleFrame !== undefined
+        )
+            return;
         const next = this.nextEntry();
         if (!next || this.composing || this.manipulating) return;
         const priority =
@@ -339,11 +313,21 @@ export class MermaidPreviewSession {
             return;
         }
         if (entry.state === 'pending') void this.lookup(entry);
-        else if (entry.state === 'display' || entry.state === 'reserve')
+        else if (entry.state === 'display' || entry.state === 'reserve') {
             mountNextMermaidPreview(entry, this.near, !!this.observer);
-        else if (entry.state === 'cached') void this.prepareCached(entry);
+            this.scheduleAfterPreviewMutation();
+            return;
+        } else if (entry.state === 'cached') void this.prepareCached(entry);
         else void this.render(entry);
         this.schedule();
+    }
+
+    private scheduleAfterPreviewMutation() {
+        // Let the browser lay out inserted SVGs before reading the next job's bounds.
+        this.rescheduleFrame = requestAnimationFrame(() => {
+            this.rescheduleFrame = undefined;
+            this.schedule();
+        });
     }
 
     private isCurrent(entry: Entry) {
@@ -482,6 +466,8 @@ export class MermaidPreviewSession {
         this.destroyed = true;
         this.cancelScheduledJob();
         if (this.viewportTimer !== undefined) clearTimeout(this.viewportTimer);
+        if (this.rescheduleFrame !== undefined)
+            cancelAnimationFrame(this.rescheduleFrame);
         if (this.warmTimer !== undefined) clearTimeout(this.warmTimer);
         if (this.warmIdle !== undefined) cancelIdleCallback(this.warmIdle);
         this.controller.abort();

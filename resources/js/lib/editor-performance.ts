@@ -1,13 +1,26 @@
+import {
+    startEditorScrollProfiling,
+    type EditorPerformanceSample,
+} from './editor-scroll-performance';
+
 export const editorProfilingEnabled =
     import.meta.env?.DEV || import.meta.env?.VITE_ORBIUM_PROFILE === 'true';
 
-type Sample = { name: string; duration: number; startTime: number };
+type Sample = EditorPerformanceSample;
 const samples: Sample[] = [];
 const marks = new Map<string, number>();
 let output: HTMLScriptElement | undefined;
+let publicationTimer: ReturnType<typeof setTimeout> | undefined;
+let completedScrollCaptures = 0;
 
 function publish() {
     if (!editorProfilingEnabled || typeof document === 'undefined') return;
+    clearTimeout(publicationTimer);
+    // Updating diagnostic DOM during scrolling can itself force expensive layout.
+    publicationTimer = setTimeout(publishSnapshot, 250);
+}
+
+function publishSnapshot() {
     if (!output?.isConnected) {
         output = document.createElement('script');
         output.type = 'application/json';
@@ -18,6 +31,7 @@ function publish() {
         marks: Object.fromEntries(marks),
         samples,
     });
+    output.dataset.scrollCapture = String(completedScrollCaptures);
 }
 
 export function markEditorPerformance(
@@ -101,6 +115,12 @@ declare global {
 }
 
 if (editorProfilingEnabled && typeof window !== 'undefined') {
+    startEditorScrollProfiling((batch, completed) => {
+        samples.push(...batch);
+        if (completed) completedScrollCaptures++;
+        if (samples.length > 500) samples.splice(0, samples.length - 500);
+        publish();
+    });
     window.__ORBIUM_PERF__ = {
         summary,
         snapshot: () => ({
