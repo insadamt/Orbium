@@ -2,6 +2,8 @@
 
 Date: 2026-10-05. Follow-up to [predictive editor performance](05-predictive-editor-performance.md). Remain in Phase 5. No commits created.
 
+The later [layout stability follow-up](05-mermaid-layout-stability.md) adds responsive height reservation before SVG mounting to address tall diagrams pushing following blocks.
+
 ## Finding
 
 The user still saw “Preparing diagram…” briefly after reaching a diagram. Inspection found avoidable scheduling delays:

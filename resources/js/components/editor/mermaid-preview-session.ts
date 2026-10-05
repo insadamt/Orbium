@@ -2,7 +2,11 @@ import type {
     MermaidPreviewEntry as Entry,
     MermaidSubscriber as Subscriber,
 } from './mermaid-preview-entry';
-import { mountNextMermaidPreview } from './mermaid-preview-display';
+import {
+    mountNextMermaidPreview,
+    showMermaidRenderError,
+} from './mermaid-preview-display';
+import { readMermaidPreviewDimensions } from './mermaid-preview-layout';
 import {
     findEditorScrollContainer,
     rankMermaidElements,
@@ -90,12 +94,13 @@ export class MermaidPreviewSession {
             this.entries.set(source, entry);
         }
         entry.subscribers.set(element, subscriber);
+        if (entry.dimensions) subscriber({ dimensions: entry.dimensions });
         this.observer?.observe(element);
         if (entry.state === 'ready') {
             entry.state = 'display';
             entry.queuedAt = performance.now();
         }
-        if (entry.state === 'error') subscriber(undefined, entry.error);
+        if (entry.state === 'error') subscriber({ error: entry.error });
         this.schedule();
         return () => {
             entry.subscribers.delete(element);
@@ -243,7 +248,7 @@ export class MermaidPreviewSession {
         for (const entry of this.entries.values()) {
             if (
                 entry.subscribers.size === 0 ||
-                !['pending', 'cached', 'render', 'display'].includes(
+                !['pending', 'cached', 'render', 'reserve', 'display'].includes(
                     entry.state,
                 )
             )
@@ -288,7 +293,7 @@ export class MermaidPreviewSession {
         return this.rankedEntries().find(({ entry }) => {
             if (entry.state === 'pending') return this.lookups < 4;
             if (entry.state === 'cached') return !this.preparingCache;
-            return entry.state === 'display' || !this.rendering;
+            return entry.state !== 'render' || !this.rendering;
         });
     }
 
@@ -306,8 +311,8 @@ export class MermaidPreviewSession {
         const next = this.nextEntry();
         if (!next || this.composing || this.manipulating) return;
         const priority =
-            next.rank * 4 +
-            ['display', 'pending', 'cached', 'render'].indexOf(
+            next.rank * 5 +
+            ['display', 'reserve', 'pending', 'cached', 'render'].indexOf(
                 next.entry.state,
             );
         if (this.cancelPreparation) {
@@ -334,7 +339,7 @@ export class MermaidPreviewSession {
             return;
         }
         if (entry.state === 'pending') void this.lookup(entry);
-        else if (entry.state === 'display')
+        else if (entry.state === 'display' || entry.state === 'reserve')
             mountNextMermaidPreview(entry, this.near, !!this.observer);
         else if (entry.state === 'cached') void this.prepareCached(entry);
         else void this.render(entry);
@@ -393,13 +398,7 @@ export class MermaidPreviewSession {
                 this.persist(entry);
             }
         } catch {
-            if (this.isCurrent(entry)) {
-                entry.state = 'error';
-                entry.error =
-                    'Diagram syntax could not be rendered. The source is preserved.';
-                for (const subscriber of entry.subscribers.values())
-                    subscriber(undefined, entry.error);
-            }
+            if (this.isCurrent(entry)) showMermaidRenderError(entry);
         } finally {
             this.rendering = false;
             this.lastRenderFinished = performance.now();
@@ -436,7 +435,8 @@ export class MermaidPreviewSession {
         entry.sanitized = true;
         if (!this.isCurrent(entry)) return;
         entry.preview = sanitized;
-        entry.state = 'display';
+        entry.dimensions = readMermaidPreviewDimensions(sanitized);
+        entry.state = 'reserve';
         if (!this.firstReady) {
             this.firstReady = true;
             markEditorPerformance(

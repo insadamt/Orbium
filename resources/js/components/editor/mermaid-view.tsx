@@ -4,6 +4,10 @@ import { Eye, Pencil } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { measureEditorWork } from '@/lib/editor-performance';
 import { instantiateMermaidSvg } from './mermaid-preview-renderer';
+import {
+    applyMermaidPreviewDimensions,
+    clearMermaidPreviewDimensions,
+} from './mermaid-preview-layout';
 import type { MermaidPreviewSession } from './mermaid-preview-session';
 
 export default function MermaidView({
@@ -34,11 +38,14 @@ export default function MermaidView({
         const unregister = session.register(
             source,
             element,
-            (preview, error) => {
+            ({ preview, dimensions, error }) => {
                 if (!active) return;
                 if (error) {
+                    clearMermaidPreviewDimensions(output);
                     output.textContent = error;
                     output.setAttribute('role', 'alert');
+                } else if (dimensions) {
+                    applyMermaidPreviewDimensions(output, dimensions);
                 } else if (preview) {
                     output.removeAttribute('role');
                     measureEditorWork('mermaid.svg-mount', () => {
@@ -107,7 +114,7 @@ export default function MermaidView({
                     ref={diagram}
                     data-mermaid-preview=""
                     hidden={editing}
-                    className="overflow-auto"
+                    className="overflow-auto [&>svg]:block [&>svg]:h-auto [&>svg]:w-full"
                     style={{ minHeight: 100 }}
                 />
             </div>

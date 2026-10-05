@@ -1,9 +1,18 @@
 import type { CachedPreview } from './mermaid-preview-renderer';
 
-export type MermaidSubscriber = (
-    preview?: CachedPreview,
-    error?: string,
-) => void;
+export type MermaidPreviewDimensions = {
+    width: number;
+    height: number;
+    maxWidth?: number;
+};
+
+export type MermaidPreviewUpdate = {
+    preview?: CachedPreview;
+    dimensions?: MermaidPreviewDimensions;
+    error?: string;
+};
+
+export type MermaidSubscriber = (update: MermaidPreviewUpdate) => void;
 
 export type MermaidPreviewEntry = {
     source: string;
@@ -14,10 +23,12 @@ export type MermaidPreviewEntry = {
         | 'lookup'
         | 'cached'
         | 'render'
+        | 'reserve'
         | 'ready'
         | 'error'
         | 'display';
     preview?: CachedPreview;
+    dimensions?: MermaidPreviewDimensions;
     displayed: Set<HTMLElement>;
     sanitized: boolean;
     error?: string;

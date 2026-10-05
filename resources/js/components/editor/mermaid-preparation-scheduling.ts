@@ -29,7 +29,10 @@ export function scheduleMermaidPreparation(
     let cancelled = false;
     const schedule = () => {
         if (cancelled) return;
-        if (timing.entry.state === 'display') {
+        if (
+            timing.entry.state === 'display' ||
+            timing.entry.state === 'reserve'
+        ) {
             frame = requestAnimationFrame(run);
         } else if (timing.entry.state === 'pending') {
             timer = window.setTimeout(run, 0);

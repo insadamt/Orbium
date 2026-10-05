@@ -4,6 +4,8 @@ The 2026-10-05 editor performance review removes blocking Mermaid preparation, i
 
 The same-day [scroll preparation follow-up](../reports/05-mermaid-scroll-preparation.md) prevents scrolling from starving nearby Mermaid work and mounts prepared previews independently of local render jobs.
 
+The [layout stability follow-up](../reports/05-mermaid-layout-stability.md) reserves prepared diagram dimensions for all copies before SVG mounting, preventing tall prepared previews from pushing following blocks when reached.
+
 The 2026-10-02 cover review adds six cropped cover ratios and per-container Gallery appearance settings to the active floating workspace pass. Existing wide covers and Gallery configurations retain their prior appearance until replaced or edited. Manual review and quality-gate results belong in the phase report; do not start a later phase.
 
 ## Current floating workspace pass (2026-09-30)

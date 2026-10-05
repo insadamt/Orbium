@@ -354,18 +354,20 @@ coloring catches up. Highlight-only transactions do not change content or create
 undo/save entries. A single large code block still requires synchronous highlighting
 within its scheduled job.
 
-Math previews activate within 600 pixels of the viewport. Mermaid previews begin
-preparing within the larger of 600 pixels or one and a half document-pane heights.
-Visible diagrams render first without a scroll delay; nearby diagrams prepare after
-scrolling settles briefly. Mermaid's rendering code loads during browser idle time
-when the document contains uncached diagrams. Previews stay active after first activation,
-and Mermaid rendering remains limited to one diagram at a time.
+Math previews activate within 600 pixels of the viewport. After the editor becomes
+interactive, Mermaid warms independently and prioritizes visible diagrams and the
+next three viewport heights in the reading direction. Nearby preparation continues
+during scrolling; distant rendering yields to interaction. Local rendering remains
+limited to one diagram at a time. Prepared dimensions reserve responsive space for
+all copies before nearby SVGs mount, so tall prepared previews do not expand their
+boxes upon insertion. Uncached sources have unknown dimensions until rendering
+completes. Previews remain mounted after first display.
 Rendered Mermaid SVGs are disposable document-scoped cache entries in PostgreSQL,
-keyed by the source hash and renderer version. Saved previews are returned with
-the document so reopening does not run Mermaid layout again. Markdown import
-shows preparation progress while uncached diagrams render and save. An edit
-rerenders after the document autosaves; obsolete SVGs are removed when the new
-source is saved. The Mermaid source in document JSON remains authoritative.
+keyed by the source hash and renderer version. Saved previews are retrieved lazily
+and reused within the editor session. Markdown import never waits for all diagrams
+or cache persistence. Local preview display and cache uploads are independent;
+obsolete SVGs are removed when changed source is saved. The Mermaid source in
+document JSON remains authoritative.
 Cached SVG is sanitized again before insertion into the editor. A renderer
 version or configuration change requires a cache version bump.
 Images use native lazy loading and asynchronous decoding. The complete editable
