@@ -12,6 +12,10 @@ export default function MathInlineView({
         usePreviewActivation<HTMLSpanElement>();
     const sourceInput = useRef<HTMLInputElement>(null);
     const latex = String(node.attrs.latex ?? '');
+    const [latexDraft, setLatexDraft] = useState(latex);
+    useEffect(() => {
+        if (!isEditing) setLatexDraft(latex);
+    }, [latex, isEditing]);
     const renderedMath = useMemo(() => {
         if (!activated) return null;
         try {
@@ -67,12 +71,13 @@ export default function MathInlineView({
                             Inline math source
                             <input
                                 ref={sourceInput}
-                                value={latex}
-                                onChange={(event) =>
+                                value={latexDraft}
+                                onChange={(event) => {
+                                    setLatexDraft(event.target.value);
                                     updateAttributes({
                                         latex: event.target.value,
-                                    })
-                                }
+                                    });
+                                }}
                                 onKeyDown={(event) => {
                                     event.stopPropagation();
                                     if (

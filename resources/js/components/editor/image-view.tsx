@@ -7,7 +7,13 @@ import {
     Maximize2,
     Trash2,
 } from 'lucide-react';
-import { useRef, useState, type KeyboardEvent, type PointerEvent } from 'react';
+import {
+    useEffect,
+    useRef,
+    useState,
+    type KeyboardEvent,
+    type PointerEvent,
+} from 'react';
 import { attachmentUrl } from './editor-api';
 
 type ImageViewProps = NodeViewProps & {
@@ -47,6 +53,13 @@ export default function ImageView({
     const imageWidth = previewWidth ?? savedWidth;
     const alignment = String(node.attrs.alignment || 'start');
     const caption = String(node.attrs.caption ?? '');
+    const [captionDraft, setCaptionDraft] = useState(caption);
+    const captionInput = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        if (document.activeElement !== captionInput.current)
+            setCaptionDraft(caption);
+    }, [caption]);
     const imageUrl = attachmentUrl(
         context.workspaceId,
         context.nodeId,
@@ -265,13 +278,15 @@ export default function ImageView({
                     {(selected || caption) && (
                         <figcaption className="mt-2 text-sm text-muted-foreground">
                             <input
+                                ref={captionInput}
                                 aria-label="Image caption"
-                                value={caption}
-                                onChange={(event) =>
+                                value={captionDraft}
+                                onChange={(event) => {
+                                    setCaptionDraft(event.target.value);
                                     updateAttributes({
                                         caption: event.target.value,
-                                    })
-                                }
+                                    });
+                                }}
                                 placeholder="Add a caption…"
                                 className="w-full bg-transparent text-center outline-none placeholder:text-muted-foreground/70 focus-visible:rounded focus-visible:outline-2 focus-visible:outline-ring"
                             />

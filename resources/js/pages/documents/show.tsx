@@ -408,6 +408,7 @@ function DocumentPage({
                         <DocumentEditorLoader
                             workspaceId={workspace.id}
                             nodeId={node.id}
+                            title={title}
                             content={savedDocument.content}
                             revision={savedDocument.revision}
                         />

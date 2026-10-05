@@ -117,7 +117,9 @@ export function DocumentSearch({
                 value={query}
                 onChange={(event) => {
                     setQuery(event.target.value);
-                    setMatchCount(selectNextMatch(editor, event.target.value));
+                    setMatchCount(
+                        countDocumentMatches(editor, event.target.value),
+                    );
                 }}
                 onKeyDown={(event) => {
                     if (event.key === 'Enter')

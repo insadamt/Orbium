@@ -53,6 +53,8 @@ plain_text
 
 A future clean Markdown serializer is desirable, but v0.1.0 portability does not depend on a Markdown folder export.
 
+The document editor can download the current document as a `.md` file, including its title and current body edits. This is a single-document convenience export, separate from the portable Orbium archive. Standard blocks use GitHub Flavored Markdown; Mermaid and math retain their source syntax. Mentions and attachments become links to this Orbium installation, so the file alone does not carry their targets or binary data. Database properties are not included. Visual-only formatting such as text color, alignment, and direction is omitted.
+
 ## Markdown typing behavior
 
 At minimum:

@@ -10,7 +10,7 @@ import type { EditorView } from '@tiptap/pm/view';
 import { ReactNodeViewRenderer, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { common, createLowlight } from 'lowlight';
-import { FileInput, FileUp, Search } from 'lucide-react';
+import { Download, FileInput, FileUp, Search } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
 import 'katex/dist/katex.min.css';
 import EditorBlockGutter from './editor-block-gutter';
@@ -42,10 +42,15 @@ import {
     parseMarkdownContent,
     readMarkdownFile,
 } from './markdown-import';
+import {
+    downloadMarkdown,
+    serializeDocumentAsMarkdown,
+} from './markdown-export';
 
 type Props = {
     workspaceId: number;
     nodeId: number;
+    title: string;
     content: EditorDocument;
     revision: number;
 };
@@ -133,6 +138,7 @@ function pasteMarkdownIntoEmptyDocument(
 export default function DocumentEditor({
     workspaceId,
     nodeId,
+    title,
     content,
     revision,
 }: Props) {
@@ -146,6 +152,7 @@ export default function DocumentEditor({
     const [matchCount, setMatchCount] = useState(0);
     const [uploadError, setUploadError] = useState('');
     const [importError, setImportError] = useState('');
+    const [exportError, setExportError] = useState('');
     const fileInput = useRef<HTMLInputElement>(null);
     const markdownInput = useRef<HTMLInputElement>(null);
     const { status, error, navigationNotice, queueSave, saveNow } =
@@ -316,6 +323,25 @@ export default function DocumentEditor({
         }
     }
 
+    function exportMarkdown() {
+        if (!editor) return;
+        setExportError('');
+        try {
+            const markdown = serializeDocumentAsMarkdown(
+                title,
+                editor.getJSON() as EditorDocument,
+                { workspaceId, nodeId, origin: window.location.origin },
+            );
+            downloadMarkdown(title, markdown);
+        } catch (failure) {
+            setExportError(
+                failure instanceof Error
+                    ? failure.message
+                    : 'Could not export the Markdown file.',
+            );
+        }
+    }
+
     useEffect(() => {
         const onKeyDown = (event: KeyboardEvent) => {
             if (!editor) return;
@@ -373,6 +399,14 @@ export default function DocumentEditor({
                     )}
                     <button
                         type="button"
+                        onClick={exportMarkdown}
+                        disabled={!editor}
+                        className="flex items-center gap-1 rounded p-1 hover:bg-accent disabled:opacity-50"
+                    >
+                        <Download size={16} /> Export Markdown
+                    </button>
+                    <button
+                        type="button"
                         onClick={() => setSearchOpen(true)}
                         aria-label="Find in document"
                         className="rounded p-1 hover:bg-accent"
@@ -388,9 +422,17 @@ export default function DocumentEditor({
                     </button>
                 </div>
             </div>
-            {(error || uploadError || importError || navigationNotice) && (
+            {(error ||
+                uploadError ||
+                importError ||
+                exportError ||
+                navigationNotice) && (
                 <p role="alert" className="mb-4 text-sm text-destructive">
-                    {error || uploadError || importError || navigationNotice}
+                    {error ||
+                        uploadError ||
+                        importError ||
+                        exportError ||
+                        navigationNotice}
                 </p>
             )}
             <input

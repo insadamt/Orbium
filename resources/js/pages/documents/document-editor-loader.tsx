@@ -5,6 +5,7 @@ import DocumentOpeningPreview from './document-opening-preview';
 type Props = {
     workspaceId: number;
     nodeId: number;
+    title: string;
     content: EditorDocument;
     revision: number;
 };

@@ -1,6 +1,6 @@
 import { Extension } from '@tiptap/core';
 import { Fragment, type Node as ProseMirrorNode } from '@tiptap/pm/model';
-import { Plugin, PluginKey, Selection } from '@tiptap/pm/state';
+import { Plugin, PluginKey, type Transaction } from '@tiptap/pm/state';
 import { findChangedBlockRanges } from './document-change-range';
 
 import {
@@ -110,6 +110,33 @@ function normalizeBlockDirection(
     );
 }
 
+function applyDirectionAttributes(
+    transaction: Transaction,
+    original: ProseMirrorNode,
+    normalized: ProseMirrorNode,
+    position: number,
+): void {
+    if (original === normalized) return;
+    if (
+        original.attrs.dir !== normalized.attrs.dir ||
+        original.attrs.directionMode !== normalized.attrs.directionMode
+    ) {
+        transaction.setNodeMarkup(position, undefined, normalized.attrs);
+    }
+    if (original.isLeaf || original.isTextblock) return;
+    let childPosition = position + 1;
+    for (let index = 0; index < original.childCount; index++) {
+        const child = original.child(index);
+        applyDirectionAttributes(
+            transaction,
+            child,
+            normalized.child(index),
+            childPosition,
+        );
+        childPosition += child.nodeSize;
+    }
+}
+
 const automaticBlockDirectionKey = new PluginKey('automaticBlockDirection');
 
 export const AutomaticBlockDirection = Extension.create({
@@ -166,9 +193,8 @@ export const AutomaticBlockDirection = Extension.create({
                             break;
                         }
                     }
-                    const blocks: ProseMirrorNode[] = [];
+                    const transaction = newState.tr;
                     let position = changed.from;
-                    let contentChanged = false;
                     for (
                         let index = start.index(0);
                         index < newState.doc.childCount;
@@ -189,23 +215,15 @@ export const AutomaticBlockDirection = Extension.create({
                         if ('directionMode' in normalized.attrs)
                             direction =
                                 normalized.attrs.dir === 'rtl' ? 'rtl' : 'ltr';
-                        blocks.push(normalized);
-                        contentChanged ||= normalized !== block;
+                        applyDirectionAttributes(
+                            transaction,
+                            block,
+                            normalized,
+                            position,
+                        );
                         position += block.nodeSize;
                     }
-                    if (!contentChanged) return null;
-                    const transaction = newState.tr.replaceWith(
-                        changed.from,
-                        position,
-                        Fragment.fromArray(blocks),
-                    );
-                    // Attribute normalization preserves positions; replacement mapping would move the caret.
-                    transaction.setSelection(
-                        Selection.fromJSON(
-                            transaction.doc,
-                            newState.selection.toJSON(),
-                        ),
-                    );
+                    if (!transaction.docChanged) return null;
                     transaction.setStoredMarks(newState.storedMarks);
                     if (initializing)
                         transaction.setMeta('addToHistory', false);

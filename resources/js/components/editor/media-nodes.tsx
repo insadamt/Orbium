@@ -32,6 +32,7 @@ function FileView({
             className="my-4 rounded-xl border border-border p-4"
             data-drag-handle
             dir={node.attrs.dir}
+            contentEditable={false}
         >
             <a
                 href={attachmentUrl(
@@ -59,6 +60,11 @@ function MermaidView({ node, updateAttributes }: NodeViewProps) {
     const [isEditing, setIsEditing] = useState(false);
     const sourceInput = useRef<HTMLTextAreaElement>(null);
     const source = String(node.attrs.source ?? '');
+    const [sourceDraft, setSourceDraft] = useState(source);
+
+    useEffect(() => {
+        if (!isEditing) setSourceDraft(source);
+    }, [source, isEditing]);
 
     useEffect(() => {
         if (isEditing) sourceInput.current?.focus();
@@ -69,7 +75,7 @@ function MermaidView({ node, updateAttributes }: NodeViewProps) {
     }, []);
 
     useEffect(() => {
-        if (!activated || renderedSource === source) return;
+        if (!activated || isEditing || renderedSource === source) return;
         let active = true;
         const render = async () => {
             try {
@@ -98,13 +104,14 @@ function MermaidView({ node, updateAttributes }: NodeViewProps) {
             active = false;
             cancel();
         };
-    }, [source, renderedSource, activated, previewContainer]);
+    }, [source, renderedSource, activated, isEditing, previewContainer]);
 
     return (
         <NodeViewWrapper
             className="my-4 rounded-xl border border-border p-4"
             data-drag-handle
             dir={node.attrs.dir}
+            contentEditable={false}
         >
             <div ref={previewContainer}>
                 <div
@@ -139,10 +146,11 @@ function MermaidView({ node, updateAttributes }: NodeViewProps) {
                     <textarea
                         ref={sourceInput}
                         aria-label="Mermaid source"
-                        value={source}
-                        onChange={(event) =>
-                            updateAttributes({ source: event.target.value })
-                        }
+                        value={sourceDraft}
+                        onChange={(event) => {
+                            setSourceDraft(event.target.value);
+                            updateAttributes({ source: event.target.value });
+                        }}
                         rows={6}
                         dir="ltr"
                         className="w-full rounded-md bg-muted p-3 font-mono text-sm"

@@ -12,6 +12,10 @@ export default function MathBlockView({
     const [isEditing, setIsEditing] = useState(false);
     const sourceInput = useRef<HTMLTextAreaElement>(null);
     const latex = String(node.attrs.latex ?? '');
+    const [latexDraft, setLatexDraft] = useState(latex);
+    useEffect(() => {
+        if (!isEditing) setLatexDraft(latex);
+    }, [latex, isEditing]);
     const renderedMath = useMemo(() => {
         if (!activated) return { html: '', error: false };
         try {
@@ -36,6 +40,7 @@ export default function MathBlockView({
         <NodeViewWrapper
             className="my-4 rounded-xl border border-border p-4"
             dir={node.attrs.dir}
+            contentEditable={false}
         >
             <div ref={previewContainer}>
                 <div
@@ -70,10 +75,11 @@ export default function MathBlockView({
                     <textarea
                         ref={sourceInput}
                         aria-label="Math source"
-                        value={latex}
-                        onChange={(event) =>
-                            updateAttributes({ latex: event.target.value })
-                        }
+                        value={latexDraft}
+                        onChange={(event) => {
+                            setLatexDraft(event.target.value);
+                            updateAttributes({ latex: event.target.value });
+                        }}
                         rows={4}
                         dir="ltr"
                         className="w-full rounded-md bg-muted p-3 font-mono text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
