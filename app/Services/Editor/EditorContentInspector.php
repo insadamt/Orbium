@@ -17,57 +17,112 @@ class EditorContentInspector
             $this->invalid('The editor content must start with a document.');
         }
 
-        $this->walk($content, 0, function (array $node): void {
-            $type = $node['type'] ?? null;
-            if (! is_string($type) || ! in_array($type, self::NODE_TYPES, true)) {
-                $this->invalid('The document contains an unsupported block.');
+        $this->walk($content, 0, $this->validateNode(...));
+    }
+
+    /** @param array<string, mixed> $content */
+    public function inspect(array $content): DocumentInspectionResult
+    {
+        if (($content['type'] ?? null) !== 'doc') {
+            $this->invalid('The editor content must start with a document.');
+        }
+        $mentions = [];
+        $attachments = [];
+        $sources = [];
+        $plainText = $this->inspectNode($content, 0, $mentions, $attachments, $sources);
+
+        return new DocumentInspectionResult($mentions, array_keys($attachments), trim($plainText), $sources);
+    }
+
+    private function inspectNode(array $node, int $depth, array &$mentions, array &$attachments, array &$sources): string
+    {
+        if ($depth > 32) {
+            $this->invalid('The document is nested too deeply.');
+        }
+        $this->validateNode($node);
+        $type = $node['type'];
+        $attrs = $node['attrs'] ?? [];
+        if ($type === 'mention') {
+            $mentions[(int) $attrs['id']] = (string) ($attrs['label'] ?? '');
+        }
+        if (in_array($type, ['image', 'file'], true)) {
+            $attachments[(int) $attrs['attachmentId']] = true;
+        }
+        if ($type === 'mermaid' && is_string($attrs['source'] ?? null)) {
+            $sources[hash('sha256', $attrs['source'])] = $attrs['source'];
+        }
+        $children = $node['content'] ?? [];
+        if (! is_array($children) || count($children) > 5000) {
+            $this->invalid('The document has invalid blocks.');
+        }
+        $parts = [];
+        foreach ($children as $child) {
+            if (! is_array($child)) {
+                $this->invalid('The document has invalid blocks.');
             }
-            if (isset($node['text']) && (! is_string($node['text']) || mb_strlen($node['text']) > 100000)) {
-                $this->invalid('A text block is too large or invalid.');
+            $parts[] = $this->inspectNode($child, $depth + 1, $mentions, $attachments, $sources);
+        }
+
+        return match ($type) {
+            'text' => $node['text'],
+            'mention' => '@'.($attrs['label'] ?? ''),
+            'blockMath', 'inlineMath' => (string) ($attrs['latex'] ?? ''),
+            'mermaid' => (string) ($attrs['source'] ?? ''),
+            default => implode(in_array($type, ['doc', 'bulletList', 'orderedList', 'taskList', 'table', 'tableRow'], true) ? "\n" : '', $parts),
+        };
+    }
+
+    private function validateNode(array $node): void
+    {
+        $type = $node['type'] ?? null;
+        if (! is_string($type) || ! in_array($type, self::NODE_TYPES, true)) {
+            $this->invalid('The document contains an unsupported block.');
+        }
+        if (isset($node['text']) && (! is_string($node['text']) || mb_strlen($node['text']) > 100000)) {
+            $this->invalid('A text block is too large or invalid.');
+        }
+        if ($type === 'text' && ! is_string($node['text'] ?? null)) {
+            $this->invalid('A text block is missing its text.');
+        }
+        if (isset($node['attrs']) && ! is_array($node['attrs'])) {
+            $this->invalid('A block has invalid attributes.');
+        }
+        $attrs = $node['attrs'] ?? [];
+        if (isset($attrs['dir']) && ! in_array($attrs['dir'], ['ltr', 'rtl', 'auto'], true)) {
+            $this->invalid('A block direction is invalid.');
+        }
+        if (isset($attrs['directionMode']) && (! in_array($type, ['paragraph', 'heading', 'bulletList', 'orderedList', 'taskList', 'blockquote', 'codeBlock', 'callout', 'table', 'horizontalRule', 'image', 'file', 'mermaid', 'blockMath'], true) || ! in_array($attrs['directionMode'], ['auto', 'manual'], true))) {
+            $this->invalid('A block direction mode is invalid.');
+        }
+        if (isset($attrs['textAlign']) && (! in_array($type, ['paragraph', 'heading'], true) || ! in_array($attrs['textAlign'], ['left', 'center', 'right'], true))) {
+            $this->invalid('A block alignment is invalid.');
+        }
+        if ($type === 'mention' && ! filter_var($attrs['id'] ?? null, FILTER_VALIDATE_INT)) {
+            $this->invalid('A mention has no target.');
+        }
+        if (in_array($type, ['image', 'file'], true) && ! filter_var($attrs['attachmentId'] ?? null, FILTER_VALIDATE_INT)) {
+            $this->invalid('A file block has no attachment.');
+        }
+        if ($type === 'heading' && ! in_array($attrs['level'] ?? null, [1, 2, 3], true)) {
+            $this->invalid('A heading level is invalid.');
+        }
+        if (isset($node['marks']) && ! is_array($node['marks'])) {
+            $this->invalid('A block has invalid formatting.');
+        }
+        foreach ($node['marks'] ?? [] as $mark) {
+            if (! is_array($mark) || ! in_array($mark['type'] ?? null, self::MARK_TYPES, true)) {
+                $this->invalid('The document contains unsupported formatting.');
             }
-            if ($type === 'text' && ! is_string($node['text'] ?? null)) {
-                $this->invalid('A text block is missing its text.');
+            if (isset($mark['attrs']) && ! is_array($mark['attrs'])) {
+                $this->invalid('A link has invalid attributes.');
             }
-            if (isset($node['attrs']) && ! is_array($node['attrs'])) {
-                $this->invalid('A block has invalid attributes.');
+            if ($mark['type'] === 'link' && ! $this->isSafeUrl($mark['attrs']['href'] ?? null)) {
+                $this->invalid('A link has an unsafe URL.');
             }
-            $attrs = $node['attrs'] ?? [];
-            if (isset($attrs['dir']) && ! in_array($attrs['dir'], ['ltr', 'rtl', 'auto'], true)) {
-                $this->invalid('A block direction is invalid.');
+            if ($mark['type'] === 'textColor' && ! $this->isSafeTextColor($mark['attrs']['color'] ?? null)) {
+                $this->invalid('A text color is invalid.');
             }
-            if (isset($attrs['directionMode']) && (! in_array($type, ['paragraph', 'heading', 'bulletList', 'orderedList', 'taskList', 'blockquote', 'codeBlock', 'callout', 'table', 'horizontalRule', 'image', 'file', 'mermaid', 'blockMath'], true) || ! in_array($attrs['directionMode'], ['auto', 'manual'], true))) {
-                $this->invalid('A block direction mode is invalid.');
-            }
-            if (isset($attrs['textAlign']) && (! in_array($type, ['paragraph', 'heading'], true) || ! in_array($attrs['textAlign'], ['left', 'center', 'right'], true))) {
-                $this->invalid('A block alignment is invalid.');
-            }
-            if ($type === 'mention' && ! filter_var($attrs['id'] ?? null, FILTER_VALIDATE_INT)) {
-                $this->invalid('A mention has no target.');
-            }
-            if (in_array($type, ['image', 'file'], true) && ! filter_var($attrs['attachmentId'] ?? null, FILTER_VALIDATE_INT)) {
-                $this->invalid('A file block has no attachment.');
-            }
-            if ($type === 'heading' && ! in_array($attrs['level'] ?? null, [1, 2, 3], true)) {
-                $this->invalid('A heading level is invalid.');
-            }
-            if (isset($node['marks']) && ! is_array($node['marks'])) {
-                $this->invalid('A block has invalid formatting.');
-            }
-            foreach ($node['marks'] ?? [] as $mark) {
-                if (! is_array($mark) || ! in_array($mark['type'] ?? null, self::MARK_TYPES, true)) {
-                    $this->invalid('The document contains unsupported formatting.');
-                }
-                if (isset($mark['attrs']) && ! is_array($mark['attrs'])) {
-                    $this->invalid('A link has invalid attributes.');
-                }
-                if ($mark['type'] === 'link' && ! $this->isSafeUrl($mark['attrs']['href'] ?? null)) {
-                    $this->invalid('A link has an unsafe URL.');
-                }
-                if ($mark['type'] === 'textColor' && ! $this->isSafeTextColor($mark['attrs']['color'] ?? null)) {
-                    $this->invalid('A text color is invalid.');
-                }
-            }
-        });
+        }
     }
 
     private function isSafeTextColor(mixed $color): bool

@@ -17,7 +17,7 @@ use Inertia\Response;
 
 class DocumentController extends Controller
 {
-    public function show(Request $request, int $workspace, int $node, MermaidPreviewCache $mermaidPreviewCache): Response
+    public function show(Request $request, int $workspace, int $node): Response
     {
         $documentNode = $this->ownedDocument($request, $workspace, $node);
         $document = $documentNode->document()->firstOrFail();
@@ -34,20 +34,20 @@ class DocumentController extends Controller
             'workspace' => $workspaceModel->only(['id', 'name']),
             'node' => $documentNode->only(['id', 'title', 'icon', 'parent_id']),
             'document' => $document->only(['content', 'revision', 'cover_attachment_id', 'cover_aspect_ratio', 'icon_attachment_id']),
-            'cachedMermaidPreviews' => $mermaidPreviewCache->previewsForDocument($documentNode->id, $document->content),
             'databaseProperties' => $documentNode->parent?->type === 'database'
                 ? DatabaseProperty::query()->where('database_node_id', $documentNode->parent_id)->orderBy('position')->get(['id', 'name', 'type', 'position', 'config']) : [],
             'databaseValues' => $documentNode->parent?->type === 'database'
                 ? DatabaseValue::query()->where('document_node_id', $documentNode->id)->get(['property_id', 'value']) : [],
-            'mentionCandidates' => $workspaceModel->nodes()->get(['id', 'title', 'type']),
-            'databaseFiles' => Attachment::query()->where('workspace_id', $workspaceModel->id)
-                ->where('owner_node_id', $documentNode->id)->get(['id', 'original_name']),
+            'mentionCandidates' => $documentNode->parent?->type === 'database' ? $workspaceModel->nodes()->get(['id', 'title', 'type']) : [],
+            'databaseFiles' => $documentNode->parent?->type === 'database' ? Attachment::query()->where('workspace_id', $workspaceModel->id)
+                ->where('owner_node_id', $documentNode->id)->get(['id', 'original_name']) : [],
             'breadcrumbs' => [...$breadcrumbs, ...$ancestors],
         ]);
     }
 
     public function update(Request $request, int $workspace, int $node, SaveDocument $save): JsonResponse
     {
+        $started = hrtime(true);
         $documentNode = $this->ownedDocument($request, $workspace, $node);
         $data = $request->validate([
             'content' => ['required', 'array'],
@@ -56,9 +56,24 @@ class DocumentController extends Controller
         if (strlen(json_encode($data['content'], JSON_THROW_ON_ERROR)) > 1048576) {
             return response()->json(['message' => 'Document content exceeds 1 MB.'], 422);
         }
+        $validatedAt = hrtime(true);
         $document = $save->save($documentNode, $data['content'], $data['revision']);
 
-        return response()->json(['revision' => $document->revision, 'saved_at' => $document->updated_at?->toIso8601String()]);
+        $response = response()->json(['revision' => $document->revision, 'saved_at' => $document->updated_at?->toIso8601String()]);
+        if (app()->isLocal()) {
+            $response->header('Server-Timing', sprintf('validation;dur=%.2f,save;dur=%.2f', ($validatedAt - $started) / 1e6, (hrtime(true) - $validatedAt) / 1e6));
+        }
+
+        return $response;
+    }
+
+    public function showMermaidPreview(Request $request, int $workspace, int $node, string $sourceHash, MermaidPreviewCache $mermaidPreviewCache): JsonResponse
+    {
+        $documentNode = $this->ownedDocument($request, $workspace, $node);
+        $request->validate(['rendererVersion' => ['required', Rule::in([MermaidPreviewCache::RENDERER_VERSION])]]);
+
+        return response()->json(['preview' => $mermaidPreviewCache->previewForDocument($documentNode->id, $sourceHash)])
+            ->header('Cache-Control', 'private, no-store');
     }
 
     public function storeMermaidPreview(Request $request, int $workspace, int $node, MermaidPreviewCache $mermaidPreviewCache): JsonResponse

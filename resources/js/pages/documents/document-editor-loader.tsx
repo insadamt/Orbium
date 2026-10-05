@@ -1,6 +1,10 @@
-import { Component, lazy, Suspense, type ReactNode } from 'react';
+import { Component, lazy, Suspense, useRef, type ReactNode } from 'react';
+import {
+    markEditorPerformance,
+    resetOpeningPreviewPerformance,
+    measureEditorAsync,
+} from '@/lib/editor-performance';
 import type { EditorDocument } from '@/components/editor/editor-api';
-import type { SavedMermaidPreviews } from '@/components/editor/use-mermaid-cache-preparation';
 import DocumentOpeningPreview from './document-opening-preview';
 
 type Props = {
@@ -9,12 +13,18 @@ type Props = {
     title: string;
     content: EditorDocument;
     revision: number;
-    cachedMermaidPreviews: SavedMermaidPreviews;
 };
 
-const DocumentEditor = lazy(
-    () => import('@/components/editor/document-editor'),
-);
+const DocumentEditor = lazy(() => {
+    markEditorPerformance('editor.dynamic-import-started');
+    return measureEditorAsync(
+        'editor.module-load',
+        () => import('@/components/editor/document-editor'),
+    ).then((module) => {
+        markEditorPerformance('editor.module-loaded');
+        return module;
+    });
+});
 
 class EditorLoadBoundary extends Component<
     { children: ReactNode; content: EditorDocument },
@@ -49,6 +59,14 @@ class EditorLoadBoundary extends Component<
 }
 
 export default function DocumentEditorLoader(props: Props) {
+    const available = useRef(false);
+    if (!available.current) {
+        available.current = true;
+        resetOpeningPreviewPerformance();
+        markEditorPerformance(
+            `document.${props.nodeId}.route-content-available`,
+        );
+    }
     return (
         <EditorLoadBoundary content={props.content}>
             <Suspense

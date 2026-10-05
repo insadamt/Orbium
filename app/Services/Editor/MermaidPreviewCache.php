@@ -62,19 +62,36 @@ class MermaidPreviewCache
     /** @param array<string, mixed> $content */
     public function removeObsoletePreviews(int $documentNodeId, array $content): void
     {
+        $this->removeObsoleteHashes($documentNodeId, array_map(
+            static fn (string $source): string => hash('sha256', $source),
+            $this->sourcesInDocument($content),
+        ));
+    }
+
+    /** @param array<int, string> $hashes */
+    public function removeObsoleteHashes(int $documentNodeId, array $hashes): void
+    {
         DB::table('document_mermaid_previews')
             ->where('document_node_id', $documentNodeId)
             ->where('renderer_version', '!=', self::RENDERER_VERSION)
             ->delete();
-        $hashes = array_map(
-            static fn (string $source): string => hash('sha256', $source),
-            $this->sourcesInDocument($content),
-        );
         $query = DB::table('document_mermaid_previews')->where('document_node_id', $documentNodeId);
         if ($hashes !== []) {
             $query->whereNotIn('source_hash', $hashes);
         }
         $query->delete();
+    }
+
+    public function previewForDocument(int $documentNodeId, string $sourceHash): ?array
+    {
+        // Rows can only be inserted for saved sources and are removed under the same document lock on save.
+        $row = DB::table('document_mermaid_previews')
+            ->where('document_node_id', $documentNodeId)
+            ->where('renderer_version', self::RENDERER_VERSION)
+            ->where('source_hash', $sourceHash)
+            ->first(['svg', 'render_id']);
+
+        return $row ? ['svg' => $row->svg, 'renderId' => $row->render_id] : null;
     }
 
     public function storeForSavedSource(int $documentNodeId, string $source, string $renderId, string $svg): void

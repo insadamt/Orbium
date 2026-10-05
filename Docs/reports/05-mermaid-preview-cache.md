@@ -2,6 +2,8 @@
 
 Date: 2026-10-05.
 
+The blocking preparation screen and eager SVG payload described below were superseded by [the predictive editor performance review](05-predictive-editor-performance.md). This report remains the record of the original cache implementation.
+
 ## Scope and result
 
 Mermaid source remains in the document JSON. The app now stores rendered SVG as disposable, document-scoped PostgreSQL cache data. Reopening a document loads the matching saved SVGs and avoids Mermaid layout for those diagrams. Existing uncached documents prepare their diagrams on first open; Markdown imports with diagrams show a preparation screen until the document saves and all eligible diagrams have been rendered and uploaded. Subsequent source edits prepare a new SVG after autosave. Saving removes cache entries for removed or changed sources.

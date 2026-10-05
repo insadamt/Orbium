@@ -162,10 +162,11 @@ export function createSuggestionExtensions(context: SuggestionContext) {
         ],
         suggestion: {
             char: '@',
-            items: async ({ query }) => {
+            debounce: 180,
+            items: async ({ query, signal }) => {
                 const response = await fetch(
                     `/workspaces/${context.workspaceId}/mentions?q=${encodeURIComponent(query)}`,
-                    { headers: { Accept: 'application/json' } },
+                    { headers: { Accept: 'application/json' }, signal },
                 );
                 return response.ok
                     ? ((await response.json()) as MentionCandidate[])

@@ -139,6 +139,25 @@ function applyDirectionAttributes(
 
 const automaticBlockDirectionKey = new PluginKey('automaticBlockDirection');
 
+function normalizeInitialDirections(
+    document: ProseMirrorNode,
+): Fragment | null {
+    let direction: ResolvedDirection = 'ltr';
+    let changed = false;
+    const blocks: ProseMirrorNode[] = [];
+    document.forEach((block) => {
+        const normalized =
+            'directionMode' in block.attrs
+                ? normalizeBlockDirection(block, direction)
+                : block;
+        if ('directionMode' in normalized.attrs)
+            direction = normalized.attrs.dir === 'rtl' ? 'rtl' : 'ltr';
+        changed ||= normalized !== block;
+        blocks.push(normalized);
+    });
+    return changed ? Fragment.fromArray(blocks) : null;
+}
+
 export const AutomaticBlockDirection = Extension.create({
     name: 'automaticBlockDirection',
 
@@ -170,17 +189,36 @@ export const AutomaticBlockDirection = Extension.create({
                     const initializing = transactions.some((transaction) =>
                         transaction.getMeta(automaticBlockDirectionKey),
                     );
+                    if (initializing) {
+                        const normalized = normalizeInitialDirections(
+                            newState.doc,
+                        );
+                        if (!normalized) return null;
+                        // Thousands of markup steps repeatedly rebuild the document; direction-only normalization preserves positions.
+                        const transaction = newState.tr.replaceWith(
+                            0,
+                            newState.doc.content.size,
+                            normalized,
+                        );
+                        transaction.setSelection(
+                            newState.selection
+                                .getBookmark()
+                                .resolve(transaction.doc),
+                        );
+                        return transaction
+                            .setStoredMarks(newState.storedMarks)
+                            .setMeta('addToHistory', false);
+                    }
                     if (
-                        !initializing &&
                         !transactions.some(
                             (transaction) => transaction.docChanged,
                         )
                     )
                         return null;
-                    const changed = initializing
-                        ? { from: 0, to: newState.doc.content.size }
-                        : findChangedBlockRanges(oldState.doc, newState.doc)
-                              ?.current;
+                    const changed = findChangedBlockRanges(
+                        oldState.doc,
+                        newState.doc,
+                    )?.current;
                     if (!changed) return null;
 
                     const start = newState.doc.resolve(changed.from);
@@ -225,8 +263,6 @@ export const AutomaticBlockDirection = Extension.create({
                     }
                     if (!transaction.docChanged) return null;
                     transaction.setStoredMarks(newState.storedMarks);
-                    if (initializing)
-                        transaction.setMeta('addToHistory', false);
                     return transaction;
                 },
             }),

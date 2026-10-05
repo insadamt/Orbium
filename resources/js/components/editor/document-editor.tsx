@@ -1,3 +1,10 @@
+import { useEditorReadiness } from './use-editor-readiness';
+import { createEditorPerformanceExtension } from './editor-performance-extension';
+import DocumentOpeningPreview from '@/pages/documents/document-opening-preview';
+import {
+    markEditorPerformance,
+    measureEditorWork,
+} from '@/lib/editor-performance';
 import type { Editor, JSONContent } from '@tiptap/core';
 import { router, usePage } from '@inertiajs/react';
 import { IncrementalCodeBlockLowlight } from './incremental-code-highlighting';
@@ -33,10 +40,7 @@ import {
     type EditorMenu,
 } from './editor-suggestions';
 import { useDocumentAutosave } from './use-document-autosave';
-import {
-    useMermaidCachePreparation,
-    type SavedMermaidPreviews,
-} from './use-mermaid-cache-preparation';
+import { MermaidPreviewSession } from './mermaid-preview-session';
 import { createCodeBlockNodeView } from './code-block-node-view';
 import MathBlockView from './math-block-view';
 import MathInlineView from './math-inline-view';
@@ -53,7 +57,6 @@ type Props = {
     title: string;
     content: EditorDocument;
     revision: number;
-    cachedMermaidPreviews: SavedMermaidPreviews;
 };
 
 const lowlight = createLowlight(common);
@@ -102,7 +105,6 @@ export default function DocumentEditor({
     title,
     content,
     revision,
-    cachedMermaidPreviews,
 }: Props) {
     const searchTerm =
         new URLSearchParams(usePage().url.split('?')[1] ?? '').get('find') ??
@@ -120,8 +122,14 @@ export default function DocumentEditor({
     const { status, error, navigationNotice, queueSave, saveNow } =
         useDocumentAutosave(workspaceId, nodeId, revision);
 
+    const mermaidSession = useMemo(
+        () => new MermaidPreviewSession(workspaceId, nodeId),
+        [workspaceId, nodeId],
+    );
+
     const extensions = useMemo(
         () => [
+            createEditorPerformanceExtension(nodeId),
             StarterKit.configure({
                 codeBlock: false,
                 dropcursor: false,
@@ -159,7 +167,7 @@ export default function DocumentEditor({
             ...createMediaExtensions({
                 workspaceId,
                 nodeId,
-                cachedMermaidPreviews,
+                mermaidSession,
             }),
             ...createSuggestionExtensions({
                 workspaceId,
@@ -167,9 +175,14 @@ export default function DocumentEditor({
                 onUpload: () => fileInput.current?.click(),
             }),
         ],
-        [workspaceId, nodeId, content.content?.length, cachedMermaidPreviews],
+        [workspaceId, nodeId, mermaidSession],
     );
 
+    const initializationMarked = useRef(false);
+    if (!initializationMarked.current) {
+        initializationMarked.current = true;
+        markEditorPerformance(`document.${nodeId}.use-editor-initialization`);
+    }
     const editor = useEditor(
         {
             extensions,
@@ -193,14 +206,12 @@ export default function DocumentEditor({
         },
         [extensions],
     );
-    const { beginImport, cancelImport, progress, cacheError } =
-        useMermaidCachePreparation(
-            editor,
-            status,
-            cachedMermaidPreviews,
-            workspaceId,
-            nodeId,
-        );
+
+    useEditorReadiness(editor, nodeId, mermaidSession);
+
+    useEffect(() => {
+        if (status === 'saved') mermaidSession.notifySaved();
+    }, [status, mermaidSession]);
 
     useEffect(() => {
         if (!editor || !searchTerm) return;
@@ -284,23 +295,10 @@ export default function DocumentEditor({
                 setImportError('The document changed before import finished.');
                 return;
             }
-            const diagramCount =
-                imported.content?.filter((block) => block.type === 'mermaid')
-                    .length ?? 0;
-            if (diagramCount > 0) {
-                beginImport(diagramCount);
-                await new Promise<void>((resolve) =>
-                    window.setTimeout(resolve, 0),
-                );
-            }
-            if (!editor.isEmpty) {
-                cancelImport();
-                setImportError('The document changed before import finished.');
-                return;
-            }
-            editor.commands.setContent(imported);
+            measureEditorWork('markdown.set-content', () =>
+                editor.commands.setContent(imported),
+            );
         } catch (failure) {
-            cancelImport();
             setImportError(
                 failure instanceof Error
                     ? failure.message
@@ -412,14 +410,12 @@ export default function DocumentEditor({
                 uploadError ||
                 importError ||
                 exportError ||
-                cacheError ||
                 navigationNotice) && (
                 <p role="alert" className="mb-4 text-sm text-destructive">
                     {error ||
                         uploadError ||
                         importError ||
                         exportError ||
-                        cacheError ||
                         navigationNotice}
                 </p>
             )}
@@ -460,6 +456,7 @@ export default function DocumentEditor({
 
             {editor && <SelectionToolbar editor={editor} />}
 
+            {!editor && <DocumentOpeningPreview content={content} />}
             {editor && (
                 <EditorBlockGutter
                     editor={editor}
@@ -470,20 +467,6 @@ export default function DocumentEditor({
                         )
                     }
                 />
-            )}
-            {progress && (
-                <div
-                    className="fixed inset-0 z-50 flex items-center justify-center bg-background/85 backdrop-blur-sm"
-                    role="status"
-                    aria-live="polite"
-                >
-                    <div className="rounded-xl border border-border bg-background px-8 py-6 text-center shadow-lg">
-                        <p className="font-medium">Preparing diagrams…</p>
-                        <p className="mt-2 text-sm text-muted-foreground">
-                            {progress.completed} of {progress.total}
-                        </p>
-                    </div>
-                </div>
             )}
             {menu && editor && (
                 <SuggestionMenu

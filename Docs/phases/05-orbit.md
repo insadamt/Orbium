@@ -1,5 +1,7 @@
 # Phase 5 — Explorer review
 
+The 2026-10-05 editor performance review removes blocking Mermaid preparation, introduces predictive/lazy previews, and improves save/inspection scheduling. Measurements, rejected native-view experimentation, evidence limits, and the manual acceptance checklist are recorded in `../reports/05-predictive-editor-performance.md`. Remain in Phase 5 for manual review.
+
 The 2026-10-02 cover review adds six cropped cover ratios and per-container Gallery appearance settings to the active floating workspace pass. Existing wide covers and Gallery configurations retain their prior appearance until replaced or edited. Manual review and quality-gate results belong in the phase report; do not start a later phase.
 
 ## Current floating workspace pass (2026-09-30)

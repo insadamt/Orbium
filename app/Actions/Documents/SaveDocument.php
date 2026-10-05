@@ -17,11 +17,11 @@ class SaveDocument
     /** @param array<string, mixed> $content */
     public function save(Node $node, array $content, int $revision): Document
     {
-        $this->inspector->validateContentShape($content);
-        $mentions = $this->inspector->extractMentions($content);
-        $attachmentIds = $this->inspector->extractAttachmentIds($content);
+        $inspection = $this->inspector->inspect($content);
+        $mentions = $inspection->mentions;
+        $attachmentIds = $inspection->attachmentIds;
 
-        return DB::transaction(function () use ($node, $content, $revision, $mentions, $attachmentIds): Document {
+        return DB::transaction(function () use ($node, $content, $revision, $mentions, $attachmentIds, $inspection): Document {
             $document = Document::query()->whereKey($node->id)->lockForUpdate()->firstOrFail();
             if ($document->revision !== $revision) {
                 throw ValidationException::withMessages(['revision' => 'This document changed elsewhere. Reload before saving.']);
@@ -32,11 +32,11 @@ class SaveDocument
 
             $document->update([
                 'content' => $content,
-                'plain_text' => $this->inspector->extractPlainText($content),
+                'plain_text' => $inspection->plainText,
                 'revision' => $revision + 1,
             ]);
 
-            $this->mermaidPreviewCache->removeObsoletePreviews($node->id, $content);
+            $this->mermaidPreviewCache->removeObsoleteHashes($node->id, array_keys($inspection->mermaidSourcesByHash));
 
             DB::table('mentions')->where('source_document_node_id', $node->id)->delete();
             foreach ($mentions as $targetId => $label) {

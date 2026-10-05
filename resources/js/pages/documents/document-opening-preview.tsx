@@ -1,4 +1,5 @@
-import type { ReactNode } from 'react';
+import { markEditorPerformance } from '@/lib/editor-performance';
+import { useEffect, type ReactNode } from 'react';
 import type { EditorDocument } from '@/components/editor/editor-api';
 
 const visibleBlockLimit = 18;
@@ -91,6 +92,9 @@ export default function DocumentOpeningPreview({
 }: {
     content: EditorDocument;
 }) {
+    useEffect(() => {
+        markEditorPerformance('opening-preview.mounted', { once: true });
+    }, []);
     return (
         <div className="orbium-editor min-h-[45vh]" aria-busy="true">
             {(content.content ?? [])

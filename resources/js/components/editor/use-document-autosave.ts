@@ -1,3 +1,9 @@
+import {
+    measureEditorWork,
+    measureEditorAsync,
+    recordEditorDuration,
+} from '@/lib/editor-performance';
+import { scheduleAutosave } from './autosave-scheduling';
 import type { Node as DocumentSnapshot } from '@tiptap/pm/model';
 import { router } from '@inertiajs/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -16,34 +22,74 @@ export function useDocumentAutosave(
     const pendingContent = useRef<DocumentSnapshot | null>(null);
     const revision = useRef(initialRevision);
     const activeRequest = useRef(false);
-    const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const cancelScheduledSave = useRef<(() => void) | null>(null);
+    const dirtySince = useRef<number | null>(null);
+    const flushAfterRequest = useRef(false);
+    const payloadCache = useRef<{
+        content: DocumentSnapshot;
+        revision: number;
+        body: string;
+    } | null>(null);
     const stopped = useRef(false);
 
     const flush = useCallback(async () => {
-        if (
-            activeRequest.current ||
-            pendingContent.current === null ||
-            stopped.current
-        )
+        cancelScheduledSave.current?.();
+        cancelScheduledSave.current = null;
+        if (pendingContent.current === null || stopped.current) return;
+        if (activeRequest.current) {
+            flushAfterRequest.current = true;
             return;
+        }
         const content = pendingContent.current;
         pendingContent.current = null;
+        dirtySince.current = null;
         activeRequest.current = true;
         setStatus('saving');
         let succeeded = false;
         try {
-            const response = await fetch(documentUrl(workspaceId, nodeId), {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken(),
-                    Accept: 'application/json',
-                },
-                body: JSON.stringify({
-                    content: content.toJSON(),
+            const payloadStarted = performance.now();
+            if (
+                payloadCache.current?.content !== content ||
+                payloadCache.current.revision !== revision.current
+            ) {
+                const json = measureEditorWork('autosave.to-json', () =>
+                    content.toJSON(),
+                );
+                const body = measureEditorWork('autosave.stringify', () =>
+                    JSON.stringify({
+                        content: json,
+                        revision: revision.current,
+                    }),
+                );
+                payloadCache.current = {
+                    content,
                     revision: revision.current,
+                    body,
+                };
+            }
+            recordEditorDuration('autosave.payload', payloadStarted);
+            const response = await measureEditorAsync('autosave.request', () =>
+                fetch(documentUrl(workspaceId, nodeId), {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken(),
+                        Accept: 'application/json',
+                    },
+                    body: payloadCache.current!.body,
                 }),
-            });
+            );
+            const serverTiming = response.headers.get('Server-Timing');
+            if (serverTiming) {
+                for (const match of serverTiming.matchAll(
+                    /([\w-]+);dur=([\d.]+)/g,
+                )) {
+                    recordEditorDuration(
+                        `autosave.server.${match[1]}`,
+                        performance.now() - Number(match[2]),
+                    );
+                }
+            }
             if (!response.ok) {
                 const body = await response.json().catch(() => ({}));
                 throw new Error(
@@ -53,15 +99,19 @@ export function useDocumentAutosave(
                         'Could not save this document.',
                 );
             }
-            const result = (await response.json()) as { revision: number };
+            const result = (await measureEditorAsync('autosave.response', () =>
+                response.json(),
+            )) as { revision: number };
             revision.current = result.revision;
             succeeded = true;
             setError('');
             setStatus(pendingContent.current ? 'unsaved' : 'saved');
             if (pendingContent.current === null) setNavigationNotice('');
         } catch (failure) {
-            if (pendingContent.current === null)
+            if (pendingContent.current === null) {
                 pendingContent.current = content;
+                dirtySince.current ??= performance.now();
+            }
             setError(
                 failure instanceof Error
                     ? failure.message
@@ -71,10 +121,17 @@ export function useDocumentAutosave(
         } finally {
             activeRequest.current = false;
             if (pendingContent.current && !stopped.current && succeeded) {
-                timer.current = setTimeout(() => {
+                if (flushAfterRequest.current) {
+                    flushAfterRequest.current = false;
                     void flush();
-                }, 700);
-            }
+                } else {
+                    cancelScheduledSave.current = scheduleAutosave(
+                        pendingContent.current,
+                        dirtySince.current ?? performance.now(),
+                        () => void flush(),
+                    );
+                }
+            } else flushAfterRequest.current = false;
         }
     }, [workspaceId, nodeId]);
 
@@ -84,16 +141,19 @@ export function useDocumentAutosave(
             pendingContent.current = content;
             setStatus('unsaved');
             setNavigationNotice('');
-            if (timer.current) clearTimeout(timer.current);
-            timer.current = setTimeout(() => {
-                void flush();
-            }, 700);
+            dirtySince.current ??= performance.now();
+            cancelScheduledSave.current?.();
+            cancelScheduledSave.current = scheduleAutosave(
+                content,
+                dirtySince.current,
+                () => void flush(),
+            );
         },
         [flush],
     );
 
     const saveNow = useCallback(() => {
-        if (timer.current) clearTimeout(timer.current);
+        cancelScheduledSave.current?.();
         void flush();
     }, [flush]);
 
@@ -113,7 +173,7 @@ export function useDocumentAutosave(
         window.addEventListener('beforeunload', beforeUnload);
         return () => {
             stopped.current = true;
-            if (timer.current) clearTimeout(timer.current);
+            cancelScheduledSave.current?.();
             removeNavigationGuard();
             window.removeEventListener('beforeunload', beforeUnload);
         };

@@ -3,7 +3,6 @@ import { useRef, useState } from 'react';
 import { useNavigation } from '@/components/navigation/navigation-store';
 import { notifyPaneLocation } from '@/components/navigation/tab-navigation';
 import type { EditorDocument } from '@/components/editor/editor-api';
-import type { SavedMermaidPreviews } from '@/components/editor/use-mermaid-cache-preparation';
 import {
     attachmentUrl,
     csrfToken,
@@ -41,7 +40,6 @@ type Props = {
         cover_aspect_ratio: CoverRatio | null;
         icon_attachment_id: number | null;
     };
-    cachedMermaidPreviews: SavedMermaidPreviews;
     databaseProperties: Property[];
     databaseValues: { property_id: number; value: unknown }[];
     mentionCandidates: Candidate[];
@@ -61,7 +59,6 @@ export default function ShowDocument() {
         workspace,
         node,
         document: savedDocument,
-        cachedMermaidPreviews,
         databaseProperties,
         databaseValues,
         mentionCandidates,
@@ -74,7 +71,6 @@ export default function ShowDocument() {
             workspace={workspace}
             node={node}
             savedDocument={savedDocument}
-            cachedMermaidPreviews={cachedMermaidPreviews}
             databaseProperties={databaseProperties}
             databaseValues={databaseValues}
             mentionCandidates={mentionCandidates}
@@ -87,7 +83,6 @@ function DocumentPage({
     workspace,
     node,
     savedDocument,
-    cachedMermaidPreviews,
     databaseProperties,
     databaseValues,
     mentionCandidates,
@@ -96,7 +91,6 @@ function DocumentPage({
     workspace: Props['workspace'];
     node: Props['node'];
     savedDocument: Props['document'];
-    cachedMermaidPreviews: Props['cachedMermaidPreviews'];
     databaseProperties: Props['databaseProperties'];
     databaseValues: Props['databaseValues'];
     mentionCandidates: Props['mentionCandidates'];
@@ -417,7 +411,6 @@ function DocumentPage({
                             title={title}
                             content={savedDocument.content}
                             revision={savedDocument.revision}
-                            cachedMermaidPreviews={cachedMermaidPreviews}
                         />
                     </div>
                 </div>

@@ -1,3 +1,4 @@
+import { measureEditorWork } from '@/lib/editor-performance';
 import type { JSONContent } from '@tiptap/core';
 import { Lexer, marked, type Token, type Tokens } from 'marked';
 import { normalizeCodeLanguage } from './code-languages';
@@ -24,8 +25,11 @@ export function parseMarkdownContent(source: string): JSONContent {
     if (new TextEncoder().encode(source).length > maximumMarkdownBytes) {
         throw new Error('Markdown content must be smaller than 400 KB.');
     }
-    const content = convertBlocks(
+    const tokens = measureEditorWork('markdown.parse', () =>
         marked.lexer(source, { gfm: true, breaks: false }),
+    );
+    const content = measureEditorWork('markdown.convert', () =>
+        convertBlocks(tokens),
     );
     if (content.length === 0) {
         throw new Error('The Markdown file has no content to import.');
