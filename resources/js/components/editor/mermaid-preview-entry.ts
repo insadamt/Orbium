@@ -9,7 +9,14 @@ export type MermaidPreviewEntry = {
     source: string;
     subscribers: Map<HTMLElement, MermaidSubscriber>;
     queuedAt: number;
-    state: 'pending' | 'lookup' | 'render' | 'ready' | 'error' | 'display';
+    state:
+        | 'pending'
+        | 'lookup'
+        | 'cached'
+        | 'render'
+        | 'ready'
+        | 'error'
+        | 'display';
     preview?: CachedPreview;
     displayed: Set<HTMLElement>;
     sanitized: boolean;

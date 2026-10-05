@@ -2,6 +2,7 @@ import type {
     MermaidPreviewEntry as Entry,
     MermaidSubscriber as Subscriber,
 } from './mermaid-preview-entry';
+import { mountNextMermaidPreview } from './mermaid-preview-display';
 import {
     findEditorScrollContainer,
     rankMermaidElements,
@@ -11,6 +12,10 @@ import {
     fetchSavedMermaidPreview,
     persistMermaidPreview,
 } from './mermaid-cache-api';
+import {
+    mermaidPreparationDelay,
+    scheduleMermaidPreparation,
+} from './mermaid-preparation-scheduling';
 import {
     sanitizeMermaidPreview,
     renderMermaidPreview,
@@ -23,7 +28,6 @@ import {
     recordEditorDuration,
 } from '@/lib/editor-performance';
 
-const interactionPauseMs = 140;
 const editorInteractionEvents = [
     'keydown',
     'pointerdown',
@@ -43,12 +47,13 @@ export class MermaidPreviewSession {
     private scrollContainer: HTMLElement | null = null;
     private editorDom?: HTMLElement;
     private controller = new AbortController();
-    private timer?: number;
-    private idle?: number;
+    private cancelPreparation?: () => void;
+    private scheduledPriority = Infinity;
     private viewportTimer?: number;
     private warmTimer?: number;
     private warmIdle?: number;
     private rendering = false;
+    private preparingCache = false;
     private lookups = 0;
     private persisting = 0;
     private started = false;
@@ -56,6 +61,7 @@ export class MermaidPreviewSession {
     private direction = 1;
     private previousScroll = 0;
     private lastInteraction = 0;
+    private lastScroll = 0;
     private lastRenderFinished = 0;
     private composing = false;
     private manipulating = false;
@@ -158,6 +164,11 @@ export class MermaidPreviewSession {
     }
 
     private onInteraction = (event: Event) => {
+        if (event.type === 'wheel') {
+            this.onViewportChange();
+            return;
+        }
+        if (event.type === 'pointermove' && !this.manipulating) return;
         if (event.type === 'compositionstart') this.composing = true;
         if (event.type === 'compositionend') this.composing = false;
         if (event.type === 'pointerdown' || event.type === 'dragstart')
@@ -174,8 +185,7 @@ export class MermaidPreviewSession {
         if (position !== this.previousScroll)
             this.direction = position > this.previousScroll ? 1 : -1;
         this.previousScroll = position;
-        this.lastInteraction = performance.now();
-        this.cancelScheduledJob();
+        this.lastScroll = performance.now();
         if (this.viewportTimer === undefined) {
             this.viewportTimer = window.setTimeout(() => {
                 this.viewportTimer = undefined;
@@ -213,7 +223,6 @@ export class MermaidPreviewSession {
                             }
                         } else this.near.delete(element);
                     }
-                    this.cancelScheduledJob();
                     this.schedule();
                 },
                 {
@@ -234,7 +243,9 @@ export class MermaidPreviewSession {
         for (const entry of this.entries.values()) {
             if (
                 entry.subscribers.size === 0 ||
-                !['pending', 'render', 'display'].includes(entry.state)
+                !['pending', 'cached', 'render', 'display'].includes(
+                    entry.state,
+                )
             )
                 continue;
             if (
@@ -244,7 +255,12 @@ export class MermaidPreviewSession {
             )
                 continue;
             const priority = rankMermaidElements(
-                entry.subscribers.keys(),
+                [...entry.subscribers.keys()].filter(
+                    (element) =>
+                        element.dataset.mermaidEditing !== 'true' &&
+                        (entry.state !== 'display' ||
+                            !entry.displayed.has(element)),
+                ),
                 this.near,
                 !!this.observer,
                 root,
@@ -256,86 +272,71 @@ export class MermaidPreviewSession {
         return ranked.sort(
             (a, b) =>
                 a.rank - b.rank ||
+                Number(b.entry.state === 'display') -
+                    Number(a.entry.state === 'display') ||
                 a.distance - b.distance ||
                 a.entry.queuedAt - b.entry.queuedAt,
         );
     }
 
     private cancelScheduledJob() {
-        if (this.timer !== undefined) clearTimeout(this.timer);
-        if (this.idle !== undefined) cancelIdleCallback(this.idle);
-        this.timer = undefined;
-        this.idle = undefined;
+        this.cancelPreparation?.();
+        this.cancelPreparation = undefined;
+    }
+
+    private nextEntry() {
+        return this.rankedEntries().find(({ entry }) => {
+            if (entry.state === 'pending') return this.lookups < 4;
+            if (entry.state === 'cached') return !this.preparingCache;
+            return entry.state === 'display' || !this.rendering;
+        });
+    }
+
+    private preparationTiming(next: { entry: Entry; rank: number }) {
+        return {
+            ...next,
+            lastInteraction: this.lastInteraction,
+            lastScroll: this.lastScroll,
+            lastRenderFinished: this.lastRenderFinished,
+        };
     }
 
     private schedule() {
-        if (
-            !this.started ||
-            this.destroyed ||
-            this.timer !== undefined ||
-            this.idle !== undefined
-        )
-            return;
-        const candidates = this.rankedEntries();
-        const next = candidates.find(({ entry }) =>
-            entry.state === 'pending' ? this.lookups < 4 : !this.rendering,
-        );
+        if (!this.started || this.destroyed) return;
+        const next = this.nextEntry();
         if (!next || this.composing || this.manipulating) return;
-        const run = () => {
-            this.timer = undefined;
-            this.idle = undefined;
-            this.runNext();
-        };
-        if (next.rank === 0 && next.entry.state === 'pending') {
-            this.timer = window.setTimeout(run, 0);
-        } else {
-            const pause = Math.max(
-                interactionPauseMs - (performance.now() - this.lastInteraction),
-                next.entry.state === 'pending'
-                    ? 0
-                    : 80 - (performance.now() - this.lastRenderFinished),
+        const priority =
+            next.rank * 4 +
+            ['display', 'pending', 'cached', 'render'].indexOf(
+                next.entry.state,
             );
-            if (pause > 0) {
-                this.timer = window.setTimeout(() => {
-                    this.timer = undefined;
-                    this.schedule();
-                }, pause);
-            } else if (typeof requestIdleCallback === 'function') {
-                this.idle = requestIdleCallback(
-                    (deadline) => {
-                        if (
-                            !deadline.didTimeout &&
-                            deadline.timeRemaining() < 8
-                        ) {
-                            this.idle = undefined;
-                            this.schedule();
-                            return;
-                        }
-                        run();
-                    },
-                    { timeout: next.rank < 3 ? 500 : 1500 },
-                );
-            } else {
-                this.timer = window.setTimeout(run, 32);
-            }
+        if (this.cancelPreparation) {
+            if (priority >= this.scheduledPriority) return;
+            this.cancelScheduledJob();
         }
+        this.scheduledPriority = priority;
+        this.cancelPreparation = scheduleMermaidPreparation(
+            this.preparationTiming(next),
+            () => {
+                this.cancelPreparation = undefined;
+                this.runNext();
+            },
+        );
     }
 
     private runNext() {
-        if (this.destroyed) return;
-        const next = this.rankedEntries().find(({ entry }) =>
-            entry.state === 'pending' ? this.lookups < 4 : !this.rendering,
-        );
+        if (this.destroyed || this.composing || this.manipulating) return;
+        const next = this.nextEntry();
         if (!next) return;
-        const { entry, rank } = next;
-        if (
-            rank !== 0 &&
-            performance.now() - this.lastInteraction < interactionPauseMs
-        ) {
+        const { entry } = next;
+        if (mermaidPreparationDelay(this.preparationTiming(next)) > 0) {
             this.schedule();
             return;
         }
         if (entry.state === 'pending') void this.lookup(entry);
+        else if (entry.state === 'display')
+            mountNextMermaidPreview(entry, this.near, !!this.observer);
+        else if (entry.state === 'cached') void this.prepareCached(entry);
         else void this.render(entry);
         this.schedule();
     }
@@ -367,7 +368,7 @@ export class MermaidPreviewSession {
                 entry.persisted = true;
                 entry.preview = preview;
             }
-            entry.state = 'render';
+            entry.state = preview ? 'cached' : 'render';
             entry.queuedAt = performance.now();
         } catch {
             if (this.isCurrent(entry)) entry.state = 'render';
@@ -407,6 +408,25 @@ export class MermaidPreviewSession {
         }
     }
 
+    private async prepareCached(entry: Entry) {
+        this.preparingCache = true;
+        entry.state = 'lookup';
+        try {
+            await this.complete(entry, entry.preview!);
+        } catch {
+            if (this.isCurrent(entry)) {
+                entry.preview = undefined;
+                entry.sanitized = false;
+                entry.persisted = false;
+                entry.state = 'render';
+            }
+        } finally {
+            this.preparingCache = false;
+            if (entry.subscribers.size === 0) this.entries.delete(entry.source);
+            this.schedule();
+        }
+    }
+
     private async complete(entry: Entry, preview: CachedPreview) {
         const sanitized = entry.sanitized
             ? preview
@@ -416,16 +436,7 @@ export class MermaidPreviewSession {
         entry.sanitized = true;
         if (!this.isCurrent(entry)) return;
         entry.preview = sanitized;
-        entry.state = 'ready';
-        for (const [element, subscriber] of entry.subscribers) {
-            if (
-                (this.observer && !this.near.has(element)) ||
-                entry.displayed.has(element)
-            )
-                continue;
-            subscriber(entry.preview);
-            entry.displayed.add(element);
-        }
+        entry.state = 'display';
         if (!this.firstReady) {
             this.firstReady = true;
             markEditorPerformance(

@@ -2,6 +2,8 @@
 
 Date: 2026-10-05. Remain in the current Phase 5 review. No later phase started; no commits created.
 
+The [scroll preparation follow-up](05-mermaid-scroll-preparation.md) corrects shared scroll/typing pauses and separates cached/display work from local rendering. Timing and queue descriptions below record the initial performance pass; the follow-up records the current scheduling behavior.
+
 ## 1. Result and root causes
 
 The blocking Mermaid import/preparation workflow has been removed. Editor usability no longer depends on finishing diagrams, remote preview lookup, or preview uploads. Mermaid preparation now uses a document-scoped predictive scheduler. The canonical editor JSON and portability format are unchanged.
