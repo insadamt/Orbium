@@ -1,7 +1,9 @@
 import {
     createContext,
+    useCallback,
     useContext,
     useEffect,
+    useMemo,
     useState,
     type ReactNode,
 } from 'react';
@@ -41,34 +43,53 @@ export function PageSearchProvider({
         setOpen(false);
         setQuery('');
         setResultCount(null);
-        setSearchStep({ id: 0, previous: false, query: '' });
+        setSearchStep((step) =>
+            step.id === 0 && step.query === ''
+                ? step
+                : { id: 0, previous: false, query: '' },
+        );
     }, [routePath]);
 
-    function closeSearch() {
+    const closeSearch = useCallback(() => {
         setOpen(false);
         setQuery('');
         setResultCount(null);
-    }
+    }, []);
+    const openSearch = useCallback(() => setOpen(true), []);
+    const stepToMatch = useCallback(
+        (previous: boolean) =>
+            setSearchStep((step) => ({
+                id: step.id + 1,
+                previous,
+                query,
+            })),
+        [query],
+    );
+    const value = useMemo(
+        () => ({
+            open,
+            query,
+            resultCount,
+            searchStep,
+            openSearch,
+            closeSearch,
+            setQuery,
+            setResultCount,
+            stepToMatch,
+        }),
+        [
+            open,
+            query,
+            resultCount,
+            searchStep,
+            openSearch,
+            closeSearch,
+            stepToMatch,
+        ],
+    );
 
     return (
-        <PageSearchContext.Provider
-            value={{
-                open,
-                query,
-                resultCount,
-                searchStep,
-                openSearch: () => setOpen(true),
-                closeSearch,
-                setQuery,
-                setResultCount,
-                stepToMatch: (previous) =>
-                    setSearchStep((step) => ({
-                        id: step.id + 1,
-                        previous,
-                        query,
-                    })),
-            }}
-        >
+        <PageSearchContext.Provider value={value}>
             {children}
         </PageSearchContext.Provider>
     );

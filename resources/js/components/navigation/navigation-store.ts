@@ -1,6 +1,7 @@
 import { router } from '@inertiajs/react';
 import { allowTabClose, useTabPageCache } from './tab-page-cache';
 import { create } from 'zustand';
+import { scheduleNavigationPersistence } from './navigation-persistence';
 import {
     groupForTab,
     reorderTabGroups,
@@ -82,20 +83,7 @@ function restoreContainerViews(value: {
     return views;
 }
 function persist(state: NavigationState) {
-    try {
-        localStorage.setItem(
-            state.storageKey,
-            JSON.stringify({
-                tabs: state.tabs,
-                activeId: state.activeId,
-                recent: state.recent,
-                containerViews: state.containerViews,
-                splitGroups: state.splitGroups,
-            }),
-        );
-    } catch {
-        /* Browser storage may be unavailable or full. */
-    }
+    scheduleNavigationPersistence(state);
 }
 export const useNavigation = create<NavigationState>((set, get) => ({
     tabs: [],
@@ -176,6 +164,15 @@ export const useNavigation = create<NavigationState>((set, get) => ({
         if (get().pending) return;
         const state = get();
         const active = state.tabs.find((tab) => tab.id === state.activeId);
+        const currentLocation = active?.entries[active.index];
+        if (
+            currentLocation?.url === location.url &&
+            currentLocation.title === location.title &&
+            currentLocation.icon === location.icon &&
+            currentLocation.iconUrl === location.iconUrl &&
+            (!nodeId || state.recent[0] === nodeId)
+        )
+            return;
         const recent = nodeId
             ? [nodeId, ...state.recent.filter((id) => id !== nodeId)].slice(
                   0,
@@ -238,6 +235,7 @@ export const useNavigation = create<NavigationState>((set, get) => ({
         persist(get());
     },
     activate(activeId) {
+        if (get().activeId === activeId) return;
         set({ activeId });
         persist(get());
     },
@@ -440,6 +438,10 @@ export const useNavigation = create<NavigationState>((set, get) => ({
         persist(get());
     },
     saveScroll() {
+        const state = get();
+        const active = state.tabs.find((tab) => tab.id === state.activeId);
+        if (!active || active.entries[active.index].scroll === window.scrollY)
+            return;
         set({
             tabs: get().tabs.map((tab) =>
                 tab.id === get().activeId

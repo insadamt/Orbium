@@ -10,7 +10,7 @@ import {
     measureEditorWork,
 } from '@/lib/editor-performance';
 import type { Editor, JSONContent } from '@tiptap/core';
-import { router, usePage } from '@inertiajs/react';
+import { router } from '@inertiajs/react';
 import { IncrementalCodeBlockLowlight } from './incremental-code-highlighting';
 import { BlockMath, InlineMath } from '@tiptap/extension-mathematics';
 import Placeholder from '@tiptap/extension-placeholder';
@@ -110,7 +110,6 @@ export default function DocumentEditor({
     content,
     revision,
 }: Props) {
-    const pageUrl = usePage().url;
     const pageSearch = usePageSearch();
     const [menu, setMenu] = useState<EditorMenu | null>(null);
     const [searchOpen, setSearchOpen] = useState(false);
@@ -217,7 +216,7 @@ export default function DocumentEditor({
     const documentTab = useEditorTabActivity(mermaidSession);
     const searchTerm =
         new URLSearchParams(
-            (documentTab.url || pageUrl).split('?')[1] ?? '',
+            (documentTab.url || window.location.href).split('?')[1] ?? '',
         ).get('find') ?? '';
 
     useEffect(() => {
@@ -460,8 +459,8 @@ export default function DocumentEditor({
                 />
             )}
 
-            {documentTab.active && editor && (
-                <SelectionToolbar editor={editor} />
+            {editor && (
+                <SelectionToolbar editor={editor} active={documentTab.active} />
             )}
 
             {!editor && <DocumentOpeningPreview content={content} />}

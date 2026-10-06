@@ -168,7 +168,9 @@ Visited app tabs restore their latest session-memory page snapshot through Inert
 
 Saved tabs close without waiting for the destination response; editor destruction is deferred until after a frame. Pending document saves block removal and flush the latest snapshot, including hidden documents and split panes. Ending a split refetches standalone document state after its panes have saved. Session caches are cleared across account initialization and are not persistent document storage. Open editor retention increases memory usage; closing tabs releases them.
 
-See `../reports/05-tab-switching-performance.md` for evidence limits and manual acceptance.
+Navigation UI persistence coalesces the latest snapshot after a frame and timer yield, with synchronous flush on pagehide/backgrounding. Unchanged scroll and metadata do not trigger state updates. Retained editor contexts and empty page-search state stay stable across unrelated shell changes; selection-toolbar plugins remain registered while hidden. These changes preserve the existing navigation storage format and document autosave.
+
+See `../reports/05-tab-switching-performance.md`, `../reports/05-document-tab-handoff.md`, and `../reports/05-warm-tab-interaction.md` for evidence limits and manual acceptance.
 
 ## History
 

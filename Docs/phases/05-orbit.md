@@ -1,5 +1,7 @@
 # Phase 5 — Explorer review
 
+The same-day [warm-tab follow-up](../reports/05-warm-tab-interaction.md) coalesces browser-local persistence, isolates inactive editor updates, and retains selection-toolbar plugins after the user reported a small remaining delay. Timing remains pending manual measurement.
+
 The 2026-10-06 tab performance review retains visited document editors and restores cached tabs locally, while keeping save guards and split-pane freshness. See [the report and manual checklist](../reports/05-tab-switching-performance.md). Runtime latency remains pending user validation. The [document handoff correction](../reports/05-document-tab-handoff.md) fixes the first pass's missing cache registration, transient loading islands, and document fade.
 
 The 2026-10-05 editor performance review removes blocking Mermaid preparation, introduces predictive/lazy previews, and improves save/inspection scheduling. Measurements, rejected native-view experimentation, evidence limits, and the manual acceptance checklist are recorded in `../reports/05-predictive-editor-performance.md`. Remain in Phase 5 for manual review.

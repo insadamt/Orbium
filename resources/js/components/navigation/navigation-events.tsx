@@ -2,6 +2,7 @@ import { router, usePage } from '@inertiajs/react';
 import { useEffect, useLayoutEffect, useState } from 'react';
 import type { Auth } from '@/types';
 import { useTabPageCache } from './tab-page-cache';
+import { flushNavigationPersistence } from './navigation-persistence';
 import { useNavigation } from './navigation-store';
 import type { TreeNode } from './navigation-types';
 import { SearchMaster } from './search-master';
@@ -62,11 +63,21 @@ export function NavigationEvents() {
 
     useEffect(() => {
         const saveScroll = () => useNavigation.getState().saveScroll();
+        const saveNavigationBeforeLeaving = () => {
+            saveScroll();
+            flushNavigationPersistence();
+        };
         const removeStart = router.on('before', saveScroll);
-        window.addEventListener('pagehide', saveScroll);
+        window.addEventListener('pagehide', saveNavigationBeforeLeaving);
+        const flushWhenHidden = () => {
+            if (document.visibilityState === 'hidden')
+                saveNavigationBeforeLeaving();
+        };
+        document.addEventListener('visibilitychange', flushWhenHidden);
         return () => {
             removeStart();
-            window.removeEventListener('pagehide', saveScroll);
+            window.removeEventListener('pagehide', saveNavigationBeforeLeaving);
+            document.removeEventListener('visibilitychange', flushWhenHidden);
         };
     }, []);
 

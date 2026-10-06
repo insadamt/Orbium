@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from 'react';
+import { memo, useEffect, useMemo, type ReactNode } from 'react';
 import type { Page } from '@inertiajs/core';
 import { usePage } from '@inertiajs/react';
 import {
@@ -31,6 +31,30 @@ function DocumentSurface({
         />
     );
 }
+
+const RetainedDocumentTab = memo(function RetainedDocumentTab({
+    tabId,
+    page,
+    visible,
+    active,
+}: {
+    tabId: string;
+    page: Page;
+    visible: boolean;
+    active: boolean;
+}) {
+    const documentTab = useMemo(
+        () => ({ tabId, active, url: page.url }),
+        [tabId, active, page.url],
+    );
+    return (
+        <div hidden={!visible} inert={!active} aria-busy={visible && !active}>
+            <DocumentTabContext.Provider value={documentTab}>
+                <DocumentSurface page={page} />
+            </DocumentTabContext.Provider>
+        </div>
+    );
+});
 
 export function RetainedDocumentWorkspace({
     children,
@@ -100,18 +124,13 @@ export function RetainedDocumentWorkspace({
                 const active =
                     visible && destinationDocumentIsReady && tabId === activeId;
                 return (
-                    <div
+                    <RetainedDocumentTab
                         key={`${tabId}:${cached.generation}`}
-                        hidden={!visible}
-                        inert={!active}
-                        aria-busy={visible && !active}
-                    >
-                        <DocumentTabContext.Provider
-                            value={{ tabId, active, url: cached.page.url }}
-                        >
-                            <DocumentSurface page={cached.page} />
-                        </DocumentTabContext.Provider>
-                    </div>
+                        tabId={tabId}
+                        page={cached.page}
+                        visible={visible}
+                        active={active}
+                    />
                 );
             })}
         </>

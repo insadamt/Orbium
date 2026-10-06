@@ -11,7 +11,7 @@ import {
     Strikethrough,
     Underline,
 } from 'lucide-react';
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import type { EditorMenu } from './editor-suggestions';
 import { TextColorPicker } from './text-color-picker';
@@ -139,11 +139,24 @@ export function DocumentSearch({
     );
 }
 
-export function SelectionToolbar({ editor }: { editor: Editor }) {
+export function SelectionToolbar({
+    editor,
+    active = true,
+}: {
+    editor: Editor;
+    active?: boolean;
+}) {
+    const activeTab = useRef(active);
+    activeTab.current = active;
+    const shouldShow = useCallback(
+        () => activeTab.current && canFormatTextSelection(editor),
+        [editor],
+    );
     return (
         <BubbleMenu
             editor={editor}
-            shouldShow={() => canFormatTextSelection(editor)}
+            shouldShow={shouldShow}
+            style={{ display: active ? undefined : 'none' }}
             className="glass-surface flex items-center gap-1 rounded-xl border border-border p-1 shadow-lg"
         >
             <FormatButton
