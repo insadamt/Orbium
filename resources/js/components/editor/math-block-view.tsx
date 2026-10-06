@@ -1,14 +1,17 @@
 import { NodeViewWrapper, type NodeViewProps } from '@tiptap/react';
-import katex from 'katex';
 import { Eye, Pencil } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import type { EditorActivityController } from './editor-activity-controller';
+import { useMathPreview } from './use-math-preview';
 import { usePreviewActivation } from './use-preview-activation';
 
 export default function MathBlockView({
     node,
     updateAttributes,
-}: NodeViewProps) {
-    const { previewContainer, activated } = usePreviewActivation();
+    activityController,
+}: NodeViewProps & { activityController: EditorActivityController }) {
+    const { previewContainer, activated } =
+        usePreviewActivation(activityController);
     const [isEditing, setIsEditing] = useState(false);
     const sourceInput = useRef<HTMLTextAreaElement>(null);
     const latex = String(node.attrs.latex ?? '');
@@ -16,25 +19,17 @@ export default function MathBlockView({
     useEffect(() => {
         if (!isEditing) setLatexDraft(latex);
     }, [latex, isEditing]);
-    const renderedMath = useMemo(() => {
-        if (!activated) return { html: '', error: false };
-        try {
-            return {
-                html: katex.renderToString(latex, {
-                    displayMode: true,
-                    throwOnError: true,
-                    trust: false,
-                }),
-                error: false,
-            };
-        } catch {
-            return { html: '', error: true };
-        }
-    }, [latex, activated]);
+    const { active, preview } = useMathPreview({
+        latex,
+        displayMode: true,
+        activated,
+        activityController,
+    });
+    const renderedMath = preview;
 
     useEffect(() => {
-        if (isEditing) sourceInput.current?.focus();
-    }, [isEditing]);
+        if (isEditing && active) sourceInput.current?.focus();
+    }, [isEditing, active]);
 
     return (
         <NodeViewWrapper

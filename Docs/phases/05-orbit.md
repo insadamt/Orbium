@@ -1,6 +1,8 @@
 # Phase 5 — Explorer review
 
-The 2026-10-06 [Performance Engine Phase 1, Task 3A report](../reports/05-performance-engine-phase-1-background-highlighting.md) follows user acceptance of Tasks 1 and 2. Incremental syntax highlighting now pauses its scheduler for inactive retained editors and resumes pending work asynchronously. Manual acceptance and CPU comparison are pending; Task 3B has not started.
+The 2026-10-06 [Performance Engine Phase 1, final Task 3 report](../reports/05-performance-engine-phase-1-background-work.md) follows acceptance of Task 3A and suspends optional Mermaid, local search, helper, and math preview work through the stable activity controller. Lifecycle diagnostics and exact Chrome/manual acceptance procedures are included; runtime numbers remain pending user measurement. Stop for Phase 1 acceptance; Performance Engine Phase 2 has not started.
+
+The 2026-10-06 [Performance Engine Phase 1, Task 3A report](../reports/05-performance-engine-phase-1-background-highlighting.md) follows user acceptance of Tasks 1 and 2. Incremental syntax highlighting now pauses its scheduler for inactive retained editors and resumes pending work asynchronously. Task 3A is user-accepted; its original CPU comparison remains unmeasured. The remaining Task 3 implementation is recorded above.
 
 The 2026-10-06 [Performance Engine Phase 1, Task 2 report](../reports/05-performance-engine-phase-1-editor-activity-controller.md) adds per-editor activity controllers adapted from retained workspace state, preserving separate visibility and interaction activity. Tasks 1 and 2 are now user-accepted; the report records Task 2's original review gate.
 

@@ -8,10 +8,8 @@ import {
 } from './mermaid-preview-display';
 import { readMermaidPreviewDimensions } from './mermaid-preview-layout';
 import { rankMermaidPreparationEntries } from './mermaid-preparation-priority';
-import {
-    findEditorScrollContainer,
-    mermaidPreparationViewports,
-} from './mermaid-viewport';
+import { MermaidSessionViewport } from './mermaid-session-viewport';
+import { scheduleEditorIdleWork } from './schedule-editor-idle-work';
 import {
     fetchSavedMermaidPreview,
     persistMermaidPreview,
@@ -23,41 +21,31 @@ import {
 import {
     sanitizeMermaidPreview,
     renderMermaidPreview,
-    warmMermaidRenderer,
     type CachedPreview,
 } from './mermaid-preview-renderer';
 import {
+    adjustEditorPerformanceCounter,
     markEditorPerformance,
     measureEditorAsync,
     recordEditorDuration,
 } from '@/lib/editor-performance';
 
-const editorInteractionEvents = [
-    'keydown',
-    'pointerdown',
-    'pointermove',
-    'wheel',
-    'input',
-    'compositionstart',
-    'compositionend',
-    'dragstart',
-    'dragend',
-];
-
 export class MermaidPreviewSession {
     private entries = new Map<string, Entry>();
-    private near = new Set<HTMLElement>();
-    private observer?: IntersectionObserver;
-    private scrollContainer: HTMLElement | null = null;
+    private elementEntries = new Map<HTMLElement, Entry>();
+    private viewport = new MermaidSessionViewport({
+        elements: () => this.registeredElements(),
+        interaction: (event) => this.onInteraction(event),
+        changed: () => this.onViewportChange(),
+        nearby: (element) => this.markNearbyPreview(element),
+    });
+    private cancelResume?: () => void;
     private active = true;
-    private editorDom?: HTMLElement;
     private controller = new AbortController();
     private cancelPreparation?: () => void;
     private scheduledPriority = Infinity;
     private viewportTimer?: number;
     private rescheduleFrame?: number;
-    private warmTimer?: number;
-    private warmIdle?: number;
     private rendering = false;
     private preparingCache = false;
     private lookups = 0;
@@ -96,8 +84,9 @@ export class MermaidPreviewSession {
             this.entries.set(source, entry);
         }
         entry.subscribers.set(element, subscriber);
+        this.elementEntries.set(element, entry);
         if (entry.dimensions) subscriber({ dimensions: entry.dimensions });
-        this.observer?.observe(element);
+        this.viewport.observe(element);
         if (entry.state === 'ready') {
             entry.state = 'display';
             entry.queuedAt = performance.now();
@@ -106,9 +95,10 @@ export class MermaidPreviewSession {
         this.schedule();
         return () => {
             entry.subscribers.delete(element);
+            this.elementEntries.delete(element);
             entry.displayed.delete(element);
-            this.observer?.unobserve(element);
-            this.near.delete(element);
+            this.viewport.unobserve(element);
+
             if (entry.subscribers.size === 0 && entry.state !== 'lookup')
                 this.entries.delete(source);
         };
@@ -117,49 +107,41 @@ export class MermaidPreviewSession {
     start(editorDom: HTMLElement) {
         if (this.started || this.destroyed) return;
         this.started = true;
-        this.editorDom = editorDom;
-        this.scrollContainer = findEditorScrollContainer(editorDom);
-        this.previousScroll = this.scrollPosition();
-        this.observeViewport();
-        window.addEventListener('scroll', this.onViewportChange, {
-            capture: true,
-            passive: true,
-        });
-        window.addEventListener('resize', this.onResize, { passive: true });
-        window.addEventListener('pointerup', this.onInteraction, {
-            passive: true,
-        });
-        window.addEventListener('pointercancel', this.onInteraction, {
-            passive: true,
-        });
-        for (const event of editorInteractionEvents) {
-            editorDom.addEventListener(event, this.onInteraction, {
-                passive: true,
-            });
-        }
-        // Warming starts after the interactive frame, never during NodeView construction.
-        this.warmTimer = window.setTimeout(() => {
-            this.warmTimer = undefined;
-            if (!this.destroyed && this.entries.size > 0) {
-                const warm = () => {
-                    this.warmIdle = undefined;
-                    if (!this.destroyed)
-                        void warmMermaidRenderer().catch(() => undefined);
-                };
-                if (typeof requestIdleCallback === 'function')
-                    this.warmIdle = requestIdleCallback(warm, {
-                        timeout: 1500,
-                    });
-                else warm();
-            }
-        }, 250);
-        this.schedule();
+        this.viewport.start(editorDom);
+        if (this.active) this.resume();
     }
 
     setActive(active: boolean) {
+        if (this.active === active || this.destroyed) return;
         this.active = active;
+        adjustEditorPerformanceCounter(
+            active ? 'mermaid.resumes' : 'mermaid.pauses',
+            1,
+        );
         this.cancelScheduledJob();
-        if (active) this.schedule();
+        this.cancelResume?.();
+        this.cancelResume = undefined;
+        if (this.viewportTimer !== undefined) clearTimeout(this.viewportTimer);
+        if (this.rescheduleFrame !== undefined)
+            cancelAnimationFrame(this.rescheduleFrame);
+        this.viewportTimer = this.rescheduleFrame = undefined;
+        this.viewport.pause();
+        this.composing = this.manipulating = false;
+        if (active && this.started) this.resume();
+    }
+
+    private resume() {
+        this.cancelResume = scheduleEditorIdleWork(() => {
+            this.cancelResume = undefined;
+            if (!this.active || this.destroyed) return;
+            this.previousScroll = this.scrollPosition();
+            this.viewport.resume();
+            this.schedule();
+            if (!this.viewport.observed)
+                for (const element of this.registeredElements())
+                    this.markNearbyPreview(element);
+            for (const entry of this.entries.values()) this.persist(entry);
+        });
     }
 
     refresh() {
@@ -173,10 +155,11 @@ export class MermaidPreviewSession {
     }
 
     private scrollPosition() {
-        return this.scrollContainer?.scrollTop ?? window.scrollY;
+        return this.viewport.scrollContainer?.scrollTop ?? window.scrollY;
     }
 
     private onInteraction = (event: Event) => {
+        if (!this.active || this.destroyed) return;
         if (event.type === 'wheel') {
             this.onViewportChange();
             return;
@@ -194,6 +177,7 @@ export class MermaidPreviewSession {
     };
 
     private onViewportChange = () => {
+        if (!this.active || this.destroyed) return;
         const position = this.scrollPosition();
         if (position !== this.previousScroll)
             this.direction = position > this.previousScroll ? 1 : -1;
@@ -207,55 +191,29 @@ export class MermaidPreviewSession {
         }
     };
 
-    private onResize = () => {
-        this.observeViewport();
-        this.onViewportChange();
-    };
+    private *registeredElements() {
+        for (const entry of this.entries.values())
+            yield* entry.subscribers.keys();
+    }
 
-    private observeViewport() {
-        this.observer?.disconnect();
-        this.near.clear();
-        if (typeof IntersectionObserver !== 'undefined') {
-            const height =
-                this.scrollContainer?.clientHeight ?? window.innerHeight;
-            this.observer = new IntersectionObserver(
-                (entries) => {
-                    for (const entry of entries) {
-                        const element = entry.target as HTMLElement;
-                        if (entry.isIntersecting) {
-                            this.near.add(element);
-                            for (const job of this.entries.values()) {
-                                if (
-                                    job.subscribers.has(element) &&
-                                    job.state === 'ready' &&
-                                    !job.displayed.has(element)
-                                ) {
-                                    job.state = 'display';
-                                    job.queuedAt = performance.now();
-                                }
-                            }
-                        } else this.near.delete(element);
-                    }
-                    this.schedule();
-                },
-                {
-                    root: this.scrollContainer,
-                    rootMargin: `${height * mermaidPreparationViewports}px 0px`,
-                },
-            );
-        }
-        for (const entry of this.entries.values()) {
-            for (const element of entry.subscribers.keys())
-                this.observer?.observe(element);
+    private markNearbyPreview(element: HTMLElement) {
+        const entry = this.elementEntries.get(element);
+        if (!entry || entry.displayed.has(element)) return;
+        if (entry.state === 'error') {
+            entry.subscribers.get(element)?.({ error: entry.error });
+            entry.displayed.add(element);
+        } else if (entry.state === 'ready') {
+            entry.state = 'display';
+            entry.queuedAt = performance.now();
         }
     }
 
     private rankedEntries() {
         return rankMermaidPreparationEntries({
             entries: this.entries.values(),
-            near: this.near,
-            observed: !!this.observer,
-            scrollContainer: this.scrollContainer,
+            near: this.viewport.near,
+            observed: this.viewport.observed,
+            scrollContainer: this.viewport.scrollContainer,
             direction: this.direction,
         });
     }
@@ -287,7 +245,8 @@ export class MermaidPreviewSession {
             !this.active ||
             !this.started ||
             this.destroyed ||
-            this.rescheduleFrame !== undefined
+            this.rescheduleFrame !== undefined ||
+            this.cancelResume !== undefined
         )
             return;
         const next = this.nextEntry();
@@ -328,7 +287,11 @@ export class MermaidPreviewSession {
         }
         if (entry.state === 'pending') void this.lookup(entry);
         else if (entry.state === 'display' || entry.state === 'reserve') {
-            mountNextMermaidPreview(entry, this.near, !!this.observer);
+            mountNextMermaidPreview(
+                entry,
+                this.viewport.near,
+                this.viewport.observed,
+            );
             this.scheduleAfterPreviewMutation();
             return;
         } else if (entry.state === 'cached') void this.prepareCached(entry);
@@ -384,21 +347,37 @@ export class MermaidPreviewSession {
 
     private async render(entry: Entry) {
         this.rendering = true;
+        adjustEditorPerformanceCounter('mermaid.active-jobs', 1);
         recordEditorDuration('mermaid.queue-wait', entry.queuedAt);
         // Remove the active job from selection while Mermaid's non-interruptible render runs.
         entry.state = 'lookup';
         try {
             const preview =
-                entry.preview ?? (await renderMermaidPreview(entry.source));
-            if (!entry.preview) entry.sanitized = true;
+                entry.preview ??
+                (await renderMermaidPreview(
+                    entry.source,
+                    () => this.active && this.isCurrent(entry),
+                ));
+            if (!preview) {
+                if (this.isCurrent(entry)) entry.state = 'render';
+                return;
+            }
             if (this.isCurrent(entry)) {
                 await this.complete(entry, preview);
                 this.persist(entry);
             }
         } catch {
-            if (this.isCurrent(entry)) showMermaidRenderError(entry);
+            if (this.isCurrent(entry)) {
+                if (this.active) showMermaidRenderError(entry);
+                else {
+                    entry.state = 'error';
+                    entry.error =
+                        'Diagram syntax could not be rendered. The source is preserved.';
+                }
+            }
         } finally {
             this.rendering = false;
+            adjustEditorPerformanceCounter('mermaid.active-jobs', -1);
             this.lastRenderFinished = performance.now();
             if (entry.subscribers.size === 0) this.entries.delete(entry.source);
             this.schedule();
@@ -425,14 +404,31 @@ export class MermaidPreviewSession {
     }
 
     private async complete(entry: Entry, preview: CachedPreview) {
+        if (!this.isCurrent(entry)) return;
+        entry.preview = preview;
+        if (!this.active) {
+            entry.state = 'cached';
+            return;
+        }
         const sanitized = entry.sanitized
             ? preview
             : await measureEditorAsync('mermaid.svg-sanitize', () =>
-                  sanitizeMermaidPreview(preview),
+                  sanitizeMermaidPreview(
+                      preview,
+                      () => this.active && this.isCurrent(entry),
+                  ),
               );
-        entry.sanitized = true;
         if (!this.isCurrent(entry)) return;
+        if (!sanitized) {
+            entry.state = 'cached';
+            return;
+        }
+        entry.sanitized = true;
         entry.preview = sanitized;
+        if (!this.active) {
+            entry.state = 'cached';
+            return;
+        }
         entry.dimensions = readMermaidPreviewDimensions(sanitized);
         entry.state = 'reserve';
         if (!this.firstReady) {
@@ -445,7 +441,9 @@ export class MermaidPreviewSession {
 
     private persist(entry: Entry) {
         if (
+            !this.active ||
             !this.isCurrent(entry) ||
+            !entry.sanitized ||
             !entry.preview ||
             entry.persisted ||
             entry.persistPending ||
@@ -482,17 +480,11 @@ export class MermaidPreviewSession {
         if (this.viewportTimer !== undefined) clearTimeout(this.viewportTimer);
         if (this.rescheduleFrame !== undefined)
             cancelAnimationFrame(this.rescheduleFrame);
-        if (this.warmTimer !== undefined) clearTimeout(this.warmTimer);
-        if (this.warmIdle !== undefined) cancelIdleCallback(this.warmIdle);
+        this.cancelResume?.();
+        this.cancelResume = undefined;
         this.controller.abort();
-        this.observer?.disconnect();
-        window.removeEventListener('scroll', this.onViewportChange, true);
-        window.removeEventListener('resize', this.onResize);
-        window.removeEventListener('pointerup', this.onInteraction);
-        window.removeEventListener('pointercancel', this.onInteraction);
-        for (const event of editorInteractionEvents)
-            this.editorDom?.removeEventListener(event, this.onInteraction);
+        this.viewport.pause();
         this.entries.clear();
-        this.near.clear();
+        this.elementEntries.clear();
     }
 }

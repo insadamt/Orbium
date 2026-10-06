@@ -1,6 +1,8 @@
 import { Extension, type Editor } from '@tiptap/core';
 import Mention from '@tiptap/extension-mention';
 import Suggestion from '@tiptap/suggestion';
+import { Plugin, PluginKey } from '@tiptap/pm/state';
+import type { EditorActivityController } from './editor-activity-controller';
 import { findBlockCommands, type BlockCommand } from './editor-commands';
 
 export type MentionCandidate = { id: number; title: string; type: string };
@@ -26,11 +28,41 @@ export type EditorMenu =
 
 type SuggestionContext = {
     workspaceId: number;
+    activityController: EditorActivityController;
     onMenuChange: (menu: EditorMenu | null) => void;
     onUpload: () => void;
 };
 
 export function createSuggestionExtensions(context: SuggestionContext) {
+    const slashKey = new PluginKey('orbiumSlashSuggestion');
+    const mentionKey = new PluginKey('orbiumMentionSuggestion');
+    const isActive = () => context.activityController.getSnapshot().active;
+    const suspension = Extension.create({
+        name: 'orbiumSuggestionActivity',
+        addProseMirrorPlugins() {
+            return [
+                new Plugin({
+                    view: (view) => {
+                        const pause = () => {
+                            if (isActive() || this.editor.isDestroyed) return;
+                            const keys = [slashKey, mentionKey].filter(
+                                (key) => key.getState(view.state)?.active,
+                            );
+                            if (keys.length === 0) return;
+                            const transaction = view.state.tr;
+                            for (const key of keys)
+                                transaction.setMeta(key, { exit: true });
+                            view.dispatch(transaction);
+                            context.onMenuChange(null);
+                        };
+                        const unsubscribe =
+                            context.activityController.subscribe(pause);
+                        return { destroy: unsubscribe };
+                    },
+                }),
+            ];
+        },
+    });
     let slashSelection = 0;
     let mentionSelection = 0;
     let slashItemCount = 0;
@@ -45,6 +77,8 @@ export function createSuggestionExtensions(context: SuggestionContext) {
             return [
                 Suggestion({
                     editor: this.editor,
+                    pluginKey: slashKey,
+                    allow: isActive,
                     char: '/',
                     startOfLine: false,
                     items: ({ query }) => [
@@ -75,6 +109,7 @@ export function createSuggestionExtensions(context: SuggestionContext) {
                     },
                     render: () => ({
                         onStart: (props) => {
+                            if (!isActive()) return;
                             slashSelection = 0;
                             slashItemCount = props.items.length;
                             runSlashItem = (index) =>
@@ -91,6 +126,7 @@ export function createSuggestionExtensions(context: SuggestionContext) {
                             context.onMenuChange(slashMenu);
                         },
                         onUpdate: (props) => {
+                            if (!isActive()) return;
                             slashSelection = 0;
                             slashItemCount = props.items.length;
                             runSlashItem = (index) =>
@@ -108,6 +144,7 @@ export function createSuggestionExtensions(context: SuggestionContext) {
                         },
                         onExit: () => context.onMenuChange(null),
                         onKeyDown: ({ event }) => {
+                            if (!isActive()) return false;
                             if (event.key === 'Escape') {
                                 context.onMenuChange(null);
                                 return true;
@@ -161,9 +198,12 @@ export function createSuggestionExtensions(context: SuggestionContext) {
             `@${node.attrs.label ?? node.attrs.id}`,
         ],
         suggestion: {
+            pluginKey: mentionKey,
+            allow: isActive,
             char: '@',
             debounce: 180,
             items: async ({ query, signal }) => {
+                if (!isActive()) return [];
                 const response = await fetch(
                     `/workspaces/${context.workspaceId}/mentions?q=${encodeURIComponent(query)}`,
                     { headers: { Accept: 'application/json' }, signal },
@@ -174,6 +214,7 @@ export function createSuggestionExtensions(context: SuggestionContext) {
             },
             render: () => ({
                 onStart: (props) => {
+                    if (!isActive()) return;
                     mentionSelection = 0;
                     mentionItemCount = props.items.length;
                     runMentionItem = (index) =>
@@ -193,6 +234,7 @@ export function createSuggestionExtensions(context: SuggestionContext) {
                     context.onMenuChange(mentionMenu);
                 },
                 onUpdate: (props) => {
+                    if (!isActive()) return;
                     mentionSelection = 0;
                     mentionItemCount = props.items.length;
                     runMentionItem = (index) =>
@@ -213,6 +255,7 @@ export function createSuggestionExtensions(context: SuggestionContext) {
                 },
                 onExit: () => context.onMenuChange(null),
                 onKeyDown: ({ event }) => {
+                    if (!isActive()) return false;
                     if (event.key === 'Escape') {
                         context.onMenuChange(null);
                         return true;
@@ -249,5 +292,5 @@ export function createSuggestionExtensions(context: SuggestionContext) {
         },
     });
 
-    return [slash, mention];
+    return [slash, mention, suspension];
 }

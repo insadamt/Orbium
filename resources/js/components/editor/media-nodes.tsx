@@ -4,6 +4,7 @@ import {
     ReactNodeViewRenderer,
     type NodeViewProps,
 } from '@tiptap/react';
+import type { EditorActivityController } from './editor-activity-controller';
 import ImageView from './image-view';
 import { attachmentUrl } from './editor-api';
 import MermaidView from './mermaid-view';
@@ -13,6 +14,7 @@ type MediaContext = {
     workspaceId: number;
     nodeId: number;
     mermaidSession: MermaidPreviewSession;
+    activityController: EditorActivityController;
 };
 
 function FileView({

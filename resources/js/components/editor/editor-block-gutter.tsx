@@ -1,4 +1,5 @@
-import { useDocumentTab } from '@/components/navigation/document-tab-context';
+import type { EditorActivityController } from './editor-activity-controller';
+import { useEditorActivity } from './use-editor-activity';
 import type { Editor } from '@tiptap/core';
 import { EditorContent } from '@tiptap/react';
 import { GripVertical, Plus } from 'lucide-react';
@@ -27,6 +28,7 @@ type DropLocation = { index: number; top: number };
 
 type Props = {
     editor: Editor;
+    activityController: EditorActivityController;
     onFiles: (files: FileList) => void;
     onMentionOpen: (nodeId: number) => void;
 };
@@ -83,10 +85,11 @@ function showBlockDragPreview(
 
 export default function EditorBlockGutter({
     editor,
+    activityController,
     onFiles,
     onMentionOpen,
 }: Props) {
-    const { active } = useDocumentTab();
+    const { active } = useEditorActivity(activityController);
     const surfaceRef = useRef<HTMLDivElement>(null);
     const draggedBlock = useRef<number | null>(null);
     const [hoveredBlock, setHoveredBlock] = useState<BlockLocation | null>(
@@ -94,7 +97,12 @@ export default function EditorBlockGutter({
     );
     const [menuBlock, setMenuBlock] = useState<OpenBlockMenu | null>(null);
     const [dropLocation, setDropLocation] = useState<DropLocation | null>(null);
-    const visibleBlock = menuBlock ?? hoveredBlock;
+    const visibleBlock = active ? (menuBlock ?? hoveredBlock) : null;
+
+    useEffect(() => {
+        if (active) return;
+        finishBlockDrag();
+    }, [active]);
 
     useEffect(() => {
         const surface = surfaceRef.current;
@@ -122,7 +130,12 @@ export default function EditorBlockGutter({
             if (frame !== null) return;
             frame = requestAnimationFrame(() => {
                 frame = null;
-                if (!pointer || !surface || draggedBlock.current !== null)
+                if (
+                    !activityController.getSnapshot().active ||
+                    !pointer ||
+                    !surface ||
+                    draggedBlock.current !== null
+                )
                     return;
                 const block = findHoveredBlock(
                     editor,
@@ -147,7 +160,7 @@ export default function EditorBlockGutter({
             surface.removeEventListener('mousemove', scheduleHoverMeasurement);
             surface.removeEventListener('mouseleave', cancelHoverMeasurement);
         };
-    }, [editor, menuBlock, active]);
+    }, [editor, menuBlock, active, activityController]);
 
     useEffect(() => {
         if (!active || !menuBlock) return;
@@ -185,17 +198,19 @@ export default function EditorBlockGutter({
             );
             window.removeEventListener('resize', closeMenuOnViewportChange);
         };
-    }, [menuBlock]);
+    }, [menuBlock, active]);
 
     function locateBlock(
         target: EventTarget,
         pointerY: number,
     ): BlockLocation | null {
-        if (!surfaceRef.current) return null;
+        if (!activityController.getSnapshot().active || !surfaceRef.current)
+            return null;
         return findHoveredBlock(editor, surfaceRef.current, target, pointerY);
     }
 
     function handleDrop(event: DragEvent<HTMLDivElement>): void {
+        if (!activityController.getSnapshot().active) return;
         if (draggedBlock.current !== null) {
             event.preventDefault();
             event.stopPropagation();
@@ -291,7 +306,11 @@ export default function EditorBlockGutter({
             }}
         >
             <EditorContent editor={editor} />
-            <TableControls editor={editor} surfaceRef={surfaceRef} />
+            <TableControls
+                editor={editor}
+                surfaceRef={surfaceRef}
+                activityController={activityController}
+            />
             {visibleBlock && (
                 <div
                     data-block-controls
@@ -379,7 +398,7 @@ export default function EditorBlockGutter({
                     />,
                     document.body,
                 )}
-            {dropLocation && (
+            {active && dropLocation && (
                 <div
                     aria-hidden="true"
                     className="pointer-events-none absolute right-0 left-10 z-10 border-t-2 border-foreground/60 sm:left-0"

@@ -1,7 +1,10 @@
+import { measureEditorWork } from '@/lib/editor-performance';
 import type { Editor } from '@tiptap/core';
 import type { Node as DocumentSnapshot } from '@tiptap/pm/model';
 import { TextSelection } from '@tiptap/pm/state';
-import { BubbleMenu } from '@tiptap/react/menus';
+import { useEditorActivity } from './use-editor-activity';
+import { ActivityBubbleMenu } from './activity-bubble-menu';
+import type { EditorActivityController } from './editor-activity-controller';
 import {
     Bold,
     Code2,
@@ -56,15 +59,17 @@ function findDocumentMatches(editor: Editor, query: string): number[] {
         return cached.positions;
     const matches: number[] = [];
     const needle = query.toLocaleLowerCase();
-    document.descendants((node, pos) => {
-        if (!node.isText || !node.text) return;
-        const text = node.text.toLocaleLowerCase();
-        let start = 0;
-        while ((start = text.indexOf(needle, start)) !== -1) {
-            matches.push(pos + start);
-            start += needle.length;
-        }
-    });
+    measureEditorWork('editor-search.scan', () =>
+        document.descendants((node, pos) => {
+            if (!node.isText || !node.text) return;
+            const text = node.text.toLocaleLowerCase();
+            let start = 0;
+            while ((start = text.indexOf(needle, start)) !== -1) {
+                matches.push(pos + start);
+                start += needle.length;
+            }
+        }),
+    );
     documentMatchCache.set(editor, { document, query, positions: matches });
     return matches;
 }
@@ -117,9 +122,6 @@ export function DocumentSearch({
                 value={query}
                 onChange={(event) => {
                     setQuery(event.target.value);
-                    setMatchCount(
-                        countDocumentMatches(editor, event.target.value),
-                    );
                 }}
                 onKeyDown={(event) => {
                     if (event.key === 'Enter')
@@ -141,23 +143,21 @@ export function DocumentSearch({
 
 export function SelectionToolbar({
     editor,
-    active = true,
+    activityController,
 }: {
     editor: Editor;
-    active?: boolean;
+    activityController: EditorActivityController;
 }) {
-    const activeTab = useRef(active);
-    activeTab.current = active;
+    const { active } = useEditorActivity(activityController);
     const shouldShow = useCallback(
-        () => activeTab.current && canFormatTextSelection(editor),
+        () => canFormatTextSelection(editor),
         [editor],
     );
     return (
-        <BubbleMenu
+        <ActivityBubbleMenu
             editor={editor}
             shouldShow={shouldShow}
-            style={{ display: active ? undefined : 'none' }}
-            className="glass-surface flex items-center gap-1 rounded-xl border border-border p-1 shadow-lg"
+            activityController={activityController}
         >
             <FormatButton
                 label="Bold"
@@ -207,8 +207,8 @@ export function SelectionToolbar({
             >
                 <Link2 size={16} />
             </FormatButton>
-            <TextColorPicker editor={editor} />
-        </BubbleMenu>
+            <TextColorPicker editor={editor} active={active} />
+        </ActivityBubbleMenu>
     );
 }
 

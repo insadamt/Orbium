@@ -42,7 +42,7 @@ function rankEntries(viewport: PreparationViewport) {
             root,
             viewport.direction,
         );
-        if (entry.state === 'display' && priority.rank === 3) continue;
+        if (priority.rank === 3) continue;
         ranked.push({ entry, ...priority });
     }
     return ranked.sort(

@@ -22,9 +22,16 @@ export class EditorActivityController {
     getSnapshot = (): EditorActivityState => this.snapshot;
 
     subscribe = (subscriber: ActivitySubscriber) => {
-        this.subscribers.add(subscriber);
+        if (!this.subscribers.has(subscriber)) {
+            this.subscribers.add(subscriber);
+            adjustEditorPerformanceCounter('editor-activity.subscriptions', 1);
+        }
         return () => {
-            this.subscribers.delete(subscriber);
+            if (this.subscribers.delete(subscriber))
+                adjustEditorPerformanceCounter(
+                    'editor-activity.subscriptions',
+                    -1,
+                );
         };
     };
 

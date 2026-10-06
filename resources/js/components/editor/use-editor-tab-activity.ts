@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useState } from 'react';
+import { useLayoutEffect, useState } from 'react';
 import { useDocumentTab } from '@/components/navigation/document-tab-context';
 import type { MermaidPreviewSession } from './mermaid-preview-session';
 import { EditorActivityController } from './editor-activity-controller';
@@ -21,7 +21,7 @@ export function useEditorTabActivity(session: MermaidPreviewSession) {
         });
     }, [activityController, documentTab.active, documentTab.visible]);
 
-    useEffect(() => {
+    useLayoutEffect(() => {
         let previousActive: boolean | undefined;
         const updateMermaidActivity = () => {
             const { active } = activityController.getSnapshot();

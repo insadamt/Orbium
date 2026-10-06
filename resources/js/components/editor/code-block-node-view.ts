@@ -48,6 +48,8 @@ export function createCodeBlockNodeView({
     getPos,
 }: NodeViewRendererProps): NodeView {
     let currentNode = node;
+    let destroyed = false;
+    const eventController = new AbortController();
     let copyStatusTimeout: number | null = null;
     const dom = document.createElement('div');
     dom.className =
@@ -73,16 +75,20 @@ export function createCodeBlockNodeView({
         select,
         normalizeCodeLanguage(String(node.attrs.language || 'plaintext')),
     );
-    select.addEventListener('change', () => {
-        const position = getPos();
-        if (typeof position !== 'number') return;
-        editor
-            .chain()
-            .focus()
-            .setTextSelection(position + 1)
-            .updateAttributes('codeBlock', { language: select.value })
-            .run();
-    });
+    select.addEventListener(
+        'change',
+        () => {
+            const position = getPos();
+            if (typeof position !== 'number') return;
+            editor
+                .chain()
+                .focus()
+                .setTextSelection(position + 1)
+                .updateAttributes('codeBlock', { language: select.value })
+                .run();
+        },
+        { signal: eventController.signal },
+    );
     selectContainer.append(select);
     const chevron = document.createElementNS(svgNamespace, 'svg');
     chevron.setAttribute('width', '14');
@@ -107,19 +113,26 @@ export function createCodeBlockNodeView({
     copyButton.className = 'rounded px-2 py-1 hover:bg-accent';
     copyButton.setAttribute('aria-live', 'polite');
     copyButton.textContent = 'Copy';
-    copyButton.addEventListener('click', async () => {
-        try {
-            await navigator.clipboard.writeText(currentNode.textContent);
-            copyButton.textContent = 'Copied';
-        } catch {
-            copyButton.textContent = 'Failed';
-        }
-        if (copyStatusTimeout !== null) window.clearTimeout(copyStatusTimeout);
-        copyStatusTimeout = window.setTimeout(() => {
-            copyButton.textContent = 'Copy';
-            copyStatusTimeout = null;
-        }, 1500);
-    });
+    copyButton.addEventListener(
+        'click',
+        async () => {
+            try {
+                await navigator.clipboard.writeText(currentNode.textContent);
+                if (destroyed) return;
+                copyButton.textContent = 'Copied';
+            } catch {
+                if (destroyed) return;
+                copyButton.textContent = 'Failed';
+            }
+            if (copyStatusTimeout !== null)
+                window.clearTimeout(copyStatusTimeout);
+            copyStatusTimeout = window.setTimeout(() => {
+                copyButton.textContent = 'Copy';
+                copyStatusTimeout = null;
+            }, 1500);
+        },
+        { signal: eventController.signal },
+    );
     toolbar.append(copyButton);
     dom.append(toolbar);
 
@@ -155,6 +168,8 @@ export function createCodeBlockNodeView({
             return toolbar.contains(mutation.target);
         },
         destroy() {
+            destroyed = true;
+            eventController.abort();
             if (copyStatusTimeout !== null)
                 window.clearTimeout(copyStatusTimeout);
         },

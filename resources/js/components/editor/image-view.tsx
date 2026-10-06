@@ -14,10 +14,16 @@ import {
     type KeyboardEvent,
     type PointerEvent,
 } from 'react';
+import type { EditorActivityController } from './editor-activity-controller';
+import { useEditorActivity } from './use-editor-activity';
 import { attachmentUrl } from './editor-api';
 
 type ImageViewProps = NodeViewProps & {
-    context: { workspaceId: number; nodeId: number };
+    context: {
+        workspaceId: number;
+        nodeId: number;
+        activityController: EditorActivityController;
+    };
 };
 type ResizeSession = {
     pointerId: number;
@@ -45,6 +51,7 @@ export default function ImageView({
     selected,
     context,
 }: ImageViewProps) {
+    const { active } = useEditorActivity(context.activityController);
     const imageContainer = useRef<HTMLDivElement>(null);
     const resizeSession = useRef<ResizeSession | null>(null);
     const [previewWidth, setPreviewWidth] = useState<number | null>(null);
@@ -55,6 +62,12 @@ export default function ImageView({
     const caption = String(node.attrs.caption ?? '');
     const [captionDraft, setCaptionDraft] = useState(caption);
     const captionInput = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        if (active) return;
+        resizeSession.current = null;
+        setPreviewWidth(null);
+    }, [active]);
 
     useEffect(() => {
         if (document.activeElement !== captionInput.current)
@@ -77,7 +90,11 @@ export default function ImageView({
         event: PointerEvent<HTMLButtonElement>,
         direction: -1 | 1,
     ) {
-        if (event.button !== 0) return;
+        if (
+            !context.activityController.getSnapshot().active ||
+            event.button !== 0
+        )
+            return;
         event.preventDefault();
         event.stopPropagation();
         resizeSession.current = {
@@ -91,6 +108,7 @@ export default function ImageView({
     }
 
     function updateResize(event: PointerEvent<HTMLButtonElement>) {
+        if (!context.activityController.getSnapshot().active) return;
         const session = resizeSession.current;
         if (!session || session.pointerId !== event.pointerId) return;
         setPreviewWidth(
@@ -106,6 +124,7 @@ export default function ImageView({
         event: PointerEvent<HTMLButtonElement>,
         save: boolean,
     ) {
+        if (!context.activityController.getSnapshot().active) return;
         const session = resizeSession.current;
         if (!session || session.pointerId !== event.pointerId) return;
         const finalWidth = clampImageWidth(
@@ -166,7 +185,7 @@ export default function ImageView({
                             draggable={false}
                             className="block h-auto w-full rounded-lg"
                         />
-                        {selected && (
+                        {selected && active && (
                             <div
                                 role="toolbar"
                                 aria-label="Image controls"
@@ -241,7 +260,7 @@ export default function ImageView({
                                 </button>
                             </div>
                         )}
-                        {selected && (
+                        {selected && active && (
                             <>
                                 {(
                                     [

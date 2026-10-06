@@ -2,7 +2,12 @@ import type { Editor } from '@tiptap/core';
 import { TableMap } from '@tiptap/pm/tables';
 import { Plus } from 'lucide-react';
 import { useEffect, useState, type RefObject } from 'react';
-import { measureEditorWork } from '@/lib/editor-performance';
+import type { EditorActivityController } from './editor-activity-controller';
+import { useEditorActivity } from './use-editor-activity';
+import {
+    adjustEditorPerformanceCounter,
+    measureEditorWork,
+} from '@/lib/editor-performance';
 
 type TableLocation = {
     position: number;
@@ -64,16 +69,20 @@ function selectCell(
 export default function TableControls({
     editor,
     surfaceRef,
+    activityController,
 }: {
     editor: Editor;
+    activityController: EditorActivityController;
     surfaceRef: RefObject<HTMLDivElement | null>;
 }) {
+    const { active } = useEditorActivity(activityController);
     const [table, setTable] = useState<TableLocation | null>(null);
 
     useEffect(() => {
         const surface = surfaceRef.current;
-        if (!surface) return;
-        const updateLocation = () =>
+        if (!active || !surface) return;
+        const updateLocation = () => {
+            if (!activityController.getSnapshot().active) return;
             measureEditorWork('table-controls.geometry', () => {
                 const editorLeft = editor.view.dom.getBoundingClientRect().left;
                 const availableWidth = Math.max(
@@ -90,24 +99,26 @@ export default function TableControls({
                     surface.style.setProperty('--table-available-width', width);
                 setTable(activeTable(editor, surface));
             });
+        };
         const resizeObserver = new ResizeObserver(updateLocation);
         resizeObserver.observe(surface);
+        adjustEditorPerformanceCounter('editor-ui.active-observers', 1);
         editor.on('selectionUpdate', updateLocation);
         editor.on('update', updateLocation);
         window.addEventListener('resize', updateLocation);
         window.addEventListener('scroll', updateLocation, true);
         updateLocation();
         return () => {
-            surface.style.removeProperty('--table-available-width');
+            adjustEditorPerformanceCounter('editor-ui.active-observers', -1);
             resizeObserver.disconnect();
             editor.off('selectionUpdate', updateLocation);
             editor.off('update', updateLocation);
             window.removeEventListener('resize', updateLocation);
             window.removeEventListener('scroll', updateLocation, true);
         };
-    }, [editor, surfaceRef]);
+    }, [editor, surfaceRef, active, activityController]);
 
-    if (!table) return null;
+    if (!active || !table) return null;
 
     function addRow() {
         if (!table) return;

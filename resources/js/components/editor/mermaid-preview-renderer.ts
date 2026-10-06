@@ -12,7 +12,7 @@ function importMermaidDependencies() {
 let dependenciesPromise:
     | ReturnType<typeof importMermaidDependencies>
     | undefined;
-let initializationPromise: Promise<void> | undefined;
+let initializationPromise: Promise<boolean> | undefined;
 let renderChain: Promise<void> = Promise.resolve();
 
 function loadMermaidDependencies() {
@@ -23,12 +23,18 @@ function loadMermaidDependencies() {
     return dependenciesPromise;
 }
 
-export function warmMermaidRenderer(): Promise<void> {
+export function warmMermaidRenderer(
+    shouldWarm: () => boolean = () => true,
+): Promise<boolean> {
     initializationPromise ??= measureEditorAsync(
         'mermaid.warm-up',
         async () => {
             markEditorPerformance('mermaid.warm-up-started');
             const [{ default: mermaid }] = await loadMermaidDependencies();
+            if (!shouldWarm()) {
+                initializationPromise = undefined;
+                return false;
+            }
             mermaid.initialize({
                 startOnLoad: false,
                 suppressErrorRendering: true,
@@ -37,6 +43,7 @@ export function warmMermaidRenderer(): Promise<void> {
                 theme: 'neutral',
             });
             markEditorPerformance('mermaid.warm-up-completed');
+            return true;
         },
     ).catch((error) => {
         initializationPromise = undefined;
@@ -47,8 +54,10 @@ export function warmMermaidRenderer(): Promise<void> {
 
 export async function sanitizeMermaidPreview(
     preview: CachedPreview,
-): Promise<CachedPreview> {
+    shouldPrepare: () => boolean = () => true,
+): Promise<CachedPreview | null> {
     const { default: DOMPurify } = await import('dompurify');
+    if (!shouldPrepare()) return null;
     return {
         ...preview,
         svg: DOMPurify.sanitize(preview.svg, {
@@ -66,19 +75,22 @@ export function instantiateMermaidSvg(preview: CachedPreview): string {
 
 export async function renderMermaidPreview(
     source: string,
-): Promise<CachedPreview> {
-    await warmMermaidRenderer();
+    shouldRender: () => boolean = () => true,
+): Promise<CachedPreview | null> {
+    if (!shouldRender()) return null;
+    if (!(await warmMermaidRenderer(shouldRender))) return null;
     const [{ default: mermaid }] = await loadMermaidDependencies();
     const renderId = `orbium-mermaid-${crypto.randomUUID()}`;
-    const render = renderChain.then(() =>
-        measureEditorAsync('mermaid.local-render', () =>
+    const render = renderChain.then(() => {
+        if (!shouldRender()) return null;
+        return measureEditorAsync('mermaid.local-render', () =>
             mermaid.render(renderId, source),
-        ),
-    );
+        );
+    });
     renderChain = render.then(
         () => undefined,
         () => undefined,
     );
     const result = await render;
-    return sanitizeMermaidPreview({ renderId, svg: result.svg });
+    return result ? { renderId, svg: result.svg } : null;
 }

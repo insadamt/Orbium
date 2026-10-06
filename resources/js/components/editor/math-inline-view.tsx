@@ -1,35 +1,33 @@
 import { NodeViewWrapper, type NodeViewProps } from '@tiptap/react';
-import katex from 'katex';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import type { EditorActivityController } from './editor-activity-controller';
+import { useMathPreview } from './use-math-preview';
 import { usePreviewActivation } from './use-preview-activation';
 
 export default function MathInlineView({
     node,
     updateAttributes,
-}: NodeViewProps) {
+    activityController,
+}: NodeViewProps & { activityController: EditorActivityController }) {
     const [isEditing, setIsEditing] = useState(false);
     const { previewContainer: container, activated } =
-        usePreviewActivation<HTMLSpanElement>();
+        usePreviewActivation<HTMLSpanElement>(activityController);
     const sourceInput = useRef<HTMLInputElement>(null);
     const latex = String(node.attrs.latex ?? '');
     const [latexDraft, setLatexDraft] = useState(latex);
     useEffect(() => {
         if (!isEditing) setLatexDraft(latex);
     }, [latex, isEditing]);
-    const renderedMath = useMemo(() => {
-        if (!activated) return null;
-        try {
-            return katex.renderToString(latex, {
-                throwOnError: true,
-                trust: false,
-            });
-        } catch {
-            return null;
-        }
-    }, [latex, activated]);
+    const { active, preview } = useMathPreview({
+        latex,
+        displayMode: false,
+        activated,
+        activityController,
+    });
+    const renderedMath = preview.html;
 
     useEffect(() => {
-        if (!isEditing) return;
+        if (!isEditing || !active) return;
         sourceInput.current?.focus();
         const closeOnOutsideClick = (event: PointerEvent) => {
             if (!container.current?.contains(event.target as Node))
@@ -38,7 +36,7 @@ export default function MathInlineView({
         document.addEventListener('pointerdown', closeOnOutsideClick);
         return () =>
             document.removeEventListener('pointerdown', closeOnOutsideClick);
-    }, [isEditing]);
+    }, [isEditing, active]);
 
     return (
         <NodeViewWrapper
@@ -65,7 +63,7 @@ export default function MathInlineView({
                         </span>
                     )}
                 </button>
-                {isEditing && (
+                {isEditing && active && (
                     <span className="absolute top-full left-0 z-50 mt-2 w-72 max-w-[80vw] rounded-lg border border-border bg-popover p-3 text-sm text-popover-foreground shadow-xl">
                         <label className="block text-xs font-medium">
                             Inline math source

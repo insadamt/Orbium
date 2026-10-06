@@ -28,11 +28,9 @@ import { AutomaticBlockDirection } from './automatic-block-direction';
 import { BlockTextAlignment } from './block-formatting';
 import type { EditorDocument } from './editor-api';
 import { uploadAttachment } from './editor-api';
-import { usePageSearch } from '@/components/navigation/page-search';
+import { useEditorSearch } from './use-editor-search';
 import {
-    countDocumentMatches,
     DocumentSearch,
-    selectNextMatch,
     SelectionToolbar,
     SuggestionMenu,
 } from './editor-controls';
@@ -110,11 +108,7 @@ export default function DocumentEditor({
     content,
     revision,
 }: Props) {
-    const pageSearch = usePageSearch();
     const [menu, setMenu] = useState<EditorMenu | null>(null);
-    const [searchOpen, setSearchOpen] = useState(false);
-    const [searchQuery, setSearchQuery] = useState('');
-    const [matchCount, setMatchCount] = useState(0);
     const [uploadError, setUploadError] = useState('');
     const [importError, setImportError] = useState('');
     const [exportError, setExportError] = useState('');
@@ -160,14 +154,24 @@ export default function DocumentEditor({
                 katexOptions: { throwOnError: false, trust: false },
             }).extend({
                 addNodeView() {
-                    return ReactNodeViewRenderer(MathBlockView);
+                    return ReactNodeViewRenderer((props) => (
+                        <MathBlockView
+                            {...props}
+                            activityController={activityController}
+                        />
+                    ));
                 },
             }),
             InlineMath.configure({
                 katexOptions: { throwOnError: false, trust: false },
             }).extend({
                 addNodeView() {
-                    return ReactNodeViewRenderer(MathInlineView);
+                    return ReactNodeViewRenderer((props) => (
+                        <MathInlineView
+                            {...props}
+                            activityController={activityController}
+                        />
+                    ));
                 },
             }),
             Placeholder.configure({
@@ -177,9 +181,11 @@ export default function DocumentEditor({
                 workspaceId,
                 nodeId,
                 mermaidSession,
+                activityController,
             }),
             ...createSuggestionExtensions({
                 workspaceId,
+                activityController,
                 onMenuChange: setMenu,
                 onUpload: () => fileInput.current?.click(),
             }),
@@ -218,72 +224,22 @@ export default function DocumentEditor({
 
     useEditorReadiness(editor, nodeId, mermaidSession);
 
-    const searchTerm =
-        new URLSearchParams(
-            (documentTab.url || window.location.href).split('?')[1] ?? '',
-        ).get('find') ?? '';
+    const {
+        searchOpen,
+        setSearchOpen,
+        searchQuery,
+        setSearchQuery,
+        matchCount,
+        setMatchCount,
+    } = useEditorSearch({
+        editor,
+        activityController,
+        url: documentTab.url || window.location.href,
+    });
 
     useEffect(() => {
         if (status === 'saved') mermaidSession.notifySaved();
     }, [status, mermaidSession]);
-
-    useEffect(() => {
-        if (!editor || !searchTerm) return;
-        setSearchQuery(searchTerm);
-        setSearchOpen(true);
-        setMatchCount(selectNextMatch(editor, searchTerm));
-    }, [editor, searchTerm]);
-
-    useEffect(() => {
-        if (!documentTab.active) return;
-        if (!editor || !pageSearch.query.trim()) {
-            pageSearch.setResultCount(null);
-            return;
-        }
-        let timer: ReturnType<typeof setTimeout> | null = null;
-        const refreshMatchCount = () =>
-            pageSearch.setResultCount(
-                countDocumentMatches(editor, pageSearch.query),
-            );
-        const scheduleMatchCount = () => {
-            if (timer !== null) clearTimeout(timer);
-            timer = setTimeout(refreshMatchCount, 150);
-        };
-        pageSearch.setResultCount(null);
-        scheduleMatchCount();
-        editor.on('update', scheduleMatchCount);
-        return () => {
-            if (timer !== null) clearTimeout(timer);
-            editor.off('update', scheduleMatchCount);
-        };
-    }, [
-        editor,
-        documentTab.active,
-        pageSearch.query,
-        pageSearch.setResultCount,
-    ]);
-
-    useEffect(() => {
-        if (
-            !documentTab.active ||
-            !editor ||
-            !pageSearch.searchStep.query ||
-            pageSearch.searchStep.id === 0
-        )
-            return;
-        pageSearch.setResultCount(
-            selectNextMatch(
-                editor,
-                pageSearch.searchStep.query,
-                pageSearch.searchStep.previous,
-            ),
-        );
-    }, [
-        editor,
-        documentTab.active,
-        pageSearch.searchStep,
-        pageSearch.setResultCount,
-    ]);
 
     async function addFiles(files: FileList | File[]) {
         if (!editor) return;
@@ -460,7 +416,7 @@ export default function DocumentEditor({
                 }}
             />
 
-            {searchOpen && editor && (
+            {documentTab.active && searchOpen && editor && (
                 <DocumentSearch
                     editor={editor}
                     query={searchQuery}
@@ -472,13 +428,17 @@ export default function DocumentEditor({
             )}
 
             {editor && (
-                <SelectionToolbar editor={editor} active={documentTab.active} />
+                <SelectionToolbar
+                    editor={editor}
+                    activityController={activityController}
+                />
             )}
 
             {!editor && <DocumentOpeningPreview content={content} />}
             {editor && (
                 <EditorBlockGutter
                     editor={editor}
+                    activityController={activityController}
                     onFiles={(files) => void addFiles(files)}
                     onMentionOpen={(targetId) =>
                         router.visit(

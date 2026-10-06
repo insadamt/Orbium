@@ -21,7 +21,13 @@ function displayedTextColor(color: string | undefined): string {
         : (color ?? 'currentColor');
 }
 
-export function TextColorPicker({ editor }: { editor: Editor }) {
+export function TextColorPicker({
+    editor,
+    active,
+}: {
+    editor: Editor;
+    active: boolean;
+}) {
     const [open, setOpen] = useState(false);
     const pickerRef = useRef<HTMLDivElement>(null);
     const selectedRange = useRef<{ from: number; to: number } | null>(null);
@@ -30,6 +36,10 @@ export function TextColorPicker({ editor }: { editor: Editor }) {
         | undefined;
 
     useEffect(() => {
+        if (!active) {
+            setOpen(false);
+            return;
+        }
         if (!open) return;
         const dismiss = (event: PointerEvent) => {
             if (!pickerRef.current?.contains(event.target as Node))
@@ -44,7 +54,7 @@ export function TextColorPicker({ editor }: { editor: Editor }) {
             document.removeEventListener('pointerdown', dismiss);
             document.removeEventListener('keydown', dismissOnEscape);
         };
-    }, [open]);
+    }, [open, active]);
 
     function chooseColor(color: string | null, keepPickerOpen = false) {
         const range = selectedRange.current;
@@ -83,7 +93,7 @@ export function TextColorPicker({ editor }: { editor: Editor }) {
                     }}
                 />
             </button>
-            {open && (
+            {active && open && (
                 <div
                     role="group"
                     aria-label="Text colors"
