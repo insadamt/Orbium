@@ -2,6 +2,7 @@ import { router, usePage } from '@inertiajs/react';
 import { ChevronDown, Search } from 'lucide-react';
 import { useEffect, useLayoutEffect, useState, type ReactNode } from 'react';
 import AppearanceTabs from '@/components/appearance-tabs';
+import EditorStyleRuntime from '@/components/editor/styles/editor-style-runtime';
 import { AppBackground } from '@/backgrounds/app-background';
 import { useSurfaceStyle } from '@/backgrounds/surface-preferences';
 import { FloatingTopControls } from '@/components/hierarchy/floating-top-controls';
@@ -143,6 +144,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
         <div
             className={`orbium-shell surface-${surfaceStyle} ${isPane ? 'orbium-embedded-pane' : ''} min-h-screen bg-background text-foreground`}
         >
+            <EditorStyleRuntime key={auth.user.id} />
             {!isPane && <AppBackground />}
             {!isPane && <NavigationEvents />}
             {!isPane && !isFloatingPage && (

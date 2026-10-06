@@ -1,6 +1,5 @@
 import { useEditorTabShortcuts } from './use-editor-tab-shortcuts';
 import { useEditorTabActivity } from './use-editor-tab-activity';
-import DocumentStyles from './styles/document-styles';
 import { BlockStyleClasses } from './styles/block-style-extension';
 import { useEditorReadiness } from './use-editor-readiness';
 import { createEditorPerformanceExtension } from './editor-performance-extension';
@@ -354,7 +353,6 @@ export default function DocumentEditor({
 
     return (
         <div className="relative" data-document-styles>
-            <DocumentStyles />
             <div className="mb-7 flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground">
                 <div className="flex items-center gap-2">
                     <span aria-live="polite">

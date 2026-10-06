@@ -9,6 +9,7 @@ export const editorProfilingEnabled =
 type Sample = EditorPerformanceSample;
 const samples: Sample[] = [];
 const marks = new Map<string, number>();
+const counters = new Map<string, number>();
 let output: HTMLScriptElement | undefined;
 let publicationTimer: ReturnType<typeof setTimeout> | undefined;
 let completedScrollCaptures = 0;
@@ -29,9 +30,16 @@ function publishSnapshot() {
     }
     output.textContent = JSON.stringify({
         marks: Object.fromEntries(marks),
+        counters: Object.fromEntries(counters),
         samples,
     });
     output.dataset.scrollCapture = String(completedScrollCaptures);
+}
+
+export function adjustEditorPerformanceCounter(name: string, amount: number) {
+    if (!editorProfilingEnabled) return;
+    counters.set(name, (counters.get(name) ?? 0) + amount);
+    publish();
 }
 
 export function markEditorPerformance(
@@ -107,6 +115,7 @@ declare global {
             summary: typeof summary;
             snapshot: () => {
                 marks: Record<string, number>;
+                counters: Record<string, number>;
                 samples: Sample[];
             };
             reset: () => void;
@@ -125,6 +134,7 @@ if (editorProfilingEnabled && typeof window !== 'undefined') {
         summary,
         snapshot: () => ({
             marks: Object.fromEntries(marks),
+            counters: Object.fromEntries(counters),
             samples: [...samples],
         }),
         reset: () => {
