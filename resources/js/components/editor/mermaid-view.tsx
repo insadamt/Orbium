@@ -62,7 +62,7 @@ export default function MermaidView({
 
     return (
         <NodeViewWrapper
-            className="my-4 rounded-xl border border-border p-4"
+            className="orbium-mermaid my-4 rounded-xl border border-border p-4"
             data-drag-handle
             dir={node.attrs.dir}
             contentEditable={false}

@@ -46,7 +46,7 @@ Do not design v0.1.0 around a required AI provider.
 ## Document expansion
 
 - full version history
-- custom CSS/theme marketplace
+- global application CSS and theme marketplace (account-wide document block CSS was approved on 2026-10-05)
 - plugin/extension ecosystem
 - arbitrary embeds beyond initial safe block set
 

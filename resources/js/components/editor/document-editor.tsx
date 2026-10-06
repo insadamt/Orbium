@@ -1,3 +1,5 @@
+import DocumentStyles from './styles/document-styles';
+import { BlockStyleClasses } from './styles/block-style-extension';
 import { useEditorReadiness } from './use-editor-readiness';
 import { createEditorPerformanceExtension } from './editor-performance-extension';
 import DocumentOpeningPreview from '@/pages/documents/document-opening-preview';
@@ -136,6 +138,7 @@ export default function DocumentEditor({
                 link: { openOnClick: false, autolink: true },
             }),
             BlockTextAlignment,
+            BlockStyleClasses,
             TextColor,
             AutomaticBlockDirection,
             SelectBlockShortcut,
@@ -144,7 +147,9 @@ export default function DocumentEditor({
                     return createCodeBlockNodeView;
                 },
             }),
-            TableKit,
+            TableKit.configure({
+                table: { HTMLAttributes: { class: 'orbium-table' } },
+            }),
             TaskList,
             TaskItem.configure({ nested: true }),
             BlockMath.configure({
@@ -349,7 +354,8 @@ export default function DocumentEditor({
     }, [editor, saveNow]);
 
     return (
-        <div className="relative">
+        <div className="relative" data-document-styles>
+            <DocumentStyles />
             <div className="mb-7 flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground">
                 <div className="flex items-center gap-2">
                     <span aria-live="polite">

@@ -383,3 +383,33 @@ Editor content may contain:
 The content format service must support remapping these references during portability restore.
 
 Never implement portability by regex replacement over serialized JSON.
+
+## Account-wide editor styles (approved 2026-10-05)
+
+Settings → Editor styles provides a base CSS stylesheet, independent block declaration overrides, and a live sample-document preview. CSS import replaces the draft base and clears draft overrides; Apply saves to the current account. Export combines the base and overrides, in that order, into one `.css` file. Reimport preserves the effective appearance as base rules; subsequent block overrides remain editable independently. Reset block clears only its override, returning to the base theme. Cancel restores saved preferences. Reset all and Enable custom styles take effect on documents only after Apply.
+
+Styles apply to normal and database documents in all workspaces owned by that account. Already-open documents receive a same-origin BroadcastChannel notification and fetch the account's saved settings. Browsers without BroadcastChannel update on navigation/reload. Theme preferences are PostgreSQL-backed `users.editor_styles` JSON and do not change canonical document content, revisions, or Markdown export. Complete account archive integration belongs to the approved portability phase; standalone CSS sharing is available now.
+
+Stable selectors: `.orbium-paragraph`, `.orbium-heading-1`, `.orbium-heading-2`, `.orbium-heading-3`, `.orbium-bullet-list`, `.orbium-ordered-list`, `.orbium-checklist`, `.orbium-quote`, `.orbium-callout`, `.orbium-code`, `.orbium-table`, `.orbium-image`, `.orbium-file`, `.orbium-mermaid`, `.orbium-math`, `.orbium-divider`. Selectors refer to block containers; image styles affect the image wrapper, and table styles affect the table. Paragraph rules also apply to paragraphs inside composite blocks. Existing explicit inline formatting remains higher priority. Title/cover and app chrome are outside this scope.
+
+Support appearance declarations: colors, font family/size/weight/style, line height, letter/word spacing, text alignment/decoration/transform/indent, border shorthand/width/style/color/edges/radius, padding, margin, and box shadow. Logical spacing and border edges support RTL. Theme variables are limited to `--foreground`, `--background`, `--muted`, `--muted-foreground`, `--border`, `--accent`, `--accent-foreground`, `--primary`, and `--primary-foreground`. Use these variables instead of fixed colors when styles should adapt to Light/Dark.
+
+CSS is parsed and validated with CSSTree and regenerated under the document/preview scope; stored source is never inserted directly. Only exact documented class selectors, optionally comma-separated, are accepted. Arbitrary/nested selectors, at-rules, remote URLs, custom properties, !important, negative dimensions, positioning, display, transforms, and animation are excluded. CSS must also be supported by the current browser. Invalid drafts show source-linked diagnostics and retain the last valid preview; enabled invalid themes cannot be applied. Invalid stored settings fall back to the default document appearance, and custom styles can always be disabled in Settings. Combined exported UTF-8 CSS is limited to 50,000 bytes; each override is limited to 10,000 characters.
+
+The sample preview contains representative media, equation, and diagram markup. It does not upload attachments or invoke the Mermaid renderer. CodeMirror is loaded with the Settings page and provides CSS highlighting, completion, and editor history. CSSTree validates syntax; Orbium owns the property/selector policy and account persistence. Block selector decorations are transient, map through edits, and rebuild only changed enclosing blocks, preserving the long-document rendering strategy.
+
+A starter theme is available at `../examples/editor-theme.css`.
+
+### Editor styles workspace redesign (2026-10-06)
+
+The settings page now summarizes saved Enabled/Disabled status, distinct customized block types (base selectors plus overrides), and override count. Customize styles opens a Radix dialog with a fixed header/toolbar/footer, maximum width 1280 px, and height 90dvh (94dvh below 480 px). The dialog's available inline size controls its layout: grouped navigation/editor/preview at 1000 px and above; AppSelect plus editor/preview at 760–999 px; AppSelect and Editor/Preview tabs below 760 px. Content scrolls inside the workspace rather than moving Apply below the sample document.
+
+Selecting a block opens its focused representative preview; Base stylesheet defaults to Full document. Both modes remain available, and switching resets preview scroll. Selector copy, override status, empty-state examples, Clear override, Import, Export, Reset theme, and a collapsed CSS reference replace the earlier dense form. Custom styles stays a draft enable switch until Apply.
+
+One CodeMirror view retains separate EditorState, cursor/selection, undo history, and scroll position per source. Theme compartments adapt syntax colors to resolved Light/Dark without recreating the editor. @codemirror/lint displays errors supplied by our CSSTree/policy validator; @lezer/highlight is a direct dependency for syntax tags. Validation returns source/message/character ranges, gathers the first error per source, and marks navigation items. A source-linked error button selects that editor and jumps to the invalid range. Combined size limits are checked before parsing.
+
+Draft validation settles after 150 ms of inactivity. Invalid drafts preserve the last valid preview, labelled Showing last valid styles; invalid saved settings initialize to default appearance. Disabled drafts show Custom styles disabled. Apply and Export validate the immediate current snapshot. Apply is disabled while unchanged, busy, or invalid and enabled. Export always requires valid CSS. Disabling an invalid theme remains possible for recovery.
+
+Apply freezes draft mutation, saves via the existing endpoint, updates the baseline, notifies open documents after success, and closes. Save/validation failures preserve the draft and appear next to the visible action bar. Cancel, Escape, and Close request Keep editing/Discard changes when dirty; closing restores focus to Customize styles. A failed import preserves the draft; a valid import clears overrides and explains that in its notice. Resets remain unsaved until Apply. No database migration, content schema, endpoint, selector, or CSS export format changes accompany this redesign.
+
+Current manual acceptance is recorded in `../reports/05-editor-styles-redesign.md`.

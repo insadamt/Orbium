@@ -130,3 +130,7 @@ Search Master combines:
 - one logical commit per task;
 - format/lint/type/build/test before commit;
 - no temporary commits intended for later squash.
+
+## 2026-10-05 — Account-wide editor block themes
+
+The user approved Settings-based Custom CSS for all documents: import/write one base stylesheet, customize each block type independently, preview drafts, and export one shareable CSS file. This replaces the prior deferral for document block CSS only; global application themes and a marketplace remain deferred. Persist preferences on the authenticated user, keep editor content unchanged, expose stable `.orbium-*` selectors, and restrict styles to appearance properties. Use CodeMirror for editing and CSSTree for parsing/validation; Orbium provides scoping and restrictions. Stay in Phase 5 for manual review.

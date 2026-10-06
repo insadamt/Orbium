@@ -10,6 +10,10 @@ The [document scroll follow-up](../reports/05-document-scroll-layout.md) replace
 
 The 2026-10-02 cover review adds six cropped cover ratios and per-container Gallery appearance settings to the active floating workspace pass. Existing wide covers and Gallery configurations retain their prior appearance until replaced or edited. Manual review and quality-gate results belong in the phase report; do not start a later phase.
 
+The 2026-10-05 user-approved editor styles addition remains in Phase 5 review: Settings now supports account-wide document block CSS, import/export, independent overrides, and live preview. See [the feature report](../reports/05-editor-styles.md). This explicitly revises the deferred custom-CSS scope without starting Phase 6 or 7.
+
+The 2026-10-06 editor styles UX review implements the approved focused-dialog plan without starting another phase. [The redesign report](../reports/05-editor-styles-redesign.md) records the actual checks, library limits, and replacement manual checklist.
+
 ## Current floating workspace pass (2026-09-30)
 
 The workspace selector now includes **Manage workspaces**, which opens the Workspaces section in Settings. Its floating manager offers compact creation, drag reorder, row menus for Rename and Move to Trash, and a collapsible Trash with Restore and permanent deletion. Permanent deletion is reached from a trashed workspace's menu and requires the exact workspace name; the server repeats that check and removes the workspace hierarchy, related records, and attachment directory. Search and document text fields use borderless surfaces without a black native focus frame.

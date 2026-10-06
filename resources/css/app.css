@@ -10,6 +10,8 @@
 @import './editor-text-colors.css';
 @import './appearance-settings.css';
 @import './wallpaper-dialog.css';
+@import './editor-styles.css';
+@import './editor-styles-responsive.css';
 @import 'tw-animate-css';
 @import './interaction-motion.css';
 

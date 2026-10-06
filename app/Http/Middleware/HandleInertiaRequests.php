@@ -38,6 +38,7 @@ class HandleInertiaRequests extends Middleware
         return [
             ...parent::share($request),
             'name' => config('app.name'),
+            'editorStyles' => fn () => $request->user()?->editor_styles,
             'auth' => [
                 'user' => $request->user(),
             ],

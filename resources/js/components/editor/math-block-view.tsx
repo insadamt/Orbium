@@ -38,7 +38,7 @@ export default function MathBlockView({
 
     return (
         <NodeViewWrapper
-            className="my-4 rounded-xl border border-border p-4"
+            className="orbium-math my-4 rounded-xl border border-border p-4"
             dir={node.attrs.dir}
             contentEditable={false}
         >

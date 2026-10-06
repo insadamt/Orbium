@@ -1,0 +1,81 @@
+@container editor-style-dialog (max-width:999px) {
+    .editor-style-workspace {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        grid-template-rows: auto minmax(0, 1fr);
+    }
+    .editor-style-navigation {
+        display: none;
+    }
+    .editor-style-compact-navigation {
+        display: block;
+        grid-column: 1 / -1;
+        padding: 10px 18px;
+        border-bottom: 1px solid var(--border);
+    }
+}
+@container editor-style-dialog (max-width:759px) {
+    .editor-style-workspace {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: auto auto minmax(0, 1fr);
+    }
+    .editor-style-mobile-tabs {
+        display: flex;
+        gap: 8px;
+        padding: 6px 18px;
+        border-bottom: 1px solid var(--border);
+    }
+    .editor-style-mobile-tabs button {
+        padding: 7px 12px;
+        border-radius: 8px;
+        font-size: 12px;
+        color: var(--muted-foreground);
+    }
+    .editor-style-mobile-tabs button[aria-selected='true'] {
+        background: var(--accent);
+        color: var(--foreground);
+    }
+    .editor-style-editor-panel {
+        border-right: 0;
+    }
+    .editor-style-workspace[data-active-tab='editor']
+        .editor-style-preview-panel,
+    .editor-style-workspace[data-active-tab='preview']
+        .editor-style-editor-panel {
+        display: none;
+    }
+    .editor-style-dialog-header,
+    .editor-style-dialog-footer {
+        padding: 12px 14px;
+    }
+    .editor-style-toolbar {
+        padding: 7px 10px;
+        flex-wrap: wrap;
+    }
+    .editor-style-toolbar-actions {
+        gap: 0;
+    }
+}
+@media (max-width: 480px) {
+    .editor-style-dialog {
+        width: calc(100vw - 16px);
+        height: 94dvh;
+        border-radius: 16px;
+    }
+    .editor-style-summary {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+}
+@keyframes editor-style-open {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .editor-style-dialog {
+        animation: none;
+    }
+}

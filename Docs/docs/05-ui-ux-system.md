@@ -33,6 +33,8 @@
 > Wallpaper gallery simplification (2026-10-01): The Wallpaper control and searchable gallery show text choices without miniature images or animation. A selected choice is marked Current. Selecting a choice opens its controls and one large live preview; Apply still commits the draft. This supersedes the thumbnail behavior described above.
 
 
+> Editor styles redesign (2026-10-06): Settings → Editor styles uses a compact saved-theme summary and Customize styles dialog. The dialog has grouped block navigation, persistent CSS editor state, focused/full previews, source-linked errors, and always-visible draft status/Apply controls. Width adapts to the dialog container, including split panes. Use neutral surfaces, visible focus, theme-aware syntax colors, and reduced-motion behavior. See `../reports/05-editor-styles-redesign.md`.
+
 ## Design direction
 
 ### App select controls (2026-10-02)

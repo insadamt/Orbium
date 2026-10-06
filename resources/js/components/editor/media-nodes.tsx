@@ -21,7 +21,7 @@ function FileView({
 }: NodeViewProps & { context: MediaContext }) {
     return (
         <NodeViewWrapper
-            className="my-4 rounded-xl border border-border p-4"
+            className="orbium-file my-4 rounded-xl border border-border p-4"
             data-drag-handle
             dir={node.attrs.dir}
             contentEditable={false}

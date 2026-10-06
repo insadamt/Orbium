@@ -31,33 +31,45 @@ function openingBlock(block: EditorDocument, index: number): ReactNode {
             const level = Number(block.attrs?.level);
             if (level === 1)
                 return (
-                    <h1 key={index} dir={direction}>
+                    <h1
+                        className="orbium-heading-1"
+                        key={index}
+                        dir={direction}
+                    >
                         {text}
                     </h1>
                 );
             if (level === 2)
                 return (
-                    <h2 key={index} dir={direction}>
+                    <h2
+                        className="orbium-heading-2"
+                        key={index}
+                        dir={direction}
+                    >
                         {text}
                     </h2>
                 );
             return (
-                <h3 key={index} dir={direction}>
+                <h3 className="orbium-heading-3" key={index} dir={direction}>
                     {text}
                 </h3>
             );
         }
         case 'horizontalRule':
-            return <hr key={index} />;
+            return <hr className="orbium-divider" key={index} />;
         case 'codeBlock':
             return (
-                <pre key={index} dir="ltr">
+                <pre className="orbium-code" key={index} dir="ltr">
                     <code>{text}</code>
                 </pre>
             );
         case 'blockquote':
             return (
-                <blockquote key={index} dir={direction}>
+                <blockquote
+                    className="orbium-quote"
+                    key={index}
+                    dir={direction}
+                >
                     {text}
                 </blockquote>
             );
@@ -69,18 +81,18 @@ function openingBlock(block: EditorDocument, index: number): ReactNode {
                     <li key={itemIndex}>{openingText(item)}</li>
                 ));
             return block.type === 'bulletList' ? (
-                <ul key={index} dir={direction}>
+                <ul className="orbium-bullet-list" key={index} dir={direction}>
                     {items}
                 </ul>
             ) : (
-                <ol key={index} dir={direction}>
+                <ol className="orbium-ordered-list" key={index} dir={direction}>
                     {items}
                 </ol>
             );
         }
         default:
             return (
-                <p key={index} dir={direction}>
+                <p className="orbium-paragraph" key={index} dir={direction}>
                     {text}
                 </p>
             );

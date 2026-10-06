@@ -134,7 +134,10 @@ export default function ImageView({
     }
 
     return (
-        <NodeViewWrapper className="editor-image my-5" dir={node.attrs.dir}>
+        <NodeViewWrapper
+            className="orbium-image editor-image my-5"
+            dir={node.attrs.dir}
+        >
             <div ref={imageContainer} contentEditable={false}>
                 <figure
                     className="max-w-full"

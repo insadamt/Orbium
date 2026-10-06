@@ -8,6 +8,11 @@ import { edit as editSecurity } from '@/routes/security';
 
 const settingsSections = [
     {
+        title: 'Editor styles',
+        href: '/settings/editor-styles',
+        searchText: 'editor styles css theme blocks import export preview',
+    },
+    {
         title: 'Profile',
         href: editProfile(),
         searchText: 'profile name email account',
