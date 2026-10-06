@@ -12,7 +12,7 @@ export default function ShowDocument() {
 
     return (
         <DocumentTabContext.Provider
-            value={{ tabId: '', active: true, url: page.url }}
+            value={{ tabId: '', active: true, visible: true, url: page.url }}
         >
             <DocumentPage
                 key={`${props.workspace.id}:${props.node.id}`}

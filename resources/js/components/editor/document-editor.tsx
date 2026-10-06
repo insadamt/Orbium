@@ -5,6 +5,7 @@ import { useEditorReadiness } from './use-editor-readiness';
 import { createEditorPerformanceExtension } from './editor-performance-extension';
 import DocumentOpeningPreview from '@/pages/documents/document-opening-preview';
 import {
+    editorProfilingEnabled,
     markEditorPerformance,
     measureEditorWork,
 } from '@/lib/editor-performance';
@@ -352,7 +353,16 @@ export default function DocumentEditor({
     );
 
     return (
-        <div className="relative" data-document-styles>
+        <div
+            className="relative"
+            data-document-styles
+            data-editor-activity-active={
+                editorProfilingEnabled ? documentTab.active : undefined
+            }
+            data-editor-activity-visible={
+                editorProfilingEnabled ? documentTab.visible : undefined
+            }
+        >
             <div className="mb-7 flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground">
                 <div className="flex items-center gap-2">
                     <span aria-live="polite">

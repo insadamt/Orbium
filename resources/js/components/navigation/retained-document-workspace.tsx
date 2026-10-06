@@ -44,8 +44,8 @@ const RetainedDocumentTab = memo(function RetainedDocumentTab({
     active: boolean;
 }) {
     const documentTab = useMemo(
-        () => ({ tabId, active, url: page.url }),
-        [tabId, active, page.url],
+        () => ({ tabId, active, visible, url: page.url }),
+        [tabId, active, visible, page.url],
     );
     return (
         <div hidden={!visible} inert={!active} aria-busy={visible && !active}>
