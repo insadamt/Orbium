@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import { FileText, Plus } from 'lucide-react';
+import { FileText, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { MasonryLayout } from '@/components/hierarchy/masonry-layout';
 import { ratioNumber } from '@/components/hierarchy/cover-presentation';
@@ -23,6 +23,7 @@ type Props = {
     files: FileReference[];
     config: ViewConfig;
     onCreate: () => void;
+    onTrashDocument: (document: DatabaseDocument) => void;
     creating: boolean;
 };
 
@@ -35,6 +36,7 @@ export default function DatabaseGallery({
     files,
     config,
     onCreate,
+    onTrashDocument,
     creating,
 }: Props) {
     const preview = config.preview ?? 'cover';
@@ -46,116 +48,130 @@ export default function DatabaseGallery({
             document.cover_attachment_id &&
             !unavailableCovers.includes(document.cover_attachment_id);
         return (
-            <Link
-                key={document.id}
-                href={`/workspaces/${workspaceId}/documents/${document.id}`}
-                className="db-gallery-card group"
-            >
-                {preview !== 'none' && (
-                    <div
-                        className="db-gallery-preview"
-                        style={
-                            config.gallery_legacy_preview
-                                ? undefined
-                                : {
-                                      aspectRatio:
-                                          natural && imageAvailable
-                                              ? ratioNumber(
-                                                    document.cover_aspect_ratio,
-                                                )
-                                              : ratioNumber(
-                                                    config.gallery_ratio ??
-                                                        '16:9',
-                                                ),
-                                      height: 'auto',
-                                  }
-                        }
-                    >
-                        {preview === 'cover' &&
-                        document.cover_attachment_id &&
-                        !unavailableCovers.includes(
-                            document.cover_attachment_id,
-                        ) ? (
-                            <img
-                                loading="lazy"
-                                decoding="async"
-                                src={`/workspaces/${workspaceId}/documents/${document.id}/attachments/${document.cover_attachment_id}`}
-                                className={`h-full w-full ${natural || config.gallery_fit === 'contain' ? 'object-contain' : 'object-cover'}`}
-                                alt=""
-                                onError={() => {
-                                    if (document.cover_attachment_id !== null) {
-                                        const attachmentId =
-                                            document.cover_attachment_id;
-                                        setUnavailableCovers((current) => [
-                                            ...current,
-                                            attachmentId,
-                                        ]);
-                                    }
-                                }}
-                            />
-                        ) : document.plain_text ? (
-                            <div className="p-5">
-                                <p className="line-clamp-5 text-xs leading-6 whitespace-pre-line text-muted-foreground/75">
-                                    {document.plain_text}
-                                </p>
-                            </div>
-                        ) : (
-                            <div className="flex h-full items-center justify-center">
-                                <FileText
-                                    size={32}
-                                    strokeWidth={1}
-                                    className="text-muted-foreground/20"
+            <div key={document.id} className="relative">
+                <Link
+                    href={`/workspaces/${workspaceId}/documents/${document.id}`}
+                    className="db-gallery-card group"
+                >
+                    {preview !== 'none' && (
+                        <div
+                            className="db-gallery-preview"
+                            style={
+                                config.gallery_legacy_preview
+                                    ? undefined
+                                    : {
+                                          aspectRatio:
+                                              natural && imageAvailable
+                                                  ? ratioNumber(
+                                                        document.cover_aspect_ratio,
+                                                    )
+                                                  : ratioNumber(
+                                                        config.gallery_ratio ??
+                                                            '16:9',
+                                                    ),
+                                          height: 'auto',
+                                      }
+                            }
+                        >
+                            {preview === 'cover' &&
+                            document.cover_attachment_id &&
+                            !unavailableCovers.includes(
+                                document.cover_attachment_id,
+                            ) ? (
+                                <img
+                                    loading="lazy"
+                                    decoding="async"
+                                    src={`/workspaces/${workspaceId}/documents/${document.id}/attachments/${document.cover_attachment_id}`}
+                                    className={`h-full w-full ${natural || config.gallery_fit === 'contain' ? 'object-contain' : 'object-cover'}`}
+                                    alt=""
+                                    onError={() => {
+                                        if (
+                                            document.cover_attachment_id !==
+                                            null
+                                        ) {
+                                            const attachmentId =
+                                                document.cover_attachment_id;
+                                            setUnavailableCovers((current) => [
+                                                ...current,
+                                                attachmentId,
+                                            ]);
+                                        }
+                                    }}
                                 />
+                            ) : document.plain_text ? (
+                                <div className="p-5">
+                                    <p className="line-clamp-5 text-xs leading-6 whitespace-pre-line text-muted-foreground/75">
+                                        {document.plain_text}
+                                    </p>
+                                </div>
+                            ) : (
+                                <div className="flex h-full items-center justify-center">
+                                    <FileText
+                                        size={32}
+                                        strokeWidth={1}
+                                        className="text-muted-foreground/20"
+                                    />
+                                </div>
+                            )}
+                        </div>
+                    )}
+                    <div className="flex-1 p-4">
+                        <h2 className="flex items-center gap-2 pr-7 text-sm font-medium">
+                            <FileText
+                                size={15}
+                                className="shrink-0 text-muted-foreground/60"
+                            />
+                            <span className="truncate">{document.title}</span>
+                        </h2>
+                        {properties.length > 0 && (
+                            <div className="mt-4 space-y-2.5">
+                                {properties.map((property) => {
+                                    const Icon =
+                                        propertyTypes[property.type].icon;
+                                    return (
+                                        <div
+                                            key={property.id}
+                                            className="flex min-w-0 items-center gap-3 text-xs"
+                                        >
+                                            <span className="flex w-24 shrink-0 items-center gap-1.5 text-muted-foreground">
+                                                <Icon
+                                                    size={12}
+                                                    className="shrink-0 opacity-70"
+                                                />
+                                                <span className="truncate">
+                                                    {property.name}
+                                                </span>
+                                            </span>
+                                            <span className="min-w-0 flex-1">
+                                                <PropertyValue
+                                                    property={property}
+                                                    value={valueFor(
+                                                        values,
+                                                        document.id,
+                                                        property.id,
+                                                    )}
+                                                    candidates={candidates}
+                                                    files={files}
+                                                    emptyLabel="—"
+                                                />
+                                            </span>
+                                        </div>
+                                    );
+                                })}
                             </div>
                         )}
                     </div>
-                )}
-                <div className="flex-1 p-4">
-                    <h2 className="flex items-center gap-2 text-sm font-medium">
-                        <FileText
-                            size={15}
-                            className="shrink-0 text-muted-foreground/60"
-                        />
-                        <span className="truncate">{document.title}</span>
-                    </h2>
-                    {properties.length > 0 && (
-                        <div className="mt-4 space-y-2.5">
-                            {properties.map((property) => {
-                                const Icon = propertyTypes[property.type].icon;
-                                return (
-                                    <div
-                                        key={property.id}
-                                        className="flex min-w-0 items-center gap-3 text-xs"
-                                    >
-                                        <span className="flex w-24 shrink-0 items-center gap-1.5 text-muted-foreground">
-                                            <Icon
-                                                size={12}
-                                                className="shrink-0 opacity-70"
-                                            />
-                                            <span className="truncate">
-                                                {property.name}
-                                            </span>
-                                        </span>
-                                        <span className="min-w-0 flex-1">
-                                            <PropertyValue
-                                                property={property}
-                                                value={valueFor(
-                                                    values,
-                                                    document.id,
-                                                    property.id,
-                                                )}
-                                                candidates={candidates}
-                                                files={files}
-                                                emptyLabel="—"
-                                            />
-                                        </span>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    )}
-                </div>
-            </Link>
+                </Link>
+                <button
+                    type="button"
+                    aria-label={`Move ${document.title} to Trash`}
+                    title="Move to Trash"
+                    onClick={() => onTrashDocument(document)}
+                    className="db-icon-button absolute top-2 right-2 bg-popover/90 hover:!text-destructive focus-visible:outline-2 focus-visible:outline-ring"
+                >
+                    <Trash2 size={15} />
+                </button>
+            </div>
         );
     }
     const createCard = (

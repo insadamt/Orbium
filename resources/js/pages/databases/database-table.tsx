@@ -7,6 +7,7 @@ import {
     Pencil,
     Plus,
     Text,
+    Trash2,
 } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import DatabaseColumnHeader from './database-column-header';
@@ -21,6 +22,7 @@ type Props = {
     onEditProperty: (property?: Property) => void;
     onSaveView: (config: ViewConfig) => void;
     onCreate: () => void;
+    onTrashDocument: (document: DatabaseDocument) => void;
     creating: boolean;
 };
 
@@ -33,6 +35,7 @@ export default function DatabaseTable({
     onEditProperty,
     onSaveView,
     onCreate,
+    onTrashDocument,
     creating,
 }: Props) {
     const [widths, setWidths] = useState(config.widths ?? {});
@@ -196,6 +199,18 @@ export default function DatabaseTable({
                                                 >
                                                     <Pencil size={14} />
                                                     Rename
+                                                </DropdownMenu.Item>
+                                                <DropdownMenu.Separator className="my-1 h-px bg-border" />
+                                                <DropdownMenu.Item
+                                                    className="db-menu-item text-destructive"
+                                                    onSelect={() =>
+                                                        onTrashDocument(
+                                                            document,
+                                                        )
+                                                    }
+                                                >
+                                                    <Trash2 size={14} />
+                                                    Move to Trash
                                                 </DropdownMenu.Item>
                                             </DropdownMenu.Content>
                                         </DropdownMenu.Portal>

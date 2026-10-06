@@ -22,11 +22,17 @@ import {
 import DatabaseGallery from './database-gallery';
 import DatabasePropertyManager from './database-property-manager';
 import DatabaseTable from './database-table';
+import TrashDatabaseDocumentDialog from './trash-database-document-dialog';
 import DatabaseViewSettings, {
     type SettingsSection,
 } from './database-view-settings';
 import PropertyInput from './property-input';
-import type { DatabasePageProps, Property, ViewConfig } from './types';
+import type {
+    DatabaseDocument,
+    DatabasePageProps,
+    Property,
+    ViewConfig,
+} from './types';
 
 const viewTypes = [
     { id: 'table', label: 'Table', icon: Table2 },
@@ -64,6 +70,8 @@ function DatabasePage({ page }: { page: DatabasePageProps }) {
         Property | 'new' | null
     >(null);
     const [creating, setCreating] = useState(false);
+    const [documentToTrash, setDocumentToTrash] =
+        useState<DatabaseDocument | null>(null);
     const [savingView, setSavingView] = useState(false);
     const [viewError, setViewError] = useState('');
     const base = `/workspaces/${workspace.id}/databases/${database.id}`;
@@ -294,6 +302,7 @@ function DatabasePage({ page }: { page: DatabasePageProps }) {
                         onEditProperty={editProperty}
                         onSaveView={saveView}
                         onCreate={createDocument}
+                        onTrashDocument={setDocumentToTrash}
                         creating={creating}
                     />
                 )}
@@ -307,6 +316,7 @@ function DatabasePage({ page }: { page: DatabasePageProps }) {
                         files={fileReferences}
                         config={config}
                         onCreate={createDocument}
+                        onTrashDocument={setDocumentToTrash}
                         creating={creating}
                     />
                 )}
@@ -369,6 +379,14 @@ function DatabasePage({ page }: { page: DatabasePageProps }) {
                     onEditProperty={editProperty}
                     saving={savingView}
                     error={viewError}
+                />
+            )}
+            {documentToTrash && (
+                <TrashDatabaseDocumentDialog
+                    key={documentToTrash.id}
+                    document={documentToTrash}
+                    base={base}
+                    onClose={() => setDocumentToTrash(null)}
                 />
             )}
             {propertyEditor && (

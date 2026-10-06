@@ -69,6 +69,15 @@ class DatabaseController extends Controller
         return to_route('documents.show', [$workspace, $document]);
     }
 
+    public function trashDocument(Request $request, int $workspace, int $node, int $document, ManageHierarchy $hierarchy): RedirectResponse
+    {
+        $database = $this->ownedDatabase($request, $workspace, $node);
+        $documentNode = $database->children()->where('type', 'document')->findOrFail($document);
+        $hierarchy->trash($documentNode);
+
+        return to_route('databases.show', [$workspace, $node]);
+    }
+
     public function createProperty(Request $request, int $workspace, int $node, ManageDatabase $action): RedirectResponse
     {
         $database = $this->ownedDatabase($request, $workspace, $node);

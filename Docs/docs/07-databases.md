@@ -105,6 +105,8 @@ Requirements:
 - create document row;
 - clicking title opens document.
 
+Each row's options menu includes **Move to Trash** with confirmation. After confirmation, the document disappears from the database while the current view, search, filters, and scroll position are preserved. Documents retain their body and structured values and can be restored from the workspace Trash.
+
 Header menu may contain:
 
 - edit property;
@@ -133,6 +135,8 @@ Visible properties
 ```
 
 Click card opens document.
+
+Each card has a separate **Move to Trash** button using the same confirmation and recoverable deletion behavior as Table. Using this button does not open the document.
 
 Keep visual treatment restrained; do not turn Gallery into a decorative image feed.
 
