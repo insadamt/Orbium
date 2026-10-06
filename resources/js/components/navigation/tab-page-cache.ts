@@ -3,6 +3,8 @@ import { toast } from 'sonner';
 import { create } from 'zustand';
 import { useNavigation } from './navigation-store';
 
+const retainedNavigationMarker = '__orbiumRetainedNavigation';
+
 type CachedTabPage = { page: Page; generation: number };
 type TabPageCache = {
     pages: Record<string, CachedTabPage>;
@@ -11,9 +13,51 @@ type TabPageCache = {
     forgetPages: (tabIds: string[]) => void;
 };
 
+type RetainedNavigationProps = Record<string, unknown> & {
+    [retainedNavigationMarker]?: { tabId: string };
+};
+
+function isRetainedNavigationPage(page: Page): boolean {
+    const marker = (page.props as RetainedNavigationProps)[
+        retainedNavigationMarker
+    ];
+
+    return typeof marker?.tabId === 'string';
+}
+
+function retainedNavigationPage(page: Page, tabId: string): Page {
+    if (page.component !== 'documents/show') return page;
+
+    const props = page.props as RetainedNavigationProps;
+    const document =
+        props.document && typeof props.document === 'object'
+            ? (props.document as Record<string, unknown>)
+            : {};
+
+    return {
+        ...page,
+        props: {
+            ...props,
+            document: {
+                content: { type: 'doc', content: [] },
+                revision: document.revision ?? 0,
+                cover_attachment_id: document.cover_attachment_id ?? null,
+                cover_aspect_ratio: document.cover_aspect_ratio ?? null,
+                icon_attachment_id: document.icon_attachment_id ?? null,
+            },
+            databaseProperties: [],
+            databaseValues: [],
+            mentionCandidates: [],
+            databaseFiles: [],
+            [retainedNavigationMarker]: { tabId },
+        },
+    };
+}
+
 export const useTabPageCache = create<TabPageCache>((set, get) => ({
     pages: {},
     rememberPage(page) {
+        if (isRetainedNavigationPage(page)) return;
         const navigation = useNavigation.getState();
         const tab = navigation.tabs.find(
             (item) => item.id === navigation.activeId,
@@ -60,9 +104,9 @@ export const useTabPageCache = create<TabPageCache>((set, get) => ({
 export function cachedPageForTab(id: string) {
     const tab = useNavigation.getState().tabs.find((item) => item.id === id);
     const cached = useTabPageCache.getState().pages[id];
-    return cached?.page.url === tab?.entries[tab.index].url
-        ? cached.page
-        : undefined;
+    if (cached?.page.url !== tab?.entries[tab.index].url) return undefined;
+
+    return retainedNavigationPage(cached.page, id);
 }
 
 export function allowTabClose(tabId: string) {
