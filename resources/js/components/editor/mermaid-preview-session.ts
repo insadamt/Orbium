@@ -49,6 +49,7 @@ export class MermaidPreviewSession {
     private near = new Set<HTMLElement>();
     private observer?: IntersectionObserver;
     private scrollContainer: HTMLElement | null = null;
+    private active = true;
     private editorDom?: HTMLElement;
     private controller = new AbortController();
     private cancelPreparation?: () => void;
@@ -153,6 +154,12 @@ export class MermaidPreviewSession {
             }
         }, 250);
         this.schedule();
+    }
+
+    setActive(active: boolean) {
+        this.active = active;
+        this.cancelScheduledJob();
+        if (active) this.schedule();
     }
 
     refresh() {
@@ -277,6 +284,7 @@ export class MermaidPreviewSession {
 
     private schedule() {
         if (
+            !this.active ||
             !this.started ||
             this.destroyed ||
             this.rescheduleFrame !== undefined
@@ -304,7 +312,13 @@ export class MermaidPreviewSession {
     }
 
     private runNext() {
-        if (this.destroyed || this.composing || this.manipulating) return;
+        if (
+            !this.active ||
+            this.destroyed ||
+            this.composing ||
+            this.manipulating
+        )
+            return;
         const next = this.nextEntry();
         if (!next) return;
         const { entry } = next;

@@ -11,6 +11,7 @@ import { NavigationEvents } from '@/components/navigation/navigation-events';
 import { NavigationBackButton } from '@/components/navigation/navigation-back-button';
 import { NavigationTabStrip } from '@/components/navigation/navigation-tab-strip';
 import { PageSearchProvider } from '@/components/navigation/page-search';
+import { RetainedDocumentWorkspace } from '@/components/navigation/retained-document-workspace';
 import { SplitWorkspace } from '@/components/navigation/split-workspace';
 import {
     locationForPage,
@@ -242,7 +243,12 @@ export default function AppLayout({ children }: AppLayoutProps) {
                     {isPane ? (
                         children
                     ) : (
-                        <SplitWorkspace>{children}</SplitWorkspace>
+                        <>
+                            <RetainedDocumentWorkspace>
+                                {children}
+                            </RetainedDocumentWorkspace>
+                            <SplitWorkspace>{null}</SplitWorkspace>
+                        </>
                     )}
                 </main>
             </PageSearchProvider>

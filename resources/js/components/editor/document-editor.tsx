@@ -1,3 +1,5 @@
+import { useEditorTabShortcuts } from './use-editor-tab-shortcuts';
+import { useEditorTabActivity } from './use-editor-tab-activity';
 import DocumentStyles from './styles/document-styles';
 import { BlockStyleClasses } from './styles/block-style-extension';
 import { useEditorReadiness } from './use-editor-readiness';
@@ -108,9 +110,7 @@ export default function DocumentEditor({
     content,
     revision,
 }: Props) {
-    const searchTerm =
-        new URLSearchParams(usePage().url.split('?')[1] ?? '').get('find') ??
-        '';
+    const pageUrl = usePage().url;
     const pageSearch = usePageSearch();
     const [menu, setMenu] = useState<EditorMenu | null>(null);
     const [searchOpen, setSearchOpen] = useState(false);
@@ -214,6 +214,12 @@ export default function DocumentEditor({
 
     useEditorReadiness(editor, nodeId, mermaidSession);
 
+    const documentTab = useEditorTabActivity(mermaidSession);
+    const searchTerm =
+        new URLSearchParams(
+            (documentTab.url || pageUrl).split('?')[1] ?? '',
+        ).get('find') ?? '';
+
     useEffect(() => {
         if (status === 'saved') mermaidSession.notifySaved();
     }, [status, mermaidSession]);
@@ -226,6 +232,7 @@ export default function DocumentEditor({
     }, [editor, searchTerm]);
 
     useEffect(() => {
+        if (!documentTab.active) return;
         if (!editor || !pageSearch.query.trim()) {
             pageSearch.setResultCount(null);
             return;
@@ -246,10 +253,16 @@ export default function DocumentEditor({
             if (timer !== null) clearTimeout(timer);
             editor.off('update', scheduleMatchCount);
         };
-    }, [editor, pageSearch.query, pageSearch.setResultCount]);
+    }, [
+        editor,
+        documentTab.active,
+        pageSearch.query,
+        pageSearch.setResultCount,
+    ]);
 
     useEffect(() => {
         if (
+            !documentTab.active ||
             !editor ||
             !pageSearch.searchStep.query ||
             pageSearch.searchStep.id === 0
@@ -262,7 +275,12 @@ export default function DocumentEditor({
                 pageSearch.searchStep.previous,
             ),
         );
-    }, [editor, pageSearch.searchStep, pageSearch.setResultCount]);
+    }, [
+        editor,
+        documentTab.active,
+        pageSearch.searchStep,
+        pageSearch.setResultCount,
+    ]);
 
     async function addFiles(files: FileList | File[]) {
         if (!editor) return;
@@ -331,27 +349,9 @@ export default function DocumentEditor({
         }
     }
 
-    useEffect(() => {
-        const onKeyDown = (event: KeyboardEvent) => {
-            if (!editor) return;
-            if (
-                (event.ctrlKey || event.metaKey) &&
-                event.key.toLowerCase() === 's'
-            ) {
-                event.preventDefault();
-                saveNow();
-            }
-            if (
-                (event.ctrlKey || event.metaKey) &&
-                event.key.toLowerCase() === 'f'
-            ) {
-                event.preventDefault();
-                setSearchOpen(true);
-            }
-        };
-        window.addEventListener('keydown', onKeyDown);
-        return () => window.removeEventListener('keydown', onKeyDown);
-    }, [editor, saveNow]);
+    useEditorTabShortcuts(editor, saveNow, documentTab.active, () =>
+        setSearchOpen(true),
+    );
 
     return (
         <div className="relative" data-document-styles>
@@ -460,7 +460,9 @@ export default function DocumentEditor({
                 />
             )}
 
-            {editor && <SelectionToolbar editor={editor} />}
+            {documentTab.active && editor && (
+                <SelectionToolbar editor={editor} />
+            )}
 
             {!editor && <DocumentOpeningPreview content={content} />}
             {editor && (
@@ -474,7 +476,7 @@ export default function DocumentEditor({
                     }
                 />
             )}
-            {menu && editor && (
+            {documentTab.active && menu && editor && (
                 <SuggestionMenu
                     menu={menu}
                     editor={editor}

@@ -3,6 +3,11 @@ import type { Page } from '@inertiajs/core';
 import { attachmentUrl } from '@/components/editor/editor-api';
 import { nodeImageUrl } from '@/components/hierarchy/node-media-api';
 import { useNavigation, type Location } from './navigation-store';
+import {
+    allowTabClose,
+    cachedPageForTab,
+    useTabPageCache,
+} from './tab-page-cache';
 import { groupForTab } from './split-group-state';
 
 type PageContext = {
@@ -111,6 +116,7 @@ function visitTab(
             commit(page);
             useNavigation.setState({ pending: false });
             recordPage(page);
+            useTabPageCache.getState().rememberPage(page);
             options.onRecorded?.(page);
             requestAnimationFrame(() =>
                 window.scrollTo(0, options.scroll ?? 0),
@@ -175,11 +181,13 @@ export function activateTab(id: string) {
     const navigation = useNavigation.getState();
     const tab = navigation.tabs.find((item) => item.id === id);
     if (!tab) return;
+    if (navigation.activeId === id || navigation.pending) return;
     const location = tab.entries[tab.index];
-    const isSplitTab = Boolean(groupForTab(navigation.splitGroups, id));
+    if (restoreCachedTab(id, () => useNavigation.getState().activate(id)))
+        return;
     visitTab(location.url, () => useNavigation.getState().activate(id), {
         scroll: location.scroll,
-        activateBeforeVisit: isSplitTab ? id : undefined,
+        activateBeforeVisit: id,
     });
 }
 export function stepHistory(delta: number) {
@@ -214,15 +222,72 @@ export function restoreBrowserHistory(url: string) {
 export function closeTab(id: string) {
     const state = useNavigation.getState();
     if (state.tabs.find((tab) => tab.id === id)?.pinned) return;
-    if (state.tabs.length <= 1) return;
+    if (state.tabs.length <= 1 || state.pending) return;
+    if (!allowTabClose(id)) return;
+    const group = groupForTab(state.splitGroups, id);
+    if (group) {
+        const companionId = group.leftId === id ? group.rightId : group.leftId;
+        if (!allowTabClose(companionId)) return;
+        useTabPageCache.getState().forgetPages([companionId]);
+    }
     if (state.activeId !== id) {
         state.close(id);
+        if (group && [group.leftId, group.rightId].includes(state.activeId)) {
+            const activeTab = state.tabs.find(
+                (tab) => tab.id === state.activeId,
+            );
+            if (activeTab)
+                visitTab(activeTab.entries[activeTab.index].url, () => {}, {
+                    scroll: activeTab.entries[activeTab.index].scroll,
+                });
+        }
         return;
     }
     const next = state.tabs.filter((tab) => tab.id !== id).at(-1);
     if (!next) return;
     const location = next.entries[next.index];
-    visitTab(location.url, () => useNavigation.getState().close(id), {
-        scroll: location.scroll,
+    if (restoreCachedTab(next.id, () => useNavigation.getState().close(id)))
+        return;
+    state.saveScroll();
+    useNavigation.getState().close(id);
+    visitTab(location.url, () => {}, { scroll: location.scroll });
+}
+
+function restoreCachedTab(id: string, commit: () => void) {
+    const page = cachedPageForTab(id);
+    if (!page) return false;
+    const navigation = useNavigation.getState();
+    const tab = navigation.tabs.find((item) => item.id === id)!;
+    navigation.saveScroll();
+    useNavigation.setState({ pending: true });
+    // Local Inertia visits preserve the shell and retained document DOM without a request.
+    commit();
+    router.push({
+        url: page.url,
+        component: page.component,
+        props: page.props,
+        preserveState: true,
+        preserveScroll: true,
+        onSuccess: () => {
+            requestAnimationFrame(() => {
+                window.scrollTo(0, tab.entries[tab.index].scroll);
+                if (
+                    page.component !== 'documents/show' &&
+                    !groupForTab(useNavigation.getState().splitGroups, id)
+                ) {
+                    window.setTimeout(() => {
+                        if (
+                            useNavigation.getState().activeId === id &&
+                            window.location.pathname +
+                                window.location.search ===
+                                page.url
+                        )
+                            router.reload();
+                    }, 0);
+                }
+            });
+        },
+        onFinish: () => useNavigation.setState({ pending: false }),
     });
+    return true;
 }

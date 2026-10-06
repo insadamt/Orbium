@@ -1,3 +1,4 @@
+import { useDocumentTab } from '@/components/navigation/document-tab-context';
 import type { Editor } from '@tiptap/core';
 import { EditorContent } from '@tiptap/react';
 import { GripVertical, Plus } from 'lucide-react';
@@ -85,6 +86,7 @@ export default function EditorBlockGutter({
     onFiles,
     onMentionOpen,
 }: Props) {
+    const { active } = useDocumentTab();
     const surfaceRef = useRef<HTMLDivElement>(null);
     const draggedBlock = useRef<number | null>(null);
     const [hoveredBlock, setHoveredBlock] = useState<BlockLocation | null>(
@@ -96,7 +98,7 @@ export default function EditorBlockGutter({
 
     useEffect(() => {
         const surface = surfaceRef.current;
-        if (!surface || menuBlock) return;
+        if (!active || !surface || menuBlock) return;
         let frame: number | null = null;
         let pointer: { target: EventTarget; y: number } | null = null;
 
@@ -145,10 +147,10 @@ export default function EditorBlockGutter({
             surface.removeEventListener('mousemove', scheduleHoverMeasurement);
             surface.removeEventListener('mouseleave', cancelHoverMeasurement);
         };
-    }, [editor, menuBlock]);
+    }, [editor, menuBlock, active]);
 
     useEffect(() => {
-        if (!menuBlock) return;
+        if (!active || !menuBlock) return;
         const closeOutside = (event: PointerEvent) => {
             if (
                 !surfaceRef.current?.contains(event.target as Node) &&
@@ -363,7 +365,8 @@ export default function EditorBlockGutter({
                     </button>
                 </div>
             )}
-            {menuBlock &&
+            {active &&
+                menuBlock &&
                 createPortal(
                     <BlockContextMenu
                         editor={editor}

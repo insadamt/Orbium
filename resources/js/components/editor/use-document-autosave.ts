@@ -3,6 +3,8 @@ import {
     measureEditorAsync,
     recordEditorDuration,
 } from '@/lib/editor-performance';
+import { useNavigation } from '@/components/navigation/navigation-store';
+import { useDocumentTab } from '@/components/navigation/document-tab-context';
 import { scheduleAutosave } from './autosave-scheduling';
 import type { Node as DocumentSnapshot } from '@tiptap/pm/model';
 import { router } from '@inertiajs/react';
@@ -16,6 +18,9 @@ export function useDocumentAutosave(
     nodeId: number,
     initialRevision: number,
 ) {
+    const { tabId, active } = useDocumentTab();
+    const activeTab = useRef(active);
+    activeTab.current = active;
     const [status, setStatus] = useState<SaveStatus>('saved');
     const [error, setError] = useState('');
     const [navigationNotice, setNavigationNotice] = useState('');
@@ -159,7 +164,13 @@ export function useDocumentAutosave(
 
     useEffect(() => {
         stopped.current = false;
-        const removeNavigationGuard = router.on('before', () => {
+        const removeNavigationGuard = router.on('before', (event) => {
+            if (
+                (!activeTab.current ||
+                    (tabId && useNavigation.getState().activeId !== tabId)) &&
+                event.detail.visit.url.pathname !== '/logout'
+            )
+                return;
             if (pendingContent.current === null && !activeRequest.current)
                 return;
             setNavigationNotice('Finish saving before leaving this document.');
@@ -170,14 +181,30 @@ export function useDocumentAutosave(
             if (pendingContent.current || activeRequest.current)
                 event.preventDefault();
         };
+        const beforeTabClose = (event: Event) => {
+            if (
+                (event as CustomEvent<{ tabId: string }>).detail.tabId !== tabId
+            )
+                return;
+            if (pendingContent.current === null && !activeRequest.current)
+                return;
+            event.preventDefault();
+            setNavigationNotice('Finish saving before closing this document.');
+            void flush();
+        };
+        window.addEventListener('orbium:before-tab-close', beforeTabClose);
         window.addEventListener('beforeunload', beforeUnload);
         return () => {
             stopped.current = true;
             cancelScheduledSave.current?.();
             removeNavigationGuard();
             window.removeEventListener('beforeunload', beforeUnload);
+            window.removeEventListener(
+                'orbium:before-tab-close',
+                beforeTabClose,
+            );
         };
-    }, [flush]);
+    }, [flush, tabId]);
 
     return { status, error, navigationNotice, queueSave, saveNow };
 }

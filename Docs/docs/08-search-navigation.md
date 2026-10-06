@@ -162,6 +162,14 @@ Explicit modifier/open-in-new-tab creates a new tab.
 
 This prevents uncontrolled tab growth.
 
+### Visited tab performance (2026-10-06)
+
+Visited app tabs restore their latest session-memory page snapshot through Inertia. Document editors stay mounted while their tab is hidden, preserving undo and editing state and continuing autosave. Hidden editors do not handle active-document shortcuts or schedule new Mermaid preparation. Explorer, database, and settings snapshots refresh after appearing. Unvisited restored tabs still load from the server while outgoing content remains visible; outgoing documents are inactive during that wait. Document response registration and initial tab setup settle before the visible handoff. Document surfaces do not fade from transparent or show an extra generic loading island.
+
+Saved tabs close without waiting for the destination response; editor destruction is deferred until after a frame. Pending document saves block removal and flush the latest snapshot, including hidden documents and split panes. Ending a split refetches standalone document state after its panes have saved. Session caches are cleared across account initialization and are not persistent document storage. Open editor retention increases memory usage; closing tabs releases them.
+
+See `../reports/05-tab-switching-performance.md` for evidence limits and manual acceptance.
+
 ## History
 
 Each tab tracks:

@@ -1,6 +1,7 @@
 import { router, usePage } from '@inertiajs/react';
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useState } from 'react';
 import type { Auth } from '@/types';
+import { useTabPageCache } from './tab-page-cache';
 import { useNavigation } from './navigation-store';
 import type { TreeNode } from './navigation-types';
 import { SearchMaster } from './search-master';
@@ -43,10 +44,11 @@ export function NavigationEvents() {
             ? (nodes.find((item) => item.id === node?.parent_id) ?? null)
             : (nodes.find((item) => item.id === currentId) ?? null);
 
-    useEffect(() => {
+    useLayoutEffect(() => {
         const firstLoad = !useNavigation.getState().storageKey;
         useNavigation.getState().initialize(auth.user.id);
         recordPage(page);
+        useTabPageCache.getState().rememberPage(page);
         if (firstLoad) {
             const navigation = useNavigation.getState();
             const tab = navigation.tabs.find(

@@ -1,3 +1,5 @@
+import { router } from '@inertiajs/react';
+import { allowTabClose, useTabPageCache } from './tab-page-cache';
 import { create } from 'zustand';
 import {
     groupForTab,
@@ -106,6 +108,7 @@ export const useNavigation = create<NavigationState>((set, get) => ({
     initialize(userId) {
         const storageKey = `orbium.navigation.v1.${userId}`;
         if (get().storageKey === storageKey) return;
+        useTabPageCache.setState({ pages: {} });
         let saved: Pick<
             NavigationState,
             'tabs' | 'activeId' | 'recent' | 'containerViews' | 'splitGroups'
@@ -368,6 +371,7 @@ export const useNavigation = create<NavigationState>((set, get) => ({
             !canSplitTabs(draggedTab, companion)
         )
             return;
+        if (!allowTabClose(id) || !allowTabClose(companionId)) return;
         set({
             splitGroups: [
                 ...state.splitGroups,
@@ -379,12 +383,23 @@ export const useNavigation = create<NavigationState>((set, get) => ({
         persist(get());
     },
     clearSplit(tabId) {
+        const group = groupForTab(get().splitGroups, tabId);
+        if (!group) return;
+        if (!allowTabClose(group.leftId) || !allowTabClose(group.rightId))
+            return;
+        useTabPageCache.getState().forgetPages([group.leftId, group.rightId]);
+        const activeTab = get().tabs.find((tab) => tab.id === get().activeId);
         set({
             splitGroups: get().splitGroups.filter(
                 (group) => group.leftId !== tabId && group.rightId !== tabId,
             ),
         });
         persist(get());
+        if (activeTab && [group.leftId, group.rightId].includes(activeTab.id)) {
+            router.visit(activeTab.entries[activeTab.index].url, {
+                preserveScroll: true,
+            });
+        }
     },
     recordPane(id, location) {
         set({

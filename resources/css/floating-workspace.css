@@ -392,6 +392,7 @@
     animation: island-arrive 220ms ease both;
 }
 .floating-document-island {
+    animation: none;
     min-height: min(75vh, 900px);
 }
 .floating-database-island {

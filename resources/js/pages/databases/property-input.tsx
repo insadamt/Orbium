@@ -1,3 +1,4 @@
+import { useDocumentTab } from '@/components/navigation/document-tab-context';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import {
     ArrowUpRight,
@@ -39,6 +40,7 @@ export default function PropertyInput({
     const [draft, setDraft] = useState(value);
     const [error, setError] = useState('');
     const [busy, setBusy] = useState(false);
+    const { active } = useDocumentTab();
     const [open, setOpen] = useState(false);
     const [query, setQuery] = useState('');
     const [uploadedFiles, setUploadedFiles] = useState<FileReference[]>([]);
@@ -145,7 +147,7 @@ export default function PropertyInput({
                 </div>
             ) : isPicker ? (
                 <DropdownMenu.Root
-                    open={open}
+                    open={open && active}
                     onOpenChange={(next) => {
                         setOpen(next);
                         if (next) setQuery('');
