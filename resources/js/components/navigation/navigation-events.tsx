@@ -39,7 +39,11 @@ export function NavigationEvents() {
         database?.title ??
         currentNode?.title ??
         workspace?.name ??
-        (page.url.startsWith('/settings') ? 'Settings' : 'Home');
+        (page.component === 'trash/index'
+            ? 'Trash'
+            : page.url.startsWith('/settings')
+              ? 'Settings'
+              : 'Home');
     const parent =
         locationKind(page.url) === 'document'
             ? (nodes.find((item) => item.id === node?.parent_id) ?? null)
@@ -190,7 +194,9 @@ export function NavigationEvents() {
             if (
                 !anchor ||
                 anchor.origin !== window.location.origin ||
-                !/^\/(workspaces\/\d+|settings\/)/.test(anchor.pathname)
+                !/^\/(workspaces\/\d+|settings\/|trash(?:\?|$))/.test(
+                    anchor.pathname,
+                )
             )
                 return;
             event.preventDefault();

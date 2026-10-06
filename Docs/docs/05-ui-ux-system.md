@@ -276,3 +276,7 @@ v0.1.0 is desktop-first.
 Tablet should remain usable with the collapsible folder sidebar and scrollable tabs.
 
 Mobile-first optimization is deferred. Do not break mobile unnecessarily, but do not sacrifice desktop signature UX to complete a mobile redesign in v0.1.0.
+
+> Unified Trash update (2026-10-06): Trash is a standalone floating content island at `/trash`. The account menu provides All Trash and a workspace-scoped entry from the explorer. Use search, workspace/type filters, sorting, grouped container details, and an on-selection action strip. Permanent deletion previews exact scope and affected item/file totals; deleted workspaces require typed-name confirmation. Empty Trash is explicit about workspace/account scope and ignores search/type filters. See `../reports/05-unified-trash.md`.
+
+> Trash UI correction (2026-10-06): Use workspace-manager-style rows with avatars, compact dates, one Restore action, and overflow menus. Use the floating shell search; keep workspace scope visible and place type/sort in a compact menu. Details opens in a fixed drawer without reflowing the list. Ordinary recovery is immediate; ancestor recovery and permanent deletion retain confirmation. See `../reports/05-trash-ui-redesign.md`.

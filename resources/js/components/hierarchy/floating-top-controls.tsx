@@ -20,7 +20,6 @@ import type { TreeNode } from '@/components/navigation/navigation-types';
 import { openLocation } from '@/components/navigation/tab-navigation';
 import type { Auth, BreadcrumbItem } from '@/types';
 import type { WorkspaceSummary } from './workspace-panel';
-import OrbitalTrash from './orbital-trash';
 import type { TrashedNode } from './node-browser';
 
 type Props = {
@@ -31,14 +30,13 @@ type Props = {
     nodes: TreeNode[];
     breadcrumbs: BreadcrumbItem[];
     showContentActions?: boolean;
-    pageType: 'explorer' | 'document' | 'database' | 'settings';
+    pageType: 'explorer' | 'document' | 'database' | 'settings' | 'trash';
 };
 
 export function FloatingTopControls({
     workspace,
     workspaces,
     currentNode,
-    trashedNodes,
     nodes,
     breadcrumbs,
     showContentActions = true,
@@ -46,7 +44,6 @@ export function FloatingTopControls({
 }: Props) {
     const { auth } = usePage<{ auth: Auth }>().props;
     const pageSearch = usePageSearch();
-    const [trashOpen, setTrashOpen] = useState(false);
     const [createType, setCreateType] = useState<TreeNode['type'] | null>(null);
     const [newWorkspaceOpen, setNewWorkspaceOpen] = useState(false);
     const [workspaceName, setWorkspaceName] = useState('');
@@ -73,7 +70,8 @@ export function FloatingTopControls({
     }, []);
 
     useEffect(() => {
-        if (!workspace || pageType === 'settings') return;
+        if (!workspace || pageType === 'settings' || pageType === 'trash')
+            return;
         try {
             localStorage.setItem(
                 'orbium.lastWorkspaceId',
@@ -85,7 +83,6 @@ export function FloatingTopControls({
     }, [workspace, pageType]);
 
     useEffect(() => {
-        setTrashOpen(false);
         setCreateType(null);
         setNewWorkspaceOpen(false);
         setWorkspaceName('');
@@ -264,6 +261,12 @@ export function FloatingTopControls({
                                 >
                                     Manage workspaces
                                 </Menu.Item>
+                                <Menu.Item
+                                    className="floating-menu-item"
+                                    onSelect={() => openLocation('/trash')}
+                                >
+                                    All Trash
+                                </Menu.Item>
                                 {workspace && showContentActions && (
                                     <>
                                         <Menu.Separator className="my-2 border-t border-border/60" />
@@ -289,7 +292,11 @@ export function FloatingTopControls({
                                 {workspace && showContentActions && (
                                     <Menu.Item
                                         className="floating-menu-item"
-                                        onSelect={() => setTrashOpen(true)}
+                                        onSelect={() =>
+                                            openLocation(
+                                                `/trash?workspace=${workspace.id}`,
+                                            )
+                                        }
                                     >
                                         Trash
                                     </Menu.Item>
@@ -380,13 +387,6 @@ export function FloatingTopControls({
                     )}
                 </DialogContent>
             </Dialog>
-            {trashOpen && workspace && (
-                <OrbitalTrash
-                    workspaceId={workspace.id}
-                    nodes={trashedNodes}
-                    onClose={() => setTrashOpen(false)}
-                />
-            )}
         </>
     );
 }

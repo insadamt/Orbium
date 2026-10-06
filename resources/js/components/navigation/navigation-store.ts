@@ -12,7 +12,7 @@ import { canSplitTabs } from './split-tab-rules';
 export type Location = {
     url: string;
     title: string;
-    kind: 'workspace' | 'document' | 'database' | 'settings';
+    kind: 'workspace' | 'document' | 'database' | 'settings' | 'trash';
     scroll: number;
     viewState?: Record<string, unknown>;
     icon?: string | null;
@@ -125,7 +125,7 @@ export const useNavigation = create<NavigationState>((set, get) => ({
                         tab.entries.every(
                             (entry) =>
                                 typeof entry.url === 'string' &&
-                                /^\/(workspaces\/\d+|settings\/|dashboard)/.test(
+                                /^\/(workspaces\/\d+|settings\/|dashboard|trash(?:\?|$))/.test(
                                     entry.url,
                                 ) &&
                                 typeof entry.title === 'string',
@@ -138,9 +138,12 @@ export const useNavigation = create<NavigationState>((set, get) => ({
                         pinned: tab.pinned === true,
                         entries: tab.entries.map((entry) => ({
                             ...entry,
-                            kind: ['document', 'database', 'settings'].includes(
-                                entry.kind,
-                            )
+                            kind: [
+                                'document',
+                                'database',
+                                'settings',
+                                'trash',
+                            ].includes(entry.kind)
                                 ? entry.kind
                                 : 'workspace',
                         })),

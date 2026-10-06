@@ -50,6 +50,12 @@ Implement Orbium's signature spatial hierarchy navigator using the stable domain
 - `docs/09-orbit-3d.md`
 - `docs/08-search-navigation.md`
 
+## Unified Trash review enhancement (2026-10-06)
+
+The subsequent [Trash UI redesign report](../reports/05-trash-ui-redesign.md) documents the approved native row/menu presentation, fixed details drawer, scope synchronization, and immediate ordinary recovery. It supplies the current manual UI checklist; visual validation remains pending.
+
+The approved Trash enhancement adds a standalone account-wide page with workspace filtering, grouped container contents, restoration, bulk actions, and permanent subtree deletion. Deletion previews are checked again on the server; workspace deletion requires exact names. Existing separately trashed descendants remain deleted when a parent is restored. See [the report and manual checklist](../reports/05-unified-trash.md). Manual validation remains pending; this is Phase 5 review work.
+
 ## Tasks
 
 ### 5.1 Scene foundation

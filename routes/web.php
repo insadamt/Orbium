@@ -6,12 +6,18 @@ use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\MentionCandidateController;
 use App\Http\Controllers\NavigationController;
 use App\Http\Controllers\NodeController;
+use App\Http\Controllers\TrashController;
 use App\Http\Controllers\WorkspaceController;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/dashboard')->name('home');
 
 Route::middleware('auth')->group(function () {
+    Route::get('trash', [TrashController::class, 'index'])->name('trash.index');
+    Route::get('trash/details', [TrashController::class, 'details'])->name('trash.details');
+    Route::get('trash/preview', [TrashController::class, 'preview'])->name('trash.preview');
+    Route::post('trash/restore', [TrashController::class, 'restore'])->name('trash.restore');
+    Route::post('trash/delete', [TrashController::class, 'destroy'])->name('trash.delete');
     Route::get('workspaces/{workspace}/search', [NavigationController::class, 'search'])->name('navigation.search');
     Route::get('workspaces/{workspace}/tree', [NavigationController::class, 'tree'])->name('navigation.tree');
     Route::put('workspaces/{workspace}/nodes/{node}/tags', [NavigationController::class, 'updateTags'])->name('navigation.tags');

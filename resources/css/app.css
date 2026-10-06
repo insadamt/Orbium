@@ -4,6 +4,7 @@
 @import './floating-workspace.css';
 @import './split-workspace.css';
 @import './workspace-manager.css';
+@import './trash.css';
 @import './node-media.css';
 @import './explorer-views.css';
 @import './appearance-surfaces.css';
@@ -519,5 +520,11 @@
         animation-duration: 0.01ms !important;
         scroll-behavior: auto !important;
         transition-duration: 0.01ms !important;
+    }
+}
+
+@layer components {
+    .trash-button {
+        @apply inline-flex min-h-9 items-center justify-center rounded-lg px-3 py-2 text-sm transition-colors hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring disabled:cursor-not-allowed disabled:opacity-40;
     }
 }

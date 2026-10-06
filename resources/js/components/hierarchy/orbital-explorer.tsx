@@ -15,7 +15,6 @@ import { NodeActions } from '@/components/navigation/node-actions';
 import { nodeUrl } from '@/components/navigation/navigation-types';
 import { openLocation } from '@/components/navigation/tab-navigation';
 import type { HierarchyNode, TrashedNode } from './node-browser';
-import OrbitalTrash from './orbital-trash';
 import OrbitalPath from './orbital-path';
 import OrbitalWorkspaceCarousel from './orbital-workspace-carousel';
 import OrbitalExplorerHeader from './orbital-explorer-header';
@@ -40,7 +39,6 @@ export default function OrbitalExplorer({
     workspace,
     workspaces,
     nodes,
-    trashedNodes,
     currentNode,
     onManageWorkspaces,
 }: Props) {
@@ -61,7 +59,6 @@ export default function OrbitalExplorer({
         null,
     );
     const [createMenuOpen, setCreateMenuOpen] = useState(false);
-    const [trashOpen, setTrashOpen] = useState(false);
     const [actionsId, setActionsId] = useState<number | null>(null);
     const [localTags, setLocalTags] = useState<Record<number, string[]>>({});
     const [stageSize, setStageSize] = useState({ width: 1200, height: 800 });
@@ -442,7 +439,9 @@ export default function OrbitalExplorer({
                             <button
                                 type="button"
                                 onClick={() => {
-                                    setTrashOpen(true);
+                                    openLocation(
+                                        `/trash?workspace=${workspace.id}`,
+                                    );
                                     setCreateMenuOpen(false);
                                 }}
                             >
@@ -506,13 +505,6 @@ export default function OrbitalExplorer({
                         />
                     </div>
                 </div>
-            )}
-            {trashOpen && (
-                <OrbitalTrash
-                    workspaceId={workspace.id}
-                    nodes={trashedNodes}
-                    onClose={() => setTrashOpen(false)}
-                />
             )}
         </div>
     );

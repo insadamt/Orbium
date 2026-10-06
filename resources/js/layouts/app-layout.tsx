@@ -27,6 +27,8 @@ type ShellPageProps = {
     auth: Auth;
     workspace?: { id: number; name: string };
     workspaces?: WorkspaceSummary[];
+    initialWorkspaceId?: number | null;
+    trashWorkspaces?: { id: number; name: string }[];
     nodes?: TreeNode[];
     trashedNodes?: TrashedNode[];
     currentNode?: TreeNode | null;
@@ -67,6 +69,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
     const isHomePage = page.component === 'dashboard';
     const isFloatingPage =
         isHomePage ||
+        page.component === 'trash/index' ||
         page.component === 'documents/show' ||
         page.component === 'databases/show' ||
         page.component.startsWith('settings/');
@@ -83,18 +86,24 @@ export default function AppLayout({ children }: AppLayoutProps) {
         }
     }, [page.component]);
     const shellWorkspace =
-        page.props.workspace ??
-        page.props.workspaces?.find(
-            (workspace) => workspace.id === settingsWorkspaceId,
-        ) ??
-        page.props.workspaces?.[0];
+        page.component === 'trash/index'
+            ? page.props.trashWorkspaces?.find(
+                  (workspace) => workspace.id === page.props.initialWorkspaceId,
+              )
+            : (page.props.workspace ??
+              page.props.workspaces?.find(
+                  (workspace) => workspace.id === settingsWorkspaceId,
+              ) ??
+              page.props.workspaces?.[0]);
     const pageType = isHomePage
         ? 'explorer'
         : page.component === 'documents/show'
           ? 'document'
           : page.component === 'databases/show'
             ? 'database'
-            : 'settings';
+            : page.component === 'trash/index'
+              ? 'trash'
+              : 'settings';
     const breadcrumbLinks = page.props.breadcrumbs ?? [];
     const currentPath = page.url.split('?')[0];
     const floatingBreadcrumbs: BreadcrumbItem[] = page.component.startsWith(

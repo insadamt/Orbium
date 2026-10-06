@@ -5,7 +5,7 @@ import { usePageSearch } from './page-search';
 export function FloatingPageSearch({
     pageType,
 }: {
-    pageType: 'explorer' | 'document' | 'database' | 'settings';
+    pageType: 'explorer' | 'document' | 'database' | 'settings' | 'trash';
 }) {
     const search = usePageSearch();
     const input = useRef<HTMLInputElement>(null);
@@ -18,6 +18,7 @@ export function FloatingPageSearch({
         document: 'Find in document…',
         database: 'Filter documents…',
         settings: 'Find settings…',
+        trash: 'Search Trash…',
     };
 
     return (

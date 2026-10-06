@@ -18,6 +18,7 @@ import { Plus } from 'lucide-react';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { DeleteWorkspaceDialog } from './delete-workspace-dialog';
 import { TrashedWorkspaces } from './trashed-workspaces';
+import { openLocation } from '@/components/navigation/tab-navigation';
 import { WorkspaceRow } from './workspace-row';
 
 export type WorkspaceSummary = { id: number; name: string; position: number };
@@ -304,6 +305,13 @@ export default function WorkspacePanel({
                 )}
             </section>
 
+            <button
+                type="button"
+                className="trash-button"
+                onClick={() => openLocation('/trash')}
+            >
+                Open unified Trash
+            </button>
             <TrashedWorkspaces
                 workspaces={trashedWorkspaces}
                 processing={processing}

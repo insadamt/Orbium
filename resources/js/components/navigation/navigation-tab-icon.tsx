@@ -1,10 +1,18 @@
-import { Database, FileText, Folder, Home, Settings2 } from 'lucide-react';
+import {
+    Database,
+    FileText,
+    Folder,
+    Home,
+    Settings2,
+    Trash2,
+} from 'lucide-react';
 import type { Location } from './navigation-store';
 
 const tabIcons = {
     document: FileText,
     database: Database,
     settings: Settings2,
+    trash: Trash2,
     workspace: Home,
 };
 

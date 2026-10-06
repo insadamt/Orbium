@@ -32,6 +32,7 @@ type PageContext = {
 export function locationKind(url: string): Location['kind'] {
     if (url.includes('/documents/')) return 'document';
     if (url.includes('/databases/')) return 'database';
+    if (url.split('?')[0] === '/trash') return 'trash';
     if (url.startsWith('/settings/')) return 'settings';
     return 'workspace';
 }
@@ -59,7 +60,11 @@ export function locationForPage(page: {
         title:
             context?.title ??
             page.props.workspace?.name ??
-            (page.url.startsWith('/settings') ? 'Settings' : 'Home'),
+            (page.url.split('?')[0] === '/trash'
+                ? 'Trash'
+                : page.url.startsWith('/settings')
+                  ? 'Settings'
+                  : 'Home'),
         kind: locationKind(page.url),
         scroll: 0,
         icon: context?.icon ?? null,

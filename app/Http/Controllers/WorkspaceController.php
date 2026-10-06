@@ -103,7 +103,7 @@ class WorkspaceController extends Controller
 
     public function destroyPermanently(Request $request, int $workspace, ManageWorkspaces $workspaces): RedirectResponse
     {
-        $workspaceModel = Workspace::query()->withTrashed()
+        $workspaceModel = Workspace::query()->onlyTrashed()
             ->where('user_id', $request->user()->id)->findOrFail($workspace);
         $data = $request->validate(['confirmed_name' => ['required', 'string', 'max:255']]);
         if (! hash_equals($workspaceModel->name, $data['confirmed_name'])) {
