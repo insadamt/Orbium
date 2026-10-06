@@ -86,7 +86,7 @@ class TrashCatalog
             }
         }
 
-        return $this->nodes->only($ids);
+        return $this->nodes->only($ids)->keyBy('id');
     }
 
     public function containedAttachments(string $key, Collection $nodes): Collection
@@ -95,7 +95,7 @@ class TrashCatalog
             return $this->attachments->where('workspace_id', (int) substr($key, 10));
         }
 
-        return $this->attachments->whereIn('owner_node_id', $nodes->keys()->all());
+        return $this->attachments->whereIn('owner_node_id', $nodes->pluck('id')->all());
     }
 
     public function parentPath(Node $node): string

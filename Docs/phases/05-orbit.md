@@ -52,6 +52,8 @@ Implement Orbium's signature spatial hierarchy navigator using the stable domain
 
 ## Unified Trash review enhancement (2026-10-06)
 
+The [permanent deletion ID correction](../reports/05-trash-node-id-fix.md) fixes collection indexes being used as node IDs during subtree previews, attachment lookup, and removal. Use its manual checklist to recheck the reported foreign-key failure; no application data was modified during implementation.
+
 The subsequent [Trash UI redesign report](../reports/05-trash-ui-redesign.md) documents the approved native row/menu presentation, fixed details drawer, scope synchronization, and immediate ordinary recovery. It supplies the current manual UI checklist; visual validation remains pending.
 
 The approved Trash enhancement adds a standalone account-wide page with workspace filtering, grouped container contents, restoration, bulk actions, and permanent subtree deletion. Deletion previews are checked again on the server; workspace deletion requires exact names. Existing separately trashed descendants remain deleted when a parent is restored. See [the report and manual checklist](../reports/05-unified-trash.md). Manual validation remains pending; this is Phase 5 review work.

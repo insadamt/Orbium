@@ -22,7 +22,9 @@ class ManageTrash
         $attachments = collect();
         foreach ($keys as $key) {
             $contained = $catalog->containedNodes($key);
-            $nodes = $nodes->union($contained);
+            foreach ($contained as $node) {
+                $nodes->put($node->id, $node);
+            }
             foreach ($catalog->containedAttachments($key, $contained) as $attachment) {
                 $attachments->put($attachment->id, $attachment);
             }
@@ -34,7 +36,7 @@ class ManageTrash
         return [
             'entries' => $entries,
             'node_count' => $nodes->count(),
-            'node_ids' => $nodes->keys()->values()->all(),
+            'node_ids' => $nodes->pluck('id')->values()->all(),
             'workspace_ids' => array_values(array_map(fn (array $entry) => $entry['workspace_id'], array_filter($entries, fn (array $entry) => $entry['type'] === 'workspace'))),
             'attachment_count' => $attachments->count(),
             'size_bytes' => $attachments->sum('size_bytes'),
@@ -78,7 +80,7 @@ class ManageTrash
             if (! hash_equals($preview['fingerprint'], $fingerprint)) {
                 throw ValidationException::withMessages(['trash' => 'Trash changed. Close this dialog and review the deletion again.']);
             }
-            $nodeIds = [];
+            $nodeIds = $preview['node_ids'];
             $attachmentIds = [];
             $workspaceIds = [];
             $storageKeys = [];
@@ -90,7 +92,6 @@ class ManageTrash
                     $workspaceIds[] = $entry['workspace_id'];
                 }
                 $nodes = $catalog->containedNodes($entry['key']);
-                array_push($nodeIds, ...$nodes->keys()->all());
                 foreach ($catalog->containedAttachments($entry['key'], $nodes) as $attachment) {
                     $attachmentIds[] = $attachment->id;
                     $storageKeys[] = $attachment->storage_key;
