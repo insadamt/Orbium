@@ -1,13 +1,20 @@
-import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
+import CodeBlockLowlight, {
+    type CodeBlockLowlightOptions,
+} from '@tiptap/extension-code-block-lowlight';
 import type { Fragment, Node as ProseMirrorNode } from '@tiptap/pm/model';
 import { Plugin, PluginKey } from '@tiptap/pm/state';
-import { Decoration, DecorationSet } from '@tiptap/pm/view';
+import { Decoration, DecorationSet, type EditorView } from '@tiptap/pm/view';
 import type { createLowlight } from 'lowlight';
+import {
+    adjustEditorPerformanceCounter,
+    measureEditorWork,
+} from '@/lib/editor-performance';
 import {
     findTransactionBlockRanges,
     type DocumentRange,
 } from './document-change-range';
 import { scheduleEditorIdleWork } from './schedule-editor-idle-work';
+import type { EditorActivityController } from './editor-activity-controller';
 
 type Lowlight = ReturnType<typeof createLowlight>;
 type HighlightNode = ReturnType<Lowlight['highlight']>['children'][number];
@@ -17,6 +24,9 @@ type HighlightState = { decorations: DecorationSet; pending: PendingBlock[] };
 type CompletedHighlights = {
     blocks: PendingBlock[];
     decorations: Decoration[];
+};
+type IncrementalHighlightingOptions = CodeBlockLowlightOptions & {
+    activityController: EditorActivityController | null;
 };
 
 function collectHighlightSpans(nodes: HighlightNode[]): HighlightSpan[] {
@@ -47,6 +57,7 @@ function collectHighlightSpans(nodes: HighlightNode[]): HighlightSpan[] {
 function createHighlightingPlugin(
     lowlight: Lowlight,
     defaultLanguage: string | null | undefined,
+    activityController: EditorActivityController | null,
 ) {
     const cache = new WeakMap<Fragment, Map<string, HighlightSpan[]>>();
     function highlightBlock(block: ProseMirrorNode): HighlightSpan[] {
@@ -157,68 +168,154 @@ function createHighlightingPlugin(
         },
         props: { decorations: (state) => key.getState(state)?.decorations },
         view: (view) => {
-            let cancelWork: (() => void) | null = null;
+            let editorView: EditorView | null = view;
+            let controller = activityController;
+            let scheduledWork: { cancel: () => void } | null = null;
             let destroyed = false;
+            let previousActive = isActive();
+
+            function isActive() {
+                return controller?.getSnapshot().active ?? true;
+            }
+            function cancelScheduledHighlight() {
+                if (!scheduledWork) return;
+                const work = scheduledWork;
+                scheduledWork = null;
+                work.cancel();
+                adjustEditorPerformanceCounter(
+                    'code-highlight.active-schedulers',
+                    -1,
+                );
+            }
+            function processHighlightBatch(currentView: EditorView) {
+                const pending = key.getState(currentView.state)?.pending;
+                if (!pending?.length) return;
+                // Read the current queue at execution time so edits and navigation cannot publish stale highlights.
+                const blocks: PendingBlock[] = [];
+                const decorations: Decoration[] = [];
+                const deadline = performance.now() + 6;
+                for (const block of pending) {
+                    blocks.push(block);
+                    for (const decoration of decorateBlock(block)) {
+                        decorations.push(decoration);
+                    }
+                    if (blocks.length >= 16 || performance.now() >= deadline)
+                        break;
+                }
+                adjustEditorPerformanceCounter(
+                    'code-highlight.processed-blocks',
+                    blocks.length,
+                );
+                currentView.dispatch(
+                    currentView.state.tr
+                        .setMeta(key, { blocks, decorations })
+                        .setMeta('addToHistory', false),
+                );
+            }
             function scheduleHighlight() {
                 if (
                     destroyed ||
-                    cancelWork ||
-                    !key.getState(view.state)?.pending.length
+                    !editorView ||
+                    !isActive() ||
+                    scheduledWork ||
+                    !key.getState(editorView.state)?.pending.length
                 )
                     return;
-                cancelWork = scheduleEditorIdleWork(() => {
-                    cancelWork = null;
-                    if (destroyed) return;
-                    const pending = key.getState(view.state)?.pending;
-                    if (!pending?.length) return;
-                    // Read the current queue at execution time so edits and navigation cannot publish stale highlights.
-                    const blocks: PendingBlock[] = [];
-                    const decorations: Decoration[] = [];
-                    const deadline = performance.now() + 6;
-                    for (const block of pending) {
-                        blocks.push(block);
-                        for (const decoration of decorateBlock(block)) {
-                            decorations.push(decoration);
-                        }
-                        if (
-                            blocks.length >= 16 ||
-                            performance.now() >= deadline
-                        )
-                            break;
-                    }
-                    view.dispatch(
-                        view.state.tr
-                            .setMeta(key, { blocks, decorations })
-                            .setMeta('addToHistory', false),
-                    );
-                    scheduleHighlight();
-                });
+                const work = {
+                    cancel: scheduleEditorIdleWork(() => {
+                        // A canceled callback must not consume a newer activation's scheduled work.
+                        if (scheduledWork !== work) return;
+                        scheduledWork = null;
+                        adjustEditorPerformanceCounter(
+                            'code-highlight.active-schedulers',
+                            -1,
+                        );
+                        if (destroyed || !editorView || !isActive()) return;
+                        measureEditorWork('code-highlight.batch', () => {
+                            if (editorView) processHighlightBatch(editorView);
+                        });
+                        scheduleHighlight();
+                    }),
+                };
+                scheduledWork = work;
+                adjustEditorPerformanceCounter(
+                    'code-highlight.active-schedulers',
+                    1,
+                );
             }
+            function updateHighlightActivity() {
+                const active = isActive();
+                if (destroyed || active === previousActive) return;
+                previousActive = active;
+                adjustEditorPerformanceCounter(
+                    active ? 'code-highlight.resumes' : 'code-highlight.pauses',
+                    1,
+                );
+                if (active) {
+                    scheduleHighlight();
+                } else {
+                    cancelScheduledHighlight();
+                }
+            }
+            let unsubscribe = controller?.subscribe(updateHighlightActivity);
+            adjustEditorPerformanceCounter(
+                'code-highlight.activity-subscriptions',
+                unsubscribe ? 1 : 0,
+            );
+            adjustEditorPerformanceCounter(
+                'code-highlight.active-schedulers',
+                0,
+            );
+            adjustEditorPerformanceCounter(
+                'code-highlight.processed-blocks',
+                0,
+            );
+            adjustEditorPerformanceCounter('code-highlight.pauses', 0);
+            adjustEditorPerformanceCounter('code-highlight.resumes', 0);
             scheduleHighlight();
             return {
                 update: scheduleHighlight,
                 destroy: () => {
+                    if (destroyed) return;
                     destroyed = true;
-                    cancelWork?.();
+                    if (unsubscribe) {
+                        unsubscribe();
+                        unsubscribe = undefined;
+                        adjustEditorPerformanceCounter(
+                            'code-highlight.activity-subscriptions',
+                            -1,
+                        );
+                    }
+                    cancelScheduledHighlight();
+                    editorView = null;
+                    controller = null;
                 },
             };
         },
     });
 }
 
-export const IncrementalCodeBlockLowlight = CodeBlockLowlight.extend({
-    addProseMirrorPlugins() {
-        // Keep the inherited VS Code paste handler, replacing only Lowlight's full-document plugin.
-        const inherited = (this.parent?.() ?? []).filter((plugin) => {
-            const key = plugin.spec.key as { key?: string } | undefined;
-            return !key?.key?.startsWith('lowlight$');
-        });
-        return [
-            ...inherited,
-            createHighlightingPlugin(
-                this.options.lowlight as Lowlight,
-                this.options.defaultLanguage,
-            ),
-        ];
-    },
-});
+export const IncrementalCodeBlockLowlight =
+    CodeBlockLowlight.extend<IncrementalHighlightingOptions>({
+        addOptions() {
+            return {
+                ...this.parent!(),
+                activityController: null,
+            };
+        },
+        addProseMirrorPlugins() {
+            // Keep the inherited VS Code paste handler, replacing only Lowlight's full-document plugin.
+            const inherited = (this.parent?.() ?? []).filter((plugin) => {
+                const key = plugin.spec.key as { key?: string } | undefined;
+                return !key?.key?.startsWith('lowlight$');
+            });
+            return [
+                ...inherited,
+                createHighlightingPlugin(
+                    this.options.lowlight as Lowlight,
+                    this.options.defaultLanguage,
+                    this.options.activityController,
+                ),
+            ];
+        },
+    });

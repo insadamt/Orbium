@@ -127,6 +127,8 @@ export default function DocumentEditor({
         () => new MermaidPreviewSession(workspaceId, nodeId),
         [workspaceId, nodeId],
     );
+    const documentTab = useEditorTabActivity(mermaidSession);
+    const { activityController } = documentTab;
 
     const extensions = useMemo(
         () => [
@@ -141,7 +143,10 @@ export default function DocumentEditor({
             TextColor,
             AutomaticBlockDirection,
             SelectBlockShortcut,
-            IncrementalCodeBlockLowlight.configure({ lowlight }).extend({
+            IncrementalCodeBlockLowlight.configure({
+                lowlight,
+                activityController,
+            }).extend({
                 addNodeView() {
                     return createCodeBlockNodeView;
                 },
@@ -179,7 +184,7 @@ export default function DocumentEditor({
                 onUpload: () => fileInput.current?.click(),
             }),
         ],
-        [workspaceId, nodeId, mermaidSession],
+        [workspaceId, nodeId, mermaidSession, activityController],
     );
 
     const initializationMarked = useRef(false);
@@ -213,7 +218,6 @@ export default function DocumentEditor({
 
     useEditorReadiness(editor, nodeId, mermaidSession);
 
-    const documentTab = useEditorTabActivity(mermaidSession);
     const searchTerm =
         new URLSearchParams(
             (documentTab.url || window.location.href).split('?')[1] ?? '',

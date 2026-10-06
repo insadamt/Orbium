@@ -62,8 +62,7 @@ export class EditorActivityController {
             adjustEditorPerformanceCounter('editor-activity.controllers', -1);
             this.adjustActivityGauges(this.snapshot, -1);
         }
-        // React development effect replay reuses this controller after cleanup.
-        this.subscribers.clear();
+        // Tiptap can survive React effect replay; consumers unsubscribe when their own lifecycle ends.
     }
 
     private adjustActivityGauges(

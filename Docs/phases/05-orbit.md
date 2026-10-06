@@ -1,6 +1,8 @@
 # Phase 5 — Explorer review
 
-The 2026-10-06 [Performance Engine Phase 1, Task 2 report](../reports/05-performance-engine-phase-1-editor-activity-controller.md) adds per-editor activity controllers adapted from retained workspace state, preserving separate visibility and interaction activity. Task 1 is user-accepted; Task 2 awaits manual review. Subsystem pauses and Task 3 have not started.
+The 2026-10-06 [Performance Engine Phase 1, Task 3A report](../reports/05-performance-engine-phase-1-background-highlighting.md) follows user acceptance of Tasks 1 and 2. Incremental syntax highlighting now pauses its scheduler for inactive retained editors and resumes pending work asynchronously. Manual acceptance and CPU comparison are pending; Task 3B has not started.
+
+The 2026-10-06 [Performance Engine Phase 1, Task 2 report](../reports/05-performance-engine-phase-1-editor-activity-controller.md) adds per-editor activity controllers adapted from retained workspace state, preserving separate visibility and interaction activity. Tasks 1 and 2 are now user-accepted; the report records Task 2's original review gate.
 
 The 2026-10-06 [Performance Engine Phase 1, Task 1 report](../reports/05-performance-engine-phase-1-editor-style-runtime.md) globalizes the saved editor-style runtime per authenticated application shell. Runtime counts and style/state acceptance remain pending the user's manual DevTools checklist; no later performance task or product phase was started.
 
