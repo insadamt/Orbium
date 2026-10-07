@@ -3,11 +3,15 @@
 namespace App\Services\Editor;
 
 use App\Models\Document;
+use App\Services\Markdown\MarkdownContract;
+use App\Services\Markdown\MarkdownDocumentInspector;
 use Illuminate\Support\Facades\DB;
 
 class MermaidPreviewCache
 {
     public const RENDERER_VERSION = 'mermaid-12.0.0-neutral-strict-v1';
+
+    public function __construct(private readonly MarkdownDocumentInspector $markdownInspector) {}
 
     /** @param array<string, mixed> $content
      * @return array<int, string>
@@ -82,6 +86,7 @@ class MermaidPreviewCache
         $query->delete();
     }
 
+    /** @return array{svg: string, renderId: string}|null */
     public function previewForDocument(int $documentNodeId, string $sourceHash): ?array
     {
         // Rows can only be inserted for saved sources and are removed under the same document lock on save.
@@ -94,11 +99,23 @@ class MermaidPreviewCache
         return $row ? ['svg' => $row->svg, 'renderId' => $row->render_id] : null;
     }
 
+    /** @return list<string> */
+    private function sourcesInSavedDocument(Document $document): array
+    {
+        return match ($document->content_format_version) {
+            1 => array_values($this->sourcesInDocument($document->content)),
+            MarkdownContract::FORMAT_VERSION => array_values($this->markdownInspector->inspect(
+                $document->markdown ?? MarkdownContract::invalid('Stored Markdown source is missing.'),
+            )->derived->mermaidSourcesByHash),
+            default => MarkdownContract::invalid('Stored document format is unsupported.'),
+        };
+    }
+
     public function storeForSavedSource(int $documentNodeId, string $source, string $renderId, string $svg): void
     {
         DB::transaction(function () use ($documentNodeId, $source, $renderId, $svg): void {
             $document = Document::query()->whereKey($documentNodeId)->lockForUpdate()->firstOrFail();
-            $sources = $this->sourcesInDocument($document->content);
+            $sources = $this->sourcesInSavedDocument($document);
             abort_unless(in_array($source, $sources, true), 422);
 
             $documentPreviews = DB::table('document_mermaid_previews')

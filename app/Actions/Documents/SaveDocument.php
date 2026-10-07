@@ -23,6 +23,9 @@ class SaveDocument
 
         return DB::transaction(function () use ($node, $content, $revision, $mentions, $attachmentIds, $inspection): Document {
             $document = Document::query()->whereKey($node->id)->lockForUpdate()->firstOrFail();
+            if ($document->content_format_version !== 1) {
+                throw ValidationException::withMessages(['content_format_version' => 'This document cannot be saved by the Tiptap editor.']);
+            }
             if ($document->revision !== $revision) {
                 throw ValidationException::withMessages(['revision' => 'This document changed elsewhere. Reload before saving.']);
             }

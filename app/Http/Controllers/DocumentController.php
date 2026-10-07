@@ -3,11 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Actions\Documents\SaveDocument;
+use App\Actions\Documents\SaveMarkdownDocument;
 use App\Models\Attachment;
 use App\Models\DatabaseProperty;
 use App\Models\DatabaseValue;
 use App\Models\Node;
 use App\Services\Editor\MermaidPreviewCache;
+use App\Services\Markdown\MarkdownContract;
+use App\Services\Markdown\MarkdownSaveData;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -21,6 +24,7 @@ class DocumentController extends Controller
     {
         $documentNode = $this->ownedDocument($request, $workspace, $node);
         $document = $documentNode->document()->firstOrFail();
+        abort_if($document->content_format_version !== 1, 409, 'This Markdown document requires the M2 editor. Use a separate document for M1 API verification.');
         $workspaceModel = $documentNode->workspace;
         $breadcrumbs = [['title' => $workspaceModel->name, 'href' => route('workspaces.show', $workspaceModel)]];
         $ancestors = [];
@@ -65,6 +69,26 @@ class DocumentController extends Controller
         }
 
         return $response;
+    }
+
+    public function updateMarkdown(Request $request, int $workspace, int $node, SaveMarkdownDocument $save): JsonResponse
+    {
+        $documentNode = $this->ownedDocument($request, $workspace, $node);
+        abort_unless($request->isJson(), 415, 'Markdown saves require application/json.');
+        $data = $request->validate([
+            'markdown' => ['present', 'string'],
+            'revision' => ['required', 'integer', 'min:0'],
+            'content_format_version' => ['required', 'integer', Rule::in([MarkdownContract::FORMAT_VERSION])],
+            'plain_text' => ['prohibited'],
+            'mentions' => ['prohibited'],
+            'attachment_ids' => ['prohibited'],
+            'mermaid_sources_by_hash' => ['prohibited'],
+        ]);
+        $document = $save->save($documentNode, new MarkdownSaveData(
+            $data['markdown'], (int) $data['revision'], (int) $data['content_format_version'],
+        ));
+
+        return response()->json(['revision' => $document->revision, 'saved_at' => $document->updated_at?->toIso8601String()]);
     }
 
     public function showMermaidPreview(Request $request, int $workspace, int $node, string $sourceHash, MermaidPreviewCache $mermaidPreviewCache): JsonResponse

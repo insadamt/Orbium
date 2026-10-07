@@ -17,7 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
 
-        // Editor JSON contains spaces and empty strings that are part of the document.
+        // Editor bodies contain spaces and empty strings that are part of the document.
         $preserveDocumentContent = static fn (Request $request): bool => $request->isMethod('PUT')
             && $request->is('workspaces/*/documents/*')
             && $request->isJson();
