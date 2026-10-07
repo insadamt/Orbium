@@ -207,7 +207,6 @@ export default function DocumentEditor({
             editorProps: {
                 attributes: {
                     class: 'orbium-editor min-h-[45vh] outline-none',
-                    'data-editor-viewport-containment': 'enabled',
                 },
                 handlePaste(view, event) {
                     return pasteMarkdownIntoEmptyDocument(

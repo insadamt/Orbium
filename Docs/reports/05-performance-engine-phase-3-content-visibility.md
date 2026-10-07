@@ -6,7 +6,46 @@ Date: 2026-10-07. Product Phase 5 review; Performance Engine Phase 3 only.
 
 Phase 1 and Phase 2 remain **KEEP**, as accepted by the user. Starting branch: `master`; starting HEAD: `560ea96` (`perf(navigation): shrink retained document history payload`); starting working tree: clean.
 
-**Acceptance decision: pending manual evidence.** An evidence-based KEEP / MODIFY / REVERT verdict cannot be assigned before the requested Chrome traces and editor checks. Retain the small experiment for measurement, rather than treating implementation completion as production KEEP. Stop here; no Phase 4, virtualization, or editor lifecycle work.
+**Verdict: REVERT / NO-GO.** User-provided P3-1 measurements fail the primary warm-activation performance gate. The runtime experiment is removed while this report preserves its design, benchmark procedure, and rejection evidence. P3-2 through P3-6 are cancelled; correctness testing is unnecessary because the performance prerequisite already failed. No Phase 4 or virtualization work has started.
+
+## Actual P3-1 benchmark result
+
+The user measured these actual tab-switch medians with containment OFF and ON:
+
+| Metric | Containment OFF | Containment ON |
+| --- | --- | --- |
+| Small interaction | 105.2 ms | 101.8 ms |
+| Small Layout | 5.13 ms | 5.51 ms |
+| TEST interaction | 198.2 ms | 196.7 ms |
+| TEST UpdateLayoutTree | 66.45 ms | 66.58 ms |
+| TEST Layout | 47.83 ms | 52.31 ms |
+| TEST PrePaint | 11.86 ms | 12.57 ms |
+
+TEST interaction changed by approximately **−0.7%**; UpdateLayoutTree was effectively unchanged; Layout became approximately **9% slower**. Browser-level `content-visibility` containment on conservative top-level editor blocks did not materially reduce TEST warm-activation rendering cost.
+
+DOM remained fully mounted, as expected. Retained TEST activation remained dominated by large-document browser layout. Expanding containment to increasingly complex blocks would increase editor-semantic risk without evidence that this mechanism solves the activation problem. We will not broaden eligibility merely to chase the experiment.
+
+The next architectural investigation is **true editor-aware viewport virtualization**. This is a future investigation requiring explicit user approval, not an implementation begun by this rollback. Phase 1 and Phase 2 remain KEEP.
+
+## Runtime removal and preserved work
+
+Removed `data-editor-containment-block`, its eligibility function, `data-editor-viewport-containment`, `editor-viewport-containment.css`, and its import. The three surviving frontend files are restored exactly to their pre-Phase-3 versions at `560ea965bf1ea9e9d0719aa616bbe4754b76fad4`.
+
+The subsequent `027dd5540ffe38eaac7bca595aebbe57fd86e11a` type fix remains: `RetainedNavigationProps` derives from `Page['props']`. Phase 1 activity handling, Phase 2 reduced navigation payload/cache protection, retained editor lifecycle, autosave, navigation, and unrelated editor behavior are unchanged. No dependencies added or changed.
+
+## Rollback validation
+
+- `npx vp fmt resources/css/app.css resources/js/components/editor/document-editor.tsx resources/js/components/editor/styles/block-style-extension.ts`: **PASS**, three surviving frontend files.
+- `npm run types:check`: **PASS**; the preserved Inertia typing fix resolves the earlier TS2322.
+- `npm run lint`: **PASS**, 268 formatted files, 204 linted files, no warnings/errors.
+- `./vendor/bin/pint --test`: **PASS**.
+- `npm run build`: **PASS**, 7.95 seconds. Existing >500 kB chunk warnings and ineffective dynamic imports for document image crop dialog, media menu, database property header, and editor loader remain.
+- `git diff --check`: **PASS**.
+- Source comparison with pre-Phase-3 commit `560ea965bf1ea9e9d0719aa616bbe4754b76fad4`: **identical** for the three surviving frontend files. Navigation directory comparison with `027dd5540ffe38eaac7bca595aebbe57fd86e11a`: **unchanged**.
+- Source search under `resources`: no remaining Phase 3 containment attributes, eligibility helper, or stylesheet references.
+- Automated tests: neither written nor run. P3-2 through P3-6 and further browser correctness checks: **cancelled**, per the user's NO-GO decision. No additional manual testing requested for the rejected experiment.
+
+## Original hypothesis and historical evidence
 
 Hypothesis: letting the browser skip offscreen simple top-level blocks reduces retained TEST activation layout and scrolling rendering costs. Phase 2 removed the large warm Inertia payload as the dominant bottleneck. User-supplied Phase 2 medians:
 
@@ -17,7 +56,11 @@ Hypothesis: letting the browser skip offscreen simple top-level blocks reduces r
 
 TEST reference: about 1,854 top-level blocks, 423 headings, 98 native code-language controls, 70 Mermaid views, and ~880 KB editor JSON. Earlier reference: ~999 ms cold mount task, ~47k–63k+ DOM nodes. These are supplied/historical measurements, not new measurements.
 
-This experiment **may reduce style, layout, paint, tab-reactivation rendering, and scroll rendering work**. It does **not reduce DOM nodes, ProseMirror document/state size, initial model construction, or retained editor memory**. All NodeViews and the full editable document still exist. No speedup or browser-correctness result is claimed.
+The original hypothesis concerned reduced style, layout, paint, tab-reactivation rendering, and scroll rendering work. The experiment did **not reduce DOM nodes, ProseMirror document/state size, initial model construction, or retained editor memory**; all NodeViews and the full editable document remained mounted. P3-1 now establishes that the tested approach did not materially improve warm activation; no browser-correctness result is claimed.
+
+## Archived experiment design and procedures
+
+The remaining investigation, implementation, original validation, benchmark setup, and P3 checklists are retained as a historical record of commit `d4247f93fe223b5067104e17a284c9bde0269df6`. They describe the removed experiment, not the current runtime. The OFF/ON commands no longer apply after rollback. Do not execute P3-2 through P3-6 or broaden eligibility; the actual verdict above supersedes the original gate below.
 
 ## DOM investigation and eligibility
 
@@ -51,7 +94,7 @@ Lists and quotes have stable outer wrappers, but their variable-height nested co
 
 Researched [TanStack Virtual](https://tanstack.com/virtual/latest/docs/introduction) and [react-window](https://github.com/bvaughn/react-window), plus [Tiptap performance guidance](https://tiptap.dev/docs/guides/performance). The first two support rendering virtual lists; they do not supply an Orbium/ProseMirror editing integration. Our assessment is that putting them around this contenteditable would require DOM ownership, selection, composition, search, and coordinate integration beyond this phase. Tiptap's React integration guidance also does not solve the measured browser layout problem by itself.
 
-Selected application-owned decorations plus native CSS, as explicitly requested; no dependency added or upgraded, and no further library-choice approval needed. Native containment retains the editor DOM but leaves skip distance and rendering decisions to the browser. The [CSS Containment specification](https://www.w3.org/TR/css-contain-2/#content-visibility) requires `auto` content to remain available to find, focus, and selection; this does not establish correctness of Chrome's integration with ProseMirror. Manual checks remain mandatory.
+Selected application-owned decorations plus native CSS, as explicitly requested; no dependency added or upgraded, and no further library-choice approval needed. Native containment retains the editor DOM but leaves skip distance and rendering decisions to the browser. The [CSS Containment specification](https://www.w3.org/TR/css-contain-2/#content-visibility) requires `auto` content to remain available to find, focus, and selection; this does not establish correctness of Chrome's integration with ProseMirror. The originally planned correctness checks were cancelled after P3-1 failed.
 
 ## Implementation and reversal
 
@@ -64,7 +107,7 @@ Selected application-owned decorations plus native CSS, as explicitly requested;
 
 Disable for A/B without rebuilding: set every loaded editor root's `data-editor-viewport-containment` to `disabled` outside a recording. Re-enable with `enabled`; verify computed styles before each run. Newly mounted roots default to enabled; repeat the override after a cold mount. Rollback is removal of the CSS import/stylesheet, root attribute, and eligibility decoration additions, or reverting this single commit after saving user edits. No content migration or undo-history reset needed.
 
-## Validation
+## Original implementation validation (historical)
 
 - `npx vp fmt resources/js/components/editor/styles/block-style-extension.ts resources/js/components/editor/document-editor.tsx resources/css/app.css resources/css/editor-viewport-containment.css`: **PASS**, four files.
 - `npm run types:check`: **FAIL**, TS2322 at untouched `resources/js/components/navigation/tab-page-cache.ts:39`: reduced page props omit required Inertia `errors`. Confirmed the identical sole error with `tsc --noEmit` against an isolated `git archive` of starting HEAD `560ea96`, sharing the installed dependencies and generated Wayfinder modules. This failure predates Phase 3; no change to Phase 2 history handling.
@@ -72,7 +115,7 @@ Disable for A/B without rebuilding: set every loaded editor root's `data-editor-
 - `./vendor/bin/pint --test`: **PASS**.
 - `npm run build`: **PASS**, 7.09 seconds. Existing >500 kB chunk warnings and ineffective dynamic imports for document image crop dialog, media menu, database property header, and editor loader remain.
 - `git diff --check`: **PASS**; new files also checked before staging/commit.
-- Automated tests: neither written nor run. Browser/manual checks and all new performance numbers: **pending user execution**.
+- Automated tests: neither written nor run. At implementation completion, browser/manual checks and performance numbers were pending. P3-1 has since been measured and rejected, as recorded above; P3-2 through P3-6 are cancelled.
 
 ## Exact Chrome benchmark setup
 
@@ -166,6 +209,8 @@ Type a marker, switch away immediately, return, wait Saved, undo/redo, then relo
 | **MODIFY** | Benefit exists, but eligibility/estimates/selectors need a small refinement; rerun affected scenarios before acceptance |
 | **REVERT / NO-GO** | Selection/search/coordinates break, anchors jump unstably, benefit negligible, or invasive editor work would be required |
 
-All P3 result cells are pending. Correctness wins even when traces improve. If simple-block ProseMirror coordinate mapping fundamentally breaks, reject the experiment; do not begin a layout engine to rescue it.
+Final decision: **REVERT / NO-GO**, based on P3-1's negligible benefit and increased TEST Layout cost. P3-2 through P3-6 were not continued. No coordinate workaround, layout engine, or broader eligibility was attempted.
 
-Commit suggestion: `perf(editor): experiment with viewport rendering containment`. One logical commit; stop after implementation, checks, report and commit.
+Original implementation commit: `d4247f93fe223b5067104e17a284c9bde0269df6` (`perf(editor): experiment with viewport rendering containment`). Preserved type-fix commit: `027dd5540ffe38eaac7bca595aebbe57fd86e11a`.
+
+Rollback commit suggestion: `revert(editor): reject viewport rendering containment experiment`. One logical commit; stop after removal, documentation, validation, and commit.

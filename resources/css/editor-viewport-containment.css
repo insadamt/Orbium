@@ -1,8 +1,0 @@
-@supports (content-visibility: auto) and
-    (contain-intrinsic-block-size: auto 1lh) {
-    .orbium-editor[data-editor-viewport-containment='enabled']
-        > [data-editor-containment-block] {
-        content-visibility: auto;
-        contain-intrinsic-block-size: auto 1lh;
-    }
-}
