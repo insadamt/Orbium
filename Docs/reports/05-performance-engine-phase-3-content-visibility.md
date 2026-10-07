@@ -25,7 +25,7 @@ TEST interaction changed by approximately **−0.7%**; UpdateLayoutTree was effe
 
 DOM remained fully mounted, as expected. Retained TEST activation remained dominated by large-document browser layout. Expanding containment to increasingly complex blocks would increase editor-semantic risk without evidence that this mechanism solves the activation problem. We will not broaden eligibility merely to chase the experiment.
 
-The next architectural investigation is **true editor-aware viewport virtualization**. This is a future investigation requiring explicit user approval, not an implementation begun by this rollback. Phase 1 and Phase 2 remain KEEP.
+Custom Tiptap/ProseMirror viewport virtualization is **paused** while CodeMirror 6 + canonical Markdown architecture is evaluated on branch `editor/codemirror-markdown`. The [M0 migration contract](06-codemirror-markdown-migration.md) inventories feature parity and the proposed syntax; CodeMirror is not accepted until its performance and parity gates pass. Phase 1 and Phase 2 remain KEEP. No migration implementation begins in M0.
 
 ## Runtime removal and preserved work
 
