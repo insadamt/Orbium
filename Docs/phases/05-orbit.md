@@ -1,5 +1,7 @@
 # Phase 5 — Explorer review
 
+Current Performance Engine status (2026-10-07): Phase 1 **KEEP**, Phase 2 **KEEP**, per the user's accepted measurements. [Phase 3 browser block containment experiment](../reports/05-performance-engine-phase-3-content-visibility.md) is implemented for manual Chrome/editor validation; KEEP / MODIFY / REVERT acceptance remains pending. This status supersedes the historical phase gates below. Stop here; no true virtualization or Performance Engine Phase 4 work.
+
 The 2026-10-06 [Performance Engine Phase 1, final Task 3 report](../reports/05-performance-engine-phase-1-background-work.md) follows acceptance of Task 3A and suspends optional Mermaid, local search, helper, and math preview work through the stable activity controller. Lifecycle diagnostics and exact Chrome/manual acceptance procedures are included; runtime numbers remain pending user measurement. Stop for Phase 1 acceptance; Performance Engine Phase 2 has not started.
 
 The 2026-10-06 [Performance Engine Phase 1, Task 3A report](../reports/05-performance-engine-phase-1-background-highlighting.md) follows user acceptance of Tasks 1 and 2. Incremental syntax highlighting now pauses its scheduler for inactive retained editors and resumes pending work asynchronously. Task 3A is user-accepted; its original CPU comparison remains unmeasured. The remaining Task 3 implementation is recorded above.

@@ -19,18 +19,34 @@ function blockClass(node: Node): string | undefined {
     }[node.type.name];
 }
 
+function isBrowserContainmentEligibleBlock(node: Node): boolean {
+    if (node.type.name === 'horizontalRule') return true;
+    if (!['paragraph', 'heading'].includes(node.type.name)) return false;
+
+    // Inline NodeViews can position controls outside the block's paint boundary.
+    for (let index = 0; index < node.childCount; index++) {
+        const child = node.child(index);
+        if (!child.isText && child.type.name !== 'hardBreak') return false;
+    }
+    return true;
+}
+
 function blockDecorations(
     doc: Node,
     from = 0,
     to = doc.content.size,
 ): Decoration[] {
     const decorations: Decoration[] = [];
-    doc.nodesBetween(from, to, (node, position) => {
+    doc.nodesBetween(from, to, (node, position, parent) => {
         const className = blockClass(node);
         if (className)
             decorations.push(
                 Decoration.node(position, position + node.nodeSize, {
                     class: className,
+                    ...(parent === doc &&
+                    isBrowserContainmentEligibleBlock(node)
+                        ? { 'data-editor-containment-block': node.type.name }
+                        : {}),
                 }),
             );
     });
