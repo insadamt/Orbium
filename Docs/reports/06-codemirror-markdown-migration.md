@@ -1,6 +1,8 @@
 # M0 — CodeMirror and canonical Markdown migration contract
 
-Date: 2026-10-07. Status: **architecture proposal; no engine acceptance or implementation**.
+Date: 2026-10-07. Status: **M0 accepted; M1 server foundation implemented for manual review; replacement engine acceptance pending**.
+
+M1 implementation details, temporary format-v1/v2 boundary, quality-check results, limitations and exact manual checks are in [M1 persistence report](06-codemirror-markdown-m1-persistence.md). Locked decisions for M1: League CommonMark as a direct dependency, dialect `orbium-markdown-v1`, existing `content_format_version` column with JSON=1 and Markdown=2, H1–H6 preservation, and an isolated Markdown API while Tiptap continues to use JSON. Historical proposal sections below remain the M0 contract; their unresolved wording is superseded only by these approved decisions and the M1 report. M2 has not started.
 
 ## Motivation and scope
 
