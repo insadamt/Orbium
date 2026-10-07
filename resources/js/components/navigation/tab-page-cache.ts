@@ -13,7 +13,7 @@ type TabPageCache = {
     forgetPages: (tabIds: string[]) => void;
 };
 
-type RetainedNavigationProps = Record<string, unknown> & {
+type RetainedNavigationProps = Page['props'] & {
     [retainedNavigationMarker]?: { tabId: string };
 };
 
