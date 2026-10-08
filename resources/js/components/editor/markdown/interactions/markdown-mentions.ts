@@ -55,7 +55,7 @@ export function markdownMentionSource(workspaceId: number): CompletionSource {
                 filter: false,
                 options: candidates.map((candidate) => ({
                     label: candidate.title,
-                    detail: candidate.type,
+                    detail: `· ${candidate.type}`,
                     apply(
                         view: EditorView,
                         _completion: unknown,

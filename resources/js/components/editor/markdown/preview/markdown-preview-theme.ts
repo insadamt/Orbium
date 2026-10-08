@@ -40,6 +40,11 @@ export const markdownSlashMenuTheme = EditorView.theme({
         borderRadius: '6px',
         fontSize: '14px',
         lineHeight: '20px',
+        whiteSpace: 'normal',
+    },
+    '.orbium-slash-menu .cm-completionDetail': {
+        fontStyle: 'normal',
+        marginInlineStart: '4px',
     },
     '.cm-tooltip-autocomplete.orbium-slash-menu > ul > li[aria-selected]': {
         backgroundColor: 'var(--accent)',

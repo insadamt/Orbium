@@ -61,5 +61,11 @@ export function mountContainer(mount: RichWidgetMount): RichController {
         return true;
     }
     update(mount.block);
-    return { update, destroy: () => dispose?.() };
+    return {
+        update,
+        destroy() {
+            controls.destroy();
+            dispose?.();
+        },
+    };
 }

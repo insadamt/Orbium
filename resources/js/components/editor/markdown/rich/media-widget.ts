@@ -22,9 +22,10 @@ export function mountMedia(mount: RichWidgetMount): RichController {
     let loadingId = '';
     let request: AbortController | undefined;
     const imageMode = block.kind === 'image';
-    const controls = sourceControls(mount, imageMode ? 'Image' : 'File');
-    const figure = element('figure', 'm-0');
-    const image = element('img', 'h-auto max-w-full rounded-xl');
+    const controls = sourceControls(mount, imageMode ? 'Image' : 'File', false);
+    controls.toolbar.hidden = true;
+    const figure = element('figure', 'm-0 max-w-full');
+    const image = element('img', 'block h-auto w-full rounded-lg');
     image.loading = 'lazy';
     image.decoding = 'async';
     image.addEventListener('load', () => {
@@ -35,7 +36,7 @@ export function mountMedia(mount: RichWidgetMount): RichController {
         controls.error.textContent = 'Image unavailable.';
         controls.error.hidden = false;
     });
-    const frame = element('div', 'group relative max-w-full');
+    const frame = element('div', 'group relative max-w-full rounded-lg');
     let resize: {
         pointer: number;
         x: number;
@@ -44,24 +45,21 @@ export function mountMedia(mount: RichWidgetMount): RichController {
         maximum: number;
     } | null = null;
     const caption = element('figcaption', 'mt-2 text-sm text-muted-foreground');
-    const download = element(
-        'a',
-        'inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm',
-    );
+    const download = element('a', 'font-medium underline');
     download.textContent = block.label ?? 'Download file';
     download.download = '';
     download.target = '_blank';
     download.rel = 'noopener noreferrer';
     const details = element(
         'span',
-        'ml-3 text-xs text-muted-foreground',
+        'ms-3 text-xs text-muted-foreground',
         'Loading attachment…',
     );
     if (imageMode) {
         frame.append(image);
         figure.append(frame, caption);
         controls.output.append(figure);
-    } else controls.output.append(widgetIcon('file', 18), download, details);
+    } else controls.output.append(download, details);
     if (imageMode) controls.toolbar.append(download);
     const replace = button('Replace', () =>
         mount.context.onUpload({
@@ -78,10 +76,6 @@ export function mountMedia(mount: RichWidgetMount): RichController {
         applyRichSource(mount.view, block, ''),
     );
     controls.toolbar.append(replace, remove);
-    const options = element(
-        'div',
-        'mt-3 flex flex-wrap items-center gap-3 text-xs text-muted-foreground',
-    );
     const alignment = element('select', 'rounded-md bg-muted px-2 py-1');
     alignment.setAttribute('aria-label', 'Image alignment');
     for (const value of ['start', 'left', 'center', 'right']) {
@@ -101,9 +95,75 @@ export function mountMedia(mount: RichWidgetMount): RichController {
     );
     captionInput.placeholder = 'Add a caption…';
     captionInput.setAttribute('aria-label', 'Image caption');
+    let selected = false;
+    const overlay = element(
+        'div',
+        'glass-surface editor-image-toolbar absolute top-1/2 z-10 flex w-10 -translate-y-1/2 flex-col items-center gap-1 rounded-lg border border-border p-1 text-xs shadow-sm',
+    );
+    overlay.setAttribute('role', 'toolbar');
+    overlay.setAttribute('aria-label', 'Image controls');
+    overlay.hidden = true;
+    const alignmentButtons: HTMLButtonElement[] = [];
+    for (const value of ['left', 'center', 'right'] as const) {
+        const control = button('', () => {
+            alignment.value = value;
+            writeImageMetadata();
+        });
+        control.setAttribute('aria-label', `Align image ${value}`);
+        control.className =
+            'rounded-md p-1.5 hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring';
+        control.append(widgetIcon(value, 16));
+        alignmentButtons.push(control);
+        overlay.append(control);
+    }
+    const widthLabel = element(
+        'span',
+        'text-center text-[10px] leading-tight text-muted-foreground tabular-nums',
+    );
+    const fill = button('', () => {
+        width.value = String(Math.round(mount.root.clientWidth));
+        writeImageMetadata();
+    });
+    fill.setAttribute('aria-label', 'Fill available width');
+    fill.title = 'Fill available width';
+    fill.append(widgetIcon('maximize', 16));
+    download.setAttribute('aria-label', 'Download image');
+    if (imageMode) download.replaceChildren(widgetIcon('download', 16));
+    remove.setAttribute('aria-label', 'Delete image');
+    remove.replaceChildren(widgetIcon('trash', 16));
+    replace.setAttribute('aria-label', 'Replace image');
+    replace.replaceChildren(widgetIcon('edit', 16));
+    overlay.append(widthLabel, fill, download, replace, remove);
+    const resizeHandles: HTMLButtonElement[] = [];
+    function setSelected(next: boolean) {
+        selected = next && mount.view.state.facet(EditorView.editable);
+        overlay.hidden = !selected;
+        frame.classList.toggle('ring-2', selected);
+        frame.classList.toggle('ring-ring', selected);
+        caption.hidden = !selected && !captionInput.value;
+        captionInput.readOnly = !selected;
+        resizeHandles.forEach((handle) => {
+            handle.hidden = !selected;
+        });
+        mount.view.requestMeasure();
+    }
+    const dismiss = (event: PointerEvent) => {
+        if (!mount.root.contains(event.target as Node)) setSelected(false);
+    };
     if (imageMode) {
-        options.append(alignment, width, captionInput);
-        controls.output.append(options);
+        captionInput.className =
+            'w-full bg-transparent text-center outline-none placeholder:text-muted-foreground/70 focus-visible:rounded focus-visible:outline-2 focus-visible:outline-ring';
+        caption.append(captionInput);
+        frame.append(overlay);
+        mount.root.addEventListener('orbium-edit-rich', () =>
+            setSelected(true),
+        );
+        figure.addEventListener('click', () => setSelected(true));
+        figure.addEventListener('focusin', () => setSelected(true));
+        image.tabIndex = 0;
+        image.draggable = false;
+        image.setAttribute('aria-label', 'Select image');
+        document.addEventListener('pointerdown', dismiss);
     }
     function writeImageMetadata() {
         const metadata: OrbiumMetadata = {
@@ -142,15 +202,21 @@ export function mountMedia(mount: RichWidgetMount): RichController {
         input.addEventListener('keydown', (event) => {
             if (!(event.ctrlKey || event.metaKey)) event.stopPropagation();
         });
-    for (const direction of [-1, 1]) {
+    for (const corner of [
+        'top-left',
+        'top-right',
+        'bottom-left',
+        'bottom-right',
+    ]) {
+        const direction = corner.endsWith('left') ? -1 : 1;
         const handle = button('', () => {});
         handle.setAttribute(
             'aria-label',
             `Resize image from ${direction < 0 ? 'left' : 'right'}`,
         );
-        handle.className =
-            'absolute top-1/2 h-10 w-2 -translate-y-1/2 cursor-ew-resize touch-none rounded-full border border-border bg-background opacity-0 focus:opacity-100 group-hover:opacity-100';
-        handle.style[direction < 0 ? 'left' : 'right'] = '-4px';
+        handle.className = `editor-image-resize-handle editor-image-resize-handle--${corner}`;
+        handle.hidden = true;
+        resizeHandles.push(handle);
         handle.addEventListener('pointerdown', (event) => {
             if (
                 !mount.view.state.facet(EditorView.editable) ||
@@ -163,7 +229,7 @@ export function mountMedia(mount: RichWidgetMount): RichController {
                 x: event.clientX,
                 width: frame.getBoundingClientRect().width,
                 direction,
-                maximum: figure.clientWidth,
+                maximum: mount.root.clientWidth,
             };
             handle.setPointerCapture(event.pointerId);
         });
@@ -184,7 +250,7 @@ export function mountMedia(mount: RichWidgetMount): RichController {
                     ),
                 ),
             );
-            frame.style.width = `${value}px`;
+            figure.style.width = `${value}px`;
             width.value = String(value);
             mount.view.requestMeasure();
         });
@@ -201,7 +267,7 @@ export function mountMedia(mount: RichWidgetMount): RichController {
                     ? String(block.metadata.width)
                     : '';
             resize = null;
-            frame.style.width = `${Math.max(120, Number(block.metadata.width ?? 720))}px`;
+            figure.style.width = `${Math.max(120, Number(block.metadata.width ?? 720))}px`;
         });
         handle.addEventListener('keydown', (event) => {
             if (
@@ -215,7 +281,8 @@ export function mountMedia(mount: RichWidgetMount): RichController {
                 Math.max(
                     120,
                     Number(block.metadata.width ?? 720) +
-                        (event.key === 'ArrowLeft' ? -10 : 10),
+                        (event.key === 'ArrowLeft' ? -1 : 1) *
+                            (event.shiftKey ? 50 : 10),
                 ),
             );
             writeImageMetadata();
@@ -233,14 +300,14 @@ export function mountMedia(mount: RichWidgetMount): RichController {
             captionInput.disabled =
                 disabled;
         image.alt = next.label ?? '';
-        frame.style.width = `${Math.max(120, Number(next.metadata.width ?? 720))}px`;
+        figure.style.width = `${Math.max(120, Number(next.metadata.width ?? 720))}px`;
         image.style.width = '100%';
-        frame.style.marginInlineStart = ['center', 'right'].includes(
+        figure.style.marginInlineStart = ['center', 'right'].includes(
             String(next.metadata.alignment),
         )
             ? 'auto'
             : '0';
-        frame.style.marginInlineEnd = [
+        figure.style.marginInlineEnd = [
             'center',
             'left',
             'start',
@@ -249,15 +316,25 @@ export function mountMedia(mount: RichWidgetMount): RichController {
             ? 'auto'
             : '0';
         if (next.metadata.alignment === 'left') {
-            frame.style.marginLeft = '0';
-            frame.style.marginRight = 'auto';
+            figure.style.marginLeft = '0';
+            figure.style.marginRight = 'auto';
         } else if (next.metadata.alignment === 'right') {
-            frame.style.marginLeft = 'auto';
-            frame.style.marginRight = '0';
+            figure.style.marginLeft = 'auto';
+            figure.style.marginRight = '0';
         }
         if (disabled) resize = null;
-        caption.textContent = String(next.metadata.caption ?? '');
-        caption.hidden = !caption.textContent;
+        caption.hidden = !selected && !next.metadata.caption;
+        widthLabel.textContent = `${Math.round(Math.min(Number(next.metadata.width ?? 720), mount.root.clientWidth))} px`;
+        alignmentButtons.forEach((control, index) =>
+            control.setAttribute(
+                'aria-pressed',
+                String(
+                    ['left', 'center', 'right'][index] ===
+                        next.metadata.alignment,
+                ),
+            ),
+        );
+        if (disabled) setSelected(false);
         alignment.value = String(next.metadata.alignment ?? 'start');
         if (document.activeElement !== width)
             width.value = next.metadata.width
@@ -278,10 +355,9 @@ export function mountMedia(mount: RichWidgetMount): RichController {
                 const url = richAttachmentUrl(mount.context, id);
                 download.href = url;
                 download.download = metadata.name;
-                download.textContent = imageMode
-                    ? 'Download'
-                    : block.label || metadata.name;
-                details.textContent = `${metadata.name} · ${metadata.mime_type} · ${new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 }).format(metadata.size_bytes / 1024)} KB`;
+                if (!imageMode)
+                    download.textContent = block.label || metadata.name;
+                details.textContent = `${Math.ceil(metadata.size_bytes / 1024)} KB`;
                 if (imageMode) {
                     if (
                         metadata.purpose !== 'image' ||
@@ -314,9 +390,11 @@ export function mountMedia(mount: RichWidgetMount): RichController {
     return {
         update,
         destroy() {
+            controls.destroy();
             destroyed = true;
             request?.abort();
             image.removeAttribute('src');
+            document.removeEventListener('pointerdown', dismiss);
         },
     };
 }

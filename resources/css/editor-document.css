@@ -215,6 +215,21 @@
 .orbium-markdown-content .cm-md-task-line {
     padding-inline-start: 0;
 }
+.orbium-markdown-content li .cm-md-list {
+    padding-inline-start: 0;
+}
+.orbium-markdown-content ol[type='a'] {
+    list-style-type: lower-alpha;
+}
+.orbium-markdown-content ol[type='A'] {
+    list-style-type: upper-alpha;
+}
+.orbium-markdown-content ol[type='i'] {
+    list-style-type: lower-roman;
+}
+.orbium-markdown-content ol[type='I'] {
+    list-style-type: upper-roman;
+}
 .orbium-markdown-content .cm-md-task-checkbox {
     width: 13px;
     height: 13px;
@@ -287,11 +302,6 @@
     white-space: pre;
 }
 
-.orbium-editor .orbium-rich-table td,
-.orbium-editor .orbium-rich-table th {
-    min-width: 100px;
-}
-
 .orbium-editor .orbium-rich-block textarea {
     line-height: 1.5;
 }
@@ -300,4 +310,56 @@
     background: var(--background);
     color: var(--foreground);
     box-shadow: 0 1px 2px rgb(0 0 0 / 0.05);
+}
+
+.orbium-markdown-live-preview .cm-tooltip:has(.orbium-selection-toolbar) {
+    border: 0;
+    background: transparent;
+}
+.orbium-markdown-live-preview .cm-tooltip .orbium-selection-toolbar {
+    max-width: calc(100vw - 16px);
+}
+.orbium-markdown-gutter[hidden] {
+    display: none;
+}
+.orbium-markdown-content .editor-block-dragging {
+    opacity: 0.45;
+}
+.orbium-rich-text-input.cm-editor,
+.orbium-rich-text-input .cm-content {
+    min-height: 0;
+    height: auto;
+}
+.orbium-markdown-content .orbium-image [aria-pressed='true'] {
+    color: var(--foreground);
+    background: var(--accent);
+}
+.orbium-markdown-content .orbium-table-container {
+    width: max-content;
+    max-width: 100%;
+    margin-bottom: 2rem;
+}
+.orbium-markdown-content .orbium-table-container .tableWrapper {
+    margin-bottom: 0;
+}
+.orbium-markdown-content .orbium-table-add-row {
+    left: 0;
+    bottom: -27px;
+    width: 100%;
+    height: 22px;
+}
+.orbium-markdown-content .orbium-table-add-column {
+    inset-inline-end: -27px;
+    top: 0;
+    width: 22px;
+    height: 100%;
+}
+.orbium-markdown-content .orbium-table-container .table-edge-control {
+    visibility: hidden;
+}
+.orbium-markdown-content
+    .orbium-table-container:focus-within
+    .table-edge-control,
+.orbium-markdown-content .orbium-table-container:hover .table-edge-control {
+    visibility: visible;
 }

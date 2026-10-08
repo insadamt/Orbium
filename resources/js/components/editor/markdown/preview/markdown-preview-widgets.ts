@@ -1,5 +1,22 @@
 import { EditorView, WidgetType } from '@codemirror/view';
 
+export class MarkdownDecodedText extends WidgetType {
+    constructor(readonly text: string) {
+        super();
+    }
+    eq(other: MarkdownDecodedText) {
+        return this.text === other.text;
+    }
+    toDOM() {
+        const span = document.createElement('span');
+        span.textContent = this.text;
+        return span;
+    }
+    ignoreEvent() {
+        return false;
+    }
+}
+
 export class MarkdownListMarker extends WidgetType {
     constructor(readonly marker: string) {
         super();

@@ -2,6 +2,8 @@
 
 Date: 2026-10-08. Status: **M5 interactions implemented for manual review; full behavior parity, browser acceptance and matched performance acceptance remain pending.**
 
+The user subsequently rejected the UI. The [M5 UI correction report](06-codemirror-markdown-m5-ui-parity.md) supersedes the initial menu and rich-block presentation described below and includes the new manual comparison checklist. M5 acceptance remains pending.
+
 The user explicitly approved M5 after the M4 report and selected reuse of installed CodeMirror completion/tooltip APIs with Orbium editing logic. This approval does not approve M6 or Tiptap removal. M4's recorded rich-content gates remain open.
 
 ## Implemented

@@ -1,4 +1,11 @@
-import { Code2, Download, FileUp, Search, Upload } from 'lucide-react';
+import {
+    Code2,
+    Download,
+    FileUp,
+    FileInput,
+    Search,
+    ChevronDown,
+} from 'lucide-react';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 
 type MarkdownEditorControlsProps = {
@@ -39,20 +46,59 @@ export function MarkdownEditorControls(props: MarkdownEditorControlsProps) {
                 )}
             </div>
             <div className="flex flex-wrap items-center gap-3">
-                <button
-                    type="button"
-                    aria-label={
-                        props.livePreview
-                            ? 'Switch to Markdown source'
-                            : 'Switch to Live Preview'
-                    }
-                    aria-pressed={!props.livePreview}
-                    className="flex items-center gap-1 rounded p-1 hover:bg-accent"
-                    onClick={props.onTogglePreview}
-                >
-                    <Code2 size={16} />
-                    {props.livePreview ? 'Markdown source' : 'Live Preview'}
-                </button>
+                {props.empty && (
+                    <button
+                        type="button"
+                        disabled={props.disabled || props.importing}
+                        className="flex items-center gap-1 rounded p-1 hover:bg-accent disabled:opacity-50"
+                        onClick={props.onImport}
+                    >
+                        <FileInput size={16} />
+                        {props.importing ? 'Importing…' : 'Import Markdown'}
+                    </button>
+                )}
+                <div className="flex items-center gap-0.5">
+                    <button
+                        type="button"
+                        disabled={props.disabled}
+                        onClick={() => props.onExport(true)}
+                        className="flex items-center gap-1 rounded p-1 hover:bg-accent disabled:opacity-50"
+                    >
+                        <Download size={16} /> Export Markdown
+                    </button>
+                    <DropdownMenu.Root>
+                        <DropdownMenu.Trigger asChild>
+                            <button
+                                type="button"
+                                disabled={props.disabled}
+                                aria-label="Export options"
+                                className="flex items-center gap-1 rounded p-1 hover:bg-accent disabled:opacity-50"
+                            >
+                                <ChevronDown size={14} />
+                            </button>
+                        </DropdownMenu.Trigger>
+                        <DropdownMenu.Portal>
+                            <DropdownMenu.Content
+                                align="end"
+                                sideOffset={6}
+                                className="glass-surface z-50 min-w-56 rounded-xl border border-border p-1 shadow-xl"
+                            >
+                                <DropdownMenu.Item
+                                    className="cursor-pointer rounded px-3 py-2 text-sm outline-none data-[highlighted]:bg-accent"
+                                    onSelect={() => props.onExport(false)}
+                                >
+                                    Keep Orbium references
+                                </DropdownMenu.Item>
+                                <DropdownMenu.Item
+                                    className="cursor-pointer rounded px-3 py-2 text-sm outline-none data-[highlighted]:bg-accent"
+                                    onSelect={() => props.onExport(true)}
+                                >
+                                    Use links to this installation
+                                </DropdownMenu.Item>
+                            </DropdownMenu.Content>
+                        </DropdownMenu.Portal>
+                    </DropdownMenu.Root>
+                </div>
                 <button
                     type="button"
                     onClick={props.onFind}
@@ -70,49 +116,22 @@ export function MarkdownEditorControls(props: MarkdownEditorControlsProps) {
                     <FileUp size={16} />
                     Add file
                 </button>
-                {props.empty && (
-                    <button
-                        type="button"
-                        disabled={props.disabled || props.importing}
-                        className="flex items-center gap-1 rounded p-1 hover:bg-accent disabled:opacity-50"
-                        onClick={props.onImport}
-                    >
-                        <Upload size={16} />
-                        {props.importing ? 'Importing…' : 'Import Markdown'}
-                    </button>
-                )}
-                <DropdownMenu.Root>
-                    <DropdownMenu.Trigger asChild>
-                        <button
-                            type="button"
-                            disabled={props.disabled}
-                            className="flex items-center gap-1 rounded p-1 hover:bg-accent disabled:opacity-50"
-                        >
-                            <Download size={16} />
-                            Export Markdown
-                        </button>
-                    </DropdownMenu.Trigger>
-                    <DropdownMenu.Portal>
-                        <DropdownMenu.Content
-                            align="end"
-                            sideOffset={6}
-                            className="glass-surface z-50 min-w-56 rounded-xl border border-border p-1 shadow-xl"
-                        >
-                            <DropdownMenu.Item
-                                className="cursor-pointer rounded px-3 py-2 text-sm outline-none data-[highlighted]:bg-accent"
-                                onSelect={() => props.onExport(false)}
-                            >
-                                Keep Orbium references
-                            </DropdownMenu.Item>
-                            <DropdownMenu.Item
-                                className="cursor-pointer rounded px-3 py-2 text-sm outline-none data-[highlighted]:bg-accent"
-                                onSelect={() => props.onExport(true)}
-                            >
-                                Use links to this installation
-                            </DropdownMenu.Item>
-                        </DropdownMenu.Content>
-                    </DropdownMenu.Portal>
-                </DropdownMenu.Root>
+                <button
+                    type="button"
+                    aria-label={
+                        props.livePreview
+                            ? 'Switch to Markdown source'
+                            : 'Switch to Live Preview'
+                    }
+                    title={
+                        props.livePreview ? 'Markdown source' : 'Live Preview'
+                    }
+                    aria-pressed={!props.livePreview}
+                    className="rounded p-1 hover:bg-accent"
+                    onClick={props.onTogglePreview}
+                >
+                    <Code2 size={16} />
+                </button>
             </div>
         </div>
     );

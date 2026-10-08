@@ -16,6 +16,7 @@ import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
 import { search } from '@codemirror/search';
 import { closeCompletion } from '@codemirror/autocomplete';
 import { markdownBlockWrappers } from './interactions/markdown-block-wrappers';
+import { markdownPresentationCommands } from './interactions/markdown-presentation-commands';
 import { markdownFindHighlights } from './interactions/markdown-find-highlights';
 import { markdownSelectionToolbar } from './interactions/markdown-selection-toolbar';
 import { markdownBlockGutter } from './interactions/markdown-block-gutter';
@@ -113,6 +114,10 @@ export default function MarkdownEditor(props: MarkdownEditorProps) {
         onUpload: (request) => callbacks.current.chooseFile(request),
     }));
     const [richExtensions] = useState(() => markdownRichBlocks(richContext));
+    const [interactionExtensions] = useState(() => [
+        markdownSelectionToolbar(setNotice),
+        markdownBlockGutter(setNotice),
+    ]);
 
     useEffect(() => {
         if (!host.current) return;
@@ -132,9 +137,8 @@ export default function MarkdownEditor(props: MarkdownEditorProps) {
                                 markdownPreviewTheme,
                                 markdownWritingCommands,
                                 markdownBlockWrappers,
-                                markdownBlockWrappers,
-                                markdownSelectionToolbar(setNotice),
-                                markdownBlockGutter(setNotice),
+                                markdownPresentationCommands,
+                                interactionExtensions,
                             ]),
                             highlightActiveLine(),
                             EditorView.lineWrapping,
@@ -270,8 +274,8 @@ export default function MarkdownEditor(props: MarkdownEditorProps) {
                           markdownPreviewTheme,
                           markdownWritingCommands,
                           markdownBlockWrappers,
-                          markdownSelectionToolbar(setNotice),
-                          markdownBlockGutter(setNotice),
+                          markdownPresentationCommands,
+                          interactionExtensions,
                       ]
                     : [
                           lineNumbers(),
@@ -407,13 +411,15 @@ export default function MarkdownEditor(props: MarkdownEditorProps) {
             <div
                 ref={host}
                 className={
-                    livePreview ? '' : 'overflow-hidden rounded-xl border'
+                    livePreview
+                        ? 'pl-10 sm:pl-0'
+                        : 'overflow-hidden rounded-xl border'
                 }
                 data-live-preview={livePreview}
                 data-orbium-markdown-editor={props.nodeId}
             />
             <p className="mt-10 text-xs text-muted-foreground">
-                Type / for blocks, or use Markdown shortcuts.
+                Type / for blocks, @ to mention, or use Markdown shortcuts.
             </p>
         </section>
     );

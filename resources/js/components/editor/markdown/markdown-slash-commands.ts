@@ -1,4 +1,5 @@
 import { markdownMentionSource } from './interactions/markdown-mentions';
+import { replacePresentedMarkdown } from './interactions/markdown-presentation-edits';
 import type { OrbiumMetadata } from './dialect/metadata';
 import {
     autocompletion,
@@ -114,11 +115,21 @@ export function insertBlockTemplate(
         (template.source.includes('\n') && line.to < view.state.doc.length)
             ? '\n\n'
             : '';
+    const source = `${before}${template.source}${suffix}`;
+    if (
+        replacePresentedMarkdown(view, {
+            from: replaceFrom,
+            to,
+            source,
+            caret: before.length + template.caret,
+        })
+    )
+        return;
     view.dispatch({
         changes: {
             from: replaceFrom,
             to,
-            insert: `${before}${template.source}${suffix}`,
+            insert: source,
         },
         selection: { anchor: replaceFrom + before.length + template.caret },
         annotations: isolateHistory.of('full'),

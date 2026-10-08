@@ -8,6 +8,7 @@ const pairedMarkers: Record<string, string> = {
     Strikethrough: 'StrikethroughMark',
     InlineCode: 'CodeMark',
     Link: 'LinkMark',
+    OrbiumSpan: 'OrbiumSpanMark',
 };
 
 function inlineBoundary(state: EditorState, node: SyntaxNode) {
@@ -58,7 +59,10 @@ export function inlineFormattingBoundary(
     return null;
 }
 
-export function paragraphSplitDelimiters(state: EditorState) {
+export function paragraphSplitDelimiters(
+    state: EditorState,
+    stopBefore?: SyntaxNode,
+) {
     const selection = state.selection.main;
     const boundaries: { opening: string; closing: string }[] = [];
     for (
@@ -69,6 +73,12 @@ export function paragraphSplitDelimiters(state: EditorState) {
         node;
         node = node.parent
     ) {
+        if (
+            stopBefore &&
+            node.from === stopBefore.from &&
+            node.name === stopBefore.name
+        )
+            break;
         const boundary = inlineBoundary(state, node);
         if (
             boundary &&

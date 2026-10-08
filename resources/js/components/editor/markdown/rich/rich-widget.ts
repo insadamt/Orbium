@@ -6,10 +6,25 @@ import { mountCode } from './code-widget';
 import { mountMedia } from './media-widget';
 import { mountTable } from './table-widget';
 import { mountContainer } from './container-widget';
+import { mountEmptyParagraph } from './empty-widget';
+import { mountCallout } from './callout-widget';
+import { bindRichBlockHistory } from './widget-controls';
 
 const presentationContainers = new WeakMap<HTMLElement, HTMLElement[]>();
 const controllers = new WeakMap<HTMLElement, RichController>();
 const observers = new WeakMap<HTMLElement, ResizeObserver>();
+
+function richBlockClassName(kind: RichBlock['kind']) {
+    const classes: Partial<Record<RichBlock['kind'], string>> = {
+        code: 'orbium-code my-5 overflow-hidden rounded-xl border border-border bg-muted',
+        image: 'orbium-image editor-image my-5',
+        file: 'orbium-file my-4 rounded-xl border border-border p-4',
+        table: 'orbium-table-container relative my-4',
+        callout: 'orbium-callout editor-callout my-4',
+        empty: 'orbium-paragraph',
+    };
+    return `orbium-rich-block ${classes[kind] ?? `orbium-${kind} my-4 rounded-xl border border-border p-4`}`;
+}
 
 export class MarkdownRichWidget extends WidgetType {
     constructor(
@@ -37,7 +52,7 @@ export class MarkdownRichWidget extends WidgetType {
         root.className =
             this.block.kind === 'inline-math'
                 ? 'relative inline-block align-baseline'
-                : `orbium-${this.block.kind === 'metadata' ? 'block-metadata' : this.block.kind === 'table' ? 'table-container' : this.block.kind} orbium-rich-block my-4 ${['metadata', 'empty'].includes(this.block.kind) ? '' : 'rounded-xl border border-border p-4'}`;
+                : richBlockClassName(this.block.kind);
         root.contentEditable = 'false';
         let content = root;
         const nestedContainers: HTMLElement[] = [];
@@ -56,18 +71,23 @@ export class MarkdownRichWidget extends WidgetType {
             block: this.block,
             context: this.context,
         };
+        bindRichBlockHistory(root, view);
         const controller =
-            this.block.kind === 'mermaid'
-                ? mountDiagram(mount)
-                : ['math', 'inline-math'].includes(this.block.kind)
-                  ? mountMath(mount)
-                  : this.block.kind === 'code'
-                    ? mountCode(mount)
-                    : ['image', 'file'].includes(this.block.kind)
-                      ? mountMedia(mount)
-                      : this.block.kind === 'table'
-                        ? mountTable(mount)
-                        : mountContainer(mount);
+            this.block.kind === 'empty'
+                ? mountEmptyParagraph(mount)
+                : this.block.kind === 'mermaid'
+                  ? mountDiagram(mount)
+                  : ['math', 'inline-math'].includes(this.block.kind)
+                    ? mountMath(mount)
+                    : this.block.kind === 'code'
+                      ? mountCode(mount)
+                      : ['image', 'file'].includes(this.block.kind)
+                        ? mountMedia(mount)
+                        : this.block.kind === 'table'
+                          ? mountTable(mount)
+                          : this.block.kind === 'callout'
+                            ? mountCallout(mount)
+                            : mountContainer(mount);
         const observer = new ResizeObserver(() => {
             if (view.dom.isConnected) view.requestMeasure();
         });

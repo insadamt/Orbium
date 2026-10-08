@@ -11,17 +11,18 @@ import {
     setMarkdownInlineMetadata,
     setMarkdownLink,
 } from './markdown-inline-format';
-import { interactionButton } from './interaction-dom';
-
-const colors = [
-    ['Red', 'red'],
-    ['Blue', 'blue'],
-    ['Green', 'green'],
-    ['Cyan', 'teal'],
-    ['Magenta', 'pink'],
-    ['Yellow in dark mode, violet in light mode', 'purple'],
-    ['Orange', 'orange'],
-];
+import { createRoot } from 'react-dom/client';
+import {
+    Bold,
+    Italic,
+    Underline,
+    Strikethrough,
+    Code2,
+    Link2,
+} from 'lucide-react';
+import { TextColorMenu } from '../../ui/text-color-menu';
+import { FormatButton } from '../../ui/format-button';
+import { markdownSelectionFormatting } from './markdown-selection-formatting';
 
 function createSelectionToolbar(
     view: EditorView,
@@ -29,9 +30,10 @@ function createSelectionToolbar(
 ) {
     const dom = document.createElement('div');
     dom.className =
-        'orbium-selection-toolbar glass-surface flex flex-wrap items-center gap-1 rounded-xl border border-border p-1 shadow-xl';
+        'orbium-selection-toolbar glass-surface flex items-center gap-1 rounded-xl border border-border p-1 shadow-lg';
     dom.setAttribute('role', 'toolbar');
     dom.setAttribute('aria-label', 'Text formatting');
+    const root = createRoot(dom);
     const run = (command: () => void) => {
         try {
             onNotice('');
@@ -44,87 +46,97 @@ function createSelectionToolbar(
             );
         }
     };
-    for (const [label, text, delimiter] of [
-        ['Bold', 'B', '**'],
-        ['Italic', 'I', '*'],
-        ['Strike', 'S', '~~'],
-        ['Inline code', '</>', '`'],
-    ] as const)
-        dom.append(
-            interactionButton(label, text, () =>
-                run(() => formatMarkdownSelection(view, delimiter)),
-            ),
+    function render() {
+        const formatting = markdownSelectionFormatting(view.state);
+        root.render(
+            <>
+                <FormatButton
+                    label="Bold"
+                    active={formatting.bold}
+                    onClick={() =>
+                        run(() => formatMarkdownSelection(view, '**'))
+                    }
+                >
+                    <Bold size={16} />
+                </FormatButton>
+                <FormatButton
+                    label="Italic"
+                    active={formatting.italic}
+                    onClick={() =>
+                        run(() => formatMarkdownSelection(view, '*'))
+                    }
+                >
+                    <Italic size={16} />
+                </FormatButton>
+                <FormatButton
+                    label="Underline"
+                    active={formatting.underline}
+                    onClick={() =>
+                        run(() =>
+                            setMarkdownInlineMetadata(view, {
+                                underline: true,
+                            }),
+                        )
+                    }
+                >
+                    <Underline size={16} />
+                </FormatButton>
+                <FormatButton
+                    label="Strike"
+                    active={formatting.strike}
+                    onClick={() =>
+                        run(() => formatMarkdownSelection(view, '~~'))
+                    }
+                >
+                    <Strikethrough size={16} />
+                </FormatButton>
+                <FormatButton
+                    label="Inline code"
+                    active={formatting.code}
+                    onClick={() =>
+                        run(() => formatMarkdownSelection(view, '`'))
+                    }
+                >
+                    <Code2 size={16} />
+                </FormatButton>
+                <FormatButton
+                    label="Link"
+                    active={formatting.link}
+                    onClick={() => {
+                        const destination = window.prompt(
+                            'Link URL (https://, http:// or mailto:)',
+                            formatting.href ?? '',
+                        );
+                        if (destination !== null)
+                            run(() =>
+                                setMarkdownLink(
+                                    view,
+                                    destination.trim() || null,
+                                ),
+                            );
+                    }}
+                >
+                    <Link2 size={16} />
+                </FormatButton>
+                <TextColorMenu
+                    active
+                    currentColor={formatting.color}
+                    onOpen={() => {}}
+                    onChoose={(color, keepOpen) => {
+                        const input = document.activeElement;
+                        run(() => setMarkdownInlineMetadata(view, { color }));
+                        if (keepOpen && input instanceof HTMLInputElement)
+                            input.focus();
+                    }}
+                />
+            </>,
         );
-    dom.append(
-        interactionButton('Underline', 'U', () =>
-            run(() => setMarkdownInlineMetadata(view, { underline: true })),
-        ),
-    );
-    dom.append(
-        interactionButton('Link', 'Link', () => {
-            const destination = window.prompt(
-                'Link URL (leave empty to remove a link)',
-                'https://',
-            );
-            if (destination !== null)
-                run(() => setMarkdownLink(view, destination.trim() || null));
-        }),
-    );
-    const palette = document.createElement('details');
-    palette.className = 'relative';
-    const summary = document.createElement('summary');
-    summary.textContent = 'Color';
-    summary.className =
-        'cursor-pointer list-none rounded px-2 py-1.5 text-sm hover:bg-accent';
-    summary.setAttribute('aria-label', 'Text color');
-    summary.addEventListener('mousedown', (event) => event.preventDefault());
-    palette.append(summary);
-    const panel = document.createElement('div');
-    panel.className =
-        'glass-surface absolute top-full right-0 z-50 mt-2 flex w-52 flex-wrap gap-2 rounded-xl border border-border p-3 shadow-xl';
-    panel.setAttribute('role', 'group');
-    panel.setAttribute('aria-label', 'Text colors');
-    for (const [name, color] of colors) {
-        const swatch = interactionButton(name, '', () =>
-            run(() =>
-                setMarkdownInlineMetadata(view, { color: `preset:${color}` }),
-            ),
-        );
-        swatch.className =
-            'size-7 rounded-full border border-border focus-visible:outline-2 focus-visible:outline-ring';
-        swatch.style.backgroundColor = `var(--editor-text-color-${color})`;
-        panel.append(swatch);
     }
-    const label = document.createElement('label');
-    label.textContent = 'Custom color';
-    label.className = 'flex w-full items-center justify-between text-xs';
-    const custom = document.createElement('input');
-    custom.type = 'color';
-    custom.value = '#75a1ff';
-    custom.setAttribute('aria-label', 'Choose any text color');
-    custom.addEventListener('change', () =>
-        run(() =>
-            setMarkdownInlineMetadata(view, {
-                color: custom.value.toLowerCase(),
-            }),
-        ),
-    );
-    label.append(custom);
-    panel.append(
-        label,
-        interactionButton('Default text color', 'Default text color', () =>
-            run(() => setMarkdownInlineMetadata(view, { color: null })),
-        ),
-    );
-    palette.append(panel);
-    dom.append(palette);
+    render();
     dom.addEventListener('keydown', (event) => {
         if (event.key === 'Escape') {
             event.preventDefault();
             view.focus();
-            view.dispatch({
-                selection: { anchor: view.state.selection.main.head },
-            });
         }
         if (
             !['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key) ||
@@ -132,7 +144,7 @@ function createSelectionToolbar(
         )
             return;
         const controls = [
-            ...dom.querySelectorAll<HTMLElement>('button, summary'),
+            ...dom.querySelectorAll<HTMLElement>('button'),
         ].filter((control) => control.offsetParent !== null);
         const index = controls.indexOf(document.activeElement as HTMLElement);
         const next =
@@ -147,10 +159,18 @@ function createSelectionToolbar(
         controls[next]?.focus();
         event.preventDefault();
     });
-    return { dom };
+    return {
+        dom,
+        update: render,
+        destroy: () => {
+            queueMicrotask(() => root.unmount());
+        },
+    };
 }
 
 export function markdownSelectionToolbar(onNotice: (message: string) => void) {
+    const createToolbar = (view: EditorView) =>
+        createSelectionToolbar(view, onNotice);
     const setFocused = StateEffect.define<boolean>();
     const field = StateField.define<{
         focused: boolean;
@@ -181,8 +201,7 @@ export function markdownSelectionToolbar(onNotice: (message: string) => void) {
                               pos: range.from,
                               end: range.to,
                               above: true,
-                              create: (view) =>
-                                  createSelectionToolbar(view, onNotice),
+                              create: createToolbar,
                           }
                         : null,
             };

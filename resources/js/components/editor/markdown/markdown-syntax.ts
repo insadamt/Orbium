@@ -1,6 +1,7 @@
 import { syntaxTree } from '@codemirror/language';
 import type { EditorState } from '@codemirror/state';
 import type { SyntaxNode } from '@lezer/common';
+import { readEditableMarkdownPresentation } from './interactions/markdown-editable-presentation';
 
 const literalNodes = new Set([
     'OrbiumDirective',
@@ -42,7 +43,15 @@ export function isMarkdownLiteralPosition(
     state: EditorState,
     position: number,
 ): boolean {
-    return hasMarkdownAncestor(markdownNodeAt(state, position), literalNodes);
+    for (
+        let node: SyntaxNode | null = markdownNodeAt(state, position);
+        node;
+        node = node.parent
+    ) {
+        if (readEditableMarkdownPresentation(state, node)) continue;
+        if (literalNodes.has(node.name)) return true;
+    }
+    return false;
 }
 
 export function isMarkdownSourceOnlyLine(text: string): boolean {

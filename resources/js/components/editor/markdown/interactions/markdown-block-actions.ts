@@ -3,6 +3,8 @@ import type { EditorState } from '@codemirror/state';
 import { isolateHistory } from '@codemirror/commands';
 import { EditorView } from '@codemirror/view';
 import type { SyntaxNode } from '@lezer/common';
+import { readRichBlock } from '../rich/read-rich-block';
+import { fencedCodeSource } from '../rich/code-widget';
 import {
     readOrbiumMetadata,
     serializeOrbiumBlock,
@@ -79,6 +81,7 @@ export function moveMarkdownBlock(
     view: EditorView,
     block: MarkdownBlockRange,
     target: MarkdownBlockRange,
+    placement = target.from < block.from ? 'before' : 'after',
 ) {
     if (
         block.from === target.from ||
@@ -92,22 +95,33 @@ export function moveMarkdownBlock(
         return;
     if (!view.state.facet(EditorView.editable) || view.compositionStarted)
         return;
-    // Leave separator spelling at its destination while moving each complete authored block.
-    const removalTo =
-        block.to < view.state.doc.length ? block.to + 1 : block.to;
-    const removalFrom =
-        removalTo === block.to && block.from > 0 ? block.from - 1 : block.from;
-    const destination = target.from < block.from ? target.from : target.to;
+    // Move an adjacent separator too, so repeated drags do not accumulate empty paragraphs.
+    let removalTo = block.to;
+    let removalFrom = block.from;
+    if (block.to < view.state.doc.length) {
+        removalTo++;
+        while (removalTo < view.state.doc.length) {
+            const line = view.state.doc.lineAt(removalTo);
+            if (line.text.trim()) break;
+            removalTo = Math.min(view.state.doc.length, line.to + 1);
+        }
+    } else if (block.from > 0) {
+        removalFrom--;
+        while (removalFrom > 0) {
+            const line = view.state.doc.lineAt(removalFrom);
+            if (line.text.trim()) break;
+            removalFrom = Math.max(0, line.from - 1);
+        }
+    }
+    const destination = placement === 'before' ? target.from : target.to;
     const insert =
-        target.from < block.from
-            ? `${block.source}\n\n`
-            : `\n\n${block.source}`;
+        placement === 'before' ? `${block.source}\n\n` : `\n\n${block.source}`;
     const changes = view.state.changes([
         { from: removalFrom, to: removalTo },
         { from: destination, insert },
     ]);
     const anchor =
-        changes.mapPos(destination, -1) + (target.from < block.from ? 0 : 2);
+        changes.mapPos(destination, -1) + (placement === 'before' ? 0 : 2);
     view.dispatch({
         changes,
         selection: { anchor },
@@ -146,11 +160,13 @@ export function markdownBlockPresentation(
                 Math.max(header.to + 1, close.from - 1),
             ),
             name: node?.getChild('Document')?.firstChild?.name ?? 'Paragraph',
+            contentFrom: Math.min(header.to + 1, close.from),
         };
     return {
         metadata: { kind: 'block' } as OrbiumMetadata,
         body: block.source,
         name: block.name,
+        contentFrom: block.from,
     };
 }
 
@@ -175,7 +191,15 @@ export function setMarkdownBlockPresentation(
         Object.keys(metadata).length === 1 && metadata.kind === 'block'
             ? current.body
             : serializeOrbiumBlock(metadata, current.body);
-    replaceMarkdownBlock(view, block, source);
+    const contentStart = source === current.body ? 0 : source.indexOf('\n') + 1;
+    const offset = Math.max(
+        0,
+        Math.min(
+            current.body.length,
+            view.state.selection.main.head - current.contentFrom,
+        ),
+    );
+    replaceMarkdownBlock(view, block, source, contentStart + offset);
 }
 
 export function turnMarkdownBlockInto(
@@ -184,22 +208,56 @@ export function turnMarkdownBlockInto(
     prefix: string,
 ) {
     const current = markdownBlockPresentation(view, block);
-    if (!/^(?:Paragraph|(?:ATX|Setext)Heading[1-6])$/.test(current.name))
+    if (
+        !/^(?:Paragraph|(?:ATX|Setext)Heading[1-6]|BulletList|OrderedList|Blockquote|FencedCode)$/.test(
+            current.name,
+        )
+    )
         throw new Error(
-            'Turn into is available for text and headings. Other blocks retain their structure.',
+            'Choose a text, heading, list, quote or code block to change its type.',
         );
-    const body = current.body
+    let body = current.body
         .replace(/^ {0,3}#{1,6}[ \t]+/, '')
         .replace(/\n {0,3}(?:=+|-+)[ \t]*$/, '');
+    if (current.name === 'FencedCode') {
+        const node = syntaxTree(view.state).topNode.childAfter(block.from);
+        const code = node && readRichBlock(view.state, node);
+        if (code?.kind !== 'code')
+            throw new Error('Diagrams keep their diagram source.');
+        body = code.content;
+    }
+    if (current.name === 'BulletList' || current.name === 'OrderedList')
+        body = body
+            .split('\n')
+            .map((line) =>
+                line
+                    .replace(/^\s*(?:[-+*]|\d+[.)])\s+(?:\[[ xX]\]\s+)?/, '')
+                    .replace(/^ {1,4}/, ''),
+            )
+            .join('\n');
+    if (current.name === 'Blockquote') {
+        if (/^\s*>\s*\[!/.test(body))
+            throw new Error('Callouts keep their callout source.');
+        body = body.replace(/^\s*>[ \t]?/gm, '');
+    }
     let source = body;
-    if (/^#+ $/.test(prefix)) source = `${prefix}${body.replace(/\n/g, ' ')}`;
+    if (prefix === '```') source = fencedCodeSource(body, 'text');
+    else if (/^#+ $/.test(prefix))
+        source = `${prefix}${body.replace(/\n/g, ' ')}`;
     else if (prefix.startsWith('>'))
         source = `${prefix}${body.replace(/\n/g, '\n> ')}`;
     else if (prefix)
-        source = `${prefix}${body.replace(/\n/g, `\n${' '.repeat(prefix.length)}`)}`;
+        source = body
+            .split('\n')
+            .map(
+                (line, index) =>
+                    `${prefix === '1. ' ? `${index + 1}. ` : prefix}${line}`,
+            )
+            .join('\n');
     const metadata = { ...current.metadata };
     if (metadata.kind === 'empty' && source.trim()) metadata.kind = 'block';
     if (prefix && !/^#+ $/.test(prefix)) delete metadata.align;
+    if (prefix !== '1. ') delete metadata.listType;
     replaceMarkdownBlock(
         view,
         block,

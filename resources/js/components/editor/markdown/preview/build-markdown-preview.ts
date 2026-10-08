@@ -1,4 +1,5 @@
 import { markdownLineDirection } from '../interactions/markdown-direction';
+import { readEditableMarkdownPresentation } from '../interactions/markdown-editable-presentation';
 import { readOrbiumMetadata } from '../dialect/metadata';
 import { syntaxTree } from '@codemirror/language';
 import { getSearchQuery } from '@codemirror/search';
@@ -12,7 +13,7 @@ import {
 } from './markdown-link-preview';
 import {
     MarkdownDivider,
-    MarkdownListMarker,
+    MarkdownDecodedText,
     MarkdownTaskCheckbox,
 } from './markdown-preview-widgets';
 
@@ -112,6 +113,7 @@ export function buildMarkdownPreview(
             to: visible.to,
             enter(reference) {
                 const node = reference.node;
+                if (readEditableMarkdownPresentation(view.state, node)) return;
                 if (opaqueNodes.has(node.name)) {
                     if (
                         [
@@ -182,23 +184,26 @@ export function buildMarkdownPreview(
                             : 0);
                     replaceSyntax(node.from, end);
                 }
+                if (node.name === 'Escape')
+                    replaceSyntax(node.from, node.from + 1);
+                if (node.name === 'Entity') {
+                    const decoder = document.createElement('textarea');
+                    decoder.innerHTML = view.state.sliceDoc(node.from, node.to);
+                    replaceSyntax(
+                        node.from,
+                        node.to,
+                        new MarkdownDecodedText(decoder.value),
+                    );
+                }
                 if (node.name === 'ListMark') {
                     addLineClass(node.from, 'cm-md-list');
-                    const marker = view.state.sliceDoc(node.from, node.to);
                     const end =
                         node.to +
                         (view.state.sliceDoc(node.to, node.to + 1) === ' '
                             ? 1
                             : 0);
-                    replaceSyntax(
-                        node.from,
-                        end,
-                        node.parent?.getChild('Task')
-                            ? undefined
-                            : new MarkdownListMarker(
-                                  /^[-+*]$/.test(marker) ? '•' : marker,
-                              ),
-                    );
+                    const leading = view.state.sliceDoc(line.from, node.from);
+                    replaceSyntax(leading.trim() ? node.from : line.from, end);
                 }
                 if (node.name === 'TaskMarker') {
                     replaceSyntax(

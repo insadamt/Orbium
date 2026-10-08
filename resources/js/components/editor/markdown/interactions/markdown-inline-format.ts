@@ -4,6 +4,7 @@ import { EditorView } from '@codemirror/view';
 import type { SyntaxNode } from '@lezer/common';
 import { markdownNodeAt } from '../markdown-syntax';
 import { readOrbiumMetadata, type OrbiumMetadata } from '../dialect/metadata';
+import { paragraphSplitDelimiters } from '../preview/markdown-paragraph-split';
 
 export function inlineFormattingRange(
     view: Pick<EditorView, 'state' | 'compositionStarted'>,
@@ -143,6 +144,41 @@ export function formatMarkdownSelection(
         markers.length >= 2 &&
         markers[0].to === range.from &&
         markers.at(-1)!.from === range.to;
+    if (
+        markers.length >= 2 &&
+        range.from >= markers[0].to &&
+        range.to <= markers.at(-1)!.from &&
+        !insideMatchingMark
+    ) {
+        const start = markers[0];
+        const end = markers.at(-1)!;
+        const inner = paragraphSplitDelimiters(view.state, enclosing);
+        const prefixText =
+            view.state.sliceDoc(start.to, range.from) + inner.closing;
+        const suffixText =
+            inner.opening + view.state.sliceDoc(range.to, end.from);
+        const opening = view.state.sliceDoc(start.from, start.to);
+        const closing = view.state.sliceDoc(end.from, end.to);
+        function retainFormatting(text: string) {
+            const leading = text.match(/^\s*/)?.[0] ?? '';
+            const trailing = text.match(/\s*$/)?.[0] ?? '';
+            return text.trim()
+                ? `${leading}${opening}${text.slice(leading.length, text.length - trailing.length)}${closing}${trailing}`
+                : text;
+        }
+        const prefix = retainFormatting(prefixText);
+        const suffix = retainFormatting(suffixText);
+        const selected = inner.opening + content + inner.closing;
+        replaceInline(
+            view,
+            enclosing.from,
+            enclosing.to,
+            prefix + selected + suffix,
+            prefix.length + inner.opening.length,
+            prefix.length + inner.opening.length + content.length,
+        );
+        return;
+    }
     if (before === delimiter && after === delimiter && insideMatchingMark) {
         replaceInline(
             view,

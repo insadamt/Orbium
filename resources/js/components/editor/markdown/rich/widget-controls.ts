@@ -30,6 +30,7 @@ export function applyRichSource(
     view: EditorView,
     block: RichBlock,
     source: string,
+    selectionOffset?: number,
 ): boolean {
     if (
         !view.state.facet(EditorView.editable) ||
@@ -39,6 +40,10 @@ export function applyRichSource(
         return false;
     view.dispatch({
         changes: { from: block.from, to: block.to, insert: source },
+        selection:
+            selectionOffset === undefined
+                ? undefined
+                : { anchor: block.from + selectionOffset },
         annotations: isolateHistory.of('full'),
         userEvent: 'input.rich',
     });
@@ -58,9 +63,14 @@ export function preservePresentation(
         .reduce((body, metadata) => wrap(metadata, body), source);
 }
 
-export function sourceControls(mount: RichWidgetMount, label: string) {
+export function sourceControls(
+    mount: RichWidgetMount,
+    label: string,
+    activateOnInsertion = true,
+) {
     let block = mount.block;
     let editing = false;
+    let destroyed = false;
     const toolbar = element(
         'div',
         'mb-2 flex items-center justify-between text-xs text-muted-foreground',
@@ -96,23 +106,6 @@ export function sourceControls(mount: RichWidgetMount, label: string) {
     group.append(edit, preview);
     toolbar.append(group);
     mount.root.append(toolbar, error, input, output);
-    mount.root.addEventListener(
-        'keydown',
-        (event) => {
-            if (
-                !(event.ctrlKey || event.metaKey) ||
-                event.altKey ||
-                !['z', 'y'].includes(event.key.toLowerCase())
-            )
-                return;
-            event.preventDefault();
-            event.stopPropagation();
-            if (event.key.toLowerCase() === 'y' || event.shiftKey)
-                redo(mount.view);
-            else undo(mount.view);
-        },
-        true,
-    );
     input.addEventListener('keydown', (event) => {
         if (!(event.ctrlKey || event.metaKey)) event.stopPropagation();
     });
@@ -130,6 +123,7 @@ export function sourceControls(mount: RichWidgetMount, label: string) {
         }
     });
     function setEditing(next: boolean) {
+        if (destroyed || !mount.view.dom.isConnected) return;
         if (next && !mount.view.state.facet(EditorView.editable)) return;
         editing = next;
         mount.view.dispatch({
@@ -152,6 +146,8 @@ export function sourceControls(mount: RichWidgetMount, label: string) {
     }
     edit.setAttribute('aria-pressed', 'false');
     preview.setAttribute('aria-pressed', 'true');
+    if (activateOnInsertion)
+        mount.root.addEventListener('orbium-edit-rich', () => setEditing(true));
     return {
         toolbar,
         input,
@@ -175,6 +171,29 @@ export function sourceControls(mount: RichWidgetMount, label: string) {
             mount.root.insertBefore(input, output);
         },
         isEditing: () => editing,
+        setEditing,
         current: () => block,
+        destroy() {
+            destroyed = true;
+        },
     };
+}
+
+export function bindRichBlockHistory(root: HTMLElement, view: EditorView) {
+    root.addEventListener(
+        'keydown',
+        (event) => {
+            if (
+                !(event.ctrlKey || event.metaKey) ||
+                event.altKey ||
+                !['z', 'y'].includes(event.key.toLowerCase())
+            )
+                return;
+            event.preventDefault();
+            event.stopPropagation();
+            if (event.key.toLowerCase() === 'y' || event.shiftKey) redo(view);
+            else undo(view);
+        },
+        true,
+    );
 }

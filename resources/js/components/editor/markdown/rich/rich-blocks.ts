@@ -17,6 +17,7 @@ import {
 } from './rich-effects';
 import type { RichBlock, RichContext } from './rich-model';
 import { MarkdownRichWidget } from './rich-widget';
+import { readEditableMarkdownPresentation } from '../interactions/markdown-editable-presentation';
 
 function collectBlocks(
     state: EditorState,
@@ -30,6 +31,7 @@ function collectBlocks(
         to,
         enter(reference) {
             const node = reference.node;
+            if (readEditableMarkdownPresentation(state, node)) return;
             if (
                 [
                     'FencedCode',
@@ -221,6 +223,7 @@ export function markdownRichBlocks(context: RichContext) {
         const ranges: Range<Decoration>[] = [];
         const search = Boolean(getSearchQuery(state).search);
         for (const block of blocks) {
+            if (block.kind === 'metadata') continue;
             if (revealed === block.from) continue;
             if (
                 search &&
@@ -250,10 +253,21 @@ export function markdownRichBlocks(context: RichContext) {
         class {
             private frame: number | null = null;
             private destroyed = false;
+            private pendingActivation = false;
             constructor(readonly view: EditorView) {
                 this.schedule();
             }
             update(update: ViewUpdate) {
+                if (
+                    update.transactions.some(
+                        (transaction) =>
+                            transaction.isUserEvent('input.slash') ||
+                            transaction.isUserEvent('input.paragraph') ||
+                            transaction.isUserEvent('input.fence'),
+                    )
+                ) {
+                    this.pendingActivation = true;
+                }
                 if (
                     update.startState.facet(EditorView.editable) !==
                         update.state.facet(EditorView.editable) ||
@@ -293,6 +307,23 @@ export function markdownRichBlocks(context: RichContext) {
                             }),
                         }),
                     );
+                    if (this.pendingActivation && this.view.hasFocus) {
+                        this.pendingActivation = false;
+                        const position = this.view.state.selection.main.head;
+                        const block = this.view.state
+                            .field(field)
+                            .blocks.find(
+                                (item) =>
+                                    item.from <= position &&
+                                    item.to >= position,
+                            );
+                        if (block)
+                            this.view.dom
+                                .querySelector<HTMLElement>(
+                                    `[data-rich-from="${block.from}"]`,
+                                )
+                                ?.dispatchEvent(new Event('orbium-edit-rich'));
+                    }
                 });
             }
             destroy() {

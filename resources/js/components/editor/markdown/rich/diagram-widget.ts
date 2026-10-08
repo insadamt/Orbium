@@ -88,6 +88,7 @@ export function mountDiagram(mount: RichWidgetMount): RichController {
     return {
         update,
         destroy() {
+            controls.destroy();
             destroyed = true;
             unsubscribe?.();
         },

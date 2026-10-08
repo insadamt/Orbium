@@ -1,12 +1,11 @@
-import { EditorView } from '@codemirror/view';
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
+import { mountInlineMathInput } from './inline-math-input';
 import { scheduleEditorIdleWork } from '../../schedule-editor-idle-work';
 import { serializeOrbiumBlock } from '../dialect/metadata';
 import type { RichBlock, RichController, RichWidgetMount } from './rich-model';
 import {
     applyRichSource,
-    button,
     element,
     preservePresentation,
     sourceControls,
@@ -38,27 +37,15 @@ export function mountMath(mount: RichWidgetMount): RichController {
     const inline = block.kind === 'inline-math';
     const controls = inline ? null : sourceControls(mount, 'Math');
     const output = controls?.output ?? element('span');
-    if (inline) {
-        const edit = button('', () => {
-            if (!mount.view.state.facet(EditorView.editable)) return;
-            const latex = window.prompt('Inline math source', block.content);
-            if (latex === null) return;
-            const source =
-                latex && !/[\r\n$]/.test(latex) && latex.trim() === latex
-                    ? `$${latex}$`
-                    : `:orbium-math${JSON.stringify({ latex })}`;
-            applyRichSource(mount.view, block, source);
-        });
-        edit.setAttribute('aria-label', 'Edit inline math');
-        edit.append(output);
-        mount.root.append(edit);
-    } else output.className = 'overflow-auto py-2';
+    const inlineInput = inline ? mountInlineMathInput(mount, output) : null;
+    if (!inline) output.className = 'overflow-auto py-2';
     let equationInput: HTMLTextAreaElement | null = null;
     let previous: string | null = null;
     let cancel: (() => void) | undefined;
     function update(next: RichBlock) {
         block = next;
         controls?.update(next);
+        inlineInput?.update(next);
         if (equationInput && equationInput.value !== next.content)
             equationInput.value = next.content;
         if (previous === next.content) return true;
@@ -109,5 +96,12 @@ export function mountMath(mount: RichWidgetMount): RichController {
         });
     }
     update(block);
-    return { update, destroy: () => cancel?.() };
+    return {
+        update,
+        destroy() {
+            controls?.destroy();
+            cancel?.();
+            inlineInput?.destroy();
+        },
+    };
 }

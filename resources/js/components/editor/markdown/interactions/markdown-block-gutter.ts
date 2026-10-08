@@ -4,18 +4,24 @@ import {
     keymap,
     type ViewUpdate,
 } from '@codemirror/view';
-import { startCompletion } from '@codemirror/autocomplete';
 import { revealRichSource } from '../rich/rich-effects';
 import { Prec } from '@codemirror/state';
-import { interactionButton, interactionSelect } from './interaction-dom';
+import { interactionButton } from './interaction-dom';
+import { mountMarkdownBlockMenu } from './markdown-block-menu';
+import { createElement } from 'react';
+import { createRoot, type Root } from 'react-dom/client';
+import { GripVertical, Plus } from 'lucide-react';
+import {
+    markdownBlockDropTarget,
+    markdownBlockElement,
+    showMarkdownBlockDragPreview,
+} from './markdown-block-drag';
 import {
     adjacentMarkdownBlock,
     markdownBlockAt,
     markdownBlockPresentation,
     moveMarkdownBlock,
     replaceMarkdownBlock,
-    setMarkdownBlockPresentation,
-    turnMarkdownBlockInto,
     type MarkdownBlockRange,
 } from './markdown-block-actions';
 
@@ -24,32 +30,45 @@ export function markdownBlockGutter(onNotice: (message: string) => void) {
         class {
             dom = document.createElement('div');
             panel = document.createElement('div');
+            dropIndicator = document.createElement('div');
+            draggedElement: HTMLElement | null = null;
             block: MarkdownBlockRange | null = null;
+            closeMenu: (() => void) | null = null;
+            iconRoots: Root[] = [];
             dragging: {
                 block: MarkdownBlockRange;
                 doc: EditorView['state']['doc'];
             } | null = null;
             constructor(readonly view: EditorView) {
                 this.dom.className =
-                    'orbium-markdown-gutter absolute z-30 flex gap-0.5 text-muted-foreground';
+                    'orbium-markdown-gutter absolute left-0 z-10 flex items-center rounded-lg text-muted-foreground sm:-left-12';
                 this.dom.hidden = true;
-                const add = interactionButton('Add block below', '+', () => {
+                const add = interactionButton('Add block below', '', () => {
                     const block = this.block;
                     if (!block) return;
                     if (
                         replaceMarkdownBlock(
                             view,
                             block,
-                            `${block.source}\n\n/`,
-                            block.source.length + 3,
+                            `${block.source}\n\n`,
+                            block.source.length + 2,
                         )
                     )
-                        startCompletion(view);
+                        this.dismissMenu();
                 });
                 const handle = interactionButton(
-                    'Block menu; drag to reorder',
-                    '⠿',
+                    'Drag block or open block menu',
+                    '',
                     () => this.openMenu(),
+                );
+                add.className =
+                    'rounded-md p-1 hover:bg-accent hover:text-foreground';
+                handle.className =
+                    'cursor-grab rounded-md p-1 hover:bg-accent hover:text-foreground active:cursor-grabbing';
+                this.iconRoots = [createRoot(add), createRoot(handle)];
+                this.iconRoots[0].render(createElement(Plus, { size: 17 }));
+                this.iconRoots[1].render(
+                    createElement(GripVertical, { size: 17 }),
                 );
                 handle.draggable = true;
                 handle.addEventListener('dragstart', (event) => {
@@ -58,32 +77,43 @@ export function markdownBlockGutter(onNotice: (message: string) => void) {
                         return;
                     }
                     this.dragging = { block: this.block, doc: view.state.doc };
+                    this.draggedElement = markdownBlockElement(
+                        view,
+                        this.block,
+                    );
+                    this.draggedElement?.classList.add('editor-block-dragging');
+                    showMarkdownBlockDragPreview(event, this.block);
                     event.dataTransfer?.setData(
                         'application/x-orbium-block',
                         String(this.block.from),
                     );
                     if (event.dataTransfer)
                         event.dataTransfer.effectAllowed = 'move';
-                    this.panel.hidden = true;
+                    this.dismissMenu();
                 });
                 handle.addEventListener('dragend', () => {
                     this.dragging = null;
+                    this.finishDrag();
                 });
-                this.panel.className =
-                    'glass-surface absolute top-full left-0 mt-1 flex w-60 flex-col gap-1 rounded-xl border border-border p-2 text-foreground shadow-xl';
+                this.dom.append(add, handle);
+                document.body.append(this.panel);
                 this.panel.hidden = true;
-                this.panel.setAttribute('role', 'group');
-                this.panel.setAttribute('aria-label', 'Block actions');
-                this.dom.append(add, handle, this.panel);
                 view.dom.append(this.dom);
+                this.dropIndicator.className =
+                    'pointer-events-none absolute right-0 left-0 z-10 border-t-2 border-foreground/60';
+                this.dropIndicator.hidden = true;
+                view.dom.append(this.dropIndicator);
                 view.dom.addEventListener('pointermove', this.hover);
                 view.dom.addEventListener('pointerleave', this.leave);
                 view.dom.addEventListener('dragover', this.dragOver);
                 view.dom.addEventListener('drop', this.drop);
+                view.dom.addEventListener('contextmenu', this.contextMenu);
+                window.addEventListener('scroll', this.viewportChanged, true);
+                window.addEventListener('resize', this.viewportChanged);
                 document.addEventListener('pointerdown', this.dismiss);
                 this.dom.addEventListener('keydown', (event) => {
                     if (event.key === 'Escape') {
-                        this.panel.hidden = true;
+                        this.dismissMenu();
                         view.focus();
                     }
                 });
@@ -114,7 +144,7 @@ export function markdownBlockGutter(onNotice: (message: string) => void) {
                 const coordinates = this.view.coordsAtPos(this.block.from);
                 if (!coordinates) return;
                 this.dom.style.top = `${coordinates.top - this.view.dom.getBoundingClientRect().top}px`;
-                this.dom.style.left = '-48px';
+
                 this.dom.hidden = false;
                 this.panel.hidden = true;
                 this.openMenu();
@@ -124,153 +154,90 @@ export function markdownBlockGutter(onNotice: (message: string) => void) {
             }
             openMenu() {
                 if (!this.block) return;
+                if (this.closeMenu) {
+                    this.dismissMenu();
+                    return;
+                }
+                const bounds = this.dom.getBoundingClientRect();
+                this.panel.hidden = false;
+                this.closeMenu = mountMarkdownBlockMenu({
+                    view: this.view,
+                    block: this.block,
+                    host: this.panel,
+                    anchor: {
+                        x: bounds.right + 8,
+                        y: bounds.bottom + 4,
+                        direction: this.blockDirection(),
+                    },
+                    onNotice,
+                    onClose: () => this.dismissMenu(),
+                });
+            }
+            blockDirection(): 'ltr' | 'rtl' {
                 const presentation = markdownBlockPresentation(
                     this.view,
-                    this.block,
+                    this.block!,
                 );
-                const convert = interactionSelect(
-                    'Turn into',
-                    [
-                        ['choose', 'Turn into…'],
-                        ['', 'Text'],
-                        ['# ', 'Heading 1'],
-                        ['## ', 'Heading 2'],
-                        ['### ', 'Heading 3'],
-                        ['- ', 'Bullet list'],
-                        ['1. ', 'Numbered list'],
-                        ['- [ ] ', 'Checklist'],
-                        ['> ', 'Quote'],
-                        ['> [!NOTE]\n> ', 'Callout'],
-                    ],
-                    'choose',
-                    (prefix) =>
-                        this.run((block) =>
-                            turnMarkdownBlockInto(this.view, block, prefix),
-                        ),
-                );
-                const direction = interactionSelect(
-                    'Block direction',
-                    [
-                        ['auto', 'Auto direction'],
-                        ['ltr', 'Left to right'],
-                        ['rtl', 'Right to left'],
-                    ],
-                    presentation.metadata.dir ?? 'auto',
-                    (dir) =>
-                        this.run((block) =>
-                            setMarkdownBlockPresentation(this.view, block, {
-                                dir: dir as 'auto' | 'ltr' | 'rtl',
-                            }),
-                        ),
-                );
-                const alignment = interactionSelect(
-                    'Text alignment',
-                    [
-                        ['', 'Default alignment'],
-                        ['left', 'Align left'],
-                        ['center', 'Align center'],
-                        ['right', 'Align right'],
-                    ],
-                    presentation.metadata.align ?? '',
-                    (align) =>
-                        this.run((block) =>
-                            setMarkdownBlockPresentation(this.view, block, {
-                                align: (align || undefined) as
-                                    | 'left'
-                                    | 'center'
-                                    | 'right'
-                                    | undefined,
-                            }),
-                        ),
-                );
-                this.panel.replaceChildren(convert, direction, alignment);
-                const actions: [string, (block: MarkdownBlockRange) => void][] =
-                    [
-                        [
-                            'Select block',
-                            (block) => {
-                                this.view.dispatch({
-                                    selection: {
-                                        anchor: block.from,
-                                        head: block.to,
-                                    },
-                                    effects: revealRichSource.of(block.from),
-                                });
-                                this.view.focus();
-                            },
-                        ],
-
-                        [
-                            'Duplicate',
-                            (block) => {
-                                replaceMarkdownBlock(
-                                    this.view,
-                                    block,
-                                    `${block.source}\n\n${block.source}`,
-                                    block.source.length + 2,
-                                );
-                            },
-                        ],
-                        [
-                            'Copy Markdown',
-                            (block) => {
-                                void navigator.clipboard
-                                    .writeText(block.source)
-                                    .catch(() =>
-                                        onNotice(
-                                            'Clipboard access failed. Select the block and copy in Source mode.',
-                                        ),
-                                    );
-                            },
-                        ],
-                        [
-                            'Move up',
-                            (block) => {
-                                const neighbor = adjacentMarkdownBlock(
-                                    this.view,
-                                    block,
-                                    true,
-                                );
-                                if (neighbor)
-                                    moveMarkdownBlock(
-                                        this.view,
-                                        block,
-                                        neighbor,
-                                    );
-                            },
-                        ],
-                        [
-                            'Move down',
-                            (block) => {
-                                const neighbor = adjacentMarkdownBlock(
-                                    this.view,
-                                    block,
-                                    false,
-                                );
-                                if (neighbor)
-                                    moveMarkdownBlock(
-                                        this.view,
-                                        block,
-                                        neighbor,
-                                    );
-                            },
-                        ],
-                        [
-                            'Delete',
-                            (block) => {
-                                replaceMarkdownBlock(this.view, block, '');
-                            },
-                        ],
-                    ];
-                for (const [label, command] of actions)
-                    this.panel.append(
-                        interactionButton(label, label, () => {
-                            this.run(command);
-                            this.panel.hidden = true;
-                        }),
-                    );
-                this.panel.hidden = !this.panel.hidden;
+                if (presentation.metadata.dir === 'rtl') return 'rtl';
+                if (presentation.metadata.dir === 'ltr') return 'ltr';
+                return getComputedStyle(
+                    this.view.domAtPos(this.block!.from).node.parentElement ??
+                        this.view.dom,
+                ).direction === 'rtl'
+                    ? 'rtl'
+                    : 'ltr';
             }
+            dismissMenu = () => {
+                this.closeMenu?.();
+                this.closeMenu = null;
+                this.panel.hidden = true;
+            };
+            contextMenu = (event: MouseEvent) => {
+                if (
+                    !this.view.state.facet(EditorView.editable) ||
+                    (event.target as Element).closest(
+                        'input, textarea, [data-block-controls]',
+                    )
+                )
+                    return;
+                const widget = (event.target as Element).closest<HTMLElement>(
+                    '[data-rich-from]',
+                );
+                const position = widget
+                    ? Number(widget.dataset.richFrom)
+                    : this.view.posAtCoords({
+                          x: event.clientX,
+                          y: event.clientY,
+                      });
+                if (position === null) return;
+                event.preventDefault();
+                this.dismissMenu();
+                this.block = markdownBlockAt(this.view.state, position);
+                this.panel.hidden = false;
+                this.closeMenu = mountMarkdownBlockMenu({
+                    view: this.view,
+                    block: this.block,
+                    host: this.panel,
+                    anchor: {
+                        x: event.clientX,
+                        y: event.clientY,
+                        direction: this.blockDirection(),
+                    },
+                    onNotice,
+                    onClose: () => this.dismissMenu(),
+                });
+            };
+            viewportChanged = (event: Event) => {
+                if (
+                    event.target instanceof Element &&
+                    event.target.closest(
+                        '[data-block-context-menu], .block-context-select-content',
+                    )
+                )
+                    return;
+                this.dismissMenu();
+            };
+
             hover = (event: PointerEvent) => {
                 if (
                     !this.panel.hidden ||
@@ -291,48 +258,69 @@ export function markdownBlockGutter(onNotice: (message: string) => void) {
                 this.block = markdownBlockAt(this.view.state, position);
                 const parent = this.view.dom.getBoundingClientRect();
                 const coordinates =
-                    widget?.getBoundingClientRect() ??
+                    markdownBlockElement(
+                        this.view,
+                        this.block,
+                    )?.getBoundingClientRect() ??
                     this.view.coordsAtPos(this.block.from);
                 if (!coordinates) return;
                 this.dom.style.top = `${coordinates.top - parent.top}px`;
-                this.dom.style.left = '-48px';
+
                 this.dom.hidden = false;
             };
             leave = () => {
                 if (this.panel.hidden) this.dom.hidden = true;
             };
             dismiss = (event: PointerEvent) => {
-                if (!this.dom.contains(event.target as Node))
-                    this.panel.hidden = true;
+                if (
+                    !this.dom.contains(event.target as Node) &&
+                    !(
+                        event.target instanceof Element &&
+                        event.target.closest(
+                            '[data-block-context-menu], .block-context-select-content',
+                        )
+                    )
+                )
+                    this.dismissMenu();
             };
             dragOver = (event: DragEvent) => {
                 if (this.dragging) {
                     event.preventDefault();
                     if (event.dataTransfer)
                         event.dataTransfer.dropEffect = 'move';
+                    const target = markdownBlockDropTarget(this.view, event);
+                    this.dropIndicator.hidden =
+                        !target ||
+                        target.block.from === this.dragging.block.from;
+                    if (target)
+                        this.dropIndicator.style.top = `${target.top}px`;
                 }
             };
+            finishDrag() {
+                this.draggedElement?.classList.remove('editor-block-dragging');
+                this.draggedElement = null;
+                this.dropIndicator.hidden = true;
+            }
             drop = (event: DragEvent) => {
                 if (!this.dragging) return;
                 event.preventDefault();
                 event.stopPropagation();
                 const drag = this.dragging;
                 this.dragging = null;
+                this.finishDrag();
                 if (drag.doc !== this.view.state.doc) {
                     onNotice(
                         'The document changed during the drag. Drag the block again.',
                     );
                     return;
                 }
-                const position = this.view.posAtCoords({
-                    x: event.clientX,
-                    y: event.clientY,
-                });
-                if (position !== null)
+                const target = markdownBlockDropTarget(this.view, event);
+                if (target)
                     moveMarkdownBlock(
                         this.view,
                         drag.block,
-                        markdownBlockAt(this.view.state, position),
+                        target.block,
+                        target.placement,
                     );
             };
             update(update: ViewUpdate) {
@@ -342,7 +330,7 @@ export function markdownBlockGutter(onNotice: (message: string) => void) {
                     !update.state.facet(EditorView.editable)
                 ) {
                     this.dom.hidden = true;
-                    this.panel.hidden = true;
+                    this.dismissMenu();
                     this.block = null;
                 }
             }
@@ -351,8 +339,24 @@ export function markdownBlockGutter(onNotice: (message: string) => void) {
                 this.view.dom.removeEventListener('pointerleave', this.leave);
                 this.view.dom.removeEventListener('dragover', this.dragOver);
                 this.view.dom.removeEventListener('drop', this.drop);
+                this.view.dom.removeEventListener(
+                    'contextmenu',
+                    this.contextMenu,
+                );
+                window.removeEventListener(
+                    'scroll',
+                    this.viewportChanged,
+                    true,
+                );
+                window.removeEventListener('resize', this.viewportChanged);
+                this.dismissMenu();
+                this.panel.remove();
                 document.removeEventListener('pointerdown', this.dismiss);
                 this.dom.remove();
+                this.finishDrag();
+                this.dropIndicator.remove();
+                const roots = this.iconRoots;
+                queueMicrotask(() => roots.forEach((root) => root.unmount()));
             }
         },
     );

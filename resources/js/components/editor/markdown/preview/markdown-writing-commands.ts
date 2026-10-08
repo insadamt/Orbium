@@ -3,6 +3,7 @@ import { syntaxTree } from '@codemirror/language';
 import { Prec } from '@codemirror/state';
 import { EditorView, keymap } from '@codemirror/view';
 import type { SyntaxNode } from '@lezer/common';
+import { readEditableMarkdownPresentation } from '../interactions/markdown-editable-presentation';
 import {
     hasMarkdownAncestor,
     isMarkdownSourceOnlyLine,
@@ -44,7 +45,11 @@ function writingNode(view: EditorView): SyntaxNode | null {
     )
         return null;
     const node = syntaxTree(state).resolveInner(line.from, 1);
-    return hasMarkdownAncestor(node, sourceOrNestedBlocks) ? null : node;
+    for (let parent: SyntaxNode | null = node; parent; parent = parent.parent) {
+        if (readEditableMarkdownPresentation(state, parent)) continue;
+        if (sourceOrNestedBlocks.has(parent.name)) return null;
+    }
+    return node;
 }
 
 function ancestor(node: SyntaxNode | null, name: RegExp): SyntaxNode | null {

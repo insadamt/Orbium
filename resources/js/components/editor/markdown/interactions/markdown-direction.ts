@@ -1,6 +1,7 @@
 import type { EditorState, Text } from '@codemirror/state';
 import { syntaxTree } from '@codemirror/language';
 import type { SyntaxNode } from '@lezer/common';
+import { readEditableMarkdownPresentation } from './markdown-editable-presentation';
 
 const rtlLetter =
     /[\p{Script=Arabic}\p{Script=Hebrew}\p{Script=Syriac}\p{Script=Thaana}\p{Script=Nko}\p{Script=Samaritan}\p{Script=Mandaic}\p{Script=Adlam}\p{Script=Hanifi_Rohingya}]/u;
@@ -67,6 +68,21 @@ export function markdownLineDirection(
         cached.get(state.doc) ?? new Map<number, 'ltr' | 'rtl'>();
     cached.set(state.doc, directions);
     const line = state.doc.lineAt(position);
+    for (
+        let parent: SyntaxNode | null = syntaxTree(state).resolveInner(
+            position,
+            1,
+        );
+        parent;
+        parent = parent.parent
+    ) {
+        const presentation = readEditableMarkdownPresentation(state, parent);
+        if (
+            presentation?.metadata.dir === 'ltr' ||
+            presentation?.metadata.dir === 'rtl'
+        )
+            return presentation.metadata.dir;
+    }
     const existing = directions.get(line.from);
     if (existing) return existing;
     let node = syntaxTree(state).resolveInner(position, 1);

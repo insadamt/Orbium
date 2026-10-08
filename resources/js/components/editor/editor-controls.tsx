@@ -1,3 +1,4 @@
+import { FormatButton } from './ui/format-button';
 import { measureEditorWork } from '@/lib/editor-performance';
 import type { Editor } from '@tiptap/core';
 import type { Node as DocumentSnapshot } from '@tiptap/pm/model';
@@ -235,31 +236,6 @@ function canFormatTextSelection(editor: Editor): boolean {
     });
 
     return containsText && supportsFormatting;
-}
-
-function FormatButton({
-    label,
-    active,
-    onClick,
-    children,
-}: {
-    label: string;
-    active: boolean;
-    onClick: () => void;
-    children: React.ReactNode;
-}) {
-    return (
-        <button
-            type="button"
-            aria-label={label}
-            aria-pressed={active}
-            onMouseDown={(event) => event.preventDefault()}
-            onClick={onClick}
-            className={`rounded p-2 ${active ? 'bg-accent' : 'hover:bg-accent'}`}
-        >
-            {children}
-        </button>
-    );
 }
 
 export function SuggestionMenu({
