@@ -19,6 +19,22 @@ function collectMarkdownWrappers(
         to,
         enter(reference) {
             const node = reference.node;
+            const start = state.doc.lineAt(node.from).from;
+            const end = state.doc.lineAt(Math.max(node.from, node.to - 1)).to;
+            if (
+                node.parent?.name === 'Document' &&
+                !node.parent.parent &&
+                end > start
+            ) {
+                // CodeMirror measures wrapper contents, including contained block margins.
+                ranges.push(
+                    BlockWrapper.create({
+                        tagName: 'div',
+                        attributes: { class: 'orbium-markdown-block-layout' },
+                        rank: 100,
+                    }).range(start, end),
+                );
+            }
             const presentation = readEditableMarkdownPresentation(state, node);
             if (presentation) {
                 const { body, header, close, metadata } = presentation;
@@ -44,7 +60,7 @@ function collectMarkdownWrappers(
                     BlockWrapper.create({
                         tagName: 'div',
                         attributes,
-                        rank: 100,
+                        rank: 99,
                     }).range(body.from, body.to),
                 );
                 return;
@@ -133,8 +149,6 @@ function collectMarkdownWrappers(
                 parent = parent.parent
             )
                 depth++;
-            const start = state.doc.lineAt(node.from).from;
-            const end = state.doc.lineAt(Math.max(node.from, node.to - 1)).to;
             if (end <= start) return;
             if (className) attributes.class = className;
             if (role) attributes.role = role;

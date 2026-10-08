@@ -75,6 +75,7 @@ export function sourceControls(
         'div',
         'mb-2 flex items-center justify-between text-xs text-muted-foreground',
     );
+    toolbar.dataset.blockGutterAnchor = '';
     toolbar.append(element('span', '', label));
     const group = element(
         'div',

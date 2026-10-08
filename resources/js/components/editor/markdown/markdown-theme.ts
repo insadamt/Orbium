@@ -34,16 +34,17 @@ export function markdownTheme(dark: boolean) {
                 fontSize: '14px',
                 height: 'clamp(240px, 65dvh, 900px)',
             },
-            '.cm-scroller': {
+            '& > .cm-scroller': {
                 overflow: 'auto',
                 fontFamily: 'var(--font-mono, monospace)',
                 lineHeight: '1.7',
             },
-            '.cm-content': {
+            '& > .cm-scroller > .cm-content': {
                 padding: '12px 0',
                 caretColor: 'var(--foreground)',
             },
-            '.cm-line': { padding: '0 12px' },
+            '& > .cm-scroller > .cm-content:not(.orbium-markdown-content) .cm-line':
+                { padding: '0 12px' },
             '.cm-gutters': {
                 backgroundColor: 'transparent',
                 color: 'var(--muted-foreground)',

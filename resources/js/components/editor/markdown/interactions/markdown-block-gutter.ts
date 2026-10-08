@@ -14,6 +14,7 @@ import { GripVertical, Plus } from 'lucide-react';
 import {
     markdownBlockDropTarget,
     markdownBlockElement,
+    markdownBlockControlTop,
     showMarkdownBlockDragPreview,
 } from './markdown-block-drag';
 import {
@@ -141,9 +142,13 @@ export function markdownBlockGutter(onNotice: (message: string) => void) {
                     this.view.state,
                     this.view.state.selection.main.head,
                 );
-                const coordinates = this.view.coordsAtPos(this.block.from);
-                if (!coordinates) return;
-                this.dom.style.top = `${coordinates.top - this.view.dom.getBoundingClientRect().top}px`;
+                const top = markdownBlockControlTop(
+                    this.view,
+                    this.block,
+                    this.dom.offsetHeight || 25,
+                );
+                if (top === null) return;
+                this.dom.style.top = `${top}px`;
 
                 this.dom.hidden = false;
                 this.panel.hidden = true;
@@ -236,6 +241,8 @@ export function markdownBlockGutter(onNotice: (message: string) => void) {
                 )
                     return;
                 this.dismissMenu();
+                this.dom.hidden = true;
+                this.block = null;
             };
 
             hover = (event: PointerEvent) => {
@@ -256,15 +263,13 @@ export function markdownBlockGutter(onNotice: (message: string) => void) {
                       });
                 if (position === null) return;
                 this.block = markdownBlockAt(this.view.state, position);
-                const parent = this.view.dom.getBoundingClientRect();
-                const coordinates =
-                    markdownBlockElement(
-                        this.view,
-                        this.block,
-                    )?.getBoundingClientRect() ??
-                    this.view.coordsAtPos(this.block.from);
-                if (!coordinates) return;
-                this.dom.style.top = `${coordinates.top - parent.top}px`;
+                const top = markdownBlockControlTop(
+                    this.view,
+                    this.block,
+                    this.dom.offsetHeight || 25,
+                );
+                if (top === null) return;
+                this.dom.style.top = `${top}px`;
 
                 this.dom.hidden = false;
             };

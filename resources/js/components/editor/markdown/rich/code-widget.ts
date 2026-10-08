@@ -25,8 +25,9 @@ export function mountCode(mount: RichWidgetMount): RichController {
     let copyStatusTimer: ReturnType<typeof setTimeout> | undefined;
     const toolbar = element(
         'div',
-        'flex items-center justify-between border-b border-border px-3 py-2 text-xs text-muted-foreground',
+        'orbium-code-toolbar flex items-center justify-between border-b border-border bg-background/30 px-4 py-2 text-xs text-muted-foreground',
     );
+    toolbar.dataset.blockGutterAnchor = '';
     const error = element('p', 'px-3 py-2 text-sm text-destructive');
     error.hidden = true;
     error.setAttribute('role', 'alert');
@@ -66,6 +67,9 @@ export function mountCode(mount: RichWidgetMount): RichController {
         );
     });
     toolbar.append(copy);
+    copy.className =
+        'rounded-md px-2.5 py-1.5 text-xs hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring';
+    copy.setAttribute('aria-live', 'polite');
     const input = mountCodeInput({
         host: codeHost,
         source: block.content,

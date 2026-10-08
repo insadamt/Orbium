@@ -20,6 +20,7 @@ import { markdownPresentationCommands } from './interactions/markdown-presentati
 import { markdownFindHighlights } from './interactions/markdown-find-highlights';
 import { markdownSelectionToolbar } from './interactions/markdown-selection-toolbar';
 import { markdownBlockGutter } from './interactions/markdown-block-gutter';
+import { markdownTrailingParagraph } from './interactions/markdown-trailing-paragraph';
 import { markdownMediaInput } from './interactions/markdown-media-input';
 import { useMarkdownTransfer } from './interactions/use-markdown-transfer';
 import { MarkdownEditorControls } from './interactions/markdown-editor-controls';
@@ -138,6 +139,7 @@ export default function MarkdownEditor(props: MarkdownEditorProps) {
                                 markdownWritingCommands,
                                 markdownBlockWrappers,
                                 markdownPresentationCommands,
+                                markdownTrailingParagraph,
                                 interactionExtensions,
                             ]),
                             highlightActiveLine(),
@@ -275,6 +277,7 @@ export default function MarkdownEditor(props: MarkdownEditorProps) {
                           markdownWritingCommands,
                           markdownBlockWrappers,
                           markdownPresentationCommands,
+                          markdownTrailingParagraph,
                           interactionExtensions,
                       ]
                     : [

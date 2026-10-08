@@ -23,7 +23,11 @@ export function markdownBlockAt(
     position: number,
 ): MarkdownBlockRange {
     let node = syntaxTree(state).resolveInner(position, 1);
-    if (node.name === 'Document') node = node.childBefore(position + 1) ?? node;
+    if (node.name === 'Document') {
+        const previous = node.childBefore(position + 1);
+        if (previous && previous.from <= position && previous.to >= position)
+            node = previous;
+    }
     while (node.parent && node.parent.parent) node = node.parent;
     if (node.name === 'Document') {
         const line = state.doc.lineAt(position);

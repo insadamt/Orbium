@@ -83,14 +83,19 @@ export function mountCodeInput({
                 dir: 'ltr',
             }),
             EditorView.theme({
-                '&': { fontSize: '0.85rem', backgroundColor: 'transparent' },
+                '&': {
+                    height: 'auto',
+                    minHeight: '0',
+                    fontSize: '0.85rem',
+                    backgroundColor: 'transparent',
+                },
                 '.cm-scroller': {
                     fontFamily: 'var(--font-mono, monospace)',
                     lineHeight: '1.55',
                     overflow: 'auto',
                 },
-                '.cm-content': { padding: '1rem 0' },
-                '.cm-line': { padding: '0 1rem' },
+                '.cm-content': { padding: '1rem 0', minHeight: '0' },
+                '&.orbium-code-input .cm-line': { padding: '0 1rem' },
                 '.cm-gutters': {
                     backgroundColor: 'transparent',
                     color: 'var(--muted-foreground)',

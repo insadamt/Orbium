@@ -169,8 +169,12 @@
     text-align: start;
 }
 
+.orbium-markdown-block-layout {
+    display: flow-root;
+}
 .orbium-markdown-content .cm-line {
     margin: 0;
+    padding: 0;
 }
 .orbium-markdown-content .cm-md-heading {
     margin-top: 0;
@@ -320,6 +324,27 @@
     max-width: calc(100vw - 16px);
 }
 .orbium-markdown-gutter[hidden] {
+    display: none;
+}
+.orbium-markdown-trailing-paragraph {
+    display: block;
+    width: 100%;
+    min-height: 3.5rem;
+    padding: 1rem 0;
+    border-radius: 0.5rem;
+    color: var(--muted-foreground);
+    font-size: 0.875rem;
+    text-align: start;
+    cursor: text;
+}
+.orbium-markdown-trailing-paragraph:hover {
+    color: var(--foreground);
+}
+.orbium-markdown-trailing-paragraph:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+}
+.orbium-markdown-trailing-paragraph[hidden] {
     display: none;
 }
 .orbium-markdown-content .editor-block-dragging {

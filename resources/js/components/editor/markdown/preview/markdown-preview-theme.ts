@@ -8,13 +8,15 @@ export const markdownPreviewTheme = [
     }),
     EditorView.theme({
         '&': { height: 'auto', minHeight: '45vh', fontSize: '1.03rem' },
-        '.cm-scroller': {
+        '& > .cm-scroller': {
             fontFamily: 'var(--font-sans, sans-serif)',
             lineHeight: '1.75',
             overflow: 'visible',
         },
-        '.cm-content': { padding: '0', minHeight: '45vh' },
-        '.cm-line': { padding: '0' },
+        '& > .cm-scroller > .cm-content': {
+            padding: '0',
+            minHeight: '45vh',
+        },
         '.cm-activeLine': { backgroundColor: 'transparent' },
         '.cm-md-source': {
             fontFamily: 'var(--font-mono, monospace)',
