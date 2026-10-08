@@ -1,10 +1,16 @@
 import {
+    createMermaidC4Config,
+    createMermaidThemeVariables,
+} from './mermaid-theme';
+import { applyMermaidPreviewColors } from './mermaid-preview-colors';
+import {
     markEditorPerformance,
     measureEditorAsync,
 } from '@/lib/editor-performance';
 
 export type CachedPreview = { svg: string; renderId: string };
-export const mermaidRendererVersion = 'mermaid-12.0.0-neutral-strict-v1';
+export const mermaidRendererVersion =
+    'mermaid-12.0.0-orbium-contrast-strict-v3';
 
 function importMermaidDependencies() {
     return Promise.all([import('mermaid'), import('dompurify')]);
@@ -40,7 +46,12 @@ export function warmMermaidRenderer(
                 suppressErrorRendering: true,
                 securityLevel: 'strict',
                 htmlLabels: false,
-                theme: 'neutral',
+                theme: 'base',
+                look: 'neo',
+                fontFamily: 'Inter, ui-sans-serif, system-ui, sans-serif',
+                themeVariables: createMermaidThemeVariables(),
+                flowchart: { curve: 'basis', padding: 20 },
+                c4: createMermaidC4Config(),
             });
             markEditorPerformance('mermaid.warm-up-completed');
             return true;
@@ -67,7 +78,7 @@ export async function sanitizeMermaidPreview(
 }
 
 export function instantiateMermaidSvg(preview: CachedPreview): string {
-    return preview.svg.replaceAll(
+    return applyMermaidPreviewColors(preview.svg).replaceAll(
         preview.renderId,
         `orbium-mermaid-${crypto.randomUUID()}`,
     );

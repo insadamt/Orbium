@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\DB;
 
 class MermaidPreviewCache
 {
-    public const RENDERER_VERSION = 'mermaid-12.0.0-neutral-strict-v1';
+    public const RENDERER_VERSION = 'mermaid-12.0.0-orbium-contrast-strict-v3';
 
     public function __construct(private readonly MarkdownDocumentInspector $markdownInspector) {}
 

@@ -9,6 +9,7 @@ import {
     markdownLinkDestination,
     openMarkdownPreviewLink,
 } from '../preview/markdown-link-preview';
+import { createMermaidPreviewControls } from '../../mermaid-preview-controls';
 import { instantiateMermaidSvg } from '../../mermaid-preview-renderer';
 import { applyMermaidPreviewDimensions } from '../../mermaid-preview-layout';
 import {
@@ -119,6 +120,10 @@ export function renderRichBody(
                 return;
             }
             if (block.kind === 'mermaid') {
+                const controls = createMermaidPreviewControls();
+                target.before(controls.button);
+                disposals.push(() => controls.destroy());
+                target.dataset.mermaidPreview = '';
                 target.textContent = 'Rendering diagram…';
                 target.className = 'overflow-auto [&>svg]:w-full';
                 disposals.push(
@@ -127,13 +132,15 @@ export function renderRichBody(
                         target,
                         ({ preview, dimensions, error }) => {
                             if (destroyed) return;
-                            if (preview)
+                            if (preview) {
+                                controls.update(preview);
                                 target.innerHTML =
                                     instantiateMermaidSvg(preview);
-                            else if (error)
+                            } else if (error) {
+                                controls.update();
                                 target.textContent =
                                     'Diagram could not be rendered. Edit this block to fix the source.';
-                            else if (dimensions)
+                            } else if (dimensions)
                                 applyMermaidPreviewDimensions(
                                     target,
                                     dimensions,

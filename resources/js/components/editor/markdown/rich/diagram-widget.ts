@@ -1,6 +1,7 @@
 import { serializeOrbiumBlock } from '../dialect/metadata';
 import { fencedCodeSource } from './code-widget';
 import { createRichSourceInput } from './rich-source-input';
+import { createMermaidPreviewControls } from '../../mermaid-preview-controls';
 import { instantiateMermaidSvg } from '../../mermaid-preview-renderer';
 import {
     applyMermaidPreviewDimensions,
@@ -17,6 +18,13 @@ import {
 export function mountDiagram(mount: RichWidgetMount): RichController {
     let current = mount.block;
     const controls = sourceControls(mount, 'Mermaid');
+    const previewControls = createMermaidPreviewControls();
+    controls.toolbar.classList.add('mermaid-inline-toolbar');
+    const actions = element('div', 'mermaid-inline-actions');
+    const modes = controls.toolbar.lastElementChild;
+    if (modes) actions.append(modes);
+    actions.append(previewControls.button);
+    controls.toolbar.append(actions);
     const input = createRichSourceInput('Mermaid source', current.content);
     controls.useContentEditor(input);
     input.addEventListener('keydown', (event) => {
@@ -55,6 +63,7 @@ export function mountDiagram(mount: RichWidgetMount): RichController {
         if (block.content === source) return true;
         source = block.content;
         unsubscribe?.();
+        previewControls.update();
         controls.output.replaceChildren(status);
         controls.output.removeAttribute('role');
         unsubscribe = mount.context.mermaid.register(
@@ -63,12 +72,14 @@ export function mountDiagram(mount: RichWidgetMount): RichController {
             ({ preview, dimensions, error }) => {
                 if (destroyed) return;
                 if (error) {
+                    previewControls.update();
                     clearMermaidPreviewDimensions(controls.output);
                     controls.output.textContent = `Diagram could not be rendered. Edit the source to fix it. ${error}`;
                     controls.output.setAttribute('role', 'alert');
                 } else if (dimensions)
                     applyMermaidPreviewDimensions(controls.output, dimensions);
                 else if (preview) {
+                    previewControls.update(preview);
                     controls.output.removeAttribute('role');
                     controls.output.innerHTML = instantiateMermaidSvg(preview);
                 }
@@ -81,6 +92,7 @@ export function mountDiagram(mount: RichWidgetMount): RichController {
     return {
         update,
         destroy() {
+            previewControls.destroy();
             controls.destroy();
             destroyed = true;
             unsubscribe?.();

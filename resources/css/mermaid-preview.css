@@ -1,0 +1,209 @@
+:root {
+    --mermaid-node: #f4f4f5;
+    --mermaid-text: #18181b;
+    --mermaid-stroke: #a1a1aa;
+    --mermaid-secondary: #e4e4e7;
+    --mermaid-chart: #c4c4cc;
+    --mermaid-group: #fafafa;
+    --mermaid-border: #d4d4d8;
+    --mermaid-line: #000;
+    --mermaid-surface: #fff;
+}
+:root.dark {
+    --mermaid-node: #27272a;
+    --mermaid-text: #fafafa;
+    --mermaid-stroke: #71717a;
+    --mermaid-secondary: #3f3f46;
+    --mermaid-chart: #52525b;
+    --mermaid-group: #1c1c1f;
+    --mermaid-border: #3f3f46;
+    --mermaid-line: #a1a1aa;
+    --mermaid-surface: #18181b;
+}
+[data-mermaid-preview] {
+    border-radius: 12px;
+    color: var(--foreground);
+}
+:root:not(.dark)
+    :is([data-mermaid-preview], .mermaid-full-drawing)
+    :is(.flowchart-link, .messageLine0, .messageLine1) {
+    stroke: #000 !important;
+}
+:root:not(.dark)
+    :is([data-mermaid-preview], .mermaid-full-drawing)
+    :is(.arrowheadPath, .arrowMarkerPath, [id$='-arrowhead'] path) {
+    fill: #000 !important;
+    stroke: #000 !important;
+}
+:is([data-mermaid-preview], .mermaid-full-drawing) .c4-shape {
+    color: var(--mermaid-text) !important;
+}
+:is([data-mermaid-preview], .mermaid-full-drawing) .c4-shape :is(text, tspan) {
+    fill: var(--mermaid-text) !important;
+}
+.mermaid-inline-block {
+    padding: 12px 0;
+}
+.mermaid-inline-toolbar {
+    gap: 12px;
+    font-size: 11px;
+    color: var(--muted-foreground);
+}
+.mermaid-inline-actions {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 8px;
+}
+.mermaid-inline-actions > [role='group'] {
+    border-color: transparent;
+    background: color-mix(in srgb, var(--muted) 55%, transparent);
+}
+.mermaid-expand-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--muted-foreground);
+}
+.mermaid-expand-button:hover:not(:disabled) {
+    background: var(--accent);
+    color: var(--foreground);
+}
+.mermaid-expand-button:disabled {
+    opacity: 0.3;
+}
+.mermaid-expand-button:focus-visible,
+.mermaid-full-dialog button:focus-visible,
+.mermaid-full-viewport:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 3px;
+}
+.mermaid-full-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    background: rgb(0 0 0 / 0.35);
+    backdrop-filter: blur(12px);
+}
+.mermaid-full-dialog {
+    position: fixed;
+    inset: 24px;
+    z-index: 101;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    background: var(--background);
+    color: var(--foreground);
+    box-shadow: 0 24px 80px rgb(0 0 0 / 0.2);
+}
+.mermaid-full-header {
+    position: absolute;
+    inset: 0 0 auto;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 20px;
+    pointer-events: none;
+}
+.mermaid-full-title {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--muted-foreground);
+}
+.mermaid-full-close,
+.mermaid-full-actions {
+    border: 1px solid var(--border);
+    background: var(--glass);
+    backdrop-filter: blur(18px);
+    pointer-events: auto;
+}
+.mermaid-full-close {
+    display: grid;
+    width: 36px;
+    height: 36px;
+    place-items: center;
+    border-radius: 12px;
+    color: var(--muted-foreground);
+}
+.mermaid-full-actions {
+    position: absolute;
+    bottom: 24px;
+    left: 50%;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 5px;
+    border-radius: 14px;
+    transform: translateX(-50%);
+    box-shadow: 0 8px 32px rgb(0 0 0 / 0.08);
+}
+.mermaid-full-actions button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-width: 36px;
+    height: 34px;
+    padding: 0 10px;
+    border: 0;
+    border-radius: 9px;
+    font-size: 12px;
+    white-space: nowrap;
+}
+.mermaid-full-actions button:last-child {
+    margin-left: 6px;
+}
+.mermaid-full-actions button:hover,
+.mermaid-full-close:hover {
+    background: var(--accent);
+    color: var(--foreground);
+}
+.mermaid-full-actions button:disabled {
+    opacity: 0.35;
+}
+.mermaid-full-viewport {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    background: var(--background);
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+}
+.mermaid-full-viewport:active {
+    cursor: grabbing;
+}
+.mermaid-full-drawing {
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform-origin: 0 0;
+    pointer-events: none;
+}
+.mermaid-full-drawing > svg {
+    display: block;
+    width: 100% !important;
+    height: 100% !important;
+    max-width: none !important;
+}
+@media (max-width: 600px) {
+    .mermaid-full-dialog {
+        inset: 8px;
+        border-radius: 14px;
+    }
+    .mermaid-full-header {
+        padding: 12px;
+    }
+    .mermaid-full-actions {
+        bottom: 16px;
+    }
+}

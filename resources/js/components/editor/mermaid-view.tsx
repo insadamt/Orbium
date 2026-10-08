@@ -8,6 +8,7 @@ import {
     applyMermaidPreviewDimensions,
     clearMermaidPreviewDimensions,
 } from './mermaid-preview-layout';
+import { createMermaidPreviewControls } from './mermaid-preview-controls';
 import type { MermaidPreviewSession } from './mermaid-preview-session';
 
 export default function MermaidView({
@@ -18,6 +19,7 @@ export default function MermaidView({
     const source = String(node.attrs.source ?? '');
     const container = useRef<HTMLDivElement>(null);
     const diagram = useRef<HTMLDivElement>(null);
+    const previewToolbar = useRef<HTMLDivElement>(null);
     const input = useRef<HTMLTextAreaElement>(null);
     const [editing, setEditing] = useState(false);
     const [sourceDraft, setSourceDraft] = useState(source);
@@ -33,6 +35,8 @@ export default function MermaidView({
         const output = diagram.current;
         if (!element || !output) return;
         let active = true;
+        const controls = createMermaidPreviewControls();
+        previewToolbar.current?.append(controls.button);
         output.textContent = 'Preparing diagram…';
         output.removeAttribute('role');
         const unregister = session.register(
@@ -41,12 +45,14 @@ export default function MermaidView({
             ({ preview, dimensions, error }) => {
                 if (!active) return;
                 if (error) {
+                    controls.update();
                     clearMermaidPreviewDimensions(output);
                     output.textContent = error;
                     output.setAttribute('role', 'alert');
                 } else if (dimensions) {
                     applyMermaidPreviewDimensions(output, dimensions);
                 } else if (preview) {
+                    controls.update(preview);
                     output.removeAttribute('role');
                     measureEditorWork('mermaid.svg-mount', () => {
                         output.innerHTML = instantiateMermaidSvg(preview);
@@ -56,13 +62,14 @@ export default function MermaidView({
         );
         return () => {
             active = false;
+            controls.destroy();
             unregister();
         };
     }, [source, session]);
 
     return (
         <NodeViewWrapper
-            className="orbium-mermaid my-4 rounded-xl border border-border p-4"
+            className="orbium-mermaid mermaid-inline-block my-4"
             data-drag-handle
             dir={node.attrs.dir}
             contentEditable={false}
@@ -72,29 +79,34 @@ export default function MermaidView({
                 data-mermaid=""
                 data-mermaid-editing={String(editing)}
             >
-                <div className="mb-2 flex justify-between text-xs text-muted-foreground">
+                <div className="mermaid-inline-toolbar mb-3 flex items-center justify-between gap-2 text-xs text-muted-foreground">
                     <span>Mermaid</span>
                     <div
-                        role="group"
-                        aria-label="Mermaid mode"
-                        className="inline-flex rounded-lg border border-border bg-muted/60 p-0.5"
+                        ref={previewToolbar}
+                        className="mermaid-inline-actions"
                     >
-                        <button
-                            type="button"
-                            aria-pressed={editing}
-                            onClick={() => setEditing(true)}
-                            className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 transition-colors focus-visible:outline-2 focus-visible:outline-ring ${editing ? 'bg-background text-foreground shadow-sm' : 'hover:bg-accent hover:text-foreground'}`}
+                        <div
+                            role="group"
+                            aria-label="Mermaid mode"
+                            className="inline-flex rounded-lg border border-border bg-muted/60 p-0.5"
                         >
-                            <Pencil size={13} aria-hidden="true" /> Edit
-                        </button>
-                        <button
-                            type="button"
-                            aria-pressed={!editing}
-                            onClick={() => setEditing(false)}
-                            className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 transition-colors focus-visible:outline-2 focus-visible:outline-ring ${!editing ? 'bg-background text-foreground shadow-sm' : 'hover:bg-accent hover:text-foreground'}`}
-                        >
-                            <Eye size={14} aria-hidden="true" /> Preview
-                        </button>
+                            <button
+                                type="button"
+                                aria-pressed={editing}
+                                onClick={() => setEditing(true)}
+                                className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 transition-colors focus-visible:outline-2 focus-visible:outline-ring ${editing ? 'bg-background text-foreground shadow-sm' : 'hover:bg-accent hover:text-foreground'}`}
+                            >
+                                <Pencil size={13} aria-hidden="true" /> Edit
+                            </button>
+                            <button
+                                type="button"
+                                aria-pressed={!editing}
+                                onClick={() => setEditing(false)}
+                                className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 transition-colors focus-visible:outline-2 focus-visible:outline-ring ${!editing ? 'bg-background text-foreground shadow-sm' : 'hover:bg-accent hover:text-foreground'}`}
+                            >
+                                <Eye size={14} aria-hidden="true" /> Preview
+                            </button>
+                        </div>
                     </div>
                 </div>
                 <textarea

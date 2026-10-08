@@ -14,6 +14,7 @@
 @import './editor-styles.css';
 @import './editor-styles-responsive.css';
 @import './editor-document.css';
+@import './mermaid-preview.css';
 @import 'tw-animate-css';
 @import './interaction-motion.css';
 
