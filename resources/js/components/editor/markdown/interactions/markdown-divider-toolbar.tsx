@@ -24,8 +24,8 @@ export function markdownDividerToolbar(onNotice: (message: string) => void) {
     function createToolbar(view: EditorView, block: MarkdownBlockRange) {
         const dom = document.createElement('div');
         dom.className =
-            'orbium-divider-toolbar orbium-editor-toolbar glass-surface rounded-xl border border-border text-foreground shadow-xl';
-        dom.setAttribute('role', 'dialog');
+            'orbium-divider-toolbar orbium-editor-toolbar glass-surface rounded-xl border border-border text-foreground shadow-lg';
+        dom.setAttribute('role', 'toolbar');
         dom.setAttribute('aria-label', 'Divider formatting');
         const root = createRoot(dom);
         let currentBlock = block;

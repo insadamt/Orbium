@@ -1,5 +1,6 @@
-import { Minus, RotateCcw, X } from 'lucide-react';
+import { RotateCcw, X } from 'lucide-react';
 import { AppSelect } from '@/components/ui/app-select';
+import { FormatButton } from '../../ui/format-button';
 import type { OrbiumMetadata } from '../dialect/metadata';
 
 type Props = {
@@ -16,137 +17,100 @@ export function MarkdownDividerControls({
 }: Props) {
     const color = metadata.dividerColor ?? '';
     const thickness = String(metadata.dividerThickness ?? '');
-    const style = metadata.dividerStyle ?? '';
-    const previewThickness = Number(thickness || 1);
+    const style = metadata.dividerStyle ?? 'solid';
+
     return (
-        <div className="w-80 max-w-[calc(100vw-24px)] space-y-3 p-3">
-            <div className="flex items-center justify-between">
-                <span className="flex items-center gap-2 text-sm font-medium">
-                    <Minus size={16} />
-                    Divider
-                </span>
-                <button
-                    type="button"
-                    aria-label="Close divider toolbar"
-                    title="Close"
-                    className="rounded-md p-1 text-muted-foreground hover:bg-accent hover:text-foreground"
-                    onClick={onClose}
-                >
-                    <X size={16} />
-                </button>
-            </div>
-            <div
-                className="flex h-10 items-center rounded-lg border border-border/60 bg-muted/40 px-3"
-                aria-label="Divider preview"
+        <div className="flex max-w-[calc(100vw-24px)] flex-wrap items-center gap-1 p-1">
+            <input
+                type="color"
+                aria-label="Divider color"
+                title="Divider color"
+                className="h-8 w-8 shrink-0 cursor-pointer rounded border border-border bg-transparent p-1 hover:bg-accent"
+                value={color || '#808080'}
+                onChange={(event) =>
+                    onChange({ dividerColor: event.target.value.toLowerCase() })
+                }
+            />
+            <button
+                type="button"
+                aria-label="Use theme default divider color"
+                title="Theme default color"
+                className="rounded p-2 hover:bg-accent"
+                onClick={() => onChange({ dividerColor: undefined })}
             >
                 <span
-                    className="w-full"
-                    style={{
-                        borderTop: `${previewThickness}px ${style || 'solid'} ${color || 'var(--border)'}`,
-                    }}
-                />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                    <label className="flex items-center justify-between text-xs text-muted-foreground">
-                        Color
-                        <input
-                            type="color"
-                            aria-label="Divider color"
-                            className="h-7 w-9 cursor-pointer rounded border border-border"
-                            value={color || '#808080'}
-                            onChange={(event) =>
-                                onChange({
-                                    dividerColor:
-                                        event.target.value.toLowerCase(),
-                                })
-                            }
-                        />
-                    </label>
-                    <button
-                        type="button"
-                        className="flex min-h-9 w-full items-center justify-between rounded-lg border border-border px-2 text-xs hover:bg-accent"
-                        onClick={() => onChange({ dividerColor: undefined })}
-                        title="Use theme default color"
-                    >
-                        <span>{color || 'Theme default'}</span>
-                        <RotateCcw size={12} />
-                    </button>
-                </div>
-                <div className="space-y-1.5">
-                    <span className="flex h-7 items-center text-xs text-muted-foreground">
-                        Thickness
-                    </span>
-                    <AppSelect
-                        label="Divider thickness"
-                        contentClassName="divider-toolbar-select-content"
-                        value={thickness}
-                        placeholder="Default (1 px)"
-                        clearLabel="Default (1 px)"
-                        onValueChange={(value) =>
-                            onChange({
-                                dividerThickness: value
-                                    ? Number(value)
-                                    : undefined,
-                            })
-                        }
-                        options={Array.from({ length: 12 }, (_, index) => ({
-                            value: String(index + 1),
-                            label: `${index + 1} px`,
-                        }))}
-                    />
-                </div>
-            </div>
-            <fieldset>
-                <legend className="mb-1.5 text-xs text-muted-foreground">
-                    Line style
-                </legend>
-                <div className="grid grid-cols-4 gap-1">
-                    {dividerStyles.map((value) => (
-                        <button
-                            key={value}
-                            type="button"
-                            aria-label={`${value} divider`}
-                            aria-pressed={(style || 'solid') === value}
-                            className={`flex min-h-12 flex-col items-center justify-center gap-2 rounded-lg border px-1 text-[11px] hover:bg-accent ${(style || 'solid') === value ? 'border-foreground/40 bg-accent' : 'border-border'}`}
-                            onClick={() => onChange({ dividerStyle: value })}
-                        >
-                            <span
-                                className="w-8"
-                                style={{
-                                    borderTop: `3px ${value} currentColor`,
-                                }}
-                                aria-hidden="true"
-                            />
-                            {value[0].toUpperCase() + value.slice(1)}
-                        </button>
-                    ))}
-                </div>
-            </fieldset>
-            {style === 'double' && previewThickness < 3 && (
-                <p className="text-xs text-muted-foreground">
-                    Use 3 px or more to show both lines.
-                </p>
-            )}
-            <div className="flex items-center justify-between gap-2 border-t border-border/70 pt-3">
-                <button
-                    type="button"
-                    className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-xs text-muted-foreground hover:bg-accent hover:text-foreground"
-                    onClick={() =>
-                        onChange({
-                            dividerColor: undefined,
-                            dividerThickness: undefined,
-                            dividerStyle: undefined,
-                        })
-                    }
+                    className="flex h-4 w-4 items-center justify-center rounded-sm border border-border text-[10px]"
+                    aria-hidden="true"
                 >
-                    <RotateCcw size={13} />
-                    Reset
-                </button>
-                <span className="text-xs text-muted-foreground">
-                    Changes apply instantly
+                    ↺
                 </span>
-            </div>
+            </button>
+            <AppSelect
+                label="Divider thickness"
+                contentClassName="divider-toolbar-select-content"
+                className="h-8 min-h-8 w-auto gap-1 rounded border-0 bg-transparent px-2 py-1 text-xs shadow-none"
+                value={thickness}
+                placeholder="1 px"
+                clearLabel="Default (1 px)"
+                onValueChange={(value) =>
+                    onChange({
+                        dividerThickness: value ? Number(value) : undefined,
+                    })
+                }
+                options={Array.from({ length: 12 }, (_, index) => ({
+                    value: String(index + 1),
+                    label: `${index + 1} px`,
+                }))}
+            />
+            <span className="mx-0.5 h-5 w-px bg-border" aria-hidden="true" />
+            {dividerStyles.map((value) => (
+                <FormatButton
+                    key={value}
+                    label={`${value[0].toUpperCase() + value.slice(1)} divider`}
+                    active={style === value}
+                    onClick={() => onChange({ dividerStyle: value })}
+                >
+                    <span
+                        className="flex h-4 w-4 items-center"
+                        title={
+                            value === 'double'
+                                ? 'Double divider (use 3 px or more to show both lines)'
+                                : `${value[0].toUpperCase() + value.slice(1)} divider`
+                        }
+                        aria-hidden="true"
+                    >
+                        <span
+                            className="w-full"
+                            style={{ borderTop: `3px ${value} currentColor` }}
+                        />
+                    </span>
+                </FormatButton>
+            ))}
+            <span className="mx-0.5 h-5 w-px bg-border" aria-hidden="true" />
+            <button
+                type="button"
+                aria-label="Reset divider appearance"
+                title="Reset divider appearance"
+                className="rounded p-2 hover:bg-accent"
+                onClick={() =>
+                    onChange({
+                        dividerColor: undefined,
+                        dividerThickness: undefined,
+                        dividerStyle: undefined,
+                    })
+                }
+            >
+                <RotateCcw size={16} />
+            </button>
+            <button
+                type="button"
+                aria-label="Close divider toolbar"
+                title="Close"
+                className="rounded p-2 text-muted-foreground hover:bg-accent hover:text-foreground"
+                onClick={onClose}
+            >
+                <X size={16} />
+            </button>
         </div>
     );
 }
