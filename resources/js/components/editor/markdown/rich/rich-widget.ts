@@ -18,6 +18,7 @@ const currentBlocks = new WeakMap<HTMLElement, RichBlock>();
 
 function richBlockClassName(kind: RichBlock['kind']) {
     const classes: Partial<Record<RichBlock['kind'], string>> = {
+        mermaid: 'orbium-mermaid rounded-xl border border-border p-4',
         code: 'orbium-code my-5 overflow-hidden rounded-xl border border-border bg-muted',
         image: 'orbium-image editor-image my-5',
         file: 'orbium-file my-4 rounded-xl border border-border p-4',
@@ -28,16 +29,42 @@ function richBlockClassName(kind: RichBlock['kind']) {
     return `orbium-rich-block ${classes[kind] ?? `orbium-${kind} my-4 rounded-xl border border-border p-4`}`;
 }
 
+function estimateDiagramWidgetHeight(block: RichBlock, context: RichContext) {
+    if (block.kind !== 'mermaid') return -1;
+    const dimensions = context.mermaid.previews.get(block.content)?.dimensions;
+    if (!dimensions || !context.diagramWidth) return -1;
+    const frameHorizontalPaddingAndBorders = 34;
+    const frameAndToolbarHeight = 74;
+    const outputWidth = Math.min(
+        Math.max(1, context.diagramWidth - frameHorizontalPaddingAndBorders),
+        dimensions.maxWidth ?? Infinity,
+    );
+    const outputHeight = Math.max(
+        100,
+        (outputWidth * dimensions.height) / dimensions.width,
+    );
+    return frameAndToolbarHeight + outputHeight;
+}
+
 export class MarkdownRichWidget extends WidgetType {
+    private readonly diagramHeightEstimate: number;
     constructor(
         readonly block: RichBlock,
         readonly context: RichContext,
         readonly disabled: boolean,
     ) {
         super();
+        this.diagramHeightEstimate = estimateDiagramWidgetHeight(
+            block,
+            context,
+        );
+    }
+    override get estimatedHeight() {
+        return this.diagramHeightEstimate;
     }
     eq(other: MarkdownRichWidget) {
         return (
+            this.diagramHeightEstimate === other.estimatedHeight &&
             this.context === other.context &&
             this.disabled === other.disabled &&
             this.block.kind === other.block.kind &&

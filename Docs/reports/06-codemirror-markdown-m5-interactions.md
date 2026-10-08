@@ -87,3 +87,7 @@ No commit, push, merge, database reset or Tiptap removal was performed. Suggeste
 - `docs(editor): record M5 interaction review checklist`
 
 Remain in M5 during review. Fix reported M5 defects here. M6 requires explicit user approval and the documented parity/performance acceptance gates.
+
+## Mermaid scroll readiness follow-up
+
+The 2026-10-09 [Mermaid scrolling report](06-mermaid-scroll-readiness.md) records background source discovery, retained prepared previews and responsive CodeMirror widget height estimates. Use its manual checklist for the reported late appearance and layout shift. Browser validation and M5 acceptance remain pending.

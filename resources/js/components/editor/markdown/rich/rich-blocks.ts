@@ -10,10 +10,13 @@ import {
 import type { Tree } from '@lezer/common';
 import { measureEditorWork } from '@/lib/editor-performance';
 import { readRichBlock } from './read-rich-block';
+import { markdownDiagramPreparation } from './markdown-diagram-preparation';
 import {
     refreshRichBlocks,
     toggleRichSource,
     revealRichSource,
+    discoverMermaidBlocks,
+    refreshMermaidLayout,
 } from './rich-effects';
 import type { RichBlock, RichContext } from './rich-model';
 import { MarkdownRichWidget } from './rich-widget';
@@ -88,6 +91,7 @@ export function markdownRichBlocks(context: RichContext) {
             let blocks = previous.blocks;
             let editors = previous.editors;
             let revealed = previous.revealed;
+            let layoutChanged = false;
             if (revealed !== null && transaction.docChanged)
                 revealed = mapRichBlockEdge(
                     transaction.changes,
@@ -168,6 +172,18 @@ export function markdownRichBlocks(context: RichContext) {
                     .filter((block) => block.from < block.to);
             }
             for (const effect of transaction.effects) {
+                if (effect.is(refreshMermaidLayout)) layoutChanged = true;
+                if (effect.is(discoverMermaidBlocks)) {
+                    blocks = [
+                        ...blocks,
+                        ...effect.value.filter(
+                            (diagram) =>
+                                !blocks.some(
+                                    (block) => block.from === diagram.from,
+                                ),
+                        ),
+                    ].sort((left, right) => left.from - right.from);
+                }
                 if (effect.is(revealRichSource)) revealed = effect.value;
                 if (effect.is(toggleRichSource)) {
                     editors = new Set(editors);
@@ -210,6 +226,7 @@ export function markdownRichBlocks(context: RichContext) {
                     revealed = null;
             }
             if (
+                !layoutChanged &&
                 revealed === previous.revealed &&
                 blocks === previous.blocks &&
                 editors === previous.editors &&
@@ -355,6 +372,7 @@ export function markdownRichBlocks(context: RichContext) {
     return [
         field,
         manager,
+        markdownDiagramPreparation(context),
         richBlockSelection((view) => view.state.field(field).blocks),
     ];
 }

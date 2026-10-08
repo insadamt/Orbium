@@ -56,6 +56,7 @@ export type RichContext = {
     nodeId: number;
     mermaid: MermaidPreviewSession;
     metadata: Map<string, AttachmentMetadata>;
+    diagramWidth?: number;
     isVisible: () => boolean;
     onUpload: (request: MarkdownUploadRequest) => void;
 };

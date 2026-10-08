@@ -23,7 +23,6 @@ function rankEntries(viewport: PreparationViewport) {
     }[] = [];
     for (const entry of viewport.entries) {
         if (
-            entry.subscribers.size === 0 ||
             !['pending', 'cached', 'render', 'reserve', 'display'].includes(
                 entry.state,
             )
@@ -34,7 +33,11 @@ function rankEntries(viewport: PreparationViewport) {
                 element.dataset.mermaidEditing !== 'true' &&
                 (entry.state !== 'display' || !entry.displayed.has(element)),
         );
-        if (elements.length === 0) continue;
+        if (elements.length === 0) {
+            if (entry.state !== 'display')
+                ranked.push({ entry, rank: 3, distance: Infinity });
+            continue;
+        }
         const priority = rankMermaidElements(
             elements,
             viewport.near,
@@ -42,7 +45,7 @@ function rankEntries(viewport: PreparationViewport) {
             root,
             viewport.direction,
         );
-        if (priority.rank === 3) continue;
+        if (priority.rank === 3 && entry.state === 'display') continue;
         ranked.push({ entry, ...priority });
     }
     return ranked.sort(

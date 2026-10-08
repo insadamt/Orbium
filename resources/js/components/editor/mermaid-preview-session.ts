@@ -30,8 +30,11 @@ import {
     recordEditorDuration,
 } from '@/lib/editor-performance';
 
+import { MermaidPreviewRegistry } from './mermaid-preview-registry';
+
 export class MermaidPreviewSession {
-    private entries = new Map<string, Entry>();
+    readonly previews = new MermaidPreviewRegistry();
+    private entries = this.previews;
     private elementEntries = new Map<HTMLElement, Entry>();
     private viewport = new MermaidSessionViewport({
         elements: () => this.registeredElements(),
@@ -68,24 +71,18 @@ export class MermaidPreviewSession {
     ) {}
 
     register(source: string, element: HTMLElement, subscriber: Subscriber) {
-        let entry = this.entries.get(source);
-        if (!entry) {
-            entry = {
-                source,
-                subscribers: new Map(),
-                displayed: new Set(),
-                sanitized: false,
-                queuedAt: performance.now(),
-                state: 'pending',
-                persisted: false,
-                persistPending: false,
-                attemptedSave: -1,
-            };
-            this.entries.set(source, entry);
-        }
+        const entry = this.entries.prepareSource(source);
         entry.subscribers.set(element, subscriber);
         this.elementEntries.set(element, entry);
         if (entry.dimensions) subscriber({ dimensions: entry.dimensions });
+        if (
+            entry.sanitized &&
+            entry.preview &&
+            ['ready', 'display', 'reserve'].includes(entry.state)
+        ) {
+            subscriber({ preview: entry.preview });
+            entry.displayed.add(element);
+        }
         this.viewport.observe(element);
         if (entry.state === 'ready') {
             entry.state = 'display';
@@ -98,10 +95,12 @@ export class MermaidPreviewSession {
             this.elementEntries.delete(element);
             entry.displayed.delete(element);
             this.viewport.unobserve(element);
-
-            if (entry.subscribers.size === 0 && entry.state !== 'lookup')
-                this.entries.delete(source);
         };
+    }
+
+    prepareSources(sources: Iterable<string>) {
+        for (const source of sources) this.entries.prepareSource(source);
+        this.schedule();
     }
 
     start(editorDom: HTMLElement) {
@@ -308,11 +307,7 @@ export class MermaidPreviewSession {
     }
 
     private isCurrent(entry: Entry) {
-        return (
-            !this.destroyed &&
-            this.entries.get(entry.source) === entry &&
-            entry.subscribers.size > 0
-        );
+        return !this.destroyed && this.entries.get(entry.source) === entry;
     }
 
     private async lookup(entry: Entry) {
@@ -340,7 +335,6 @@ export class MermaidPreviewSession {
             if (this.isCurrent(entry)) entry.state = 'render';
         } finally {
             this.lookups -= 1;
-            if (entry.subscribers.size === 0) this.entries.delete(entry.source);
             this.schedule();
         }
     }
@@ -379,7 +373,6 @@ export class MermaidPreviewSession {
             this.rendering = false;
             adjustEditorPerformanceCounter('mermaid.active-jobs', -1);
             this.lastRenderFinished = performance.now();
-            if (entry.subscribers.size === 0) this.entries.delete(entry.source);
             this.schedule();
         }
     }
@@ -398,7 +391,6 @@ export class MermaidPreviewSession {
             }
         } finally {
             this.preparingCache = false;
-            if (entry.subscribers.size === 0) this.entries.delete(entry.source);
             this.schedule();
         }
     }
@@ -431,6 +423,7 @@ export class MermaidPreviewSession {
         }
         entry.dimensions = readMermaidPreviewDimensions(sanitized);
         entry.state = 'reserve';
+        this.previews.notifyPrepared();
         if (!this.firstReady) {
             this.firstReady = true;
             markEditorPerformance(
