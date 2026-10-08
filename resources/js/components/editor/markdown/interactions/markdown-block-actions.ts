@@ -1,5 +1,5 @@
 import { ensureSyntaxTree, syntaxTree } from '@codemirror/language';
-import type { EditorState } from '@codemirror/state';
+import type { EditorState, StateEffect } from '@codemirror/state';
 import { isolateHistory } from '@codemirror/commands';
 import { EditorView } from '@codemirror/view';
 import type { SyntaxNode } from '@lezer/common';
@@ -60,11 +60,18 @@ export function markdownBlockAt(
     return { from, to, name: node.name, source: state.sliceDoc(from, to) };
 }
 
+type MarkdownBlockEditOptions = {
+    effects?: readonly StateEffect<unknown>[];
+    focusEditor?: boolean;
+    scrollIntoView?: boolean;
+};
+
 export function replaceMarkdownBlock(
     view: EditorView,
     block: MarkdownBlockRange,
     source: string,
     caret = 0,
+    options: MarkdownBlockEditOptions = {},
 ) {
     if (
         !view.state.facet(EditorView.editable) ||
@@ -77,9 +84,10 @@ export function replaceMarkdownBlock(
         selection: { anchor: block.from + Math.min(caret, source.length) },
         annotations: isolateHistory.of('full'),
         userEvent: 'input.block',
-        scrollIntoView: true,
+        scrollIntoView: options.scrollIntoView ?? true,
+        effects: options.effects,
     });
-    view.focus();
+    if (options.focusEditor !== false) view.focus();
     return true;
 }
 
@@ -195,6 +203,7 @@ export function setMarkdownBlockPresentation(
     view: EditorView,
     block: MarkdownBlockRange,
     patch: Partial<OrbiumMetadata>,
+    options: MarkdownBlockEditOptions = {},
 ) {
     const current = markdownBlockPresentation(view, block);
     if (
@@ -208,6 +217,13 @@ export function setMarkdownBlockPresentation(
     if (!current.body.trim()) metadata.kind = 'empty';
     if (patch.dir === 'auto') delete metadata.dir;
     if ('align' in patch && !patch.align) delete metadata.align;
+    for (const key of [
+        'dividerColor',
+        'dividerThickness',
+        'dividerStyle',
+    ] as const) {
+        if (key in patch && patch[key] === undefined) delete metadata[key];
+    }
     const source =
         Object.keys(metadata).length === 1 && metadata.kind === 'block'
             ? current.body
@@ -220,7 +236,13 @@ export function setMarkdownBlockPresentation(
             view.state.selection.main.head - current.contentFrom,
         ),
     );
-    replaceMarkdownBlock(view, block, source, contentStart + offset);
+    return replaceMarkdownBlock(
+        view,
+        block,
+        source,
+        contentStart + offset,
+        options,
+    );
 }
 
 export function turnMarkdownBlockInto(

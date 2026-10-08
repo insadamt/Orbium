@@ -5,6 +5,7 @@ namespace App\Services\Markdown;
 use League\CommonMark\Extension\CommonMark\Node\Block\FencedCode;
 use League\CommonMark\Extension\CommonMark\Node\Block\Heading;
 use League\CommonMark\Extension\CommonMark\Node\Block\ListBlock;
+use League\CommonMark\Extension\CommonMark\Node\Block\ThematicBreak;
 use League\CommonMark\Extension\CommonMark\Node\Inline\Image;
 use League\CommonMark\Node\Block\Paragraph;
 use League\CommonMark\Node\Node;
@@ -32,6 +33,9 @@ final class OrbiumStructureValidator
                 }
                 if (isset($metadata['listType']) && ! ($child instanceof ListBlock && $child->getListData()->type === ListBlock::TYPE_ORDERED)) {
                     $this->invalid($block, 'listType requires an ordered list.');
+                }
+                if (array_intersect(['dividerColor', 'dividerThickness', 'dividerStyle'], array_keys($metadata)) !== [] && ! $child instanceof ThematicBreak) {
+                    $this->invalid($block, 'Divider appearance requires a thematic break.');
                 }
                 break;
             case 'image':

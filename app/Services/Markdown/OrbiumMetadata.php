@@ -65,7 +65,7 @@ final class OrbiumMetadata
         $kind = $inline ? 'inline' : ($metadata['kind'] ?? null);
         $allowed = match ($kind) {
             'inline' => ['color', 'underline'],
-            'block' => ['kind', 'dir', 'align', 'listType'],
+            'block' => ['kind', 'dir', 'align', 'listType', 'dividerColor', 'dividerThickness', 'dividerStyle'],
             'image' => ['kind', 'caption', 'width', 'alignment'],
             'empty' => ['kind', 'dir', 'align'],
             'math' => ['kind', 'latex'],
@@ -82,6 +82,9 @@ final class OrbiumMetadata
                 'dir' => in_array($value, ['auto', 'ltr', 'rtl'], true),
                 'align' => in_array($value, ['left', 'center', 'right'], true),
                 'alignment' => in_array($value, ['start', 'left', 'center', 'right'], true),
+                'dividerColor' => is_string($value) && preg_match('/^#[0-9a-f]{6}$/D', $value) === 1,
+                'dividerThickness' => is_int($value) && $value >= 1 && $value <= 12,
+                'dividerStyle' => in_array($value, ['solid', 'dashed', 'dotted', 'double'], true),
                 'listType' => in_array($value, ['1', 'a', 'A', 'i', 'I'], true),
                 'width', 'colspan', 'rowspan' => is_int($value) && $value > 0 && $value <= 2147483647,
                 'header' => is_bool($value),

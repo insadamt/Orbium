@@ -87,7 +87,7 @@ export function TextColorMenu({
                 <div
                     role="group"
                     aria-label="Text colors"
-                    className="glass-surface absolute top-full right-0 z-50 mt-2 w-52 rounded-xl border border-border p-3 shadow-xl"
+                    className="orbium-editor-toolbar glass-surface absolute top-full right-0 z-50 mt-2 w-52 rounded-xl border border-border p-3 shadow-xl"
                 >
                     <p className="mb-2 text-xs font-medium text-muted-foreground">
                         Text color

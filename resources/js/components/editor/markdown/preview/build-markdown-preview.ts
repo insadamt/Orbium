@@ -2,7 +2,6 @@ import { markdownLineDirection } from '../interactions/markdown-direction';
 import { readEditableMarkdownPresentation } from '../interactions/markdown-editable-presentation';
 import { readOrbiumMetadata } from '../dialect/metadata';
 import { syntaxTree } from '@codemirror/language';
-import { getSearchQuery } from '@codemirror/search';
 import type { Range } from '@codemirror/state';
 import { Decoration, EditorView, type WidgetType } from '@codemirror/view';
 import type { SyntaxNode } from '@lezer/common';
@@ -53,7 +52,6 @@ export function buildMarkdownPreview(
     const atomicRanges: Range<Decoration>[] = [];
     const lineClasses = new Map<number, Set<string>>();
     const handled = new Set<string>();
-    const revealSearchSelection = Boolean(getSearchQuery(view.state).search);
     const addLineClass = (position: number, className: string) => {
         const lineStart = view.state.doc.lineAt(position).from;
         const classes = lineClasses.get(lineStart) ?? new Set<string>();
@@ -78,11 +76,6 @@ export function buildMarkdownPreview(
     };
     const replaceSyntax = (from: number, to: number, widget?: WidgetType) => {
         if (
-            (revealSearchSelection &&
-                view.state.selection.ranges.some(
-                    (range) =>
-                        !range.empty && range.from < to && range.to > from,
-                )) ||
             from >= to ||
             view.state.doc.lineAt(from).number !==
                 view.state.doc.lineAt(to - 1).number
@@ -223,7 +216,26 @@ export function buildMarkdownPreview(
                 }
                 if (node.name === 'HorizontalRule') {
                     addLineClass(node.from, 'orbium-divider');
-                    replaceSyntax(node.from, node.to, new MarkdownDivider());
+                    let metadata = {};
+                    for (
+                        let parent = node.parent;
+                        parent;
+                        parent = parent.parent
+                    ) {
+                        const presentation = readEditableMarkdownPresentation(
+                            view.state,
+                            parent,
+                        );
+                        if (presentation) {
+                            metadata = presentation.metadata;
+                            break;
+                        }
+                    }
+                    replaceSyntax(
+                        node.from,
+                        node.to,
+                        new MarkdownDivider(metadata),
+                    );
                 }
                 if (inlineClasses[node.name]) {
                     decorations.push(
@@ -319,8 +331,14 @@ export function buildMarkdownPreview(
                             node.to,
                         ),
                     );
-                    hideInlineMarkers(node, 'OrbiumSpanMark');
-                    replaceSyntax(metadataNode!.from, metadataNode!.to);
+                    const markers = node.getChildren('OrbiumSpanMark');
+                    const opening = markers[0];
+                    const closing = markers.at(-1);
+                    if (opening && closing) {
+                        replaceSyntax(opening.from, opening.to);
+                        // A caret between the bracket and metadata would let typing break the span.
+                        replaceSyntax(closing.from, metadataNode!.to);
+                    }
                 }
                 if (node.name === 'InlineCode') return false;
             },

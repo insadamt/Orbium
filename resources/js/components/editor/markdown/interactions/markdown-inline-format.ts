@@ -19,6 +19,7 @@ export function inlineFormattingRange(
     const fromNode = markdownNodeAt(view.state, range.from + 1);
     const toNode = markdownNodeAt(view.state, range.to - 1);
     const forbidden = new Set([
+        'HorizontalRule',
         'FencedCode',
         'CodeBlock',
         'CodeInfo',

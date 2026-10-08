@@ -7,6 +7,7 @@ import { markdownLivePreview } from '../preview/markdown-live-preview';
 import { markdownPreviewTheme } from '../preview/markdown-preview-theme';
 import { markdownWritingCommands } from '../preview/markdown-writing-commands';
 import { markdownTypingShortcuts } from '../markdown-typing-commands';
+import { markdownDividerToolbar } from '../interactions/markdown-divider-toolbar';
 import { markdownSelectionToolbar } from '../interactions/markdown-selection-toolbar';
 import type { RichContext } from './rich-model';
 
@@ -43,6 +44,7 @@ export function mountRichTextInput({
                 markdownWritingCommands,
                 markdownTypingShortcuts,
                 markdownSelectionToolbar(onNotice),
+                markdownDividerToolbar(onNotice),
                 EditorView.lineWrapping,
                 editing.of(EditorView.editable.of(true)),
                 EditorView.contentAttributes.of({ 'aria-label': label }),

@@ -9,9 +9,10 @@ import {
 import { measureEditorWork } from '@/lib/editor-performance';
 import type { MarkdownLinkContext } from './markdown-link-preview';
 import { buildMarkdownPreview } from './build-markdown-preview';
+import { markdownPreviewSelection } from './markdown-preview-selection';
 
 export function markdownLivePreview(context: MarkdownLinkContext) {
-    return ViewPlugin.fromClass(
+    const previewPlugin = ViewPlugin.fromClass(
         class {
             decorations;
             atomicRanges;
@@ -56,4 +57,5 @@ export function markdownLivePreview(context: MarkdownLinkContext) {
                 ),
         },
     );
+    return [previewPlugin, markdownPreviewSelection];
 }

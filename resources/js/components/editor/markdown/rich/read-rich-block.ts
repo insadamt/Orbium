@@ -147,6 +147,13 @@ export function readRichBlock(
                 return null;
             if (metadata.listType && children[0].name !== 'OrderedList')
                 return null;
+            if (
+                ['dividerColor', 'dividerThickness', 'dividerStyle'].some(
+                    (key) => key in metadata,
+                ) &&
+                children[0].name !== 'HorizontalRule'
+            )
+                return null;
             return inner
                 ? {
                       ...inner,

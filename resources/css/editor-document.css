@@ -316,13 +316,6 @@
     box-shadow: 0 1px 2px rgb(0 0 0 / 0.05);
 }
 
-.orbium-markdown-live-preview .cm-tooltip:has(.orbium-selection-toolbar) {
-    border: 0;
-    background: transparent;
-}
-.orbium-markdown-live-preview .cm-tooltip .orbium-selection-toolbar {
-    max-width: calc(100vw - 16px);
-}
 .orbium-markdown-gutter[hidden] {
     display: none;
 }
@@ -408,4 +401,43 @@
     .table-edge-control,
 .orbium-markdown-content .orbium-table-container:hover .table-edge-control {
     visibility: visible;
+}
+
+.orbium-markdown-content .cm-md-divider[data-custom-divider] {
+    position: relative;
+    background: none;
+}
+.orbium-markdown-content .cm-md-divider[data-custom-divider]::after {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    border-top: var(--divider-thickness, 1px) var(--divider-style, solid)
+        var(--divider-color, var(--border));
+}
+
+.orbium-editor-toolbar.glass-surface {
+    background: var(--glass);
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    color: var(--foreground);
+    max-width: calc(100vw - 24px);
+    -webkit-backdrop-filter: blur(26px) saturate(140%);
+    backdrop-filter: blur(26px) saturate(140%);
+}
+:root[data-surface-style='normal'] .orbium-editor-toolbar.glass-surface {
+    background: var(--card);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+}
+:root[data-surface-style='frosted'] .orbium-editor-toolbar.glass-surface {
+    background: var(--frosted-raised);
+    border-color: transparent;
+}
+@media (prefers-reduced-transparency: reduce) {
+    .orbium-editor-toolbar.glass-surface {
+        -webkit-backdrop-filter: none;
+        backdrop-filter: none;
+    }
 }

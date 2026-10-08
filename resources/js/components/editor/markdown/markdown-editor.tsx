@@ -18,6 +18,7 @@ import { closeCompletion } from '@codemirror/autocomplete';
 import { markdownBlockWrappers } from './interactions/markdown-block-wrappers';
 import { markdownPresentationCommands } from './interactions/markdown-presentation-commands';
 import { markdownFindHighlights } from './interactions/markdown-find-highlights';
+import { markdownDividerToolbar } from './interactions/markdown-divider-toolbar';
 import { markdownSelectionToolbar } from './interactions/markdown-selection-toolbar';
 import { markdownBlockGutter } from './interactions/markdown-block-gutter';
 import { markdownTrailingParagraph } from './interactions/markdown-trailing-paragraph';
@@ -117,6 +118,7 @@ export default function MarkdownEditor(props: MarkdownEditorProps) {
     const [richExtensions] = useState(() => markdownRichBlocks(richContext));
     const [interactionExtensions] = useState(() => [
         markdownSelectionToolbar(setNotice),
+        markdownDividerToolbar(setNotice),
         markdownBlockGutter(setNotice),
     ]);
 

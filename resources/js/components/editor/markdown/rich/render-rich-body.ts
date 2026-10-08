@@ -1,3 +1,4 @@
+import { applyMarkdownDividerAppearance } from '../preview/markdown-divider-appearance';
 import { EditorState } from '@codemirror/state';
 import { markdownLanguage } from '@codemirror/lang-markdown';
 import type { MarkdownParser } from '@lezer/markdown';
@@ -250,6 +251,13 @@ export function renderRichBody(
                 const documentNode = node.getChild('Document');
                 if (documentNode) {
                     renderChildren(target, documentNode, false);
+                    const divider =
+                        target.querySelector<HTMLElement>('.cm-md-divider');
+                    if (divider)
+                        applyMarkdownDividerAppearance(
+                            divider,
+                            block.presentation,
+                        );
                     if (block.presentation.listType)
                         target
                             .querySelector('ol')
@@ -267,7 +275,9 @@ export function renderRichBody(
             return;
         }
         if (node.name === 'HorizontalRule') {
-            parent.append(element('hr'));
+            const divider = element('span', 'orbium-divider cm-md-divider');
+            divider.setAttribute('role', 'separator');
+            parent.append(divider);
             return;
         }
         if (node.name === 'HardBreak') {

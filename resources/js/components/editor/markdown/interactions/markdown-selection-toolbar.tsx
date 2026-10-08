@@ -3,6 +3,8 @@ import {
     EditorView,
     ViewPlugin,
     showTooltip,
+    getTooltip,
+    tooltips,
     type Tooltip,
 } from '@codemirror/view';
 import {
@@ -30,7 +32,7 @@ function createSelectionToolbar(
 ) {
     const dom = document.createElement('div');
     dom.className =
-        'orbium-selection-toolbar glass-surface flex items-center gap-1 rounded-xl border border-border p-1 shadow-lg';
+        'orbium-selection-toolbar orbium-editor-toolbar glass-surface flex items-center gap-1 rounded-xl border border-border p-1 shadow-lg';
     dom.setAttribute('role', 'toolbar');
     dom.setAttribute('aria-label', 'Text formatting');
     const root = createRoot(dom);
@@ -220,9 +222,15 @@ export function markdownSelectionToolbar(onNotice: (message: string) => void) {
             schedule() {
                 queueMicrotask(() => {
                     if (this.destroyed || !this.view.dom.isConnected) return;
-                    const focused = this.view.dom.contains(
-                        document.activeElement,
-                    );
+                    const tooltip = this.view.state.field(field).tooltip;
+                    const focused =
+                        this.view.dom.contains(document.activeElement) ||
+                        Boolean(
+                            tooltip &&
+                            getTooltip(this.view, tooltip)?.dom.contains(
+                                document.activeElement,
+                            ),
+                        );
                     if (this.view.state.field(field).focused !== focused)
                         this.view.dispatch({ effects: setFocused.of(focused) });
                 });
@@ -232,5 +240,5 @@ export function markdownSelectionToolbar(onNotice: (message: string) => void) {
             }
         },
     );
-    return [field, focus];
+    return [field, focus, tooltips({ parent: document.body })];
 }

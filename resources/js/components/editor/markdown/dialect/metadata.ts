@@ -3,6 +3,9 @@ export type OrbiumMetadata = {
     dir?: 'auto' | 'ltr' | 'rtl';
     align?: 'left' | 'center' | 'right';
     alignment?: 'start' | 'left' | 'center' | 'right';
+    dividerColor?: string;
+    dividerThickness?: number;
+    dividerStyle?: 'solid' | 'dashed' | 'dotted' | 'double';
     listType?: '1' | 'a' | 'A' | 'i' | 'I';
     caption?: string;
     latex?: string;
@@ -69,7 +72,15 @@ function duplicateKeys(source: string): boolean {
 
 const allowedKeys: Record<string, string[]> = {
     inline: ['color', 'underline'],
-    block: ['kind', 'dir', 'align', 'listType'],
+    block: [
+        'kind',
+        'dir',
+        'align',
+        'listType',
+        'dividerColor',
+        'dividerThickness',
+        'dividerStyle',
+    ],
     image: ['kind', 'caption', 'width', 'alignment'],
     empty: ['kind', 'dir', 'align'],
     math: ['kind', 'latex'],
@@ -138,6 +149,29 @@ export function readOrbiumMetadata(
                     break;
                 case 'underline':
                     if (value !== true) return null;
+                    break;
+                case 'dividerThickness':
+                    if (
+                        !Number.isInteger(value) ||
+                        Number(value) < 1 ||
+                        Number(value) > 12
+                    )
+                        return null;
+                    break;
+                case 'dividerStyle':
+                    if (
+                        !['solid', 'dashed', 'dotted', 'double'].includes(
+                            value as string,
+                        )
+                    )
+                        return null;
+                    break;
+                case 'dividerColor':
+                    if (
+                        typeof value !== 'string' ||
+                        !/^#[0-9a-f]{6}$/.test(value)
+                    )
+                        return null;
                     break;
                 case 'color':
                     if (

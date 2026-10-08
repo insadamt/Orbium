@@ -1,3 +1,5 @@
+import type { OrbiumMetadata } from '../dialect/metadata';
+import { applyMarkdownDividerAppearance } from './markdown-divider-appearance';
 import { EditorView, WidgetType } from '@codemirror/view';
 
 export class MarkdownDecodedText extends WidgetType {
@@ -95,13 +97,22 @@ export class MarkdownTaskCheckbox extends WidgetType {
 }
 
 export class MarkdownDivider extends WidgetType {
-    eq(other: WidgetType) {
-        return other instanceof MarkdownDivider;
+    constructor(readonly metadata: OrbiumMetadata = {}) {
+        super();
+    }
+    eq(other: MarkdownDivider) {
+        return (
+            this.metadata.dividerColor === other.metadata.dividerColor &&
+            this.metadata.dividerThickness ===
+                other.metadata.dividerThickness &&
+            this.metadata.dividerStyle === other.metadata.dividerStyle
+        );
     }
     toDOM() {
         const divider = document.createElement('span');
         divider.className = 'cm-md-divider';
         divider.setAttribute('role', 'separator');
+        applyMarkdownDividerAppearance(divider, this.metadata);
         return divider;
     }
     ignoreEvent() {

@@ -413,3 +413,43 @@ Draft validation settles after 150 ms of inactivity. Invalid drafts preserve the
 Apply freezes draft mutation, saves via the existing endpoint, updates the baseline, notifies open documents after success, and closes. Save/validation failures preserve the draft and appear next to the visible action bar. Cancel, Escape, and Close request Keep editing/Discard changes when dirty; closing restores focus to Customize styles. A failed import preserves the draft; a valid import clears overrides and explains that in its notice. Resets remain unsaved until Apply. No database migration, content schema, endpoint, selector, or CSS export format changes accompany this redesign.
 
 Current manual acceptance is recorded in `../reports/05-editor-styles-redesign.md`.
+
+### Per-divider appearance (approved 2026-10-08)
+
+In the Markdown editor, double-click a rendered divider to open its dedicated floating
+toolbar. Alt+Enter also opens it when the caret is in a divider. The toolbar includes a
+line preview, a native custom color picker, integer thicknesses from 1 to 12 CSS
+pixels, and solid/dashed/dotted/double style buttons. Every change updates the divider
+immediately and enters the normal autosave queue. The toolbar remains open while
+adjusting controls. Reset clears local overrides immediately. Escape, Close, and
+clicking outside dismiss the toolbar; Undo reverses changes. There is no Apply button.
+Appearance controls are absent from the block context menu. Divider markers are
+excluded from text formatting, preventing inline color from replacing a rule. Reset removes
+all three local overrides; default choices leave each property unset. Double borders
+need at least 3 px to visibly separate the lines. Plain `---`, `***`, and `___` rules
+retain their existing default appearance.
+
+Canonical Markdown stores these optional fields in a `kind=block` directive wrapping
+exactly one thematic break: `dividerColor` (lowercase six-digit hex),
+`dividerThickness` (integer 1–12), and `dividerStyle` (solid/dashed/dotted/double).
+PHP and TypeScript validate the same values and reject appearance fields on other
+block types. Example:
+
+```markdown
+:::orbium {"kind":"block","dividerColor":"#75a1ff","dividerThickness":3,"dividerStyle":"dashed"}
+---
+:::
+```
+
+Autosave, Markdown source/export, duplicate, and move preserve these fields.
+This additive dialect extension needs no database migration. Older application
+versions reject these newly supported fields rather than silently dropping them.
+The retained legacy Tiptap editor does not expose these per-divider controls.
+
+
+Editor text and divider toolbars use CodeMirror's body-mounted tooltip container so
+ancestor document glass surfaces do not limit their backdrop blur. The toolbar and
+text-color picker share the same raised frosted surface in frosted mode; normal mode
+uses a solid card surface. Unsupported backdrop filters and reduced-transparency
+preferences retain the existing more-opaque surface fallback. Toolbar focus remains
+tracked when text color controls are outside the editor DOM.
