@@ -15,7 +15,13 @@ import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
 import { search } from '@codemirror/search';
 import { closeCompletion } from '@codemirror/autocomplete';
-import { Code2, FileUp, Search } from 'lucide-react';
+import { markdownBlockWrappers } from './interactions/markdown-block-wrappers';
+import { markdownFindHighlights } from './interactions/markdown-find-highlights';
+import { markdownSelectionToolbar } from './interactions/markdown-selection-toolbar';
+import { markdownBlockGutter } from './interactions/markdown-block-gutter';
+import { markdownMediaInput } from './interactions/markdown-media-input';
+import { useMarkdownTransfer } from './interactions/use-markdown-transfer';
+import { MarkdownEditorControls } from './interactions/markdown-editor-controls';
 import { markdownSlashCommands } from './markdown-slash-commands';
 import { markdownTypingShortcuts } from './markdown-typing-commands';
 import {
@@ -48,6 +54,7 @@ import { useMarkdownSearch } from './use-markdown-search';
 export type MarkdownEditorProps = {
     workspaceId: number;
     nodeId: number;
+    title: string;
     markdown: string;
     revision: number;
     limits: MarkdownLimits;
@@ -56,6 +63,13 @@ export type MarkdownEditorProps = {
 export default function MarkdownEditor(props: MarkdownEditorProps) {
     const host = useRef<HTMLDivElement>(null);
     const [view, setView] = useState<EditorView | null>(null);
+    const [notice, setNotice] = useState('');
+    const transferContext = useRef(props);
+    const transfer = useMarkdownTransfer(
+        view,
+        transferContext.current,
+        props.title,
+    );
     const [livePreview, setLivePreview] = useState(true);
     const upload = useMarkdownUpload(props.workspaceId, props.nodeId);
     const { active, visible } = useDocumentTab();
@@ -70,11 +84,17 @@ export default function MarkdownEditor(props: MarkdownEditorProps) {
         queueSave: autosave.queueSave,
         count: finder.scheduleCount,
         chooseFile: upload.chooseFile,
+        uploadDroppedFiles: upload.uploadDroppedFiles,
+        importSource: transfer.importSource,
+        updateEmpty: transfer.updateEmpty,
     });
     callbacks.current = {
         queueSave: autosave.queueSave,
         count: finder.scheduleCount,
         chooseFile: upload.chooseFile,
+        uploadDroppedFiles: upload.uploadDroppedFiles,
+        importSource: transfer.importSource,
+        updateEmpty: transfer.updateEmpty,
     };
     const initial = useRef(props);
     const appearance = useRef(resolvedAppearance);
@@ -111,6 +131,10 @@ export default function MarkdownEditor(props: MarkdownEditorProps) {
                                 richExtensions,
                                 markdownPreviewTheme,
                                 markdownWritingCommands,
+                                markdownBlockWrappers,
+                                markdownBlockWrappers,
+                                markdownSelectionToolbar(setNotice),
+                                markdownBlockGutter(setNotice),
                             ]),
                             highlightActiveLine(),
                             EditorView.lineWrapping,
@@ -121,13 +145,53 @@ export default function MarkdownEditor(props: MarkdownEditorProps) {
                                 pasteURLAsLink: false,
                             }),
                             search(),
-                            markdownSlashCommands((request) =>
-                                callbacks.current.chooseFile(request),
+                            markdownFindHighlights,
+                            markdownSlashCommands(
+                                (request) =>
+                                    callbacks.current.chooseFile(request),
+                                initial.current.workspaceId,
                             ),
                             markdownTypingShortcuts,
                             pendingInlineFormatting,
                             insertPendingInlineFormatting,
                             markdownUploadAnchor,
+                            markdownMediaInput(
+                                (files, request) =>
+                                    callbacks.current.uploadDroppedFiles(
+                                        files,
+                                        request,
+                                    ),
+                                setNotice,
+                            ),
+                            EditorView.domEventHandlers({
+                                paste(event, current) {
+                                    if (
+                                        !current.state.facet(
+                                            EditorView.editable,
+                                        ) ||
+                                        current.state.doc.toString().trim() ||
+                                        event.clipboardData?.files.length ||
+                                        (event.target instanceof Element &&
+                                            event.target.closest(
+                                                'textarea, input',
+                                            ))
+                                    )
+                                        return false;
+                                    const text =
+                                        event.clipboardData?.getData(
+                                            'text/plain',
+                                        ) ?? '';
+                                    if (
+                                        !/^(?:#{1,6} |[-*+] |\d+\. |> |`{3,}|:{3,}orbium |\$\$)|\*\*[^*]+\*\*|\[[^\]]+\]\([^)]+\)/m.test(
+                                            text,
+                                        )
+                                    )
+                                        return false;
+                                    event.preventDefault();
+                                    void callbacks.current.importSource(text);
+                                    return true;
+                                },
+                            }),
                             markdownSlashMenuTheme,
                             markdownLinkNavigation,
                             keymap.of([...defaultKeymap, ...historyKeymap]),
@@ -148,6 +212,7 @@ export default function MarkdownEditor(props: MarkdownEditorProps) {
                                 if (!update.docChanged) return;
                                 callbacks.current.queueSave(update.state.doc);
                                 callbacks.current.count();
+                                callbacks.current.updateEmpty();
                             }),
                         ],
                     }),
@@ -204,6 +269,9 @@ export default function MarkdownEditor(props: MarkdownEditorProps) {
                           richExtensions,
                           markdownPreviewTheme,
                           markdownWritingCommands,
+                          markdownBlockWrappers,
+                          markdownSelectionToolbar(setNotice),
+                          markdownBlockGutter(setNotice),
                       ]
                     : [
                           lineNumbers(),
@@ -262,68 +330,49 @@ export default function MarkdownEditor(props: MarkdownEditorProps) {
             aria-label="Document editor"
             data-document-styles
         >
-            <div className="mb-7 flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground">
-                <div className="flex items-center gap-2">
-                    <span role="status">
-                        {autosave.status === 'saved'
-                            ? 'Saved'
-                            : autosave.status === 'saving'
-                              ? 'Saving…'
-                              : autosave.status === 'error'
-                                ? 'Save failed'
-                                : 'Unsaved changes'}
-                    </span>
-                    {autosave.status === 'error' && (
-                        <button
-                            type="button"
-                            className="underline"
-                            onClick={() => void autosave.saveNow()}
-                        >
-                            Retry
-                        </button>
-                    )}
-                </div>
-                <div className="flex items-center gap-3">
-                    <button
-                        type="button"
-                        aria-label={
-                            livePreview
-                                ? 'Switch to Markdown source'
-                                : 'Switch to Live Preview'
-                        }
-                        aria-pressed={!livePreview}
-                        className="flex items-center gap-1 rounded p-1 hover:bg-accent"
-                        onClick={() => setLivePreview((current) => !current)}
-                    >
-                        <Code2 size={16} />
-                        {livePreview ? 'Markdown source' : 'Live Preview'}
-                    </button>
-                    <button
-                        type="button"
-                        onClick={finder.openSearch}
-                        aria-label="Find in document"
-                        className="rounded p-1 hover:bg-accent"
-                    >
-                        <Search size={16} />
-                    </button>
-                    <button
-                        type="button"
-                        disabled={!active || !view || upload.uploading}
-                        className="flex items-center gap-1 rounded p-1 hover:bg-accent disabled:opacity-50"
-                        onClick={() => {
-                            if (!view) return;
-                            upload.chooseFile({
-                                view,
-                                from: view.state.selection.main.from,
-                                to: view.state.selection.main.to,
-                                kind: 'file',
-                            });
-                        }}
-                    >
-                        <FileUp size={16} /> Add file
-                    </button>
-                </div>
-            </div>
+            <MarkdownEditorControls
+                status={autosave.status}
+                livePreview={livePreview}
+                disabled={!active || !view || upload.uploading}
+                empty={transfer.empty}
+                importing={transfer.busy}
+                onRetry={() => void autosave.saveNow()}
+                onTogglePreview={() => setLivePreview((current) => !current)}
+                onFind={finder.openSearch}
+                onUpload={() => {
+                    if (view)
+                        upload.chooseFile({
+                            view,
+                            from: view.state.selection.main.from,
+                            to: view.state.selection.main.to,
+                            kind: 'file',
+                        });
+                }}
+                onImport={() => transfer.input.current?.click()}
+                onExport={transfer.exportMarkdown}
+            />
+            {notice && (
+                <p role="status" className="mb-2 text-sm text-muted-foreground">
+                    {notice}
+                </p>
+            )}
+            {transfer.error && (
+                <p role="alert" className="mb-2 text-sm text-destructive">
+                    {transfer.error}
+                </p>
+            )}
+            <input
+                ref={transfer.input}
+                type="file"
+                accept=".md,.markdown,text/markdown"
+                className="hidden"
+                aria-label="Import Markdown document"
+                onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    if (file) void transfer.importFile(file);
+                    event.target.value = '';
+                }}
+            />
             {upload.uploading && (
                 <p role="status" className="mb-2 text-sm text-muted-foreground">
                     Uploading {upload.kind}…
@@ -340,8 +389,8 @@ export default function MarkdownEditor(props: MarkdownEditorProps) {
                 className="hidden"
                 aria-label="Upload document attachment"
                 onChange={(event) => {
-                    const file = event.target.files?.[0];
-                    if (file) void upload.uploadFile(file);
+                    const files = [...(event.target.files ?? [])];
+                    if (files.length) void upload.uploadSelectedFiles(files);
                     else upload.clearUploadRequest();
                 }}
             />

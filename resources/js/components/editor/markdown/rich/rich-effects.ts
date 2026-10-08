@@ -10,3 +10,5 @@ export const toggleRichSource = StateEffect.define<{
     from: number;
     open: boolean;
 }>();
+
+export const revealRichSource = StateEffect.define<number>();

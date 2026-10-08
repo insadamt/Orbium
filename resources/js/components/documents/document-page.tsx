@@ -410,6 +410,7 @@ export function DocumentPage({
                                 <MarkdownOpeningPreview />
                             ) : (
                                 <MarkdownEditorLoader
+                                    title={title}
                                     workspaceId={workspace.id}
                                     nodeId={node.id}
                                     markdown={savedDocument.markdown}

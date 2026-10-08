@@ -4,7 +4,10 @@ import type { MarkdownParser } from '@lezer/markdown';
 import type { SyntaxNode } from '@lezer/common';
 import { orbiumMarkdownDialect } from '../dialect/markdown-dialect';
 import { readOrbiumMetadata, type OrbiumMetadata } from '../dialect/metadata';
-import { markdownLinkDestination } from '../preview/markdown-link-preview';
+import {
+    markdownLinkDestination,
+    openMarkdownPreviewLink,
+} from '../preview/markdown-link-preview';
 import { instantiateMermaidSvg } from '../../mermaid-preview-renderer';
 import { applyMermaidPreviewDimensions } from '../../mermaid-preview-layout';
 import {
@@ -310,6 +313,18 @@ export function renderRichBody(
                 link.href = url;
                 link.target = '_blank';
                 link.rel = 'noopener noreferrer';
+                link.dataset.orbiumPreviewLink = '';
+                link.dataset.orbiumMention =
+                    url.startsWith('/workspaces/') &&
+                    !url.includes('/attachments/')
+                        ? 'true'
+                        : 'false';
+                if (link.dataset.orbiumMention === 'true')
+                    link.classList.add('editor-mention');
+                link.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    openMarkdownPreviewLink(event, link);
+                });
             }
             const marks = node.getChildren('LinkMark');
             const opening = marks[0];
@@ -339,8 +354,15 @@ export function renderRichBody(
         if (tag === 'p') child.className = 'orbium-paragraph';
         else if (/^h[1-6]$/.test(tag))
             child.className = `orbium-heading-${tag.slice(1)}`;
-        else if (tag === 'ul') child.className = 'orbium-bullet-list';
-        else if (tag === 'ol') {
+        else if (tag === 'ul') {
+            const taskList = node
+                .getChildren('ListItem')
+                .some((item) => item.getChild('Task'));
+            child.className = taskList
+                ? 'orbium-checklist'
+                : 'orbium-bullet-list';
+            if (taskList) child.dataset.type = 'taskList';
+        } else if (tag === 'ol') {
             child.className = 'orbium-ordered-list';
             const start = /^\s*(\d+)[.)] /.exec(
                 source.slice(node.from, node.to),

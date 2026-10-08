@@ -10,7 +10,11 @@ import {
 import type { Tree } from '@lezer/common';
 import { measureEditorWork } from '@/lib/editor-performance';
 import { readRichBlock } from './read-rich-block';
-import { refreshRichBlocks, toggleRichSource } from './rich-effects';
+import {
+    refreshRichBlocks,
+    toggleRichSource,
+    revealRichSource,
+} from './rich-effects';
 import type { RichBlock, RichContext } from './rich-model';
 import { MarkdownRichWidget } from './rich-widget';
 
@@ -59,6 +63,7 @@ export function markdownRichBlocks(context: RichContext) {
     const field = StateField.define<{
         blocks: RichBlock[];
         editors: Set<number>;
+        revealed: number | null;
         decorations: ReturnType<typeof Decoration.set>;
     }>({
         create(state) {
@@ -71,12 +76,16 @@ export function markdownRichBlocks(context: RichContext) {
             return {
                 blocks,
                 editors: new Set(),
+                revealed: null,
                 decorations: decorate(state, blocks),
             };
         },
         update(previous, transaction) {
             let blocks = previous.blocks;
             let editors = previous.editors;
+            let revealed = previous.revealed;
+            if (revealed !== null && transaction.docChanged)
+                revealed = transaction.changes.mapPos(revealed, -1);
             if (transaction.docChanged) {
                 editors = new Set(
                     [...editors].map((from) =>
@@ -137,6 +146,7 @@ export function markdownRichBlocks(context: RichContext) {
                     .filter((block) => block.from < block.to);
             }
             for (const effect of transaction.effects) {
+                if (effect.is(revealRichSource)) revealed = effect.value;
                 if (effect.is(toggleRichSource)) {
                     editors = new Set(editors);
                     if (effect.value.open) editors.add(effect.value.from);
@@ -171,7 +181,14 @@ export function markdownRichBlocks(context: RichContext) {
                         .sort((left, right) => left.from - right.from);
                 }
             }
+            if (revealed !== null && transaction.selection) {
+                const block = blocks.find((item) => item.from === revealed);
+                const range = transaction.state.selection.main;
+                if (!block || range.head < block.from || range.head > block.to)
+                    revealed = null;
+            }
             if (
+                revealed === previous.revealed &&
                 blocks === previous.blocks &&
                 editors === previous.editors &&
                 !transaction.selection &&
@@ -184,7 +201,8 @@ export function markdownRichBlocks(context: RichContext) {
             return {
                 blocks,
                 editors,
-                decorations: decorate(transaction.state, blocks),
+                revealed,
+                decorations: decorate(transaction.state, blocks, revealed),
             };
         },
         provide: (source) => [
@@ -195,10 +213,15 @@ export function markdownRichBlocks(context: RichContext) {
         ],
     });
 
-    function decorate(state: EditorState, blocks: RichBlock[]) {
+    function decorate(
+        state: EditorState,
+        blocks: RichBlock[],
+        revealed: number | null = null,
+    ) {
         const ranges: Range<Decoration>[] = [];
         const search = Boolean(getSearchQuery(state).search);
         for (const block of blocks) {
+            if (revealed === block.from) continue;
             if (
                 search &&
                 state.selection.ranges.some(

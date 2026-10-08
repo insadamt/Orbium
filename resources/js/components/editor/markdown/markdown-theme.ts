@@ -57,6 +57,10 @@ export function markdownTheme(dark: boolean) {
                 { backgroundColor: 'var(--accent)' },
             '.cm-cursor': { borderLeftColor: 'var(--foreground)' },
             '.cm-searchMatch': {
+                backgroundColor: 'transparent',
+                outline: 'none',
+            },
+            '.cm-md-find-match': {
                 backgroundColor: 'var(--accent)',
                 outline: '1px solid var(--muted-foreground)',
             },

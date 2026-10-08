@@ -1,3 +1,4 @@
+import { markdownMentionSource } from './interactions/markdown-mentions';
 import type { OrbiumMetadata } from './dialect/metadata';
 import {
     autocompletion,
@@ -30,7 +31,7 @@ export type MarkdownBlockTemplate = {
     caret: number;
 };
 
-const templates: MarkdownBlockTemplate[] = [
+export const markdownBlockTemplates: MarkdownBlockTemplate[] = [
     { label: 'Text', search: 'paragraph plain', source: '', caret: 0 },
     { label: 'Heading 1', search: 'h1 title', source: '# ', caret: 2 },
     { label: 'Heading 2', search: 'h2 subtitle', source: '## ', caret: 3 },
@@ -98,7 +99,7 @@ const templates: MarkdownBlockTemplate[] = [
     },
 ];
 
-function insertBlockTemplate(
+export function insertBlockTemplate(
     view: EditorView,
     template: MarkdownBlockTemplate,
     from: number,
@@ -128,6 +129,7 @@ function insertBlockTemplate(
 
 export function markdownSlashCommands(
     onUpload: (request: MarkdownUploadRequest) => void,
+    workspaceId: number,
 ) {
     const slashSource = (context: CompletionContext) => {
         if (
@@ -148,7 +150,7 @@ export function markdownSlashCommands(
         );
         if (previous && !/\s/.test(previous)) return null;
         const query = match.text.slice(1).trim().toLowerCase();
-        const options = templates
+        const options = markdownBlockTemplates
             .filter((template) =>
                 `${template.label} ${template.search}`
                     .toLowerCase()
@@ -180,7 +182,7 @@ export function markdownSlashCommands(
     };
     return [
         autocompletion({
-            override: [slashSource],
+            override: [slashSource, markdownMentionSource(workspaceId)],
             defaultKeymap: false,
             activateOnTypingDelay: 0,
             interactionDelay: 0,

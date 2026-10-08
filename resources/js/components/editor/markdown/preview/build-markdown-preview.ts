@@ -1,3 +1,4 @@
+import { markdownLineDirection } from '../interactions/markdown-direction';
 import { readOrbiumMetadata } from '../dialect/metadata';
 import { syntaxTree } from '@codemirror/language';
 import { getSearchQuery } from '@codemirror/search';
@@ -100,6 +101,7 @@ export function buildMarkdownPreview(
         let position = view.state.doc.lineAt(visible.from).from;
         while (position <= visible.to) {
             const line = view.state.doc.lineAt(position);
+            addLineClass(position, 'cm-md-directed');
             if (!line.text.trim() && line.number < view.state.doc.lines)
                 addLineClass(position, 'cm-md-separator');
             if (line.to >= visible.to) break;
@@ -135,26 +137,20 @@ export function buildMarkdownPreview(
                 if (node.name === 'Paragraph' || node.name === 'Task') {
                     const firstLine = view.state.doc.lineAt(node.from);
                     if (isMarkdownSourceOnlyLine(firstLine.text)) return false;
-                    addNodeLineClasses(node, visible, 'orbium-paragraph');
                 }
                 const key = `${node.name}:${node.from}:${node.to}`;
                 if (handled.has(key)) return;
                 handled.add(key);
                 const line = view.state.doc.lineAt(node.from);
                 if (isMarkdownSourceOnlyLine(line.text)) return false;
-                if (node.name === 'Blockquote')
+                if (node.name === 'ListItem') {
                     addNodeLineClasses(
                         node,
                         visible,
-                        'cm-md-quote orbium-quote',
+                        node.getChild('Task')
+                            ? 'cm-md-list cm-md-task-line'
+                            : 'cm-md-list',
                     );
-                if (node.name === 'ListItem') {
-                    const className = node.getChild('Task')
-                        ? 'cm-md-list cm-md-task-line orbium-checklist'
-                        : node.parent?.name === 'OrderedList'
-                          ? 'cm-md-list orbium-ordered-list'
-                          : 'cm-md-list orbium-bullet-list';
-                    addNodeLineClasses(node, visible, className);
                 }
                 const heading = /^(?:ATX|Setext)Heading([1-6])$/.exec(
                     node.name,
@@ -179,7 +175,6 @@ export function buildMarkdownPreview(
                     replaceSyntax(node.from, end);
                 }
                 if (node.name === 'QuoteMark') {
-                    addLineClass(node.from, 'cm-md-quote');
                     const end =
                         node.to +
                         (view.state.sliceDoc(node.to, node.to + 1) === ' '
@@ -249,13 +244,22 @@ export function buildMarkdownPreview(
                     if (!destination) return;
                     decorations.push(
                         Decoration.mark({
-                            class: 'cm-md-link',
+                            class:
+                                destination.startsWith('/workspaces/') &&
+                                !destination.includes('/attachments/')
+                                    ? 'cm-md-link editor-mention'
+                                    : 'cm-md-link',
                             tagName: 'a',
                             attributes: {
                                 href: destination,
                                 target: '_blank',
                                 rel: 'noopener noreferrer',
                                 'data-orbium-preview-link': '',
+                                'data-orbium-mention':
+                                    destination.startsWith('/workspaces/') &&
+                                    !destination.includes('/attachments/')
+                                        ? 'true'
+                                        : 'false',
                                 title: 'Ctrl/Cmd+click to open link',
                             },
                         }).range(node.from, node.to),
@@ -319,7 +323,14 @@ export function buildMarkdownPreview(
     }
     for (const [from, classes] of lineClasses)
         decorations.push(
-            Decoration.line({ class: [...classes].join(' ') }).range(from),
+            Decoration.line({
+                class: [...classes].join(' '),
+                attributes: {
+                    dir: classes.has('cm-md-source')
+                        ? 'ltr'
+                        : markdownLineDirection(view.state, from),
+                },
+            }).range(from),
         );
     return {
         decorations: Decoration.set(decorations, true),

@@ -1,13 +1,14 @@
-import {
-    SearchQuery,
-    findNext,
-    findPrevious,
-    setSearchQuery,
-} from '@codemirror/search';
-import type { EditorView } from '@codemirror/view';
+import { setLogicalMarkdownMatches } from './interactions/markdown-find-highlights';
+import { SearchQuery, setSearchQuery } from '@codemirror/search';
+import { EditorView } from '@codemirror/view';
+import type { Text } from '@codemirror/state';
 import { useCallback, useEffect, useRef } from 'react';
 import { usePageSearch } from '@/components/navigation/page-search';
 import { useDocumentTab } from '@/components/navigation/document-tab-context';
+import {
+    findLogicalMarkdownMatches,
+    type LogicalMarkdownMatch,
+} from './interactions/markdown-logical-text';
 
 export function useMarkdownSearch(view: EditorView | null) {
     const { active, url } = useDocumentTab();
@@ -16,27 +17,66 @@ export function useMarkdownSearch(view: EditorView | null) {
     const appliedStep = useRef(0);
     const appliedUrlTerm = useRef('');
     const timer = useRef<number | undefined>(undefined);
+    const cached = useRef<{
+        source: Text;
+        query: string;
+        matches: LogicalMarkdownMatch[];
+    } | null>(null);
     const urlTerm =
         new URLSearchParams(url.split('?')[1] ?? '').get('find') ?? '';
-
+    const matchesFor = useCallback(
+        (term: string) => {
+            if (!view) return [];
+            if (
+                cached.current?.source === view.state.doc &&
+                cached.current.query === term
+            )
+                return cached.current.matches;
+            const matches = findLogicalMarkdownMatches(view.state.doc, term);
+            cached.current = { source: view.state.doc, query: term, matches };
+            return matches;
+        },
+        [view],
+    );
+    const navigateMatch = useCallback(
+        (term: string, previous: boolean) => {
+            if (!view) return;
+            const matches = matchesFor(term);
+            setResultCount(matches.length);
+            const selection = view.state.selection.main;
+            const match = previous
+                ? ([...matches]
+                      .reverse()
+                      .find((item) => item.from < selection.from) ??
+                  matches.at(-1))
+                : (matches.find(
+                      (item) =>
+                          item.from >= selection.to &&
+                          (selection.empty || item.from > selection.from),
+                  ) ?? matches[0]);
+            if (!match) return;
+            view.dispatch({
+                selection: { anchor: match.from, head: match.to },
+                effects: [
+                    setLogicalMarkdownMatches.of(matches),
+                    setSearchQuery.of(
+                        new SearchQuery({ search: term, literal: true }),
+                    ),
+                    EditorView.scrollIntoView(match.from, { y: 'center' }),
+                ],
+            });
+        },
+        [view, matchesFor, setResultCount],
+    );
     const scheduleCount = useCallback(() => {
         clearTimeout(timer.current);
         if (!active || !view) return;
         timer.current = window.setTimeout(() => {
-            if (!query) {
-                setResultCount(null);
-                return;
-            }
-            const cursor = new SearchQuery({
-                search: query,
-                literal: true,
-            }).getCursor(view.state);
-            let count = 0;
-            while (!cursor.next().done) count++;
-            setResultCount(count);
+            const matches = query ? matchesFor(query) : [];
+            setResultCount(query ? matches.length : null);
+            view.dispatch({ effects: setLogicalMarkdownMatches.of(matches) });
         }, 150);
-    }, [active, view, query, setResultCount]);
-
+    }, [active, view, query, matchesFor, setResultCount]);
     useEffect(() => {
         if (!active || !view) return;
         view.dispatch({
@@ -47,7 +87,6 @@ export function useMarkdownSearch(view: EditorView | null) {
         scheduleCount();
         return () => clearTimeout(timer.current);
     }, [view, active, query, scheduleCount]);
-
     useEffect(() => {
         if (!urlTerm) appliedUrlTerm.current = '';
         if (!active || !view || !urlTerm || appliedUrlTerm.current === urlTerm)
@@ -55,14 +94,8 @@ export function useMarkdownSearch(view: EditorView | null) {
         appliedUrlTerm.current = urlTerm;
         setQuery(urlTerm);
         openSearch();
-        view.dispatch({
-            effects: setSearchQuery.of(
-                new SearchQuery({ search: urlTerm, literal: true }),
-            ),
-        });
-        findNext(view);
-    }, [active, view, urlTerm, setQuery, openSearch]);
-
+        navigateMatch(urlTerm, false);
+    }, [active, view, urlTerm, setQuery, openSearch, navigateMatch]);
     useEffect(() => {
         if (searchStep.id === 0) appliedStep.current = 0;
         if (
@@ -75,9 +108,8 @@ export function useMarkdownSearch(view: EditorView | null) {
         )
             return;
         appliedStep.current = searchStep.id;
-        if (searchStep.previous) findPrevious(view);
-        else findNext(view);
-    }, [active, view, query, searchStep]);
-
+        navigateMatch(query, searchStep.previous);
+    }, [active, view, query, searchStep, navigateMatch]);
+    useEffect(() => () => clearTimeout(timer.current), []);
     return { scheduleCount, openSearch };
 }

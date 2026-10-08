@@ -1,6 +1,7 @@
 import { EditorView } from '@codemirror/view';
 
 export const markdownPreviewTheme = [
+    EditorView.perLineTextDirection.of(true),
     EditorView.editorAttributes.of({ class: 'orbium-markdown-live-preview' }),
     EditorView.contentAttributes.of({
         class: 'orbium-editor orbium-markdown-content',

@@ -1,4 +1,5 @@
-import { EditorSelection, Prec, type EditorState } from '@codemirror/state';
+import { Prec, type EditorState } from '@codemirror/state';
+import { formatMarkdownSelection } from './interactions/markdown-inline-format';
 import { indentLess, indentMore, isolateHistory } from '@codemirror/commands';
 import { EditorView, keymap, type Command } from '@codemirror/view';
 import {
@@ -12,7 +13,7 @@ import {
     isMarkdownSourceOnlyLine,
 } from './markdown-syntax';
 
-function toggleInlineDelimiter(delimiter: string): Command {
+function toggleInlineDelimiter(delimiter: '**' | '*' | '~~'): Command {
     return (view) => {
         if (!view.state.facet(EditorView.editable) || view.compositionStarted)
             return false;
@@ -57,45 +58,7 @@ function toggleInlineDelimiter(delimiter: string): Command {
             });
             return true;
         }
-        const transaction = view.state.changeByRange((range) => {
-            const before = view.state.sliceDoc(
-                Math.max(0, range.from - delimiter.length),
-                range.from,
-            );
-            const after = view.state.sliceDoc(
-                range.to,
-                range.to + delimiter.length,
-            );
-            if (before === delimiter && after === delimiter) {
-                return {
-                    changes: [
-                        { from: range.from - delimiter.length, to: range.from },
-                        { from: range.to, to: range.to + delimiter.length },
-                    ],
-                    range: EditorSelection.range(
-                        range.from - delimiter.length,
-                        range.to - delimiter.length,
-                    ),
-                };
-            }
-            const text = view.state.sliceDoc(range.from, range.to);
-            return {
-                changes: {
-                    from: range.from,
-                    to: range.to,
-                    insert: `${delimiter}${text}${delimiter}`,
-                },
-                range: EditorSelection.range(
-                    range.from + delimiter.length,
-                    range.to + delimiter.length,
-                ),
-            };
-        });
-        view.dispatch({
-            ...transaction,
-            annotations: isolateHistory.of('full'),
-            userEvent: 'input.format',
-        });
+        formatMarkdownSelection(view, delimiter);
         return true;
     };
 }

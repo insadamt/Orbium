@@ -10,6 +10,8 @@ use App\Models\DatabaseValue;
 use App\Models\Node;
 use App\Services\Editor\MermaidPreviewCache;
 use App\Services\Markdown\MarkdownContract;
+use App\Services\Markdown\MarkdownDocumentInspector;
+use App\Services\Markdown\MarkdownReferenceValidator;
 use App\Services\Markdown\MarkdownSaveData;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -102,6 +104,22 @@ class DocumentController extends Controller
         }
 
         return $response;
+    }
+
+    public function inspectMarkdown(Request $request, int $workspace, int $node, MarkdownDocumentInspector $inspector, MarkdownReferenceValidator $references): JsonResponse
+    {
+        $documentNode = $this->ownedDocument($request, $workspace, $node);
+        abort_unless($documentNode->document->content_format_version === MarkdownContract::FORMAT_VERSION, 409, 'Import requires a Markdown document.');
+        abort_unless($request->isJson(), 415, 'Markdown inspection requires application/json.');
+        $data = $request->validate([
+            'markdown' => ['present', 'string'],
+            'content_format_version' => ['required', 'integer', Rule::in([MarkdownContract::FORMAT_VERSION])],
+        ]);
+        $inspection = $inspector->inspect($data['markdown']);
+        $references->validate($documentNode, $inspection);
+
+        return response()->json(['markdown' => $inspection->source, 'content_format_version' => MarkdownContract::FORMAT_VERSION])
+            ->header('Cache-Control', 'private, no-store');
     }
 
     public function showMermaidPreview(Request $request, int $workspace, int $node, string $sourceHash, MermaidPreviewCache $mermaidPreviewCache): JsonResponse
