@@ -4,6 +4,10 @@ import { useDocumentTab } from '@/components/navigation/document-tab-context';
 import { useNavigation } from '@/components/navigation/navigation-store';
 import { notifyPaneLocation } from '@/components/navigation/tab-navigation';
 import type { EditorDocument } from '@/components/editor/editor-api';
+import type { MarkdownLimits } from '@/components/editor/markdown/markdown-api';
+import MarkdownEditorLoader, {
+    MarkdownOpeningPreview,
+} from '@/components/editor/markdown/markdown-editor-loader';
 import {
     attachmentUrl,
     csrfToken,
@@ -40,12 +44,18 @@ export type DocumentPageProps = {
         parent_id: number | null;
     };
     document: {
-        content: EditorDocument;
         revision: number;
         cover_attachment_id: number | null;
         cover_aspect_ratio: CoverRatio | null;
         icon_attachment_id: number | null;
-    };
+    } & (
+        | { content_format_version: 1; content: EditorDocument }
+        | {
+              content_format_version: 2;
+              markdown: string;
+              markdown_limits: MarkdownLimits;
+          }
+    );
     databaseProperties: Property[];
     databaseValues: { property_id: number; value: unknown }[];
     mentionCandidates: Candidate[];
@@ -395,7 +405,19 @@ export function DocumentPage({
                                     files={databaseFiles}
                                 />
                             )}
-                        {previewOnly ? (
+                        {savedDocument.content_format_version === 2 ? (
+                            previewOnly ? (
+                                <MarkdownOpeningPreview />
+                            ) : (
+                                <MarkdownEditorLoader
+                                    workspaceId={workspace.id}
+                                    nodeId={node.id}
+                                    markdown={savedDocument.markdown}
+                                    revision={savedDocument.revision}
+                                    limits={savedDocument.markdown_limits}
+                                />
+                            )
+                        ) : previewOnly ? (
                             <DocumentOpeningPreview
                                 content={savedDocument.content}
                             />

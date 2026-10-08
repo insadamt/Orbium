@@ -1,0 +1,303 @@
+.orbium-editor {
+    color: var(--foreground);
+    font-size: 1.03rem;
+    line-height: 1.75;
+    overflow-wrap: anywhere;
+    min-width: 0;
+    border: 0;
+    outline: none;
+}
+.orbium-editor:focus-visible {
+    outline: none;
+}
+
+.orbium-editor:where(:not(.orbium-markdown-content)) > * + * {
+    margin-top: 0.75em;
+}
+.orbium-editor > .editor-block-dragging {
+    opacity: 0.45;
+}
+.editor-block-drag-preview {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 50;
+    pointer-events: none;
+    max-width: 20rem;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    background: var(--popover);
+    color: var(--foreground);
+    padding: 0.4rem 0.7rem;
+    font-size: 0.875rem;
+    line-height: 1.4;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    box-shadow: 0 8px 24px rgb(0 0 0 / 0.16);
+}
+.orbium-editor p.is-editor-empty:first-child::before {
+    content: attr(data-placeholder);
+    float: left;
+    color: var(--muted-foreground);
+    pointer-events: none;
+    height: 0;
+}
+.orbium-editor [dir='rtl'] > p.is-editor-empty:first-child::before,
+.orbium-editor p[dir='rtl'].is-editor-empty:first-child::before {
+    float: right;
+}
+.orbium-editor h1,
+.orbium-editor .cm-md-heading-1 {
+    font-size: 2rem;
+    font-weight: 650;
+    line-height: 1.2;
+    margin-top: 1.3em;
+}
+.orbium-editor h2,
+.orbium-editor .cm-md-heading-2 {
+    font-size: 1.5rem;
+    font-weight: 630;
+    line-height: 1.25;
+    margin-top: 1.2em;
+}
+.orbium-editor h3,
+.orbium-editor .cm-md-heading-3 {
+    font-size: 1.2rem;
+    font-weight: 620;
+    line-height: 1.3;
+    margin-top: 1.1em;
+}
+.orbium-editor ul:not([data-type='taskList']) {
+    list-style: disc;
+    padding-inline-start: 1.6em;
+}
+.orbium-editor ol {
+    list-style: decimal;
+    padding-inline-start: 1.6em;
+}
+.orbium-editor ul[data-type='taskList'] {
+    list-style: none;
+    padding-inline-start: 0;
+}
+.orbium-editor ul[data-type='taskList'] li {
+    display: flex;
+    gap: 0.6em;
+}
+.orbium-editor ul[data-type='taskList'] li > label {
+    flex: none;
+}
+.orbium-editor ul[data-type='taskList'] li > div {
+    flex: 1;
+}
+.orbium-editor blockquote,
+.orbium-editor .cm-md-quote {
+    border-inline-start: 3px solid var(--border);
+    padding-inline-start: 1.1rem;
+    color: var(--muted-foreground);
+}
+.orbium-editor .editor-callout,
+.orbium-editor aside[data-callout] {
+    border: 1px solid var(--border);
+    border-radius: 0.8rem;
+    padding: 1rem 1.2rem;
+    background: var(--muted);
+}
+.orbium-editor hr,
+.orbium-editor .cm-md-divider {
+    border: 0;
+    height: 1.75em;
+    margin: 0.75em 0 0;
+    background: linear-gradient(var(--border), var(--border)) center / 100% 1px
+        no-repeat;
+}
+.orbium-editor a {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+.orbium-editor code,
+.orbium-editor .cm-md-inline-code {
+    border-radius: 0.25rem;
+    background: var(--muted);
+    padding: 0.1em 0.3em;
+    font-size: 0.88em;
+}
+.orbium-editor pre {
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: 0.8rem;
+    background: var(--muted);
+    padding: 1rem;
+    font-size: 0.85rem;
+    line-height: 1.55;
+}
+.orbium-editor pre code {
+    background: transparent;
+    padding: 0;
+}
+.orbium-editor .hljs-keyword,
+.orbium-editor .hljs-selector-tag {
+    color: var(--color-info);
+}
+.orbium-editor .hljs-string,
+.orbium-editor .hljs-number {
+    color: var(--color-success);
+}
+.orbium-editor .hljs-comment {
+    color: var(--muted-foreground);
+}
+.orbium-editor .tableWrapper {
+    width: max-content;
+    max-width: var(--table-available-width, 100%);
+    min-width: 0;
+    overflow-x: auto;
+    margin-bottom: 2rem;
+}
+.orbium-editor table {
+    border-collapse: collapse;
+    width: max-content;
+}
+.orbium-editor th,
+.orbium-editor td {
+    border: 1px solid var(--border);
+    min-width: 6rem;
+    padding: 0.45rem 0.65rem;
+    vertical-align: top;
+}
+.orbium-editor th {
+    background: var(--muted);
+    text-align: start;
+}
+
+.orbium-markdown-content .cm-line {
+    margin: 0;
+}
+.orbium-markdown-content .cm-md-heading {
+    margin-top: 0;
+}
+.orbium-markdown-content .cm-md-heading-1 {
+    padding-block-start: 1.3em;
+}
+.orbium-markdown-content .cm-md-heading-2 {
+    padding-block-start: 1.2em;
+}
+.orbium-markdown-content .cm-md-heading-3 {
+    padding-block-start: 1.1em;
+}
+.orbium-markdown-content .cm-md-heading-4,
+.orbium-markdown-content .cm-md-heading-5,
+.orbium-markdown-content .cm-md-heading-6 {
+    font-size: 1.2rem;
+    font-weight: 620;
+    line-height: 1.3;
+    padding-block-start: 1.1em;
+}
+.orbium-markdown-content .cm-md-after-separator.cm-md-heading {
+    padding-block-start: max(0px, calc(1.1em - 0.7725rem));
+}
+.orbium-markdown-content .cm-md-after-separator.cm-md-heading-1 {
+    padding-block-start: max(0px, calc(1.3em - 0.7725rem));
+}
+.orbium-markdown-content .cm-md-after-separator.cm-md-heading-2 {
+    padding-block-start: max(0px, calc(1.2em - 0.7725rem));
+}
+.orbium-markdown-content .cm-md-separator:not(.cm-md-source) {
+    line-height: 0.75;
+}
+.orbium-markdown-content .cm-md-list {
+    padding-inline-start: 1.6em;
+}
+.orbium-markdown-content .cm-md-list-marker {
+    display: inline-block;
+    width: 1.6em;
+    margin-inline-start: -1.6em;
+}
+.orbium-markdown-content .cm-md-task-line {
+    padding-inline-start: 0;
+}
+.orbium-markdown-content .cm-md-task-checkbox {
+    width: 13px;
+    height: 13px;
+    vertical-align: baseline;
+    margin-inline-end: 0.6em;
+    cursor: pointer;
+}
+.orbium-markdown-content .cm-md-strong {
+    font-weight: bolder;
+}
+.orbium-markdown-content .cm-md-emphasis {
+    font-style: italic;
+}
+.orbium-markdown-content .cm-md-strike {
+    text-decoration: line-through;
+}
+.orbium-markdown-content .cm-md-inline-code {
+    font-family: var(--font-mono, monospace);
+}
+.orbium-markdown-content .cm-md-divider {
+    display: inline-block;
+    width: 100%;
+    vertical-align: middle;
+    margin: 0;
+}
+.orbium-markdown-live-preview .cm-placeholder {
+    color: var(--muted-foreground);
+}
+.orbium-slash-menu .cm-completionLabel {
+    font-family: var(--font-sans, sans-serif);
+}
+.orbium-slash-menu > ul > li:hover {
+    background: var(--accent);
+}
+.cm-tooltip.cm-tooltip-autocomplete.orbium-slash-menu {
+    background: var(--glass);
+    color: var(--foreground);
+    border: 1px solid var(--border);
+}
+.surface-normal .cm-tooltip.orbium-slash-menu,
+:root[data-surface-style='normal'] .cm-tooltip.orbium-slash-menu {
+    background: var(--card);
+}
+.surface-frosted .cm-tooltip.orbium-slash-menu,
+:root[data-surface-style='frosted'] .cm-tooltip.orbium-slash-menu {
+    background: var(--frosted-panel);
+    border-color: transparent;
+    box-shadow: none;
+}
+
+.orbium-editor .orbium-rich-block [hidden] {
+    display: none !important;
+}
+
+.orbium-editor .orbium-code-preview {
+    display: flex;
+    gap: 1rem;
+    overflow: auto;
+}
+
+.orbium-editor .orbium-code-line-numbers {
+    flex-shrink: 0;
+    color: var(--muted-foreground);
+    text-align: right;
+    user-select: none;
+}
+
+.orbium-editor .orbium-code-preview code {
+    flex: 1;
+    white-space: pre;
+}
+
+.orbium-editor .orbium-rich-table td,
+.orbium-editor .orbium-rich-table th {
+    min-width: 100px;
+}
+
+.orbium-editor .orbium-rich-block textarea {
+    line-height: 1.5;
+}
+
+.orbium-editor .orbium-rich-mode[aria-pressed='true'] {
+    background: var(--background);
+    color: var(--foreground);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.05);
+}

@@ -6,6 +6,7 @@ use App\Actions\Databases\ManageDatabase;
 use App\Models\DatabaseValue;
 use App\Models\Node;
 use App\Models\Workspace;
+use App\Services\Markdown\MarkdownContract;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -29,7 +30,8 @@ class ManageHierarchy
             if ($type === 'document') {
                 $node->document()->create([
                     'content' => ['type' => 'doc', 'content' => [['type' => 'paragraph']]],
-                    'content_format_version' => 1,
+                    'content_format_version' => MarkdownContract::FORMAT_VERSION,
+                    'markdown' => '',
                     'plain_text' => '',
                 ]);
             }

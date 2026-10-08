@@ -39,7 +39,13 @@ function retainedNavigationPage(page: Page, tabId: string): Page {
         props: {
             ...props,
             document: {
-                content: { type: 'doc', content: [] },
+                ...(document.content_format_version === 2
+                    ? {
+                          markdown: '',
+                          markdown_limits: document.markdown_limits,
+                      }
+                    : { content: { type: 'doc', content: [] } }),
+                content_format_version: document.content_format_version ?? 1,
                 revision: document.revision ?? 0,
                 cover_attachment_id: document.cover_attachment_id ?? null,
                 cover_aspect_ratio: document.cover_aspect_ratio ?? null,

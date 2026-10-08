@@ -76,6 +76,23 @@ class AttachmentController extends Controller
         return $this->serveAttachment($workspace, $node, $attachment, false);
     }
 
+    public function metadata(Request $request, int $workspace, int $node, int $attachment): JsonResponse
+    {
+        $documentNode = $request->user()->workspaces()->findOrFail($workspace)
+            ->nodes()->where('type', 'document')->findOrFail($node);
+        $this->assertVisible($documentNode);
+        $file = Attachment::query()->where('workspace_id', $workspace)
+            ->where('owner_node_id', $node)->findOrFail($attachment);
+
+        return response()->json([
+            'id' => $file->id,
+            'name' => $file->original_name,
+            'mime_type' => $file->mime_type,
+            'size_bytes' => $file->size_bytes,
+            'purpose' => $file->purpose,
+        ]);
+    }
+
     public function showNodeImage(Request $request, int $workspace, int $node, int $attachment): BinaryFileResponse
     {
         $container = $request->user()->workspaces()->findOrFail($workspace)

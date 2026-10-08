@@ -24,7 +24,8 @@ class DocumentController extends Controller
     {
         $documentNode = $this->ownedDocument($request, $workspace, $node);
         $document = $documentNode->document()->firstOrFail();
-        abort_if($document->content_format_version !== 1, 409, 'This Markdown document requires the M2 editor. Use a separate document for M1 API verification.');
+        abort_unless(in_array($document->content_format_version, [1, MarkdownContract::FORMAT_VERSION], true), 409, 'This document format requires a newer editor.');
+        abort_if($document->content_format_version === MarkdownContract::FORMAT_VERSION && ! is_string($document->markdown), 409, 'The stored Markdown source is unavailable.');
         $workspaceModel = $documentNode->workspace;
         $breadcrumbs = [['title' => $workspaceModel->name, 'href' => route('workspaces.show', $workspaceModel)]];
         $ancestors = [];
@@ -37,7 +38,12 @@ class DocumentController extends Controller
         return Inertia::render('documents/show', [
             'workspace' => $workspaceModel->only(['id', 'name']),
             'node' => $documentNode->only(['id', 'title', 'icon', 'parent_id']),
-            'document' => $document->only(['content', 'revision', 'cover_attachment_id', 'cover_aspect_ratio', 'icon_attachment_id']),
+            'document' => [
+                ...$document->only(['content_format_version', 'revision', 'cover_attachment_id', 'cover_aspect_ratio', 'icon_attachment_id']),
+                ...($document->content_format_version === MarkdownContract::FORMAT_VERSION
+                    ? ['markdown' => $document->markdown, 'markdown_limits' => ['source_bytes' => MarkdownContract::MAX_SOURCE_BYTES, 'line_bytes' => MarkdownContract::MAX_LINE_BYTES]]
+                    : ['content' => $document->content]),
+            ],
             'databaseProperties' => $documentNode->parent?->type === 'database'
                 ? DatabaseProperty::query()->where('database_node_id', $documentNode->parent_id)->orderBy('position')->get(['id', 'name', 'type', 'position', 'config']) : [],
             'databaseValues' => $documentNode->parent?->type === 'database'
@@ -73,6 +79,7 @@ class DocumentController extends Controller
 
     public function updateMarkdown(Request $request, int $workspace, int $node, SaveMarkdownDocument $save): JsonResponse
     {
+        $started = hrtime(true);
         $documentNode = $this->ownedDocument($request, $workspace, $node);
         abort_unless($request->isJson(), 415, 'Markdown saves require application/json.');
         $data = $request->validate([
@@ -84,11 +91,17 @@ class DocumentController extends Controller
             'attachment_ids' => ['prohibited'],
             'mermaid_sources_by_hash' => ['prohibited'],
         ]);
+        $validatedAt = hrtime(true);
         $document = $save->save($documentNode, new MarkdownSaveData(
             $data['markdown'], (int) $data['revision'], (int) $data['content_format_version'],
         ));
 
-        return response()->json(['revision' => $document->revision, 'saved_at' => $document->updated_at?->toIso8601String()]);
+        $response = response()->json(['revision' => $document->revision, 'saved_at' => $document->updated_at?->toIso8601String()]);
+        if (app()->isLocal()) {
+            $response->header('Server-Timing', sprintf('validation;dur=%.2f,save;dur=%.2f', ($validatedAt - $started) / 1e6, (hrtime(true) - $validatedAt) / 1e6));
+        }
+
+        return $response;
     }
 
     public function showMermaidPreview(Request $request, int $workspace, int $node, string $sourceHash, MermaidPreviewCache $mermaidPreviewCache): JsonResponse

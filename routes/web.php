@@ -50,6 +50,7 @@ Route::middleware('auth')->group(function () {
     Route::post('workspaces/{workspace}/documents/{node}/mermaid-previews', [DocumentController::class, 'storeMermaidPreview'])->name('documents.mermaid-previews.store');
     Route::patch('workspaces/{workspace}/documents/{node}/header', [DocumentController::class, 'updateHeader'])->name('documents.header');
     Route::post('workspaces/{workspace}/documents/{node}/attachments', [AttachmentController::class, 'store'])->name('attachments.store');
+    Route::get('workspaces/{workspace}/documents/{node}/attachments/{attachment}/metadata', [AttachmentController::class, 'metadata'])->name('attachments.metadata');
     Route::get('workspaces/{workspace}/documents/{node}/attachments/{attachment}', [AttachmentController::class, 'show'])->name('attachments.show');
     Route::patch('workspaces/{workspace}/nodes/{node}', [NodeController::class, 'update'])->name('nodes.update');
     Route::patch('workspaces/{workspace}/nodes/{node}/header', [NodeController::class, 'updateHeader'])->name('nodes.header');

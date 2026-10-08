@@ -2,6 +2,8 @@
 
 Date: 2026-10-07. Branch: `editor/codemirror-markdown`. Base: accepted M0 `5f9057d06ece36be62602e800bcbe6a086165885`. Status: implemented for manual review; M2 is gated on explicit approval. No automated tests were written or run. Runtime manual acceptance belongs to the user.
 
+Follow-up: [M2 source editor and manual baseline report](06-codemirror-markdown-m2-core.md) records the subsequently authorized UI integration, new-document defaults and application of the M1 migration. The M1 runtime boundary below is historical; M3 remains gated.
+
 ## Storage and temporary runtime boundary
 
 Migration `2026_10_07_000001_add_markdown_to_documents.php` adds nullable TEXT `documents.markdown`. Existing JSONB `content`, version defaults, header fields, revision and existing rows are retained. The migration has not been executed by the agent; no database reset or conversion occurred. Markdown is a plain UTF-8 string, without a structured-data cast. The model explicitly casts `content_format_version` and `revision` to integers.
