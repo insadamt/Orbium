@@ -29,7 +29,10 @@ export function mountMedia(mount: RichWidgetMount): RichController {
     image.loading = 'lazy';
     image.decoding = 'async';
     image.addEventListener('load', () => {
-        if (!destroyed) mount.view.requestMeasure();
+        if (!destroyed) {
+            applyImageWidth();
+            mount.view.requestMeasure();
+        }
     });
     image.addEventListener('error', () => {
         if (destroyed) return;
@@ -120,6 +123,15 @@ export function mountMedia(mount: RichWidgetMount): RichController {
         'span',
         'text-center text-[10px] leading-tight text-muted-foreground tabular-nums',
     );
+    function applyImageWidth() {
+        figure.style.width = `${block.metadata.width ? Math.max(120, Number(block.metadata.width)) : image.naturalWidth || 720}px`;
+    }
+    const widthObserver = new ResizeObserver(() => {
+        const measuredWidth = Math.round(frame.getBoundingClientRect().width);
+        widthLabel.textContent =
+            measuredWidth > 0 ? `${measuredWidth} px` : 'Auto';
+    });
+    if (imageMode) widthObserver.observe(frame);
     const fill = button('', () => {
         width.value = String(Math.round(mount.root.clientWidth));
         writeImageMetadata();
@@ -160,7 +172,7 @@ export function mountMedia(mount: RichWidgetMount): RichController {
         );
         figure.addEventListener('click', () => setSelected(true));
         figure.addEventListener('focusin', () => setSelected(true));
-        image.tabIndex = 0;
+        image.tabIndex = -1;
         image.draggable = false;
         image.setAttribute('aria-label', 'Select image');
         document.addEventListener('pointerdown', dismiss);
@@ -212,7 +224,7 @@ export function mountMedia(mount: RichWidgetMount): RichController {
         const handle = button('', () => {});
         handle.setAttribute(
             'aria-label',
-            `Resize image from ${direction < 0 ? 'left' : 'right'}`,
+            `Resize image from ${corner.replace('-', ' ')}`,
         );
         handle.className = `editor-image-resize-handle editor-image-resize-handle--${corner}`;
         handle.hidden = true;
@@ -252,6 +264,7 @@ export function mountMedia(mount: RichWidgetMount): RichController {
             );
             figure.style.width = `${value}px`;
             width.value = String(value);
+            widthLabel.textContent = `${value} px`;
             mount.view.requestMeasure();
         });
         handle.addEventListener('pointerup', (event) => {
@@ -267,7 +280,7 @@ export function mountMedia(mount: RichWidgetMount): RichController {
                     ? String(block.metadata.width)
                     : '';
             resize = null;
-            figure.style.width = `${Math.max(120, Number(block.metadata.width ?? 720))}px`;
+            applyImageWidth();
         });
         handle.addEventListener('keydown', (event) => {
             if (
@@ -280,7 +293,7 @@ export function mountMedia(mount: RichWidgetMount): RichController {
             width.value = String(
                 Math.max(
                     120,
-                    Number(block.metadata.width ?? 720) +
+                    frame.getBoundingClientRect().width +
                         (event.key === 'ArrowLeft' ? -1 : 1) *
                             (event.shiftKey ? 50 : 10),
                 ),
@@ -300,7 +313,7 @@ export function mountMedia(mount: RichWidgetMount): RichController {
             captionInput.disabled =
                 disabled;
         image.alt = next.label ?? '';
-        figure.style.width = `${Math.max(120, Number(next.metadata.width ?? 720))}px`;
+        applyImageWidth();
         image.style.width = '100%';
         figure.style.marginInlineStart = ['center', 'right'].includes(
             String(next.metadata.alignment),
@@ -324,7 +337,7 @@ export function mountMedia(mount: RichWidgetMount): RichController {
         }
         if (disabled) resize = null;
         caption.hidden = !selected && !next.metadata.caption;
-        widthLabel.textContent = `${Math.round(Math.min(Number(next.metadata.width ?? 720), mount.root.clientWidth))} px`;
+        if (!frame.isConnected) widthLabel.textContent = 'Auto';
         alignmentButtons.forEach((control, index) =>
             control.setAttribute(
                 'aria-pressed',
@@ -390,6 +403,7 @@ export function mountMedia(mount: RichWidgetMount): RichController {
     return {
         update,
         destroy() {
+            widthObserver.disconnect();
             controls.destroy();
             destroyed = true;
             request?.abort();

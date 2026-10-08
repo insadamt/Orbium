@@ -65,7 +65,11 @@ export const markdownTrailingParagraph = ViewPlugin.fromClass(
             this.button.className = 'orbium-markdown-trailing-paragraph';
             this.button.setAttribute('aria-label', 'Add a text block below');
             this.button.textContent = 'Click to write below';
-            this.button.addEventListener('click', this.addParagraph);
+            this.button.addEventListener(
+                'pointerdown',
+                this.pressWritingTarget,
+            );
+            this.button.addEventListener('click', this.activateWritingTarget);
             view.dom.append(this.button);
             view.dom.addEventListener('pointerdown', this.clickBelowContent);
             this.trailing = trailingSpecialBlock(
@@ -76,6 +80,17 @@ export const markdownTrailingParagraph = ViewPlugin.fromClass(
         }
 
         addParagraph = () => focusParagraphAfterLastBlock(this.view);
+
+        pressWritingTarget = (event: PointerEvent) => {
+            if (event.button !== 0) return;
+            // Image controls can collapse on blur and move this target before pointerup.
+            event.preventDefault();
+            this.addParagraph();
+        };
+
+        activateWritingTarget = (event: MouseEvent) => {
+            if (event.detail === 0) this.addParagraph();
+        };
 
         clickBelowContent = (event: PointerEvent) => {
             if (
@@ -133,7 +148,14 @@ export const markdownTrailingParagraph = ViewPlugin.fromClass(
         }
 
         destroy() {
-            this.button.removeEventListener('click', this.addParagraph);
+            this.button.removeEventListener(
+                'pointerdown',
+                this.pressWritingTarget,
+            );
+            this.button.removeEventListener(
+                'click',
+                this.activateWritingTarget,
+            );
             this.button.remove();
             this.view.dom.removeEventListener(
                 'pointerdown',

@@ -5,7 +5,9 @@ import {
     autocompletion,
     completionKeymap,
     acceptCompletion,
-    type CompletionContext,
+    closeCompletion,
+    selectedCompletion,
+    CompletionContext,
 } from '@codemirror/autocomplete';
 import { Prec } from '@codemirror/state';
 import { isolateHistory } from '@codemirror/commands';
@@ -191,6 +193,23 @@ export function markdownSlashCommands(
         }
         return { from: match.from, options, filter: false };
     };
+    function acceptCurrentSlashCommand(view: EditorView) {
+        const context = new CompletionContext(
+            view.state,
+            view.state.selection.main.head,
+            false,
+            view,
+        );
+        const result = view.state.selection.main.empty && slashSource(context);
+        if (!result || !result.options.length) return acceptCompletion(view);
+        const selected = selectedCompletion(view.state);
+        const option =
+            result.options.find((option) => option.label === selected?.label) ??
+            result.options[0];
+        closeCompletion(view);
+        option.apply(view, option, result.from, context.pos);
+        return true;
+    }
     return [
         autocompletion({
             override: [slashSource, markdownMentionSource(workspaceId)],
@@ -204,10 +223,12 @@ export function markdownSlashCommands(
         // Ctrl+Space belongs to Search Master, including while the slash picker is open.
         Prec.highest(
             keymap.of([
+                { key: 'Enter', run: acceptCurrentSlashCommand },
+                { key: 'Tab', run: acceptCurrentSlashCommand },
                 ...completionKeymap.filter(
-                    (binding) => binding.key !== 'Ctrl-Space',
+                    (binding) =>
+                        !['Ctrl-Space', 'Enter'].includes(binding.key ?? ''),
                 ),
-                { key: 'Tab', run: acceptCompletion },
             ]),
         ),
     ];

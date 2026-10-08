@@ -1,6 +1,7 @@
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
 import { mountInlineMathInput } from './inline-math-input';
+import { createRichSourceInput } from './rich-source-input';
 import { scheduleEditorIdleWork } from '../../schedule-editor-idle-work';
 import { serializeOrbiumBlock } from '../dialect/metadata';
 import type { RichBlock, RichController, RichWidgetMount } from './rich-model';
@@ -61,15 +62,7 @@ export function mountMath(mount: RichWidgetMount): RichController {
         return true;
     }
     if (controls) {
-        const input = element(
-            'textarea',
-            'mb-3 w-full rounded-md bg-muted p-3 font-mono text-sm',
-        );
-        input.rows = 4;
-        input.dir = 'ltr';
-        input.setAttribute('aria-label', 'Math source');
-        input.value = block.content;
-        input.hidden = true;
+        const input = createRichSourceInput('Math source', block.content);
         equationInput = input;
         controls.useContentEditor(input);
         input.addEventListener('keydown', (event) => {

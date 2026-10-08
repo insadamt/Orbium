@@ -17,6 +17,8 @@ import {
 } from './rich-effects';
 import type { RichBlock, RichContext } from './rich-model';
 import { MarkdownRichWidget } from './rich-widget';
+import { richBlockSelection } from './rich-block-selection';
+import { mapRichBlockEdge } from './rich-range-mapping';
 import { readEditableMarkdownPresentation } from '../interactions/markdown-editable-presentation';
 
 function collectBlocks(
@@ -87,25 +89,43 @@ export function markdownRichBlocks(context: RichContext) {
             let editors = previous.editors;
             let revealed = previous.revealed;
             if (revealed !== null && transaction.docChanged)
-                revealed = transaction.changes.mapPos(revealed, -1);
+                revealed = mapRichBlockEdge(
+                    transaction.changes,
+                    revealed,
+                    'start',
+                );
             if (transaction.docChanged) {
                 editors = new Set(
                     [...editors].map((from) =>
-                        transaction.changes.mapPos(from, -1),
+                        mapRichBlockEdge(transaction.changes, from, 'start'),
                     ),
                 );
                 blocks = blocks
                     .map((block) => {
-                        const from = transaction.changes.mapPos(block.from, -1);
-                        const to = transaction.changes.mapPos(block.to, 1);
-                        const contentFrom = transaction.changes.mapPos(
-                            block.contentFrom,
-                            -1,
+                        const from = mapRichBlockEdge(
+                            transaction.changes,
+                            block.from,
+                            'start',
                         );
-                        const contentTo = transaction.changes.mapPos(
-                            block.contentTo,
-                            1,
+                        const to = mapRichBlockEdge(
+                            transaction.changes,
+                            block.to,
+                            'end',
                         );
+                        const contentFrom =
+                            block.contentFrom === block.from
+                                ? from
+                                : transaction.changes.mapPos(
+                                      block.contentFrom,
+                                      -1,
+                                  );
+                        const contentTo =
+                            block.contentTo === block.to
+                                ? to
+                                : transaction.changes.mapPos(
+                                      block.contentTo,
+                                      1,
+                                  );
                         const source = transaction.state.sliceDoc(from, to);
                         if (source === block.source)
                             return {
@@ -332,5 +352,9 @@ export function markdownRichBlocks(context: RichContext) {
             }
         },
     );
-    return [field, manager];
+    return [
+        field,
+        manager,
+        richBlockSelection((view) => view.state.field(field).blocks),
+    ];
 }

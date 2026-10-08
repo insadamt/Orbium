@@ -142,7 +142,11 @@ export function sourceControls(
         if (next) {
             if (!customEditor) input.value = block.source;
             input.focus();
-        } else mount.view.focus();
+        } else
+            (
+                mount.root.closest<HTMLElement>('[data-rich-from]') ??
+                mount.root
+            ).focus({ preventScroll: true });
         mount.view.requestMeasure();
     }
     edit.setAttribute('aria-pressed', 'false');

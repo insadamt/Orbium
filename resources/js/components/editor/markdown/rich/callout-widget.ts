@@ -14,6 +14,7 @@ export function mountCallout(mount: RichWidgetMount) {
     const header = mount.view.state.doc.lineAt(block.contentFrom).text;
     const preview = element('div', 'cursor-text');
     preview.tabIndex = 0;
+    preview.dataset.richWriting = '';
     preview.setAttribute('aria-label', 'Edit callout');
     const input = element('div');
     input.hidden = true;

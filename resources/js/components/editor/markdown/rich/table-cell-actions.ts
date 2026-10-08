@@ -24,6 +24,13 @@ export function mountTableCellActions({
     hasSpans: () => boolean;
 }) {
     const structural: HTMLButtonElement[] = [];
+    const spanHint = element(
+        'p',
+        'w-full px-2 py-1 text-xs text-muted-foreground',
+        'Split spanning cells before adding or removing rows and columns.',
+    );
+    spanHint.hidden = true;
+    actions.append(spanHint);
     function structuralButton(
         label: string,
         action: (next: RichTable) => void,
@@ -178,6 +185,7 @@ export function mountTableCellActions({
             width.value = String(cell?.metadata.colwidth?.[0] ?? '');
         },
         update(disabled: boolean) {
+            spanHint.hidden = !hasSpans();
             for (const control of structural) {
                 control.disabled = disabled || hasSpans();
                 control.title = hasSpans()
@@ -190,6 +198,9 @@ export function mountTableCellActions({
                 alignment.disabled =
                     disabled;
             width.disabled = disabled || hasSpans();
+            width.title = hasSpans()
+                ? 'Split spanning cells before changing column width.'
+                : '';
         },
     };
 }

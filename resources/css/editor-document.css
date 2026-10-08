@@ -347,6 +347,27 @@
 .orbium-markdown-trailing-paragraph[hidden] {
     display: none;
 }
+
+.orbium-rich-block:focus {
+    outline: 2px solid var(--ring);
+    outline-offset: 3px;
+}
+.orbium-rich-source-input {
+    field-sizing: content;
+    min-height: 3rem;
+    max-height: 20rem;
+    resize: vertical;
+    border: 0;
+    border-bottom: 1px solid transparent;
+    border-radius: 0;
+    background: transparent;
+    padding: 0.5rem 0;
+    outline: none;
+    line-height: 1.55;
+}
+.orbium-rich-source-input:focus {
+    border-bottom-color: var(--ring);
+}
 .orbium-markdown-content .editor-block-dragging {
     opacity: 0.45;
 }

@@ -18,6 +18,23 @@ export type MarkdownBlockRange = {
     source: string;
 };
 
+export function isStructuralMarkdownSeparator(
+    state: EditorState,
+    position: number,
+) {
+    const line = state.doc.lineAt(position);
+    if (
+        line.text.trim() ||
+        line.number === 1 ||
+        line.number === state.doc.lines
+    )
+        return false;
+    return (
+        Boolean(state.doc.line(line.number - 1).text.trim()) &&
+        markdownBlockAt(state, position).source.trim() === ''
+    );
+}
+
 export function markdownBlockAt(
     state: EditorState,
     position: number,

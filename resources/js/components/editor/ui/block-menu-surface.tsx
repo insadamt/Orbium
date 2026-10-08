@@ -29,6 +29,7 @@ export type BlockMenuAnchor = {
     direction: 'ltr' | 'rtl';
 };
 type Props = {
+    currentBlockType?: string;
     anchor: BlockMenuAnchor;
     formatting: {
         alignment: string | null;
@@ -46,6 +47,7 @@ type Props = {
 };
 
 export function BlockMenuSurface({
+    currentBlockType,
     anchor,
     formatting,
     canMoveUp,
@@ -102,8 +104,13 @@ export function BlockMenuSurface({
                 <span>Block type</span>
                 <AppSelect
                     label="Turn block into"
-                    value=""
-                    placeholder="Turn into…"
+                    value={
+                        currentBlockType &&
+                        blockConversions.includes(currentBlockType)
+                            ? currentBlockType
+                            : ''
+                    }
+                    placeholder={currentBlockType ?? 'Turn into…'}
                     className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground"
                     contentClassName="block-context-select-content"
                     onValueChange={(value) => perform(() => onConvert(value))}

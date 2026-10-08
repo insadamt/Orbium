@@ -15,7 +15,7 @@ export const markdownPreviewTheme = [
         },
         '& > .cm-scroller > .cm-content': {
             padding: '0',
-            minHeight: '45vh',
+            minHeight: '0',
         },
         '.cm-activeLine': { backgroundColor: 'transparent' },
         '.cm-md-source': {

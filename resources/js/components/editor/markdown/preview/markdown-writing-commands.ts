@@ -1,6 +1,7 @@
 import { isolateHistory } from '@codemirror/commands';
 import { syntaxTree } from '@codemirror/language';
 import { Prec } from '@codemirror/state';
+import { exitEmptyMarkdownContainer } from './markdown-container-exit';
 import { EditorView, keymap } from '@codemirror/view';
 import type { SyntaxNode } from '@lezer/common';
 import { readEditableMarkdownPresentation } from '../interactions/markdown-editable-presentation';
@@ -190,7 +191,11 @@ function joinPreviousParagraph(view: EditorView): boolean {
 
 export const markdownWritingCommands = Prec.high(
     keymap.of([
-        { key: 'Enter', run: insertParagraph },
+        {
+            key: 'Enter',
+            run: (view) =>
+                exitEmptyMarkdownContainer(view) || insertParagraph(view),
+        },
         { key: 'Shift-Enter', run: insertLineBreak },
         {
             key: 'Backspace',

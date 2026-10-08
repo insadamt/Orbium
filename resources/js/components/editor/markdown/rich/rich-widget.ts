@@ -9,10 +9,12 @@ import { mountContainer } from './container-widget';
 import { mountEmptyParagraph } from './empty-widget';
 import { mountCallout } from './callout-widget';
 import { bindRichBlockHistory } from './widget-controls';
+import { bindRichBlockSelection } from './rich-block-selection';
 
 const presentationContainers = new WeakMap<HTMLElement, HTMLElement[]>();
 const controllers = new WeakMap<HTMLElement, RichController>();
 const observers = new WeakMap<HTMLElement, ResizeObserver>();
+const currentBlocks = new WeakMap<HTMLElement, RichBlock>();
 
 function richBlockClassName(kind: RichBlock['kind']) {
     const classes: Partial<Record<RichBlock['kind'], string>> = {
@@ -72,6 +74,8 @@ export class MarkdownRichWidget extends WidgetType {
             context: this.context,
         };
         bindRichBlockHistory(root, view);
+        if (!['inline-math', 'metadata', 'empty'].includes(this.block.kind))
+            bindRichBlockSelection(root, view, () => this.currentBlock(root));
         const controller =
             this.block.kind === 'empty'
                 ? mountEmptyParagraph(mount)
@@ -110,6 +114,7 @@ export class MarkdownRichWidget extends WidgetType {
         return controller.update(this.block);
     }
     private applyPresentation(root: HTMLElement) {
+        currentBlocks.set(root, this.block);
         root.dataset.richKind = this.block.kind;
         root.dataset.richFrom = String(this.block.from);
         root.dir = String(this.block.presentation.dir ?? 'auto');
@@ -121,6 +126,7 @@ export class MarkdownRichWidget extends WidgetType {
         });
     }
     destroy(root: HTMLElement) {
+        currentBlocks.delete(root);
         presentationContainers.delete(root);
         observers.get(root)?.disconnect();
         observers.delete(root);
@@ -129,5 +135,8 @@ export class MarkdownRichWidget extends WidgetType {
     }
     ignoreEvent() {
         return true;
+    }
+    private currentBlock(root: HTMLElement) {
+        return currentBlocks.get(root) ?? this.block;
     }
 }

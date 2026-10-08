@@ -20,6 +20,7 @@ import {
 import {
     adjacentMarkdownBlock,
     markdownBlockAt,
+    isStructuralMarkdownSeparator,
     markdownBlockPresentation,
     moveMarkdownBlock,
     replaceMarkdownBlock,
@@ -138,6 +139,13 @@ export function markdownBlockGutter(onNotice: (message: string) => void) {
                     this.view.compositionStarted
                 )
                     return;
+                if (
+                    isStructuralMarkdownSeparator(
+                        this.view.state,
+                        this.view.state.selection.main.head,
+                    )
+                )
+                    return;
                 this.block = markdownBlockAt(
                     this.view.state,
                     this.view.state.selection.main.head,
@@ -214,7 +222,11 @@ export function markdownBlockGutter(onNotice: (message: string) => void) {
                           x: event.clientX,
                           y: event.clientY,
                       });
-                if (position === null) return;
+                if (
+                    position === null ||
+                    isStructuralMarkdownSeparator(this.view.state, position)
+                )
+                    return;
                 event.preventDefault();
                 this.dismissMenu();
                 this.block = markdownBlockAt(this.view.state, position);
@@ -261,7 +273,14 @@ export function markdownBlockGutter(onNotice: (message: string) => void) {
                           x: event.clientX,
                           y: event.clientY,
                       });
-                if (position === null) return;
+                if (
+                    position === null ||
+                    isStructuralMarkdownSeparator(this.view.state, position)
+                ) {
+                    this.dom.hidden = true;
+                    this.block = null;
+                    return;
+                }
                 this.block = markdownBlockAt(this.view.state, position);
                 const top = markdownBlockControlTop(
                     this.view,

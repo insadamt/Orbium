@@ -29,6 +29,26 @@ const conversionPrefixes: Record<string, string> = {
     Code: '```',
 };
 
+function currentBlockType(name: string, source: string) {
+    const heading = /^(?:ATX|Setext)Heading([1-6])$/.exec(name);
+    if (heading) return `Heading ${heading[1]}`;
+    if (name === 'BulletList')
+        return /^\s*[-+*]\s+\[[ xX]\]/m.test(source)
+            ? 'Checklist'
+            : 'Bullet list';
+    const labels: Record<string, string> = {
+        Paragraph: 'Text',
+        OrderedList: 'Numbered list',
+        Blockquote: 'Quote',
+        FencedCode: 'Code',
+        CodeBlock: 'Code',
+        Table: 'Table',
+        OrbiumMathBlock: 'Math block',
+        HorizontalRule: 'Divider',
+    };
+    return labels[name] ?? 'Rich block';
+}
+
 export function mountMarkdownBlockMenu({
     view,
     block,
@@ -92,6 +112,10 @@ export function mountMarkdownBlockMenu({
     }
     root.render(
         <BlockMenuSurface
+            currentBlockType={currentBlockType(
+                presentation.name,
+                presentation.body,
+            )}
             anchor={anchor}
             formatting={{
                 alignment:

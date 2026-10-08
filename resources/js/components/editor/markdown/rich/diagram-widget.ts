@@ -1,5 +1,6 @@
 import { serializeOrbiumBlock } from '../dialect/metadata';
 import { fencedCodeSource } from './code-widget';
+import { createRichSourceInput } from './rich-source-input';
 import { instantiateMermaidSvg } from '../../mermaid-preview-renderer';
 import {
     applyMermaidPreviewDimensions,
@@ -16,15 +17,7 @@ import {
 export function mountDiagram(mount: RichWidgetMount): RichController {
     let current = mount.block;
     const controls = sourceControls(mount, 'Mermaid');
-    const input = element(
-        'textarea',
-        'mb-3 w-full rounded-md bg-muted p-3 font-mono text-sm',
-    );
-    input.rows = 6;
-    input.dir = 'ltr';
-    input.spellcheck = false;
-    input.setAttribute('aria-label', 'Mermaid source');
-    input.value = current.content;
+    const input = createRichSourceInput('Mermaid source', current.content);
     controls.useContentEditor(input);
     input.addEventListener('keydown', (event) => {
         if (!(event.ctrlKey || event.metaKey)) event.stopPropagation();

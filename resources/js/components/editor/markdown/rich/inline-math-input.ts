@@ -64,6 +64,10 @@ export function mountInlineMathInput(
     return {
         update(next: RichBlock) {
             block = next;
+            edit.setAttribute(
+                'aria-label',
+                `Edit inline math: ${next.content}`,
+            );
             if (input.value !== next.content) input.value = next.content;
             edit.disabled = input.readOnly = !mount.view.state.facet(
                 EditorView.editable,

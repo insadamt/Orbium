@@ -44,7 +44,7 @@ export function mountTable(mount: RichWidgetMount): RichController {
     mount.root.classList.add('group');
     const actions = element(
         'div',
-        'glass-surface absolute bottom-full left-0 z-20 mb-2 flex max-w-full flex-wrap items-center gap-1 rounded-xl border border-border p-1 shadow-lg',
+        'glass-surface mb-2 flex max-w-full flex-wrap items-center gap-1 rounded-xl border border-border p-1 shadow-lg',
     );
     actions.hidden = true;
     const options = button('', () => {
@@ -54,7 +54,7 @@ export function mountTable(mount: RichWidgetMount): RichController {
     options.setAttribute('aria-label', 'Table options');
     options.setAttribute('aria-expanded', 'false');
     options.className =
-        'glass-surface absolute right-0 bottom-full mb-1 rounded-md border border-border p-1 shadow-sm';
+        'glass-surface mb-1 ms-auto block rounded-md border border-border p-1 shadow-sm';
     options.append(widgetIcon('more', 16));
     options.hidden = true;
     mount.root.append(options);
