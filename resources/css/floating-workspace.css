@@ -7,6 +7,9 @@
 .dark .floating-workspace {
     background: #0d1012;
 }
+.floating-top-controls-spacer {
+    flex: 0 0 auto;
+}
 .floating-top-controls {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 720px) minmax(0, 1fr);

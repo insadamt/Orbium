@@ -184,6 +184,9 @@ export function NavigationTabStrip({
         edge: splitEdge,
         eligible: draggedCanSplit,
         clearEdge,
+        prepareHeldTab,
+        splitPreparedTab,
+        preparingDropTitle,
     } = useSplitTabDrag(draggedTab, tabs, activeId, splitGroups);
     const firstSplitTabIds = new Set(
         splitGroups.flatMap((group) => {
@@ -258,11 +261,12 @@ export function NavigationTabStrip({
             tabList.scrollLeft += tabBounds.right - listBounds.right;
     }, [activeId]);
 
-    function reorderTabs({ active, over }: DragEndEvent) {
+    async function reorderTabs({ active, over }: DragEndEvent) {
         setDraggedTab(null);
         clearEdge();
         if (splitEdge) {
-            useNavigation.getState().splitTab(String(active.id), splitEdge);
+            const tab = tabs.find((item) => item.id === String(active.id));
+            if (tab) await splitPreparedTab(tab, splitEdge);
             return;
         }
         if (over && active.id !== over.id)
@@ -285,11 +289,28 @@ export function NavigationTabStrip({
 
     return (
         <nav
+            onPointerDownCapture={(event) => {
+                const element =
+                    event.target instanceof Element
+                        ? event.target
+                              .closest('.tab-drag-surface')
+                              ?.closest<HTMLElement>('[data-tab-id]')
+                        : null;
+                const tab = tabs.find(
+                    (item) => item.id === element?.dataset.tabId,
+                );
+                if (tab) void prepareHeldTab(tab);
+            }}
             aria-label="Workspace tabs"
             className={
                 floating ? 'floating-tabs' : 'relative h-full min-w-0 flex-1'
             }
         >
+            {preparingDropTitle && (
+                <span className="split-preparing-status" role="status">
+                    Opening {preparingDropTitle}…
+                </span>
+            )}
             <DndContext
                 sensors={sensors}
                 collisionDetection={closestCenter}
@@ -317,6 +338,7 @@ export function NavigationTabStrip({
                             tabElement?.getBoundingClientRect().width ??
                                 active.rect.current.initial?.width,
                         );
+                        void prepareHeldTab(tab);
                         setDraggedTab(tab);
                     }
                 }}

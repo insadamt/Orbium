@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import type { SplitTabs, Tab } from './navigation-store';
+import { usePage } from '@inertiajs/react';
+import { prepareTabForSplit } from './split-tab-preparation';
+import { useNavigation, type SplitTabs, type Tab } from './navigation-store';
+import { hasRetainedDocument } from './tab-page-cache';
 import { groupForTab } from './split-group-state';
 import { canSplitTabs } from './split-tab-rules';
 
@@ -10,6 +13,10 @@ export function useSplitTabDrag(
     activeId: string,
     splitGroups: SplitTabs[],
 ) {
+    const { version } = usePage();
+    const [preparingDropTitle, setPreparingDropTitle] = useState<string | null>(
+        null,
+    );
     const [edge, setEdge] = useState<'left' | 'right' | null>(null);
     const activeTab = tabs.find((tab) => tab.id === activeId);
     const eligible = Boolean(
@@ -49,7 +56,61 @@ export function useSplitTabDrag(
         };
     }, [eligible]);
 
-    return { edge, eligible, clearEdge: () => setEdge(null) };
+    function prepareHeldTab(tab: Tab) {
+        if (groupForTab(splitGroups, tab.id)) return Promise.resolve(false);
+        const companion =
+            tab.id === activeId
+                ? tabs.find(
+                      (candidate) =>
+                          !groupForTab(splitGroups, candidate.id) &&
+                          canSplitTabs(tab, candidate),
+                  )
+                : activeTab;
+        if (!canSplitTabs(tab, companion)) return Promise.resolve(false);
+        return Promise.all([
+            prepareTabForSplit(tab, version),
+            companion
+                ? prepareTabForSplit(companion, version)
+                : Promise.resolve(false),
+        ]).then((prepared) => prepared.every(Boolean));
+    }
+
+    async function splitPreparedTab(tab: Tab, placement: 'left' | 'right') {
+        const previous = useNavigation.getState();
+        const companion = previous.tabs.find(
+            (item) => item.id === previous.activeId,
+        );
+        const companionUrl = companion?.entries[companion.index].url;
+        if (
+            !hasRetainedDocument(tab.id) &&
+            tab.entries[tab.index].kind === 'document'
+        )
+            setPreparingDropTitle(tab.entries[tab.index].title);
+        try {
+            await prepareHeldTab(tab);
+            const current = useNavigation.getState();
+            const currentCompanion = current.tabs.find(
+                (item) => item.id === current.activeId,
+            );
+            if (
+                current.activeId === previous.activeId &&
+                currentCompanion?.entries[currentCompanion.index].url ===
+                    companionUrl
+            )
+                current.splitTab(tab.id, placement);
+        } finally {
+            setPreparingDropTitle(null);
+        }
+    }
+
+    return {
+        edge,
+        eligible,
+        prepareHeldTab,
+        splitPreparedTab,
+        preparingDropTitle,
+        clearEdge: () => setEdge(null),
+    };
 }
 
 export function SplitEdgePreview({

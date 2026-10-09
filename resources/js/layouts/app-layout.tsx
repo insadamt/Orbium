@@ -13,7 +13,6 @@ import { NavigationBackButton } from '@/components/navigation/navigation-back-bu
 import { NavigationTabStrip } from '@/components/navigation/navigation-tab-strip';
 import { PageSearchProvider } from '@/components/navigation/page-search';
 import { RetainedDocumentWorkspace } from '@/components/navigation/retained-document-workspace';
-import { SplitWorkspace } from '@/components/navigation/split-workspace';
 import {
     locationForPage,
     notifyPaneLocation,
@@ -258,7 +257,6 @@ export default function AppLayout({ children }: AppLayoutProps) {
                             <RetainedDocumentWorkspace>
                                 {children}
                             </RetainedDocumentWorkspace>
-                            <SplitWorkspace>{null}</SplitWorkspace>
                         </>
                     )}
                 </main>

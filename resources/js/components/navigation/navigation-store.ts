@@ -1,5 +1,9 @@
 import { router } from '@inertiajs/react';
-import { allowTabClose, useTabPageCache } from './tab-page-cache';
+import {
+    allowTabClose,
+    hasRetainedDocument,
+    useTabPageCache,
+} from './tab-page-cache';
 import { create } from 'zustand';
 import { scheduleNavigationPersistence } from './navigation-persistence';
 import {
@@ -8,6 +12,7 @@ import {
     restoreSplitGroups,
 } from './split-group-state';
 import { canSplitTabs } from './split-tab-rules';
+import { captureSplitMotion } from './split-workspace-motion';
 
 export type Location = {
     url: string;
@@ -372,7 +377,13 @@ export const useNavigation = create<NavigationState>((set, get) => ({
             !canSplitTabs(draggedTab, companion)
         )
             return;
-        if (!allowTabClose(id) || !allowTabClose(companionId)) return;
+        if (
+            (!hasRetainedDocument(id) && !allowTabClose(id)) ||
+            (!hasRetainedDocument(companionId) && !allowTabClose(companionId))
+        )
+            return;
+        state.saveScroll();
+        captureSplitMotion(companionId, id);
         set({
             splitGroups: [
                 ...state.splitGroups,
@@ -386,9 +397,17 @@ export const useNavigation = create<NavigationState>((set, get) => ({
     clearSplit(tabId) {
         const group = groupForTab(get().splitGroups, tabId);
         if (!group) return;
-        if (!allowTabClose(group.leftId) || !allowTabClose(group.rightId))
+        if (
+            (!hasRetainedDocument(group.leftId) &&
+                !allowTabClose(group.leftId)) ||
+            (!hasRetainedDocument(group.rightId) &&
+                !allowTabClose(group.rightId))
+        )
             return;
-        useTabPageCache.getState().forgetPages([group.leftId, group.rightId]);
+        const framedTabIds = [group.leftId, group.rightId].filter(
+            (id) => !hasRetainedDocument(id),
+        );
+        useTabPageCache.getState().forgetPages(framedTabIds);
         const activeTab = get().tabs.find((tab) => tab.id === get().activeId);
         set({
             splitGroups: get().splitGroups.filter(
@@ -396,7 +415,7 @@ export const useNavigation = create<NavigationState>((set, get) => ({
             ),
         });
         persist(get());
-        if (activeTab && [group.leftId, group.rightId].includes(activeTab.id)) {
+        if (activeTab && framedTabIds.includes(activeTab.id)) {
             router.visit(activeTab.entries[activeTab.index].url, {
                 preserveScroll: true,
             });
@@ -443,17 +462,15 @@ export const useNavigation = create<NavigationState>((set, get) => ({
     saveScroll() {
         const state = get();
         const active = state.tabs.find((tab) => tab.id === state.activeId);
-        if (!active || active.entries[active.index].scroll === window.scrollY)
-            return;
+        const scroll = window.scrollY;
+        if (!active || active.entries[active.index].scroll === scroll) return;
         set({
             tabs: get().tabs.map((tab) =>
                 tab.id === get().activeId
                     ? {
                           ...tab,
                           entries: tab.entries.map((entry, i) =>
-                              i === tab.index
-                                  ? { ...entry, scroll: window.scrollY }
-                                  : entry,
+                              i === tab.index ? { ...entry, scroll } : entry,
                           ),
                       }
                     : tab,

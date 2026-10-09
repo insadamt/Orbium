@@ -127,52 +127,41 @@
     background: var(--background);
     color: var(--foreground);
 }
-.orbium-main:has(.split-workspace.is-active) {
-    display: flex;
-    flex-direction: column;
-    height: 100dvh;
-    overflow: hidden;
-    padding-bottom: 16px;
-}
-html:has(.split-workspace.is-active),
-body:has(.split-workspace.is-active) {
-    overflow: hidden;
-    scrollbar-width: none;
-}
-html:has(.split-workspace.is-active)::-webkit-scrollbar,
-body:has(.split-workspace.is-active)::-webkit-scrollbar {
-    display: none;
-}
 .split-workspace {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 16px;
-    flex: 1 1 auto;
+    min-width: 0;
     min-height: 0;
-    margin-top: 12px;
+    align-items: start;
+    margin-top: 80px;
+    overflow-x: clip;
 }
-.split-workspace.is-dormant {
-    position: fixed;
-    top: 0;
-    left: -200vw;
-    width: 100vw;
-    height: 100dvh;
-    margin: 0;
-    visibility: hidden;
-    pointer-events: none;
+.split-frame-group.is-active {
+    display: contents;
+}
+.split-frame-group.is-dormant {
+    display: none;
+}
+.split-pane-position-left {
+    grid-column: 1;
+    grid-row: 1;
+}
+.split-pane-position-right {
+    grid-column: 2;
+    grid-row: 1;
 }
 .split-pane-position {
     min-width: 0;
     min-height: 0;
-    overflow: hidden;
     container-type: inline-size;
 }
 .split-pane {
     width: 100%;
-    height: 100%;
+    height: auto;
     min-width: 0;
     min-height: 0;
-    overflow: auto;
+    overflow: visible;
 }
 .split-pane,
 .split-pane *,
@@ -212,12 +201,12 @@ html.orbium-embedded-document *::-webkit-scrollbar {
 .orbium-embedded-pane .floating-body-island {
     width: 100%;
     max-width: 100%;
-    margin-top: 80px;
+    margin-top: 0;
     padding: 44px 52px 64px;
 }
 .orbium-embedded-pane .floating-workspace {
     display: flow-root;
-    min-height: 100dvh;
+    min-height: 0;
     padding: 0;
 }
 html.orbium-embedded-document,
@@ -227,17 +216,28 @@ html.orbium-embedded-document .orbium-embedded-pane .floating-workspace {
     background: transparent;
     background-image: none;
 }
+@media (max-width: 1000px) {
+    .split-workspace {
+        margin-top: 64px;
+    }
+}
 @media (max-width: 700px) {
     .split-workspace {
         grid-template-columns: minmax(0, 1fr);
-        grid-template-rows: repeat(2, minmax(0, 1fr));
+        grid-template-rows: auto auto;
+    }
+    .split-pane-position-right {
+        grid-column: 1;
+        grid-row: 2;
     }
     .orbium-embedded-pane .floating-body-island {
-        margin-top: 32px;
         padding: 32px;
     }
 }
 @media (max-width: 480px) {
+    .split-workspace {
+        margin-top: 48px;
+    }
     .orbium-embedded-pane .floating-body-island {
         padding: 22px 18px 36px;
         border-radius: 24px;
@@ -245,7 +245,6 @@ html.orbium-embedded-document .orbium-embedded-pane .floating-workspace {
 }
 @container (max-width: 700px) {
     .split-pane .floating-body-island {
-        margin-top: 32px;
         padding: 32px;
     }
 }
@@ -288,4 +287,29 @@ html.orbium-embedded-document .orbium-embedded-pane .floating-workspace {
     .split-edge-zone span {
         transition: none;
     }
+}
+
+.split-preparing-status {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    z-index: 76;
+    max-width: calc(100vw - 48px);
+    padding: 10px 16px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--background);
+    color: var(--foreground);
+    font-size: 12px;
+    transform: translateX(-50%);
+}
+
+.orbium-embedded-pane .floating-document-island {
+    min-height: min(
+        calc(var(--orbium-host-viewport-height, 100dvh) * 0.75),
+        900px
+    );
+}
+.orbium-embedded-pane .floating-database-island {
+    min-height: calc(var(--orbium-host-viewport-height, 100dvh) * 0.65);
 }

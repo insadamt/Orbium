@@ -1,18 +1,44 @@
-import { useEffect, useState, type ReactNode } from 'react';
-import { useNavigation, type SplitTabs, type Tab } from './navigation-store';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useNavigation, type Tab } from './navigation-store';
 import { groupForTab } from './split-group-state';
 import { openLocation } from './tab-navigation';
+import { hasRetainedDocument, useTabPageCache } from './tab-page-cache';
+import { useSplitPreparation } from './split-tab-preparation';
+import { usePaneFrameHeight } from './use-pane-frame-height';
 
-function PaneFrame({ tab }: { tab: Tab }) {
-    const [initialUrl] = useState(() => tab.entries[tab.index].url);
+function PaneFrame({
+    tab,
+    side,
+    active,
+}: {
+    tab: Tab;
+    side?: 'left' | 'right';
+    active: boolean;
+}) {
+    const [initialUrl, setInitialUrl] = useState(
+        () => tab.entries[tab.index].url,
+    );
     const [isReady, setIsReady] = useState(false);
+    const frameRef = useRef<HTMLIFrameElement>(null);
+    const height = usePaneFrameHeight({ frameRef, isReady, active });
     const location = tab.entries[tab.index];
+    const previousUrl = useRef(location.url);
+    useEffect(() => {
+        if (!active && location.url !== previousUrl.current) {
+            setIsReady(false);
+            setInitialUrl(location.url);
+        }
+        previousUrl.current = location.url;
+    }, [active, location.url]);
 
     return (
         <section
-            className="split-pane split-pane-framed"
+            className={`split-pane split-pane-framed split-pane-position ${side ? `split-pane-position-${side}` : ''}`}
+            data-workspace-tab-id={tab.id}
             data-split-pane-id={tab.id}
             aria-label={`${location.title} pane`}
+            hidden={!active}
+            inert={!active}
         >
             {!isReady && (
                 <div className="split-pane-loading" role="status">
@@ -20,6 +46,8 @@ function PaneFrame({ tab }: { tab: Tab }) {
                 </div>
             )}
             <iframe
+                ref={frameRef}
+                style={{ height }}
                 title={`${location.title} pane`}
                 name={`orbium-pane:${tab.id}`}
                 src={initialUrl}
@@ -31,46 +59,26 @@ function PaneFrame({ tab }: { tab: Tab }) {
     );
 }
 
-function SplitPairWorkspace({
-    group,
-    leftTab,
-    rightTab,
-    active,
-}: {
-    group: SplitTabs;
-    leftTab: Tab;
-    rightTab: Tab;
-    active: boolean;
-}) {
-    const [hasActivated, setHasActivated] = useState(active);
-
-    useEffect(() => {
-        if (active) setHasActivated(true);
-    }, [active]);
-
-    // Keep visited frames alive for unsaved edits, but do not boot every restored group at startup.
-    if (!active && !hasActivated) return null;
-
-    return (
-        <div
-            className={`split-workspace ${active ? 'is-active' : 'is-dormant'}`}
-            data-split-group={group.leftId}
-            aria-hidden={!active}
-        >
-            <div className="split-pane-position split-pane-position-left">
-                <PaneFrame tab={leftTab} />
-            </div>
-            <div className="split-pane-position split-pane-position-right">
-                <PaneFrame tab={rightTab} />
-            </div>
-        </div>
-    );
-}
-
 export function SplitWorkspace({ children }: { children: ReactNode }) {
+    useTabPageCache((state) => state.pages);
+    const frameTabIds = useSplitPreparation((state) => state.frameTabIds);
     const splitGroups = useNavigation((state) => state.splitGroups);
     const tabs = useNavigation((state) => state.tabs);
     const activeId = useNavigation((state) => state.activeId);
+    const activeGroup = groupForTab(splitGroups, activeId);
+
+    useEffect(() => {
+        if (!activeGroup) return;
+        useSplitPreparation.setState((state) => ({
+            frameTabIds: Array.from(
+                new Set([
+                    ...state.frameTabIds,
+                    activeGroup.leftId,
+                    activeGroup.rightId,
+                ]),
+            ),
+        }));
+    }, [activeGroup]);
 
     useEffect(() => {
         function receivePaneNavigation(event: MessageEvent) {
@@ -119,25 +127,30 @@ export function SplitWorkspace({ children }: { children: ReactNode }) {
             window.removeEventListener('message', receivePaneNavigation);
     }, [splitGroups]);
 
-    if (!splitGroups.length) return <>{children}</>;
-
-    const activeGroup = groupForTab(splitGroups, activeId);
-
     return (
         <>
             {!activeGroup && children}
-            {splitGroups.map((group) => {
-                const leftTab = tabs.find((tab) => tab.id === group.leftId);
-                const rightTab = tabs.find((tab) => tab.id === group.rightId);
-                return leftTab && rightTab ? (
-                    <SplitPairWorkspace
-                        key={`${group.leftId}:${group.rightId}`}
-                        group={group}
-                        leftTab={leftTab}
-                        rightTab={rightTab}
-                        active={group === activeGroup}
+            {tabs.map((tab) => {
+                const group = groupForTab(splitGroups, tab.id);
+                if (
+                    hasRetainedDocument(tab.id) ||
+                    ((!group || group !== activeGroup) &&
+                        !frameTabIds.includes(tab.id))
+                )
+                    return null;
+                const side = group
+                    ? group.leftId === tab.id
+                        ? 'left'
+                        : 'right'
+                    : undefined;
+                return (
+                    <PaneFrame
+                        key={tab.id}
+                        tab={tab}
+                        side={side}
+                        active={Boolean(group && group === activeGroup)}
                     />
-                ) : null;
+                );
             })}
         </>
     );

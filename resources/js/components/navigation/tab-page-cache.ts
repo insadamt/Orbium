@@ -9,6 +9,7 @@ type CachedTabPage = { page: Page; generation: number };
 type TabPageCache = {
     pages: Record<string, CachedTabPage>;
     rememberPage: (page: Page) => void;
+    rememberPreparedPage: (prepared: { tabId: string; page: Page }) => void;
     releaseClosedPages: (visibleTabId?: string) => void;
     forgetPages: (tabIds: string[]) => void;
 };
@@ -85,6 +86,20 @@ export const useTabPageCache = create<TabPageCache>((set, get) => ({
             },
         });
     },
+    rememberPreparedPage({ tabId, page }) {
+        const tab = useNavigation
+            .getState()
+            .tabs.find((item) => item.id === tabId);
+        if (!tab || tab.entries[tab.index].url !== page.url) return;
+        const previous = get().pages[tabId];
+        if (previous?.page.url === page.url) return;
+        set({
+            pages: {
+                ...get().pages,
+                [tabId]: { page, generation: (previous?.generation ?? 0) + 1 },
+            },
+        });
+    },
     forgetPages(tabIds) {
         const excluded = new Set(tabIds);
         set({
@@ -106,6 +121,15 @@ export const useTabPageCache = create<TabPageCache>((set, get) => ({
             set({ pages });
     },
 }));
+
+export function hasRetainedDocument(tabId: string) {
+    const tab = useNavigation.getState().tabs.find((item) => item.id === tabId);
+    const cached = useTabPageCache.getState().pages[tabId];
+    return (
+        cached?.page.component === 'documents/show' &&
+        cached.page.url === tab?.entries[tab.index].url
+    );
+}
 
 export function cachedPageForTab(id: string) {
     const tab = useNavigation.getState().tabs.find((item) => item.id === id);

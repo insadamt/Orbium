@@ -7,7 +7,12 @@ export const markdownPreviewTheme = [
         class: 'orbium-editor orbium-markdown-content',
     }),
     EditorView.theme({
-        '&': { height: 'auto', minHeight: '45vh', fontSize: '1.03rem' },
+        '&': {
+            height: 'auto',
+            minHeight:
+                'calc(var(--orbium-host-viewport-height, 100dvh) * 0.45)',
+            fontSize: '1.03rem',
+        },
         '& > .cm-scroller': {
             fontFamily: 'var(--font-sans, sans-serif)',
             lineHeight: '1.75',

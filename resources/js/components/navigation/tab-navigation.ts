@@ -6,6 +6,7 @@ import { useNavigation, type Location } from './navigation-store';
 import {
     allowTabClose,
     cachedPageForTab,
+    hasRetainedDocument,
     useTabPageCache,
 } from './tab-page-cache';
 import { groupForTab } from './split-group-state';
@@ -233,11 +234,16 @@ export function closeTab(id: string) {
     if (group) {
         const companionId = group.leftId === id ? group.rightId : group.leftId;
         if (!allowTabClose(companionId)) return;
-        useTabPageCache.getState().forgetPages([companionId]);
+        if (!hasRetainedDocument(companionId))
+            useTabPageCache.getState().forgetPages([companionId]);
     }
     if (state.activeId !== id) {
         state.close(id);
-        if (group && [group.leftId, group.rightId].includes(state.activeId)) {
+        if (
+            group &&
+            [group.leftId, group.rightId].includes(state.activeId) &&
+            !hasRetainedDocument(state.activeId)
+        ) {
             const activeTab = state.tabs.find(
                 (tab) => tab.id === state.activeId,
             );

@@ -28,6 +28,10 @@ The 2026-10-05 user-approved editor styles addition remains in Phase 5 review: S
 
 The 2026-10-06 editor styles UX review implements the approved focused-dialog plan without starting another phase. [The redesign report](../reports/05-editor-styles-redesign.md) records the actual checks, library limits, and replacement manual checklist.
 
+The 2026-10-09 [split document retention fix](../reports/05-split-document-retention.md) reuses loaded document editors when entering and ending a split, preserving editor state and avoiding duplicate iframe loads. Database and unvisited restored panes retain the existing iframe fallback. Manual acceptance remains pending.
+
+The 2026-10-09 [split motion and preparation enhancement](../reports/05-split-motion-preparation.md) adds GSAP split/merge transitions and prepares eligible held tabs before drop. Reduced motion remains immediate. Static checks and manual acceptance are recorded in the report; visual testing is left to the user.
+
 ## Current floating workspace pass (2026-09-30)
 
 The workspace selector now includes **Manage workspaces**, which opens the Workspaces section in Settings. Its floating manager offers compact creation, drag reorder, row menus for Rename and Move to Trash, and a collapsible Trash with Restore and permanent deletion. Permanent deletion is reached from a trashed workspace's menu and requires the exact workspace name; the server repeats that check and removes the workspace hierarchy, related records, and attachment directory. Search and document text fields use borderless surfaces without a black native focus frame.

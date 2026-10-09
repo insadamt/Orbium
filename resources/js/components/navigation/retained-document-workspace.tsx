@@ -1,4 +1,11 @@
-import { memo, useEffect, useMemo, type ReactNode } from 'react';
+import {
+    memo,
+    useEffect,
+    useLayoutEffect,
+    useMemo,
+    type ReactNode,
+} from 'react';
+import { flushSync } from 'react-dom';
 import type { Page } from '@inertiajs/core';
 import { usePage } from '@inertiajs/react';
 import {
@@ -9,6 +16,11 @@ import { DocumentTabContext } from './document-tab-context';
 import { useNavigation } from './navigation-store';
 import { useTabPageCache } from './tab-page-cache';
 import { groupForTab } from './split-group-state';
+import { SplitWorkspace } from './split-workspace';
+import {
+    disposeSplitMotion,
+    playPendingSplitMotion,
+} from './split-workspace-motion';
 
 function DocumentSurface({
     page,
@@ -37,18 +49,39 @@ const RetainedDocumentTab = memo(function RetainedDocumentTab({
     page,
     visible,
     active,
+    side,
 }: {
     tabId: string;
     page: Page;
     visible: boolean;
     active: boolean;
+    side?: 'left' | 'right';
 }) {
+    function activatePane() {
+        if (side && !active)
+            flushSync(() => useNavigation.getState().activate(tabId));
+    }
+
     const documentTab = useMemo(
         () => ({ tabId, active, visible, url: page.url }),
         [tabId, active, visible, page.url],
     );
     return (
-        <div hidden={!visible} inert={!active} aria-busy={visible && !active}>
+        <div
+            hidden={!visible}
+            inert={!visible || (!side && !active)}
+            aria-busy={visible && !side && !active}
+            className={
+                side
+                    ? `split-pane split-pane-position split-pane-position-${side}`
+                    : undefined
+            }
+            data-workspace-tab-id={tabId}
+            data-split-pane-id={side ? tabId : undefined}
+            tabIndex={side ? -1 : undefined}
+            onPointerDownCapture={activatePane}
+            onFocusCapture={activatePane}
+        >
             <DocumentTabContext.Provider value={documentTab}>
                 <DocumentSurface page={page} />
             </DocumentTabContext.Provider>
@@ -85,6 +118,12 @@ export function RetainedDocumentWorkspace({
           ? activeId
           : outgoingDocumentId;
 
+    useLayoutEffect(() => {
+        playPendingSplitMotion();
+    }, [splitGroups]);
+
+    useEffect(() => disposeSplitMotion, []);
+
     useEffect(() => {
         // Keep the outgoing surface until its replacement exists, then tear it down after paint.
         let timer: number | undefined;
@@ -104,7 +143,7 @@ export function RetainedDocumentWorkspace({
     }, [tabs, visibleDocumentId]);
 
     return (
-        <>
+        <div className={activeGroup ? 'split-workspace is-active' : undefined}>
             {!activeGroup &&
                 !visibleDocumentId &&
                 (currentPage.component === 'documents/show' ? (
@@ -115,12 +154,20 @@ export function RetainedDocumentWorkspace({
                     children
                 ))}
             {Object.entries(pages).map(([tabId, cached]) => {
-                if (
-                    cached.page.component !== 'documents/show' ||
-                    groupForTab(splitGroups, tabId)
-                )
-                    return null;
-                const visible = tabId === visibleDocumentId;
+                if (cached.page.component !== 'documents/show') return null;
+                const group = groupForTab(splitGroups, tabId);
+                const tab = tabs.find((tab) => tab.id === tabId);
+                const isSplitPane = Boolean(
+                    group && cached.page.url === tab?.entries[tab.index].url,
+                );
+                const side = isSplitPane
+                    ? group?.leftId === tabId
+                        ? 'left'
+                        : 'right'
+                    : undefined;
+                const visible =
+                    (isSplitPane && group === activeGroup) ||
+                    tabId === visibleDocumentId;
                 const active =
                     visible && destinationDocumentIsReady && tabId === activeId;
                 return (
@@ -130,9 +177,11 @@ export function RetainedDocumentWorkspace({
                         page={cached.page}
                         visible={visible}
                         active={active}
+                        side={side}
                     />
                 );
             })}
-        </>
+            <SplitWorkspace>{null}</SplitWorkspace>
+        </div>
     );
 }

@@ -6,6 +6,7 @@ import type { Tab } from './navigation-store';
 import { useNavigation } from './navigation-store';
 import { NavigationTabIcon } from './navigation-tab-icon';
 import { activateTab } from './tab-navigation';
+import { endSplitWithMotion } from './split-workspace-actions';
 
 type Props = {
     left: Tab;
@@ -35,8 +36,8 @@ export function SplitNavigationTab({
     } = useSortable({ id: sortId });
 
     useEffect(() => {
-        if (!isGroupActive) setFocusedId(activeId);
-    }, [activeId, isGroupActive]);
+        setFocusedId(activeId);
+    }, [activeId]);
 
     function selectPane(tabId: string) {
         if (!isGroupActive) {
@@ -44,6 +45,7 @@ export function SplitNavigationTab({
             setFocusedId(tabId);
             return;
         }
+        useNavigation.getState().activate(tabId);
         setFocusedId(tabId);
         const pane = Array.from(
             document.querySelectorAll<HTMLElement>('[data-split-pane-id]'),
@@ -94,7 +96,7 @@ export function SplitNavigationTab({
                 aria-label="End split"
                 title="End split"
                 className="split-navigation-close"
-                onClick={() => useNavigation.getState().clearSplit(left.id)}
+                onClick={() => endSplitWithMotion(left.id)}
             >
                 <X size={14} aria-hidden="true" />
             </button>

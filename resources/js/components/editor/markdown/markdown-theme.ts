@@ -32,7 +32,7 @@ export function markdownTheme(dark: boolean) {
                 color: 'var(--foreground)',
                 backgroundColor: 'transparent',
                 fontSize: '14px',
-                height: 'clamp(240px, 65dvh, 900px)',
+                height: 'clamp(240px, calc(var(--orbium-host-viewport-height, 100dvh) * 0.65), 900px)',
             },
             '& > .cm-scroller': {
                 overflow: 'auto',

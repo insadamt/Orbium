@@ -315,7 +315,11 @@ export function FloatingTopControls({
                     </Menu.Root>
                 </div>
             </header>
-            <div aria-hidden="true" style={{ height: topControlsHeight }} />
+            <div
+                className="floating-top-controls-spacer"
+                aria-hidden="true"
+                style={{ height: topControlsHeight }}
+            />
             <Dialog open={newWorkspaceOpen} onOpenChange={setNewWorkspaceOpen}>
                 <DialogContent>
                     <DialogTitle>New workspace</DialogTitle>
