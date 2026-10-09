@@ -199,3 +199,165 @@ for bundle sizes and mixed static/dynamic imports.
    scroll limit. Undo/redo, save and reload; expected: correct persistent order.
 
 Suggested commit: `fix(editor): anchor block drops above the insertion boundary`
+
+
+## Approved follow-up — upper/lower pane drop behavior
+
+The user approved splitting the visible editor pane into upper and lower halves.
+This supersedes the previous always-above anchoring rule. At pointer release:
+
+- Upper half: keep the bottom edge of the block above the insertion line fixed;
+  the inserted block makes room downward.
+- Lower half: keep the top edge of the block below the insertion line fixed;
+  the inserted block makes room upward.
+- Exactly at the midpoint: use the upper-half rule.
+
+The insertion line still determines the source order. The drop half is chosen
+using release coordinates and the originating pane's clipped viewport, so wheel
+scrolling, edge scrolling, resize and split panes use the current geometry.
+Neighbor discovery skips the dragged source; source offsets map through the move
+before the selected edge is remeasured. No neighboring or measurable anchor
+falls back to offset preservation. Browser scroll limits still constrain full
+compensation. No new packages, persistent changes or commits.
+
+Library review: the existing installed CodeMirror geometry/change-mapping APIs
+and [official reference](https://codemirror.net/docs/ref/) remain sufficient.
+CodeMirror supplies coordinates and source mapping; the direction rule is
+Orbium product behavior. Continue the previously user-approved own solution;
+no dependency change is needed. No automated tests written or run. Manual
+browser acceptance remains pending.
+
+### Upper/lower validation
+
+All checks exited with status 0:
+
+- Targeted formatting: passed.
+- `npm run types:check`: passed.
+- `npm run lint`: passed; 365 formatted files and 299 linted files without warnings/errors.
+- `npm run build`: passed in 8.77 seconds. Bundle-size, mixed static/dynamic import and plugin timing warnings remain (87% of build time in plugin hooks).
+- `git diff --check`: passed.
+
+No PHP files changed; PHP checks were not needed.
+
+### Upper/lower manual checklist
+
+1. Open a long document with separated paragraphs and a tall code block. Drag
+   the code block to an insertion line in the upper half of the visible pane.
+   Expected: the block above the line stays at its screen position; content
+   underneath shifts down. The resulting order matches the line.
+2. Undo, then drop the same block at a line in the lower half. Expected: the
+   block below the line stays at its screen position; content above shifts up
+   to make room. No automatic caret focus or rich-source reveal.
+3. Repeat both drops using before/after placement and with sources originally
+   above and below the destination. Expected: the half, rather than drag travel
+   direction, selects which side stays fixed. Lists, tables and images move as
+   complete blocks.
+4. While holding a block, wheel-scroll to put the destination into the other
+   half, then release. Expected: the release half controls anchoring. Repeat
+   with edge scrolling; expected: scrolling and the insertion line still work.
+5. Repeat in split panes, at 80%/125% zoom, and after resizing a pane. Expected:
+   each pane uses its own current visible midpoint. Release exactly at the
+   midpoint; expected: the upper-half rule.
+6. Drop at the first/last boundary, on the source itself, and at the physical
+   scroll limits. Expected: valid ordering without duplicate blocks; absent
+   anchors or clamped scrolling use the documented fallback. Undo/redo, wait
+   for Saved and reload; expected: the resulting order persists.
+
+Suggested commit: `feat(editor): anchor block drops by visible pane half`
+
+
+## Review repair — show the moved block's top
+
+The user reported that drops were leaving the bottom visible instead of the
+beginning. Lower-half neighbor anchoring can put the beginning of a tall block
+above the pane. After the selected half's positioning, drop handling now checks
+the moved block's top and scrolls only when needed to keep that top and its first
+line within the visible pane, with a 12-pixel inset. It does not try to fit the
+whole block or scroll to its bottom. Top visibility takes priority over neighbor
+anchoring when both cannot be satisfied. Already-visible beginnings require no
+additional adjustment.
+
+The moved block's start is computed from the insertion's CodeMirror change
+mapping. Rendered widget/character geometry is used when available, with the
+CodeMirror line-block height map as the fallback for an offscreen beginning.
+The check runs synchronously and again after the layout frame. Caret focus,
+source reveal, block order, wheel scrolling and keyboard/menu behavior remain
+unchanged. This is a repair using the user's existing approved CodeMirror
+solution; no packages, formats, migrations or commits were added.
+
+### Top-visibility validation
+
+All checks exited with status 0: targeted formatting, `npm run types:check`,
+`npm run lint` (365 formatted files, 299 linted files without warnings/errors),
+`npm run build` (9.65 seconds), and `git diff --check`. Bundle-size and mixed
+static/dynamic import warnings remain. No automated tests written or run.
+Browser acceptance is pending. Browser scroll limits can constrain positioning;
+late changes in media/diagram heights remain subject to manual review.
+
+### Top-visibility manual checklist
+
+1. Create a long document with several paragraphs and a code block taller than
+   the visible pane. Drag the code block to a boundary in the lower half.
+   Expected: its header/first line remains visible after release; the view does
+   not settle on only its bottom. Its bottom may be below the viewport.
+2. Undo, then repeat in the upper half and using before/after placement.
+   Expected: the top is visible for each move; when anchoring already leaves it
+   visible, there is no extra scroll adjustment.
+3. Repeat with a tall table, list, image or Mermaid block in a long document.
+   Expected: the beginning of the moved block appears and source is not revealed
+   or focused automatically. Check both immediately after release and after
+   the next layout frame.
+4. Wheel-scroll while holding the block, drop in a split pane, and repeat at
+   80%/125% zoom. Expected: the originating pane retains the top of the dropped
+   block, wheel dragging still works, and the other pane remains unaffected.
+5. Check small blocks, self/adjacent drops, Escape cancellation, undo/redo and
+   save/reload. Expected: existing ordering and cancellation behavior continues;
+   small blocks with visible tops do not introduce extra scrolling.
+
+Suggested commit: `fix(editor): keep moved block top visible after drop`
+
+## Final direction choice — always push content below
+
+The user chose one rule for every variation: insertions push content below
+downward. This supersedes the upper/lower pane behavior. Pointer drops now always
+anchor the bottom edge of the preceding block. The lower neighbor discovery,
+pane-midpoint decision and unused release-coordinate argument were removed.
+Source order still follows the insertion line. Before/after placement, source
+travel direction and pane half do not change the push direction.
+
+The moved block's top-visibility check, pointer dragging, wheel/edge scrolling,
+undo/autosave and keyboard/menu movement remain. Missing/unmeasurable preceding
+anchors use offset preservation; scroll limits can constrain compensation.
+Keeping a clipped beginning visible can require a small viewport adjustment.
+This uses the previously approved CodeMirror/Orbium solution; no dependencies,
+formats, migrations or commits changed. No automated tests written or run.
+Browser acceptance remains pending.
+
+### Final direction validation
+
+All checks exited with status 0: targeted formatting, `npm run types:check`,
+`npm run lint` (365 formatted files; 299 linted files without warnings/errors),
+`npm run build` (10.95 seconds), and `git diff --check`. Build warnings remain
+for bundle sizes, mixed static/dynamic imports and plugin timings (85% of build
+time in plugin hooks). No PHP files changed; PHP checks were not needed.
+
+### Final direction manual checklist
+
+1. In a long document, drag a paragraph between two visible blocks in the upper
+   half, then repeat in the lower half. Expected: the preceding block stays in
+   place and the following content moves down in both cases.
+2. Repeat before/after placement with sources originally above and below the
+   destination. Expected: the line determines order, and all placements make
+   room below rather than above.
+3. Drop a code block taller than the pane in each half. Expected: content below
+   is pushed down and the block's header/first line is visible after release;
+   its bottom may remain offscreen. Repeat with tables, lists and images.
+4. Wheel-scroll and edge-scroll while holding a block, then drop in a split pane
+   and repeat at 80%/125% zoom. Expected: the same downward rule in all cases,
+   working scrolling and no change in the other pane.
+5. Check first/last boundaries, self/adjacent drops, Escape, undo/redo and
+   save/reload. Expected: no duplicate blocks or extra separators, correct
+   persisted order and no lingering drag feedback. Physical scroll limits can
+   clamp the viewport adjustment.
+
+Suggested commit: `fix(editor): always push content below block drops`

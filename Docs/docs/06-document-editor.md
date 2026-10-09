@@ -461,12 +461,17 @@ tracked when text color controls are outside the editor DOM.
 The Markdown editor grip uses pointer capture with an Orbium block controller.
 A fixed insertion line targets complete top-level source blocks. Edge dragging
 and mouse-wheel/trackpad input scroll the enclosing document pane; wheel deltas
-retain their pixel, line or page units. Drops keep the block immediately above the insertion boundary at its screen
-position so the inserted block pushes content below downward. Source removal
-above the destination is compensated by adjusting the scroll offset. At the
-first boundary, or when the anchor is not measurable, offsets are retained as a
-fallback. Drops do not focus the editor or select/reveal the moved block.
-Keyboard/menu moves retain their caret and scroll behavior. A source change
+retain their pixel, line or page units. Every pointer drop anchors the block
+above the insertion line so content below moves downward, regardless of the
+pane half or drag direction. The insertion line still controls block order.
+When there is no preceding anchor, or it cannot be measured, offsets are retained
+as fallback. Scroll limits can constrain compensation. Drops do not focus the
+editor or select/reveal the moved block. After anchoring, the moved block's top
+is kept visible with a small pane-edge inset. If its beginning would be clipped,
+top visibility takes priority over keeping the preceding block stationary;
+a block that is already visible causes no additional scrolling. This runs again
+after the layout frame. Keyboard/menu moves retain their caret and scroll
+behavior. A source change
 cancels a pending drag; drops on another document do not move content. Existing
 block-menu and Alt+Shift+Up/Down movement remain available. Nested reparenting and
 multi-block selection dragging are not implemented. Touch behavior is not yet
