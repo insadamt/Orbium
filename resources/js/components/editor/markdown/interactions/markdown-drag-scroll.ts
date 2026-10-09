@@ -41,6 +41,11 @@ export function scrollMarkdownDrag(
         direction < 0 ? pointerY - viewport.top : viewport.bottom - pointerY;
     const delta =
         direction * (1 - distance / edge) * Math.min(elapsed, 32) * 0.65;
+    return scrollMarkdownDragBy(view, delta);
+}
+
+export function scrollMarkdownDragBy(view: EditorView, delta: number) {
+    let remaining = delta;
     for (
         let element: HTMLElement | null = view.scrollDOM;
         element;
@@ -49,10 +54,11 @@ export function scrollMarkdownDrag(
         if (!/(auto|scroll)/.test(getComputedStyle(element).overflowY))
             continue;
         const previous = element.scrollTop;
-        element.scrollTop += delta;
-        if (element.scrollTop !== previous) return true;
+        element.scrollTo({ top: previous + remaining, behavior: 'instant' });
+        remaining -= element.scrollTop - previous;
+        if (Math.abs(remaining) < 1) return true;
     }
     const previous = window.scrollY;
-    window.scrollBy({ top: delta, behavior: 'instant' });
-    return window.scrollY !== previous;
+    window.scrollBy({ top: remaining, behavior: 'instant' });
+    return remaining !== delta || window.scrollY !== previous;
 }

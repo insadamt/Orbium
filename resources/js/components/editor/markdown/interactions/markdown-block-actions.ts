@@ -111,6 +111,7 @@ export function moveMarkdownBlock(
     block: MarkdownBlockRange,
     target: MarkdownBlockRange,
     placement = target.from < block.from ? 'before' : 'after',
+    options: { preserveViewport?: boolean } = {},
 ) {
     if (
         block.from === target.from ||
@@ -166,12 +167,13 @@ export function moveMarkdownBlock(
         changes.mapPos(destination, -1) + (placement === 'before' ? 0 : 2);
     view.dispatch({
         changes,
-        selection: { anchor },
+        selection: options.preserveViewport ? undefined : { anchor },
         annotations: isolateHistory.of('full'),
         userEvent: 'move.block',
-        scrollIntoView: true,
+        scrollIntoView: !options.preserveViewport,
     });
-    view.focus();
+    if (!options.preserveViewport) view.focus();
+    return changes;
 }
 
 export function markdownBlockPresentation(

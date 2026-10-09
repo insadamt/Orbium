@@ -144,10 +144,7 @@ export function markdownBlockDropTarget(
     };
 }
 
-export function showMarkdownBlockDragPreview(
-    event: DragEvent,
-    block: MarkdownBlockRange,
-) {
+export function createMarkdownBlockDragPreview(block: MarkdownBlockRange) {
     const preview = document.createElement('div');
     preview.className = 'editor-block-drag-preview';
     preview.textContent =
@@ -155,6 +152,5 @@ export function showMarkdownBlockDragPreview(
             .text.trim()
             .slice(0, 90) || 'Empty block';
     document.body.append(preview);
-    event.dataTransfer?.setDragImage(preview, 16, 16);
-    setTimeout(() => preview.remove(), 0);
+    return preview;
 }
