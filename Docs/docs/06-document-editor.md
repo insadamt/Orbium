@@ -455,3 +455,14 @@ text-color picker share the same raised frosted surface in frosted mode; normal 
 uses a solid card surface. Unsupported backdrop filters and reduced-transparency
 preferences retain the existing more-opaque surface fallback. Toolbar focus remains
 tracked when text color controls are outside the editor DOM.
+
+### CodeMirror block drag and drop (2026-10-09)
+
+The Markdown editor grip uses native desktop dragging with an Orbium block
+controller. A fixed insertion line targets complete top-level source blocks;
+edge dragging scrolls the enclosing document pane. CodeMirror and nested rich
+editors do not process these block drops as text. A source change cancels a
+pending drag; drops on another document do not move content. Existing block-menu
+and Alt+Shift+Up/Down movement remain available. Native touch dragging, nested
+reparenting and multi-block selection dragging are not implemented. Manual
+acceptance is tracked in `../reports/06-codemirror-block-drag-drop.md`.

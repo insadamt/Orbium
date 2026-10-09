@@ -17,6 +17,22 @@
 .orbium-editor > .editor-block-dragging {
     opacity: 0.45;
 }
+.orbium-markdown-drop-indicator {
+    position: fixed;
+    z-index: 60;
+    pointer-events: none;
+    border-top: 2px solid var(--foreground);
+}
+.orbium-markdown-drop-indicator::before {
+    content: '';
+    position: absolute;
+    top: -4px;
+    left: -3px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--foreground);
+}
 .editor-block-drag-preview {
     position: fixed;
     top: 0;

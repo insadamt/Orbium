@@ -11,12 +11,8 @@ import { mountMarkdownBlockMenu } from './markdown-block-menu';
 import { createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { GripVertical, Plus } from 'lucide-react';
-import {
-    markdownBlockDropTarget,
-    markdownBlockElement,
-    markdownBlockControlTop,
-    showMarkdownBlockDragPreview,
-} from './markdown-block-drag';
+import { markdownBlockControlTop } from './markdown-block-drag';
+import { MarkdownBlockDragController } from './markdown-block-drag-controller';
 import {
     adjacentMarkdownBlock,
     markdownBlockAt,
@@ -32,15 +28,10 @@ export function markdownBlockGutter(onNotice: (message: string) => void) {
         class {
             dom = document.createElement('div');
             panel = document.createElement('div');
-            dropIndicator = document.createElement('div');
-            draggedElement: HTMLElement | null = null;
+            dragController: MarkdownBlockDragController;
             block: MarkdownBlockRange | null = null;
             closeMenu: (() => void) | null = null;
             iconRoots: Root[] = [];
-            dragging: {
-                block: MarkdownBlockRange;
-                doc: EditorView['state']['doc'];
-            } | null = null;
             constructor(readonly view: EditorView) {
                 this.dom.className =
                     'orbium-markdown-gutter absolute left-0 z-10 flex items-center rounded-lg text-muted-foreground sm:-left-12';
@@ -58,11 +49,17 @@ export function markdownBlockGutter(onNotice: (message: string) => void) {
                     )
                         this.dismissMenu();
                 });
-                const handle = interactionButton(
+                const handle = document.createElement('button');
+                handle.type = 'button';
+                handle.setAttribute(
+                    'aria-label',
                     'Drag block or open block menu',
-                    '',
-                    () => this.openMenu(),
                 );
+                handle.title = 'Drag to reorder · Click for block menu';
+                handle.addEventListener('click', () => {
+                    if (!this.dragController.suppressHandleClick)
+                        this.openMenu();
+                });
                 add.className =
                     'rounded-md p-1 hover:bg-accent hover:text-foreground';
                 handle.className =
@@ -72,43 +69,19 @@ export function markdownBlockGutter(onNotice: (message: string) => void) {
                 this.iconRoots[1].render(
                     createElement(GripVertical, { size: 17 }),
                 );
-                handle.draggable = true;
-                handle.addEventListener('dragstart', (event) => {
-                    if (!this.block || !view.state.facet(EditorView.editable)) {
-                        event.preventDefault();
-                        return;
-                    }
-                    this.dragging = { block: this.block, doc: view.state.doc };
-                    this.draggedElement = markdownBlockElement(
-                        view,
-                        this.block,
-                    );
-                    this.draggedElement?.classList.add('editor-block-dragging');
-                    showMarkdownBlockDragPreview(event, this.block);
-                    event.dataTransfer?.setData(
-                        'application/x-orbium-block',
-                        String(this.block.from),
-                    );
-                    if (event.dataTransfer)
-                        event.dataTransfer.effectAllowed = 'move';
-                    this.dismissMenu();
-                });
-                handle.addEventListener('dragend', () => {
-                    this.dragging = null;
-                    this.finishDrag();
+                this.dragController = new MarkdownBlockDragController({
+                    view,
+                    handle,
+                    currentBlock: () => this.block,
+                    onStart: () => this.dismissMenu(),
+                    onNotice,
                 });
                 this.dom.append(add, handle);
                 document.body.append(this.panel);
                 this.panel.hidden = true;
                 view.dom.append(this.dom);
-                this.dropIndicator.className =
-                    'pointer-events-none absolute right-0 left-0 z-10 border-t-2 border-foreground/60';
-                this.dropIndicator.hidden = true;
-                view.dom.append(this.dropIndicator);
                 view.dom.addEventListener('pointermove', this.hover);
                 view.dom.addEventListener('pointerleave', this.leave);
-                view.dom.addEventListener('dragover', this.dragOver);
-                view.dom.addEventListener('drop', this.drop);
                 view.dom.addEventListener('contextmenu', this.contextMenu);
                 window.addEventListener('scroll', this.viewportChanged, true);
                 window.addEventListener('resize', this.viewportChanged);
@@ -259,6 +232,7 @@ export function markdownBlockGutter(onNotice: (message: string) => void) {
 
             hover = (event: PointerEvent) => {
                 if (
+                    this.dragController.active ||
                     !this.panel.hidden ||
                     this.dom.contains(event.target as Node) ||
                     !this.view.state.facet(EditorView.editable)
@@ -307,47 +281,8 @@ export function markdownBlockGutter(onNotice: (message: string) => void) {
                 )
                     this.dismissMenu();
             };
-            dragOver = (event: DragEvent) => {
-                if (this.dragging) {
-                    event.preventDefault();
-                    if (event.dataTransfer)
-                        event.dataTransfer.dropEffect = 'move';
-                    const target = markdownBlockDropTarget(this.view, event);
-                    this.dropIndicator.hidden =
-                        !target ||
-                        target.block.from === this.dragging.block.from;
-                    if (target)
-                        this.dropIndicator.style.top = `${target.top}px`;
-                }
-            };
-            finishDrag() {
-                this.draggedElement?.classList.remove('editor-block-dragging');
-                this.draggedElement = null;
-                this.dropIndicator.hidden = true;
-            }
-            drop = (event: DragEvent) => {
-                if (!this.dragging) return;
-                event.preventDefault();
-                event.stopPropagation();
-                const drag = this.dragging;
-                this.dragging = null;
-                this.finishDrag();
-                if (drag.doc !== this.view.state.doc) {
-                    onNotice(
-                        'The document changed during the drag. Drag the block again.',
-                    );
-                    return;
-                }
-                const target = markdownBlockDropTarget(this.view, event);
-                if (target)
-                    moveMarkdownBlock(
-                        this.view,
-                        drag.block,
-                        target.block,
-                        target.placement,
-                    );
-            };
             update(update: ViewUpdate) {
+                this.dragController.update(update);
                 if (
                     update.docChanged ||
                     update.viewportChanged ||
@@ -361,8 +296,6 @@ export function markdownBlockGutter(onNotice: (message: string) => void) {
             destroy() {
                 this.view.dom.removeEventListener('pointermove', this.hover);
                 this.view.dom.removeEventListener('pointerleave', this.leave);
-                this.view.dom.removeEventListener('dragover', this.dragOver);
-                this.view.dom.removeEventListener('drop', this.drop);
                 this.view.dom.removeEventListener(
                     'contextmenu',
                     this.contextMenu,
@@ -377,8 +310,7 @@ export function markdownBlockGutter(onNotice: (message: string) => void) {
                 this.panel.remove();
                 document.removeEventListener('pointerdown', this.dismiss);
                 this.dom.remove();
-                this.finishDrag();
-                this.dropIndicator.remove();
+                this.dragController.destroy();
                 const roots = this.iconRoots;
                 queueMicrotask(() => roots.forEach((root) => root.unmount()));
             }

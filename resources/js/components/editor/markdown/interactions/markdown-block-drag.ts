@@ -1,3 +1,4 @@
+import { syntaxTree } from '@codemirror/language';
 import type { EditorView } from '@codemirror/view';
 import {
     markdownBlockAt,
@@ -74,33 +75,72 @@ export function markdownBlockControlTop(
     );
 }
 
-export function markdownBlockDropTarget(view: EditorView, event: DragEvent) {
+type MarkdownDragPointer = {
+    clientX: number;
+    clientY: number;
+    target: EventTarget | null;
+};
+
+export function markdownBlockDropTarget(
+    view: EditorView,
+    pointer: MarkdownDragPointer,
+) {
     const widget =
-        event.target instanceof Element
-            ? event.target.closest<HTMLElement>('[data-rich-from]')
+        pointer.target instanceof Element
+            ? pointer.target.closest<HTMLElement>('[data-rich-from]')
             : null;
+    const content = view.contentDOM.getBoundingClientRect();
     const position = widget
         ? Number(widget.dataset.richFrom)
-        : view.posAtCoords({ x: event.clientX, y: event.clientY });
-    if (position === null) return null;
-    const block = markdownBlockAt(view.state, position);
+        : view.posAtCoords(
+              {
+                  x: Math.max(
+                      content.left + 1,
+                      Math.min(content.right - 1, pointer.clientX),
+                  ),
+                  y: pointer.clientY,
+              },
+              false,
+          );
+    if (position === null || !Number.isFinite(position)) return null;
+    let block = markdownBlockAt(view.state, position);
+    if (!block.source.trim()) {
+        const tree = syntaxTree(view.state).topNode;
+        const previous = tree.childBefore(position);
+        const next = tree.childAfter(position);
+        const previousBottom =
+            previous && view.coordsAtPos(previous.to)?.bottom;
+        const nextTop = next && view.coordsAtPos(next.from)?.top;
+        const neighbor =
+            previous && next && previousBottom != null && nextTop != null
+                ? pointer.clientY < (previousBottom + nextTop) / 2
+                    ? previous
+                    : next
+                : (previous ?? next);
+        if (neighbor) block = markdownBlockAt(view.state, neighbor.from);
+    }
     const element = markdownBlockElement(view, block);
     const bounds = element?.getBoundingClientRect();
     const start = view.coordsAtPos(block.from);
     const end = view.coordsAtPos(block.to);
-    const top = bounds?.top ?? start?.top;
-    const bottom = bounds?.bottom ?? end?.bottom;
+    // A multi-line source block spans several cm-line elements.
+    const top =
+        bounds && start
+            ? Math.min(bounds.top, start.top)
+            : (bounds?.top ?? start?.top);
+    const bottom =
+        bounds && end
+            ? Math.max(bounds.bottom, end.bottom)
+            : (bounds?.bottom ?? end?.bottom);
     if (top === undefined || bottom === undefined) return null;
     const placement =
-        event.clientY < (top + bottom) / 2
+        pointer.clientY < (top + bottom) / 2
             ? ('before' as const)
             : ('after' as const);
     return {
         block,
         placement,
-        top:
-            (placement === 'before' ? top - 4 : bottom + 4) -
-            view.dom.getBoundingClientRect().top,
+        top: placement === 'before' ? top - 4 : bottom + 4,
     };
 }
 

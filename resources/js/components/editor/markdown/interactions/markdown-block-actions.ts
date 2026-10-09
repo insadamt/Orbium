@@ -122,7 +122,20 @@ export function moveMarkdownBlock(
         view.state.sliceDoc(target.from, target.to) !== target.source
     )
         return;
-    if (!view.state.facet(EditorView.editable) || view.compositionStarted)
+    if (
+        !view.state.facet(EditorView.editable) ||
+        view.state.readOnly ||
+        view.compositionStarted
+    )
+        return;
+    if (
+        (placement === 'before' &&
+            block.to <= target.from &&
+            !view.state.sliceDoc(block.to, target.from).trim()) ||
+        (placement === 'after' &&
+            target.to <= block.from &&
+            !view.state.sliceDoc(target.to, block.from).trim())
+    )
         return;
     // Move an adjacent separator too, so repeated drags do not accumulate empty paragraphs.
     let removalTo = block.to;
