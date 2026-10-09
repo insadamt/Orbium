@@ -462,7 +462,10 @@ export const useNavigation = create<NavigationState>((set, get) => ({
     saveScroll() {
         const state = get();
         const active = state.tabs.find((tab) => tab.id === state.activeId);
-        const scroll = window.scrollY;
+        const pane = Array.from(
+            document.querySelectorAll<HTMLElement>('.split-pane:not([hidden])'),
+        ).find((pane) => pane.dataset.splitPaneId === state.activeId);
+        const scroll = pane?.scrollTop ?? window.scrollY;
         if (!active || active.entries[active.index].scroll === scroll) return;
         set({
             tabs: get().tabs.map((tab) =>

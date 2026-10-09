@@ -32,6 +32,8 @@ The 2026-10-09 [split document retention fix](../reports/05-split-document-reten
 
 The 2026-10-09 [split motion and preparation enhancement](../reports/05-split-motion-preparation.md) adds GSAP split/merge transitions and prepares eligible held tabs before drop. Reduced motion remains immediate. Static checks and manual acceptance are recorded in the report; visual testing is left to the user.
 
+The 2026-10-09 user-approved split scrolling correction remains in Phase 5 review. Panes scroll independently under the navbar when hovered; wheel input outside both panes moves both. The requested revision removes the Settings Guide and Alt + wheel behavior. See [the correction report](../reports/05-split-cursor-scrolling.md) for implementation limits and manual checks.
+
 ## Current floating workspace pass (2026-09-30)
 
 The workspace selector now includes **Manage workspaces**, which opens the Workspaces section in Settings. Its floating manager offers compact creation, drag reorder, row menus for Rename and Move to Trash, and a collapsible Trash with Restore and permanent deletion. Permanent deletion is reached from a trashed workspace's menu and requires the exact workspace name; the server repeats that check and removes the workspace hierarchy, related records, and attachment directory. Search and document text fields use borderless surfaces without a black native focus frame.

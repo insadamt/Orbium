@@ -1,13 +1,16 @@
 import { useLayoutEffect, useState, type RefObject } from 'react';
+import { attachPaneWheelScrolling } from './split-pane-scroll';
 
 export function usePaneFrameHeight({
     frameRef,
     isReady,
     active,
+    loadVersion,
 }: {
     frameRef: RefObject<HTMLIFrameElement | null>;
     isReady: boolean;
     active: boolean;
+    loadVersion: number;
 }) {
     const [height, setHeight] = useState(() => window.innerHeight);
 
@@ -40,16 +43,25 @@ export function usePaneFrameHeight({
         }
 
         const observer = new ResizeObserver(scheduleContentMeasurement);
+        const pane = frame.closest<HTMLElement>('.split-pane');
+        const detachWheel =
+            active && pane
+                ? attachPaneWheelScrolling({
+                      pane,
+                      eventTarget: paneDocument,
+                  })
+                : undefined;
         observer.observe(main);
         window.addEventListener('resize', scheduleContentMeasurement);
         measureContentHeight();
         return () => {
             observer.disconnect();
+            detachWheel?.();
             window.removeEventListener('resize', scheduleContentMeasurement);
             if (scheduledFrame !== undefined)
                 cancelAnimationFrame(scheduledFrame);
         };
-    }, [frameRef, isReady, active]);
+    }, [frameRef, isReady, active, loadVersion]);
 
     return height;
 }

@@ -3,6 +3,7 @@ import {
     useEffect,
     useLayoutEffect,
     useMemo,
+    useRef,
     type ReactNode,
 } from 'react';
 import { flushSync } from 'react-dom';
@@ -17,6 +18,8 @@ import { useNavigation } from './navigation-store';
 import { useTabPageCache } from './tab-page-cache';
 import { groupForTab } from './split-group-state';
 import { SplitWorkspace } from './split-workspace';
+import { useSplitPaneScroll } from './use-split-pane-scroll';
+import { attachWorkspaceWheelScrolling } from './split-pane-scroll';
 import {
     disposeSplitMotion,
     playPendingSplitMotion,
@@ -57,6 +60,11 @@ const RetainedDocumentTab = memo(function RetainedDocumentTab({
     active: boolean;
     side?: 'left' | 'right';
 }) {
+    const paneRef = useSplitPaneScroll({
+        tabId,
+        split: Boolean(side),
+        visible,
+    });
     function activatePane() {
         if (side && !active)
             flushSync(() => useNavigation.getState().activate(tabId));
@@ -68,6 +76,7 @@ const RetainedDocumentTab = memo(function RetainedDocumentTab({
     );
     return (
         <div
+            ref={paneRef}
             hidden={!visible}
             inert={!visible || (!side && !active)}
             aria-busy={visible && !side && !active}
@@ -100,6 +109,7 @@ export function RetainedDocumentWorkspace({
     const tabs = useNavigation((state) => state.tabs);
     const splitGroups = useNavigation((state) => state.splitGroups);
     const activeGroup = groupForTab(splitGroups, activeId);
+    const workspaceRef = useRef<HTMLDivElement>(null);
     const activeTab = tabs.find((tab) => tab.id === activeId);
     const activeCached = pages[activeId];
     const destinationDocumentIsReady =
@@ -117,6 +127,32 @@ export function RetainedDocumentWorkspace({
         : destinationDocumentIsReady
           ? activeId
           : outgoingDocumentId;
+
+    useLayoutEffect(() => {
+        const workspace = workspaceRef.current;
+        if (!activeGroup || !workspace) return;
+        window.scrollTo(0, 0);
+        let previousOffset = 0;
+        const updateWorkspaceOffset = () => {
+            const top =
+                workspace.getBoundingClientRect().top +
+                window.scrollY +
+                previousOffset;
+            previousOffset = top;
+            workspace.style.setProperty('--split-workspace-offset', `${top}px`);
+        };
+        updateWorkspaceOffset();
+        const detachWheel = attachWorkspaceWheelScrolling(workspace);
+        const observer = new ResizeObserver(updateWorkspaceOffset);
+        observer.observe(workspace);
+        window.addEventListener('resize', updateWorkspaceOffset);
+        return () => {
+            observer.disconnect();
+            detachWheel();
+            window.removeEventListener('resize', updateWorkspaceOffset);
+            workspace.style.removeProperty('--split-workspace-offset');
+        };
+    }, [activeGroup]);
 
     useLayoutEffect(() => {
         playPendingSplitMotion();
@@ -143,7 +179,10 @@ export function RetainedDocumentWorkspace({
     }, [tabs, visibleDocumentId]);
 
     return (
-        <div className={activeGroup ? 'split-workspace is-active' : undefined}>
+        <div
+            ref={workspaceRef}
+            className={activeGroup ? 'split-workspace is-active' : undefined}
+        >
             {!activeGroup &&
                 !visibleDocumentId &&
                 (currentPage.component === 'documents/show' ? (

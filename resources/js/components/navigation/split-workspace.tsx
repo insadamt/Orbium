@@ -5,6 +5,7 @@ import { openLocation } from './tab-navigation';
 import { hasRetainedDocument, useTabPageCache } from './tab-page-cache';
 import { useSplitPreparation } from './split-tab-preparation';
 import { usePaneFrameHeight } from './use-pane-frame-height';
+import { useSplitPaneScroll } from './use-split-pane-scroll';
 
 function PaneFrame({
     tab,
@@ -15,12 +16,23 @@ function PaneFrame({
     side?: 'left' | 'right';
     active: boolean;
 }) {
+    const paneRef = useSplitPaneScroll({
+        tabId: tab.id,
+        split: Boolean(side),
+        visible: active,
+    });
     const [initialUrl, setInitialUrl] = useState(
         () => tab.entries[tab.index].url,
     );
     const [isReady, setIsReady] = useState(false);
+    const [loadVersion, setLoadVersion] = useState(0);
     const frameRef = useRef<HTMLIFrameElement>(null);
-    const height = usePaneFrameHeight({ frameRef, isReady, active });
+    const height = usePaneFrameHeight({
+        frameRef,
+        isReady,
+        active,
+        loadVersion,
+    });
     const location = tab.entries[tab.index];
     const previousUrl = useRef(location.url);
     useEffect(() => {
@@ -33,6 +45,7 @@ function PaneFrame({
 
     return (
         <section
+            ref={paneRef}
             className={`split-pane split-pane-framed split-pane-position ${side ? `split-pane-position-${side}` : ''}`}
             data-workspace-tab-id={tab.id}
             data-split-pane-id={tab.id}
@@ -53,7 +66,10 @@ function PaneFrame({
                 src={initialUrl}
                 loading="eager"
                 className={isReady ? 'is-ready' : ''}
-                onLoad={() => setIsReady(true)}
+                onLoad={() => {
+                    setIsReady(true);
+                    setLoadVersion((version) => version + 1);
+                }}
             />
         </section>
     );

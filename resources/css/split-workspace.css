@@ -134,7 +134,8 @@
     min-width: 0;
     min-height: 0;
     align-items: start;
-    margin-top: 80px;
+    --split-page-gap: 80px;
+    margin-top: calc(-1 * var(--split-workspace-offset, 0px));
     overflow-x: clip;
 }
 .split-frame-group.is-active {
@@ -158,10 +159,16 @@
 }
 .split-pane {
     width: 100%;
-    height: auto;
+    height: 100dvh;
     min-width: 0;
     min-height: 0;
-    overflow: visible;
+    padding-top: calc(
+        var(--split-workspace-offset, 0px) + var(--split-page-gap, 80px)
+    );
+    padding-bottom: 64px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
 }
 .split-pane,
 .split-pane *,
@@ -218,7 +225,7 @@ html.orbium-embedded-document .orbium-embedded-pane .floating-workspace {
 }
 @media (max-width: 1000px) {
     .split-workspace {
-        margin-top: 64px;
+        --split-page-gap: 64px;
     }
 }
 @media (max-width: 700px) {
@@ -236,7 +243,7 @@ html.orbium-embedded-document .orbium-embedded-pane .floating-workspace {
 }
 @media (max-width: 480px) {
     .split-workspace {
-        margin-top: 48px;
+        --split-page-gap: 48px;
     }
     .orbium-embedded-pane .floating-body-island {
         padding: 22px 18px 36px;
