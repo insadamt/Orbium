@@ -7,7 +7,7 @@ export const markdownPreviewTheme = [
         class: 'orbium-editor orbium-markdown-content',
     }),
     EditorView.theme({
-        '&': {
+        '&.cm-editor': {
             height: 'auto',
             minHeight:
                 'calc(var(--orbium-host-viewport-height, 100dvh) * 0.45)',
@@ -17,6 +17,7 @@ export const markdownPreviewTheme = [
             fontFamily: 'var(--font-sans, sans-serif)',
             lineHeight: '1.75',
             overflow: 'visible',
+            overscrollBehaviorY: 'auto',
         },
         '& > .cm-scroller > .cm-content': {
             padding: '0',

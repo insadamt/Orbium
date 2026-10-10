@@ -28,7 +28,7 @@ export function markdownSourceHighlighting(dark: boolean) {
 export function markdownTheme(dark: boolean) {
     return EditorView.theme(
         {
-            '&': {
+            '&.cm-editor': {
                 color: 'var(--foreground)',
                 backgroundColor: 'transparent',
                 fontSize: '14px',
@@ -36,6 +36,7 @@ export function markdownTheme(dark: boolean) {
             },
             '& > .cm-scroller': {
                 overflow: 'auto',
+                overscrollBehaviorY: 'contain',
                 fontFamily: 'var(--font-mono, monospace)',
                 lineHeight: '1.7',
             },

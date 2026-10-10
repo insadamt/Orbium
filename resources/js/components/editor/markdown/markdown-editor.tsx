@@ -427,9 +427,6 @@ export default function MarkdownEditor(props: MarkdownEditorProps) {
                 data-live-preview={livePreview}
                 data-orbium-markdown-editor={props.nodeId}
             />
-            <p className="mt-10 text-xs text-muted-foreground">
-                Type / for blocks, @ to mention, or use Markdown shortcuts.
-            </p>
         </section>
     );
 }

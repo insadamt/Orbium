@@ -1,0 +1,57 @@
+.floating-workspace.document-workspace:not(:has(> .split-workspace.is-active)) {
+    display: flex;
+    flex-direction: column;
+    min-height: 100dvh;
+    padding-bottom: 16px;
+}
+
+.document-workspace > .retained-document-workspace:not(.is-active),
+.document-workspace
+    > .retained-document-workspace:not(.is-active)
+    > div:not([hidden]) {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+}
+
+.document-workspace
+    > .retained-document-workspace:not(.is-active)
+    > div:not([hidden])
+    > .floating-document-island {
+    width: 100%;
+    flex-grow: 1;
+}
+
+.floating-workspace:has(> .split-workspace.is-active) {
+    min-height: 0;
+    padding-bottom: 0;
+}
+
+.orbium-shell:has(> .document-workspace),
+.orbium-shell:has(> .floating-workspace > .split-workspace.is-active) {
+    min-height: 0;
+}
+
+.floating-workspace .floating-document-island {
+    min-height: 0;
+    padding-bottom: 16px;
+}
+
+.split-pane:has(> .floating-document-island) {
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 16px;
+}
+
+.split-pane > .floating-document-island {
+    flex: 1 0 auto;
+}
+
+.orbium-embedded-pane
+    .floating-workspace.document-workspace:not(
+        :has(> .split-workspace.is-active)
+    ) {
+    display: block;
+    min-height: 0;
+    padding-bottom: 0;
+}

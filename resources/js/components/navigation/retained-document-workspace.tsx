@@ -181,7 +181,11 @@ export function RetainedDocumentWorkspace({
     return (
         <div
             ref={workspaceRef}
-            className={activeGroup ? 'split-workspace is-active' : undefined}
+            className={
+                activeGroup
+                    ? 'retained-document-workspace split-workspace is-active'
+                    : 'retained-document-workspace'
+            }
         >
             {!activeGroup &&
                 !visibleDocumentId &&

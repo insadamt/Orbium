@@ -454,9 +454,6 @@ export default function DocumentEditor({
                     onClose={() => setMenu(null)}
                 />
             )}
-            <p className="mt-10 text-xs text-muted-foreground">
-                Type / for blocks, @ to mention, or use Markdown shortcuts.
-            </p>
         </div>
     );
 }

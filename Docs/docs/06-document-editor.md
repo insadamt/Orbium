@@ -29,6 +29,15 @@ Icons that do not match 512×512 open a crop dialog. Every new cover opens the c
 
 No permanent formatting toolbar.
 
+The editor is the final area on document pages, with a 16px outer bottom margin
+and 16px of padding inside the island. A short document island grows to fill
+the remaining viewport height; longer documents scroll naturally and finish
+16px above the screen's bottom edge. The retained workspace and visible tab
+pass the remaining height to the island. The shortcut hint is not rendered
+below it. Empty writing space within the editor remains available.
+CodeMirror root height rules target `.cm-editor` explicitly because the external
+tooltip host shares theme classes and must not reserve editor-sized space.
+
 Every block supports automatic text direction and an Auto/LTR/RTL choice in its block menu. Automatic direction follows the first strong character and inherits the preceding block's direction when the block has no directional text. RTL layouts use logical edges for lists, quotes, tables, attachments, and media; code and diagram source fields remain left-to-right for editing.
 
 Preferred text column:

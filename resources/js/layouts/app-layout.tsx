@@ -228,7 +228,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
             )}
             <PageSearchProvider routePath={page.url.split('?')[0]}>
                 <main
-                    className={`orbium-main w-full ${isFloatingPage ? 'floating-workspace' : 'mx-auto max-w-[1600px] px-5 py-10 md:px-8 md:py-14'}`}
+                    className={`orbium-main w-full ${page.component === 'documents/show' ? 'document-workspace' : ''} ${isFloatingPage ? 'floating-workspace' : 'mx-auto max-w-[1600px] px-5 py-10 md:px-8 md:py-14'}`}
                 >
                     {!isPane && isFloatingPage && (
                         <FloatingTopControls

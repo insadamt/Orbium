@@ -7,7 +7,7 @@ function wheelDistance(event: WheelEvent, pane: HTMLElement) {
     return event.deltaY;
 }
 
-function nestedContentCanScroll(event: WheelEvent, boundary: EventTarget) {
+function nestedContentOwnsWheel(event: WheelEvent, boundary: EventTarget) {
     for (const target of event.composedPath()) {
         if (target === boundary) break;
         const element = target as Element;
@@ -15,6 +15,8 @@ function nestedContentCanScroll(event: WheelEvent, boundary: EventTarget) {
         const styles =
             element.ownerDocument.defaultView?.getComputedStyle(element);
         if (!styles || !/(auto|scroll)/.test(styles.overflowY)) continue;
+        if (['contain', 'none'].includes(styles.overscrollBehaviorY))
+            return true;
         if (
             (event.deltaY < 0 && element.scrollTop > 0) ||
             (event.deltaY > 0 &&
@@ -42,7 +44,7 @@ export function attachPaneWheelScrolling({
             return;
         if (
             event.defaultPrevented ||
-            nestedContentCanScroll(event, eventTarget)
+            nestedContentOwnsWheel(event, eventTarget)
         )
             return;
         event.preventDefault();
@@ -74,7 +76,7 @@ export function attachWorkspaceWheelScrolling(workspace: HTMLElement) {
             return;
         const target = event.target as Element;
         if (target.closest?.('.split-pane:not([hidden])')) return;
-        if (nestedContentCanScroll(event, document.body)) return;
+        if (nestedContentOwnsWheel(event, document.body)) return;
         const panes = workspace.querySelectorAll<HTMLElement>(
             '.split-pane:not([hidden])',
         );
