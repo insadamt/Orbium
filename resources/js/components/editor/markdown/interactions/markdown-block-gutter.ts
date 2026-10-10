@@ -12,6 +12,7 @@ import { createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { GripVertical, Plus } from 'lucide-react';
 import { markdownBlockControlTop } from './markdown-block-drag';
+import { MarkdownBlockHandleMotion } from './markdown-block-handle-motion';
 import { MarkdownBlockDragController } from './markdown-block-drag-controller';
 import {
     adjacentMarkdownBlock,
@@ -32,7 +33,10 @@ export function markdownBlockGutter(onNotice: (message: string) => void) {
             block: MarkdownBlockRange | null = null;
             closeMenu: (() => void) | null = null;
             iconRoots: Root[] = [];
-            measurementFrame: number | null = null;
+            motion = new MarkdownBlockHandleMotion(this.dom);
+            hoveredPosition: number | null = null;
+            destroyed = false;
+            animateNextMove = false;
             constructor(readonly view: EditorView) {
                 this.dom.className =
                     'orbium-markdown-gutter absolute left-0 z-10 flex items-center rounded-lg text-muted-foreground sm:-left-12';
@@ -74,16 +78,24 @@ export function markdownBlockGutter(onNotice: (message: string) => void) {
                     view,
                     handle,
                     currentBlock: () => this.block,
-                    onStart: () => this.dismissMenu(),
+                    onStart: () => {
+                        this.motion.finish();
+                        this.dismissMenu();
+                    },
                     onNotice,
                 });
+                this.dom.addEventListener(
+                    'pointerdown',
+                    () => this.motion.finish(),
+                    true,
+                );
                 this.dom.append(add, handle);
                 document.body.append(this.panel);
                 this.panel.hidden = true;
                 view.dom.append(this.dom);
                 view.dom.addEventListener('pointermove', this.hover);
                 view.dom.addEventListener('pointerleave', this.leave);
-                view.dom.addEventListener('focusin', this.refreshActiveBlock);
+                view.dom.addEventListener('focusin', this.focusChanged);
                 this.refreshActiveBlock();
                 view.dom.addEventListener('contextmenu', this.contextMenu);
                 window.addEventListener('scroll', this.viewportChanged, true);
@@ -132,9 +144,12 @@ export function markdownBlockGutter(onNotice: (message: string) => void) {
                     this.dom.offsetHeight || 25,
                 );
                 if (top === null) return;
-                this.dom.style.top = `${top}px`;
-
-                this.dom.hidden = false;
+                this.motion.place({
+                    top,
+                    visibleTop: null,
+                    blockFrom: this.block.from,
+                    animate: false,
+                });
                 this.panel.hidden = true;
                 this.openMenu();
                 this.panel
@@ -143,6 +158,7 @@ export function markdownBlockGutter(onNotice: (message: string) => void) {
             }
             openMenu() {
                 if (!this.block) return;
+                this.motion.finish();
                 if (this.closeMenu) {
                     this.dismissMenu();
                     return;
@@ -220,48 +236,88 @@ export function markdownBlockGutter(onNotice: (message: string) => void) {
                     onClose: () => this.dismissMenu(),
                 });
             };
-            showBlock(block: MarkdownBlockRange) {
-                const top = markdownBlockControlTop(
-                    this.view,
-                    block,
-                    this.dom.offsetHeight || 25,
-                );
-                if (top === null) {
-                    this.dom.hidden = true;
-                    return;
-                }
-                this.block = block;
-                this.dom.style.top = `${top}px`;
-                this.dom.hidden = false;
+            activeBlockPosition() {
+                const focused = document.activeElement;
+                const widget =
+                    focused instanceof Element &&
+                    this.view.dom.contains(focused)
+                        ? focused.closest<HTMLElement>('[data-rich-from]')
+                        : null;
+                return widget
+                    ? Number(widget.dataset.richFrom)
+                    : this.view.state.selection.main.head;
             }
-            refreshActiveBlock = () => {
-                if (this.measurementFrame !== null)
-                    cancelAnimationFrame(this.measurementFrame);
-                this.measurementFrame = requestAnimationFrame(() => {
-                    this.measurementFrame = null;
-                    if (this.dragController.active || !this.panel.hidden)
-                        return;
-                    if (!this.view.state.facet(EditorView.editable)) {
-                        this.dom.hidden = true;
-                        return;
-                    }
-                    const focused = document.activeElement;
-                    const widget =
-                        focused instanceof Element &&
-                        this.view.dom.contains(focused)
-                            ? focused.closest<HTMLElement>('[data-rich-from]')
-                            : null;
-                    const position = widget
-                        ? Number(widget.dataset.richFrom)
-                        : this.view.state.selection.main.head;
-                    if (
-                        isStructuralMarkdownSeparator(this.view.state, position)
-                    ) {
-                        this.dom.hidden = true;
-                        return;
-                    }
-                    this.showBlock(markdownBlockAt(this.view.state, position));
+            refreshCurrentBlock = (animate = false) => {
+                this.animateNextMove ||= animate;
+                this.view.requestMeasure({
+                    key: this,
+                    read: () => {
+                        if (
+                            this.destroyed ||
+                            this.dragController.active ||
+                            !this.panel.hidden
+                        )
+                            return undefined;
+                        if (!this.view.state.facet(EditorView.editable))
+                            return null;
+                        const position =
+                            this.hoveredPosition ?? this.activeBlockPosition();
+                        if (
+                            isStructuralMarkdownSeparator(
+                                this.view.state,
+                                position,
+                            )
+                        )
+                            return undefined;
+                        const block = markdownBlockAt(
+                            this.view.state,
+                            position,
+                        );
+                        const top = markdownBlockControlTop(
+                            this.view,
+                            block,
+                            this.dom.offsetHeight || 25,
+                        );
+                        if (top === null) return null;
+                        return {
+                            block,
+                            top,
+                            visibleTop: this.motion.measureVisibleTop(
+                                this.view.dom.getBoundingClientRect().top,
+                                this.view.scaleY,
+                            ),
+                        };
+                    },
+                    write: (placement) => {
+                        if (
+                            this.destroyed ||
+                            this.dragController.active ||
+                            !this.panel.hidden ||
+                            placement === undefined
+                        )
+                            return;
+                        const animateMove = this.animateNextMove;
+                        this.animateNextMove = false;
+                        if (placement === null) {
+                            this.motion.hide();
+                            return;
+                        }
+                        this.block = placement.block;
+                        this.motion.place({
+                            ...placement,
+                            blockFrom: placement.block.from,
+                            animate: animateMove,
+                        });
+                    },
                 });
+            };
+            refreshActiveBlock = () => {
+                this.hoveredPosition = null;
+                this.refreshCurrentBlock(true);
+            };
+            focusChanged = (event: FocusEvent) => {
+                if (!this.dom.contains(event.target as Node))
+                    this.refreshActiveBlock();
             };
             viewportChanged = (event: Event) => {
                 if (
@@ -272,7 +328,7 @@ export function markdownBlockGutter(onNotice: (message: string) => void) {
                 )
                     return;
                 this.dismissMenu();
-                this.refreshActiveBlock();
+                this.refreshCurrentBlock();
             };
 
             hover = (event: PointerEvent) => {
@@ -295,15 +351,12 @@ export function markdownBlockGutter(onNotice: (message: string) => void) {
                 if (
                     position === null ||
                     isStructuralMarkdownSeparator(this.view.state, position)
-                ) {
-                    this.refreshActiveBlock();
+                )
                     return;
-                }
-                if (this.measurementFrame !== null) {
-                    cancelAnimationFrame(this.measurementFrame);
-                    this.measurementFrame = null;
-                }
-                this.showBlock(markdownBlockAt(this.view.state, position));
+                const block = markdownBlockAt(this.view.state, position);
+                if (this.hoveredPosition === block.from) return;
+                this.hoveredPosition = block.from;
+                this.refreshCurrentBlock(true);
             };
             leave = () => {
                 if (this.panel.hidden) this.refreshActiveBlock();
@@ -322,25 +375,26 @@ export function markdownBlockGutter(onNotice: (message: string) => void) {
             };
             update(update: ViewUpdate) {
                 this.dragController.update(update);
+                if (update.docChanged && this.hoveredPosition !== null)
+                    this.hoveredPosition = update.changes.mapPos(
+                        this.hoveredPosition,
+                    );
                 if (
                     update.docChanged ||
                     update.viewportChanged ||
-                    update.selectionSet ||
-                    update.focusChanged ||
                     update.geometryChanged ||
                     !update.state.facet(EditorView.editable)
                 ) {
-                    this.dismissMenu();
-                    this.refreshActiveBlock();
+                    if (update.docChanged) this.dismissMenu();
+                    this.refreshCurrentBlock();
                 }
+                if (update.selectionSet || update.focusChanged)
+                    this.refreshActiveBlock();
             }
             destroy() {
-                if (this.measurementFrame !== null)
-                    cancelAnimationFrame(this.measurementFrame);
-                this.view.dom.removeEventListener(
-                    'focusin',
-                    this.refreshActiveBlock,
-                );
+                this.destroyed = true;
+                this.motion.hide();
+                this.view.dom.removeEventListener('focusin', this.focusChanged);
                 this.view.dom.removeEventListener('pointermove', this.hover);
                 this.view.dom.removeEventListener('pointerleave', this.leave);
                 this.view.dom.removeEventListener(

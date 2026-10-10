@@ -63,3 +63,40 @@ Reload Orbium and open a disposable Markdown document in Live Preview with at le
 Browser behavior has not been verified in this work; the checklist is pending with the user. The existing CodeMirror geometry engine is retained and customized, rather than replaced by a new selection renderer. In table editing, the first stage selects the focused cell's editor contents. Document selection refers to the body, excluding the separately edited title. Operating-system reduced motion governs the new CSS animation.
 
 Continue review within the current editor phase. Wait for user review before beginning another phase.
+
+## Review follow-up — stable handle motion
+
+Date: 2026-10-10. The user reported frequent glitches in the six-dot animation. This follow-up supersedes the delayed CSS `top` transition and fade described above.
+
+Code inspection identified competing positioning paths: hover chose one block, but geometry/scroll refreshes restored the active selection block. Blank separators also restored the active block while the pointer crossed between neighbors. Animating every `top` change with a delay added lag during scrolling and layout changes.
+
+The gutter now retains its hovered target through geometry/scroll updates, maps that target through source edits, and returns to the active block on pointer leave or a focus/selection change. Blank gaps retain the previous target until another block is reached. CodeMirror `requestMeasure` batches geometry reads separately from writes and coalesces repeated requests. Focusing the gutter's own buttons does not replace its block target.
+
+A focused `MarkdownBlockHandleMotion` controller replaces the CSS animation. Its 150 ms transform animation runs only when changing blocks, without the previous delay. An interrupted move starts at the currently displayed position. Unchanged measurements preserve the running animation; initial display, same-block layout shifts and ordinary scroll/resize correction do not start animations. Pointer presses, menus, dragging, hiding and editor destruction cancel motion where appropriate. Operating-system reduced motion skips new animations. The repeated fade was removed.
+
+Library assessment: continue Orbium-owned behavior with CodeMirror's installed measurement API. Reviewed native [Element.animate](https://developer.mozilla.org/en-US/docs/Web/API/Element/animate) and [Animation.cancel](https://developer.mozilla.org/en-US/docs/Web/API/Animation/cancel) documentation. These provide interruptible transform playback and cleanup; Orbium still owns block targeting and geometry. GSAP remains unnecessary for this small repair, so no dependency or dependency-choice approval is needed.
+
+### Actual validation
+
+All checks exited with status 0:
+
+- Targeted `npx vp fmt`: passed.
+- `npm run types:check`: passed.
+- `npm run lint`: passed; 367 files formatted, 301 linted files without warnings/errors.
+- `npm run build`: passed in 10.59 seconds; existing large-chunk and mixed static/dynamic import warnings remain.
+- `git diff --check`: passed.
+
+No automated tests written or run. Browser acceptance remains pending with the user. No backend, format, migration or dependency changes. No commit was created.
+
+### Exact manual checklist
+
+1. Reload Orbium. In a disposable document containing several paragraphs and headings, move the pointer rapidly up/down between blocks, reversing direction before each move finishes. Expected: one continuous handle movement toward the latest block, without flickering, queued delays or repeated returns to the active paragraph.
+2. Click paragraph A, then hover paragraph C. Keep the pointer on C while code/diagram content settles, and move through blank separators between C and its neighbors. Expected: the handle stays on the hovered target through layout refreshes and retains that target while crossing gaps; reaching another block moves it once. Move outside the editor: expected return to A, with its handle still visible.
+3. Hover a block and wheel-scroll a long document, including scrolling inside code or a split pane. Resize the pane. Expected: controls follow the same block without trailing behind a delayed scroll animation. Repeat at 80%/125% browser zoom.
+4. Click the grip while it is moving, open/close its menu, and drag/reorder a block. Expected: motion settles for interaction; menu and drag use the indicated block, with no moving menu anchor or lingering animation after drop/cancel. Press Escape during a drag and repeat.
+5. Move the caret with arrow keys, click into code/table/callout content, and type near a paragraph wrap boundary. Expected: controls follow the focused outer block; editing a block's height does not restart its animation repeatedly.
+6. Enable system reduced motion and repeat block changes. Expected: immediate positioning with no animation. Switch documents/tabs and Source/Live Preview, then save/reload: expected no stale controls, content loss or extra undo/save entries caused by handle motion.
+
+Suggested commit: `fix(editor): stabilize block handle animation`
+
+Remain within the current editor review phase; wait for the user's manual review.
