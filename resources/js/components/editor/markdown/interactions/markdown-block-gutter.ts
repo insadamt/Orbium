@@ -32,6 +32,7 @@ export function markdownBlockGutter(onNotice: (message: string) => void) {
             block: MarkdownBlockRange | null = null;
             closeMenu: (() => void) | null = null;
             iconRoots: Root[] = [];
+            measurementFrame: number | null = null;
             constructor(readonly view: EditorView) {
                 this.dom.className =
                     'orbium-markdown-gutter absolute left-0 z-10 flex items-center rounded-lg text-muted-foreground sm:-left-12';
@@ -82,6 +83,8 @@ export function markdownBlockGutter(onNotice: (message: string) => void) {
                 view.dom.append(this.dom);
                 view.dom.addEventListener('pointermove', this.hover);
                 view.dom.addEventListener('pointerleave', this.leave);
+                view.dom.addEventListener('focusin', this.refreshActiveBlock);
+                this.refreshActiveBlock();
                 view.dom.addEventListener('contextmenu', this.contextMenu);
                 window.addEventListener('scroll', this.viewportChanged, true);
                 window.addEventListener('resize', this.viewportChanged);
@@ -217,6 +220,49 @@ export function markdownBlockGutter(onNotice: (message: string) => void) {
                     onClose: () => this.dismissMenu(),
                 });
             };
+            showBlock(block: MarkdownBlockRange) {
+                const top = markdownBlockControlTop(
+                    this.view,
+                    block,
+                    this.dom.offsetHeight || 25,
+                );
+                if (top === null) {
+                    this.dom.hidden = true;
+                    return;
+                }
+                this.block = block;
+                this.dom.style.top = `${top}px`;
+                this.dom.hidden = false;
+            }
+            refreshActiveBlock = () => {
+                if (this.measurementFrame !== null)
+                    cancelAnimationFrame(this.measurementFrame);
+                this.measurementFrame = requestAnimationFrame(() => {
+                    this.measurementFrame = null;
+                    if (this.dragController.active || !this.panel.hidden)
+                        return;
+                    if (!this.view.state.facet(EditorView.editable)) {
+                        this.dom.hidden = true;
+                        return;
+                    }
+                    const focused = document.activeElement;
+                    const widget =
+                        focused instanceof Element &&
+                        this.view.dom.contains(focused)
+                            ? focused.closest<HTMLElement>('[data-rich-from]')
+                            : null;
+                    const position = widget
+                        ? Number(widget.dataset.richFrom)
+                        : this.view.state.selection.main.head;
+                    if (
+                        isStructuralMarkdownSeparator(this.view.state, position)
+                    ) {
+                        this.dom.hidden = true;
+                        return;
+                    }
+                    this.showBlock(markdownBlockAt(this.view.state, position));
+                });
+            };
             viewportChanged = (event: Event) => {
                 if (
                     event.target instanceof Element &&
@@ -226,8 +272,7 @@ export function markdownBlockGutter(onNotice: (message: string) => void) {
                 )
                     return;
                 this.dismissMenu();
-                this.dom.hidden = true;
-                this.block = null;
+                this.refreshActiveBlock();
             };
 
             hover = (event: PointerEvent) => {
@@ -251,23 +296,17 @@ export function markdownBlockGutter(onNotice: (message: string) => void) {
                     position === null ||
                     isStructuralMarkdownSeparator(this.view.state, position)
                 ) {
-                    this.dom.hidden = true;
-                    this.block = null;
+                    this.refreshActiveBlock();
                     return;
                 }
-                this.block = markdownBlockAt(this.view.state, position);
-                const top = markdownBlockControlTop(
-                    this.view,
-                    this.block,
-                    this.dom.offsetHeight || 25,
-                );
-                if (top === null) return;
-                this.dom.style.top = `${top}px`;
-
-                this.dom.hidden = false;
+                if (this.measurementFrame !== null) {
+                    cancelAnimationFrame(this.measurementFrame);
+                    this.measurementFrame = null;
+                }
+                this.showBlock(markdownBlockAt(this.view.state, position));
             };
             leave = () => {
-                if (this.panel.hidden) this.dom.hidden = true;
+                if (this.panel.hidden) this.refreshActiveBlock();
             };
             dismiss = (event: PointerEvent) => {
                 if (
@@ -286,14 +325,22 @@ export function markdownBlockGutter(onNotice: (message: string) => void) {
                 if (
                     update.docChanged ||
                     update.viewportChanged ||
+                    update.selectionSet ||
+                    update.focusChanged ||
+                    update.geometryChanged ||
                     !update.state.facet(EditorView.editable)
                 ) {
-                    this.dom.hidden = true;
                     this.dismissMenu();
-                    this.block = null;
+                    this.refreshActiveBlock();
                 }
             }
             destroy() {
+                if (this.measurementFrame !== null)
+                    cancelAnimationFrame(this.measurementFrame);
+                this.view.dom.removeEventListener(
+                    'focusin',
+                    this.refreshActiveBlock,
+                );
                 this.view.dom.removeEventListener('pointermove', this.hover);
                 this.view.dom.removeEventListener('pointerleave', this.leave);
                 this.view.dom.removeEventListener(

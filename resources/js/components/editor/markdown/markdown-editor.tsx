@@ -1,3 +1,7 @@
+import {
+    markdownSelectAll,
+    orbiumSelectionAppearance,
+} from './markdown-selection';
 import { MermaidPreviewSession } from '../mermaid-preview-session';
 import { orbiumMarkdownDialect } from './dialect/markdown-dialect';
 import { markdownRichBlocks } from './rich/rich-blocks';
@@ -5,7 +9,6 @@ import type { RichContext } from './rich/rich-model';
 import { Compartment, EditorState } from '@codemirror/state';
 import {
     EditorView,
-    drawSelection,
     highlightActiveLine,
     keymap,
     lineNumbers,
@@ -133,7 +136,8 @@ export default function MarkdownEditor(props: MarkdownEditorProps) {
                         doc: initial.current.markdown,
                         extensions: [
                             history(),
-                            drawSelection(),
+                            orbiumSelectionAppearance,
+                            markdownSelectAll,
                             presentation.current.of([
                                 markdownLivePreview(initial.current),
                                 richExtensions,

@@ -1,3 +1,7 @@
+import {
+    markdownSelectAll,
+    orbiumSelectionAppearance,
+} from '../markdown-selection';
 import { Compartment, EditorState } from '@codemirror/state';
 import { EditorView, keymap } from '@codemirror/view';
 import { defaultKeymap } from '@codemirror/commands';
@@ -35,6 +39,8 @@ export function mountRichTextInput({
         state: EditorState.create({
             doc: source,
             extensions: [
+                orbiumSelectionAppearance,
+                markdownSelectAll,
                 markdown({
                     base: markdownLanguage,
                     extensions: [orbiumMarkdownDialect],

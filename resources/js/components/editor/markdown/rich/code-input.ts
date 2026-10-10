@@ -1,4 +1,8 @@
 import {
+    markdownSelectAll,
+    orbiumSelectionAppearance,
+} from '../markdown-selection';
+import {
     Compartment,
     StateEffect,
     StateField,
@@ -73,6 +77,8 @@ export function mountCodeInput({
         parent: host,
         doc: source,
         extensions: [
+            orbiumSelectionAppearance,
+            markdownSelectAll,
             highlighting,
             editing.of(EditorView.editable.of(true)),
             keymap.of([indentWithTab, ...defaultKeymap]),

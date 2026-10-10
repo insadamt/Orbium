@@ -54,9 +54,6 @@ export function markdownTheme(dark: boolean) {
                 backgroundColor: 'var(--muted)',
             },
             '&.cm-focused': { outline: 'none' },
-            '&.cm-focused .cm-selectionBackground, .cm-selectionBackground, .cm-content ::selection':
-                { backgroundColor: 'var(--accent)' },
-            '.cm-cursor': { borderLeftColor: 'var(--foreground)' },
             '.cm-searchMatch': {
                 backgroundColor: 'transparent',
                 outline: 'none',

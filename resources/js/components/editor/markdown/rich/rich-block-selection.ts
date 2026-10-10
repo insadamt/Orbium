@@ -1,3 +1,4 @@
+import { selectBlockContents } from '../markdown-selection';
 import { isolateHistory } from '@codemirror/commands';
 import { Prec } from '@codemirror/state';
 import {
@@ -108,6 +109,20 @@ export function bindRichBlockSelection(
             view.dispatch({
                 selection: { anchor: block.from, head: block.to },
                 effects: revealRichSource.of(block.from),
+            });
+            view.focus();
+            return;
+        }
+        if (
+            (event.ctrlKey || event.metaKey) &&
+            !event.shiftKey &&
+            event.key.toLowerCase() === 'a'
+        ) {
+            event.preventDefault();
+            event.stopPropagation();
+            selectBlockContents(view, {
+                from: block.contentFrom,
+                to: block.contentTo,
             });
             view.focus();
             return;
