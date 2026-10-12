@@ -1,5 +1,10 @@
 # Phase 5 — Explorer review
 
+Navigation motion follow-up (2026-10-12): opening and closing navigation tabs now
+use brief scale/fade pop animations, including split groups. Reduced motion keeps
+changes immediate. See [the report and manual checklist](../reports/05-navigation-tab-pop-motion.md).
+Visual acceptance remains pending within Phase 5.
+
 Orbing removal (2026-10-12): At the user’s request, the Orbing explorer view
 has been removed. Workspace and folder explorers offer Grid, List, and Gallery;
 saved Orbing selections fall back to Grid. Its renderer, camera/motion controls,

@@ -14,18 +14,10 @@ import {
     horizontalListSortingStrategy,
     SortableContext,
     sortableKeyboardCoordinates,
-    useSortable,
 } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
 import { createPortal } from 'react-dom';
 import { ChevronLeft, ChevronRight, Pin, X } from 'lucide-react';
-import {
-    useEffect,
-    useRef,
-    useState,
-    type KeyboardEvent,
-    type MouseEvent,
-} from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
     NavigationTabContextMenu,
     type TabMenuPosition,
@@ -35,7 +27,8 @@ import { groupForTab } from './split-group-state';
 import { NavigationTabIcon } from './navigation-tab-icon';
 import { SplitEdgePreview, useSplitTabDrag } from './split-tab-drag';
 import { SplitNavigationTab } from './split-navigation-tab';
-import { activateTab, closeTab } from './tab-navigation';
+import { SortableNavigationTab } from './sortable-navigation-tab';
+import { useNavigationTabPresence } from './use-navigation-tab-presence';
 
 const keepTabDragInsideStrip: Modifier = ({
     transform,
@@ -57,111 +50,6 @@ const keepTabDragInsideStrip: Modifier = ({
         scaleY: 1,
     };
 };
-function SortableTab({
-    tab,
-    selected,
-    floating,
-    tabCount,
-    onOpenMenu,
-}: {
-    tab: Tab;
-    selected: boolean;
-    floating: boolean;
-    tabCount: number;
-    onOpenMenu: (position: TabMenuPosition) => void;
-}) {
-    const entry = tab.entries[tab.index];
-    const {
-        attributes,
-        listeners,
-        setNodeRef,
-        setActivatorNodeRef,
-        transform,
-        transition,
-        isDragging,
-    } = useSortable({ id: tab.id });
-    return (
-        <div
-            ref={setNodeRef}
-            style={{
-                transform: isDragging
-                    ? undefined
-                    : CSS.Transform.toString(transform),
-                transition,
-                opacity: isDragging ? 0 : undefined,
-            }}
-            data-dragging={isDragging}
-            data-pinned={Boolean(tab.pinned)}
-            data-tab-id={tab.id}
-            className={`${floating ? 'floating-tab' : 'my-1.5 flex max-w-52 min-w-28 shrink-0 items-center rounded-lg'} ${selected ? 'bg-accent text-foreground' : 'text-muted-foreground hover:bg-accent/60'}`}
-            onContextMenu={(event: MouseEvent<HTMLDivElement>) => {
-                event.preventDefault();
-                onOpenMenu({
-                    tabId: tab.id,
-                    title: entry.title,
-                    pinned: Boolean(tab.pinned),
-                    x: event.clientX,
-                    y: event.clientY,
-                    direction: getComputedStyle(event.currentTarget)
-                        .direction as 'ltr' | 'rtl',
-                });
-            }}
-            onKeyDown={(event: KeyboardEvent<HTMLDivElement>) => {
-                if (event.shiftKey && event.key === 'F10') {
-                    event.preventDefault();
-                    const bounds = event.currentTarget.getBoundingClientRect();
-                    onOpenMenu({
-                        tabId: tab.id,
-                        title: entry.title,
-                        pinned: Boolean(tab.pinned),
-                        x:
-                            getComputedStyle(event.currentTarget).direction ===
-                            'rtl'
-                                ? bounds.right
-                                : bounds.left,
-                        y: bounds.bottom,
-                        direction: getComputedStyle(event.currentTarget)
-                            .direction as 'ltr' | 'rtl',
-                    });
-                }
-            }}
-        >
-            <button
-                id={`tab-${tab.id}`}
-                ref={setActivatorNodeRef}
-                type="button"
-                {...attributes}
-                {...listeners}
-                role="tab"
-                aria-selected={selected}
-                title={entry.title}
-                onClick={() => activateTab(tab.id)}
-                className="tab-drag-surface flex min-w-0 flex-1 items-center gap-2 py-2 pr-1 pl-3 text-left text-sm"
-            >
-                <NavigationTabIcon entry={entry} />
-                <span className="truncate">{entry.title}</span>
-            </button>
-            {tab.pinned && (
-                <Pin
-                    size={12}
-                    fill="currentColor"
-                    className="mr-2 shrink-0 text-muted-foreground"
-                    aria-label="Pinned tab"
-                />
-            )}
-            {tabCount > 1 && !tab.pinned && (
-                <button
-                    type="button"
-                    aria-label={`Close ${entry.title}`}
-                    onClick={() => closeTab(tab.id)}
-                    className="mr-1 rounded-md p-1 text-muted-foreground hover:bg-background hover:text-foreground"
-                >
-                    <X size={13} aria-hidden="true" />
-                </button>
-            )}
-        </div>
-    );
-}
 
 export function NavigationTabStrip({
     floating = false,
@@ -188,18 +76,8 @@ export function NavigationTabStrip({
         splitPreparedTab,
         preparingDropTitle,
     } = useSplitTabDrag(draggedTab, tabs, activeId, splitGroups);
-    const firstSplitTabIds = new Set(
-        splitGroups.flatMap((group) => {
-            const firstTab = tabs.find(
-                (tab) => tab.id === group.leftId || tab.id === group.rightId,
-            );
-            return firstTab ? [firstTab.id] : [];
-        }),
-    );
-    const displayedTabs = tabs.filter(
-        (tab) =>
-            !groupForTab(splitGroups, tab.id) || firstSplitTabIds.has(tab.id),
-    );
+    const renderedTabs = useNavigationTabPresence(tabs, splitGroups);
+    const displayedTabs = renderedTabs.filter((item) => !item.exiting);
     const draggedGroup = draggedTab
         ? groupForTab(splitGroups, draggedTab.id)
         : undefined;
@@ -241,7 +119,7 @@ export function NavigationTabStrip({
             resizeObserver.disconnect();
             tabList.removeEventListener('scroll', updateScrollEdges);
         };
-    }, [tabs]);
+    }, [tabs, renderedTabs]);
 
     useEffect(() => {
         const tabList = tabListRef.current;
@@ -349,7 +227,7 @@ export function NavigationTabStrip({
                 }}
             >
                 <SortableContext
-                    items={displayedTabs.map((tab) => tab.id)}
+                    items={displayedTabs.map((item) => item.tab.id)}
                     strategy={horizontalListSortingStrategy}
                 >
                     <div
@@ -362,37 +240,30 @@ export function NavigationTabStrip({
                                 : 'tab-scroll-list flex h-full min-w-0 items-stretch gap-1 overflow-x-auto px-2'
                         }
                     >
-                        {displayedTabs.map((tab) => {
-                            const group = groupForTab(splitGroups, tab.id);
-                            if (group) {
-                                const left = tabs.find(
-                                    (item) => item.id === group.leftId,
-                                );
-                                const right = tabs.find(
-                                    (item) => item.id === group.rightId,
-                                );
-                                return left && right ? (
+                        {renderedTabs.map(
+                            ({ key, tab, left, right, exiting }) =>
+                                left && right ? (
                                     <SplitNavigationTab
-                                        key={`split-${left.id}-${right.id}`}
+                                        key={key}
                                         left={left}
                                         right={right}
                                         sortId={tab.id}
                                         activeId={activeId}
                                         floating={floating}
+                                        exiting={exiting}
                                     />
-                                ) : null;
-                            }
-                            return (
-                                <SortableTab
-                                    key={tab.id}
-                                    tab={tab}
-                                    selected={tab.id === activeId}
-                                    floating={floating}
-                                    tabCount={tabs.length}
-                                    onOpenMenu={setMenuPosition}
-                                />
-                            );
-                        })}
+                                ) : (
+                                    <SortableNavigationTab
+                                        key={key}
+                                        tab={tab}
+                                        selected={tab.id === activeId}
+                                        floating={floating}
+                                        tabCount={tabs.length}
+                                        onOpenMenu={setMenuPosition}
+                                        exiting={exiting}
+                                    />
+                                ),
+                        )}
                     </div>
                 </SortableContext>
                 {portalHost &&

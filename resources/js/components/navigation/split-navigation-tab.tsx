@@ -14,6 +14,7 @@ type Props = {
     sortId: string;
     activeId: string;
     floating: boolean;
+    exiting: boolean;
 };
 
 export function SplitNavigationTab({
@@ -22,6 +23,7 @@ export function SplitNavigationTab({
     sortId,
     activeId,
     floating,
+    exiting,
 }: Props) {
     const isGroupActive = activeId === left.id || activeId === right.id;
     const [focusedId, setFocusedId] = useState(activeId);
@@ -33,7 +35,10 @@ export function SplitNavigationTab({
         transform,
         transition,
         isDragging,
-    } = useSortable({ id: sortId });
+    } = useSortable({
+        id: exiting ? `exiting-split-${left.id}-${right.id}` : sortId,
+        disabled: exiting,
+    });
 
     useEffect(() => {
         setFocusedId(activeId);
@@ -65,8 +70,12 @@ export function SplitNavigationTab({
                 transition,
                 opacity: isDragging ? 0 : undefined,
             }}
-            className={`split-navigation-tab ${floating ? 'floating-tab' : 'my-1.5 rounded-lg'} ${isGroupActive ? 'bg-accent text-foreground' : 'text-muted-foreground hover:bg-accent/60'}`}
-            data-split-tab-ids={`${left.id} ${right.id}`}
+            inert={exiting}
+            aria-hidden={exiting || undefined}
+            data-tab-exiting={exiting}
+            data-dragging={isDragging}
+            className={`navigation-tab-motion split-navigation-tab ${floating ? 'floating-tab' : 'my-1.5 rounded-lg'} ${isGroupActive ? 'bg-accent text-foreground' : 'text-muted-foreground hover:bg-accent/60'}`}
+            data-split-tab-ids={exiting ? undefined : `${left.id} ${right.id}`}
             aria-label="Split tab"
         >
             {[left, right].map((tab) => {
