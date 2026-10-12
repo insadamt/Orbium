@@ -1,35 +1,23 @@
 import { button, element } from './widget-controls';
 import { widgetIcon } from './widget-icons';
+import { openContentFullPreview } from '../../content-full-preview';
 
 type TableFullscreenOptions = {
-    root: HTMLElement;
     edges: HTMLElement;
     grid: HTMLTableElement;
     beforeOpen: () => void;
 };
 
 export function mountTableFullscreenView({
-    root,
     edges,
     grid,
     beforeOpen,
 }: TableFullscreenOptions) {
-    const dialog = element('dialog', 'orbium-table-fullscreen-view');
-    dialog.setAttribute('aria-label', 'Fullscreen table view');
-    const heading = element('div', 'orbium-table-fullscreen-heading');
-    const title = element('span', '', 'Table');
-    const close = button('Close', () => dialog.close());
-    close.prepend(widgetIcon('close', 15));
-    heading.append(title, close);
-    const scroller = element(
-        'div',
-        'tableWrapper orbium-table-fullscreen-scroller',
-    );
-    dialog.append(heading, scroller);
-    root.append(dialog);
+    let closePreview: (() => void) | undefined;
 
     function open() {
         beforeOpen();
+        closePreview?.();
         const preview = grid.cloneNode(true) as HTMLTableElement;
         for (const control of preview.querySelectorAll(
             'button, .orbium-rich-text-input',
@@ -47,9 +35,23 @@ export function mountTableFullscreenView({
             output.removeAttribute('aria-label');
             output.classList.remove('cursor-text');
         }
-        scroller.replaceChildren(preview);
-        dialog.showModal();
-        close.focus({ preventScroll: true });
+        const content = element(
+            'div',
+            'orbium-editor orbium-markdown-content orbium-table-full-preview',
+        );
+        const width = Math.max(1, grid.scrollWidth);
+        const height = Math.max(1, grid.scrollHeight);
+        preview.style.width = `${width}px`;
+        content.append(preview);
+        closePreview = openContentFullPreview({
+            content,
+            dimensions: { width: width + 2, height: height + 2 },
+            title: 'Table preview',
+            canvasLabel:
+                'Table canvas. Use plus and minus to zoom, arrow keys to pan, and zero to fit.',
+            fitLabel: 'Fit table to view',
+            trigger,
+        });
     }
 
     const trigger = button('', open);
@@ -59,15 +61,9 @@ export function mountTableFullscreenView({
     trigger.setAttribute('aria-haspopup', 'dialog');
     trigger.append(widgetIcon('maximize', 14));
     edges.append(trigger);
-    dialog.addEventListener('close', () => {
-        scroller.replaceChildren();
-        if (trigger.isConnected) trigger.focus({ preventScroll: true });
-    });
-    dialog.addEventListener('keydown', (event) => event.stopPropagation());
     return {
         destroy() {
-            if (dialog.open) dialog.close();
-            dialog.remove();
+            closePreview?.();
             trigger.remove();
         },
     };

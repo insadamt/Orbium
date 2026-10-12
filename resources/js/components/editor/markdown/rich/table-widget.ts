@@ -171,7 +171,6 @@ export function mountTable(mount: RichWidgetMount): RichController {
         'orbium-table-add-column',
     );
     const fullscreenView = mountTableFullscreenView({
-        root: mount.root,
         edges,
         grid,
         beforeOpen: () => {

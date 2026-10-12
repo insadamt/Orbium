@@ -189,7 +189,8 @@
     transform-origin: 0 0;
     pointer-events: none;
 }
-.mermaid-full-drawing > svg {
+.mermaid-full-svg,
+.mermaid-full-svg > svg {
     display: block;
     width: 100% !important;
     height: 100% !important;
