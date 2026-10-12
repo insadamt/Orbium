@@ -1,6 +1,31 @@
 import type { OrbiumMetadata } from '../dialect/metadata';
 import type { RichCell, RichTable } from './rich-model';
 import { button, element } from './widget-controls';
+import { widgetIcon } from './widget-icons';
+
+const tableActionIcons = {
+    'Add row': 'rowAdd',
+    'Add column': 'columnAdd',
+    'Delete row': 'rowDelete',
+    'Delete column': 'columnDelete',
+    'Toggle header': 'header',
+    'Merge right': 'merge',
+    'Split cell': 'split',
+} as const;
+
+function tableActionButton(
+    label: keyof typeof tableActionIcons,
+    action: () => void,
+) {
+    const control = button('', action);
+    control.className =
+        'rounded p-2 hover:bg-accent disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-ring';
+    control.setAttribute('aria-label', label);
+    control.title = label;
+    control.append(widgetIcon(tableActionIcons[label], 16));
+    control.addEventListener('mousedown', (event) => event.preventDefault());
+    return control;
+}
 export const emptyTableCell = (header = false): RichCell => ({
     from: 0,
     to: 0,
@@ -32,10 +57,10 @@ export function mountTableCellActions({
     spanHint.hidden = true;
     actions.append(spanHint);
     function structuralButton(
-        label: string,
+        label: keyof typeof tableActionIcons,
         action: (next: RichTable) => void,
     ) {
-        const control = button(label, () => {
+        const control = tableActionButton(label, () => {
             if (!hasSpans()) editTable(action);
         });
         structural.push(control);
@@ -66,14 +91,14 @@ export function mountTableCellActions({
             onSelectCell(selected().row, Math.max(0, selected().column - 1));
         }
     });
-    const header = button('Toggle header', () =>
+    const header = tableActionButton('Toggle header', () =>
         editTable((next) => {
             const cell = next.rows[selected().row]?.[selected().column];
             if (cell) cell.metadata.header = !cell.metadata.header;
         }, true),
     );
     actions.append(header);
-    const merge = button('Merge right', () =>
+    const merge = tableActionButton('Merge right', () =>
         editTable((next) => {
             const row = next.rows[selected().row];
             const first = row?.[selected().column];
@@ -106,7 +131,7 @@ export function mountTableCellActions({
         }, true),
     );
     actions.append(merge);
-    const split = button('Split cell', () =>
+    const split = tableActionButton('Split cell', () =>
         editTable((next) => {
             const row = next.rows[selected().row];
             const cell = row?.[selected().column];
@@ -127,7 +152,7 @@ export function mountTableCellActions({
     actions.append(split);
     const alignment = element(
         'select',
-        'rounded-md bg-muted px-2 py-1 text-xs',
+        'h-8 rounded border-0 bg-transparent px-2 text-xs hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring',
     );
     alignment.setAttribute('aria-label', 'Cell alignment');
     for (const value of ['', 'left', 'center', 'right']) {
@@ -148,7 +173,7 @@ export function mountTableCellActions({
     actions.append(alignment);
     const width = element(
         'input',
-        'w-28 rounded-md bg-muted px-2 py-1 text-xs',
+        'h-8 w-24 rounded border border-border bg-transparent px-2 text-xs hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring',
     );
     width.type = 'number';
     width.min = '0';
@@ -190,7 +215,7 @@ export function mountTableCellActions({
                 control.disabled = disabled || hasSpans();
                 control.title = hasSpans()
                     ? 'Split spanning cells before changing table structure.'
-                    : '';
+                    : (control.getAttribute('aria-label') ?? '');
             }
             header.disabled =
                 merge.disabled =

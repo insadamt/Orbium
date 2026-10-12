@@ -1,6 +1,7 @@
 import { emptyTableCell, mountTableCellActions } from './table-cell-actions';
 import { mountRichTextInput } from './rich-text-input';
 import { widgetIcon } from './widget-icons';
+import { mountTableOptionsToolbar } from './table-options-toolbar';
 import { EditorView } from '@codemirror/view';
 import { serializeOrbiumBlock } from '../dialect/metadata';
 import type {
@@ -42,29 +43,16 @@ export function mountTable(mount: RichWidgetMount): RichController {
     const controls = sourceControls(mount, 'Table', false);
     controls.toolbar.hidden = true;
     mount.root.classList.add('group');
-    const actions = element(
-        'div',
-        'glass-surface mb-2 flex max-w-full flex-wrap items-center gap-1 rounded-xl border border-border p-1 shadow-lg',
-    );
-    actions.hidden = true;
-    const options = button('', () => {
-        actions.hidden = !actions.hidden;
-        options.setAttribute('aria-expanded', String(!actions.hidden));
-    });
-    options.setAttribute('aria-label', 'Table options');
-    options.setAttribute('aria-expanded', 'false');
-    options.className =
-        'glass-surface mb-1 ms-auto block rounded-md border border-border p-1 shadow-sm';
-    options.append(widgetIcon('more', 16));
-    options.hidden = true;
-    mount.root.append(options);
-    controls.output.append(actions);
+    const tableToolbar = mountTableOptionsToolbar(mount.root, mount.view);
+    const { toolbar: actions, options } = tableToolbar;
+    const frame = element('div', 'orbium-table-frame');
     const scroller = element('div', 'tableWrapper overflow-x-auto');
     const grid = element('table', 'orbium-table orbium-rich-table');
     const body = element('tbody');
     grid.append(body);
     scroller.append(grid);
-    controls.output.append(scroller);
+    frame.append(scroller);
+    controls.output.append(frame);
     const editors: HTMLElement[][] = [];
     let activeInput: ReturnType<typeof mountRichTextInput> | null = null;
     let activePosition: CellPosition | null = null;
@@ -125,6 +113,7 @@ export function mountTable(mount: RichWidgetMount): RichController {
         hasSpans,
         onSelectCell: setSelected,
     });
+    actions.append(tableToolbar.closeButton);
     function setSelected(row: number, column: number) {
         selected = { row, column };
         cellActions.selectCell(row, column);
@@ -144,12 +133,17 @@ export function mountTable(mount: RichWidgetMount): RichController {
         }
     }
     const dismiss = (event: PointerEvent) => {
-        if (mount.root.contains(event.target as Node)) return;
+        if (
+            mount.root.contains(event.target as Node) ||
+            actions.contains(event.target as Node)
+        )
+            return;
         closeCell();
-        actions.hidden = options.hidden = true;
+        tableToolbar.close();
+        options.hidden = true;
     };
     document.addEventListener('pointerdown', dismiss);
-    const edges = element('div', 'pointer-events-none absolute inset-0 z-10');
+    const edges = element('div', 'orbium-table-edges');
     function edgeButton(
         label: string,
         action: (next: RichTable) => void,
@@ -180,7 +174,7 @@ export function mountTable(mount: RichWidgetMount): RichController {
         },
         'orbium-table-add-column',
     );
-    controls.output.append(edges);
+    frame.append(edges);
     mount.root.addEventListener('orbium-edit-rich', () =>
         renderers[0]?.[0]?.output.click(),
     );
@@ -256,7 +250,7 @@ export function mountTable(mount: RichWidgetMount): RichController {
                     if (event.key === 'Escape') {
                         event.preventDefault();
                         closeCell();
-                        actions.hidden = true;
+                        tableToolbar.close();
                         output.focus();
                     }
                     if (event.key !== 'Tab' || event.defaultPrevented) return;
@@ -271,7 +265,7 @@ export function mountTable(mount: RichWidgetMount): RichController {
                         );
                     else {
                         closeCell();
-                        actions.hidden = true;
+                        tableToolbar.close();
                         mount.view.focus();
                     }
                 });
@@ -329,6 +323,7 @@ export function mountTable(mount: RichWidgetMount): RichController {
         update,
         destroy() {
             controls.destroy();
+            tableToolbar.destroy();
             disposeCells();
             document.removeEventListener('pointerdown', dismiss);
         },

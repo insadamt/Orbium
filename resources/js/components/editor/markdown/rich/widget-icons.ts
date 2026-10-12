@@ -1,4 +1,12 @@
 const paths = {
+    close: ['M18 6 6 18', 'm6 6 12 12'],
+    rowAdd: ['M3 3h18v12H3Z', 'M3 9h18', 'M12 18v6', 'M9 21h6'],
+    columnAdd: ['M3 3h12v18H3Z', 'M9 3v18', 'M18 12h6', 'M21 9v6'],
+    rowDelete: ['M3 3h18v12H3Z', 'M3 9h18', 'M9 21h6'],
+    columnDelete: ['M3 3h12v18H3Z', 'M9 3v18', 'M18 12h6'],
+    header: ['M3 3h18v18H3Z', 'M3 9h18', 'M9 9v12', 'M3 6h18'],
+    merge: ['M3 3h18v18H3Z', 'M7 12h10', 'm10 9-3 3 3 3', 'm14 9 3 3-3 3'],
+    split: ['M3 3h18v18H3Z', 'M12 3v18', 'm8 9-3 3 3 3', 'm16 9 3 3-3 3'],
     more: ['M12 5h.01', 'M12 12h.01', 'M12 19h.01'],
     left: ['M21 6H3', 'M15 12H3', 'M17 18H3'],
     center: ['M21 6H3', 'M18 12H6', 'M17 18H7'],

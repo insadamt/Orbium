@@ -56,6 +56,7 @@ import { type MarkdownLimits } from './markdown-api';
 import { markdownSourceHighlighting, markdownTheme } from './markdown-theme';
 import { useMarkdownAutosave } from './use-markdown-autosave';
 import { useMarkdownSearch } from './use-markdown-search';
+import { MarkdownTableOfContents } from './markdown-table-of-contents';
 
 export type MarkdownEditorProps = {
     workspaceId: number;
@@ -110,6 +111,7 @@ export default function MarkdownEditor(props: MarkdownEditorProps) {
     const theme = useRef(new Compartment());
     const editing = useRef(new Compartment());
     const presentation = useRef(new Compartment());
+    const outlineUpdates = useRef(new Compartment());
     const [richContext] = useState<RichContext>(() => ({
         workspaceId: props.workspaceId,
         nodeId: props.nodeId,
@@ -136,6 +138,7 @@ export default function MarkdownEditor(props: MarkdownEditorProps) {
                         doc: initial.current.markdown,
                         extensions: [
                             history(),
+                            outlineUpdates.current.of([]),
                             orbiumSelectionAppearance,
                             markdownSelectAll,
                             presentation.current.of([
@@ -344,6 +347,12 @@ export default function MarkdownEditor(props: MarkdownEditorProps) {
             data-document-styles
         >
             <MarkdownEditorControls
+                tableOfContents={
+                    <MarkdownTableOfContents
+                        view={view}
+                        updates={outlineUpdates.current}
+                    />
+                }
                 status={autosave.status}
                 livePreview={livePreview}
                 disabled={!active || !view || upload.uploading}

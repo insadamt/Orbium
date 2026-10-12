@@ -7,6 +7,7 @@ import {
     ChevronDown,
 } from 'lucide-react';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
+import type { ReactNode } from 'react';
 
 type MarkdownEditorControlsProps = {
     status: 'saved' | 'saving' | 'error' | 'unsaved';
@@ -20,6 +21,7 @@ type MarkdownEditorControlsProps = {
     onUpload: () => void;
     onImport: () => void;
     onExport: (online: boolean) => void;
+    tableOfContents: ReactNode;
 };
 
 export function MarkdownEditorControls(props: MarkdownEditorControlsProps) {
@@ -46,6 +48,7 @@ export function MarkdownEditorControls(props: MarkdownEditorControlsProps) {
                 )}
             </div>
             <div className="flex flex-wrap items-center gap-3">
+                {props.tableOfContents}
                 {props.empty && (
                     <button
                         type="button"

@@ -1,3 +1,4 @@
+import { DocumentOutlineLayout } from '@/components/editor/document-outline-layout';
 import { Head } from '@inertiajs/react';
 import { useRef, useState } from 'react';
 import { useDocumentTab } from '@/components/navigation/document-tab-context';
@@ -303,160 +304,168 @@ export function DocumentPage({
         <>
             {active && <Head title={title} />}
             <div className="floating-body-island floating-document-island mx-auto max-w-[1120px]">
-                <div className="relative">
-                    {coverId && (
-                        <div
-                            className={`flex justify-center ${coverRatio ? '' : 'aspect-[980/288]'}`}
-                        >
-                            <img
-                                src={attachmentUrl(
-                                    workspace.id,
-                                    node.id,
-                                    coverId,
-                                )}
-                                alt="Document cover"
-                                className={
-                                    coverRatio
-                                        ? 'block h-auto max-h-[min(480px,55dvh)] max-w-full rounded-2xl object-contain'
-                                        : 'h-full w-full rounded-2xl object-cover'
-                                }
-                                style={
-                                    coverRatio
-                                        ? {
-                                              aspectRatio:
-                                                  ratioNumber(coverRatio),
-                                          }
-                                        : undefined
-                                }
-                            />
-                        </div>
-                    )}
-                    <div className="absolute top-3 right-3 z-20">
-                        <DocumentMediaMenu
-                            hasIcon={Boolean(iconAttachmentId || legacyIcon)}
-                            hasCover={Boolean(coverId)}
-                            iconUploading={iconUploading}
-                            coverUploading={coverUploading}
-                            onChooseIcon={() => iconInput.current?.click()}
-                            onRemoveIcon={() => void removeIcon()}
-                            onChooseCover={() => coverInput.current?.click()}
-                            onRemoveCover={() => void removeCover()}
-                        />
-                    </div>
-                    <div className="mx-auto flow-root max-w-[780px]">
-                        {(iconAttachmentId || legacyIcon) && (
+                <DocumentOutlineLayout title={title}>
+                    <div className="relative">
+                        {coverId && (
                             <div
-                                className={`relative z-10 mb-5 ml-4 flex size-24 items-center justify-center overflow-hidden rounded-2xl border-4 border-background bg-muted shadow-md ${coverId && !coverRatio ? '-mt-12' : ''}`}
+                                className={`flex justify-center ${coverRatio ? '' : 'aspect-[980/288]'}`}
                             >
-                                {iconAttachmentId ? (
-                                    <img
-                                        src={attachmentUrl(
-                                            workspace.id,
-                                            node.id,
-                                            iconAttachmentId,
-                                        )}
-                                        alt="Document icon"
-                                        className="h-full w-full object-cover"
-                                    />
-                                ) : (
-                                    <span
-                                        className="text-5xl"
-                                        aria-label="Document icon"
-                                    >
-                                        {legacyIcon}
-                                    </span>
-                                )}
+                                <img
+                                    src={attachmentUrl(
+                                        workspace.id,
+                                        node.id,
+                                        coverId,
+                                    )}
+                                    alt="Document cover"
+                                    className={
+                                        coverRatio
+                                            ? 'block h-auto max-h-[min(480px,55dvh)] max-w-full rounded-2xl object-contain'
+                                            : 'h-full w-full rounded-2xl object-cover'
+                                    }
+                                    style={
+                                        coverRatio
+                                            ? {
+                                                  aspectRatio:
+                                                      ratioNumber(coverRatio),
+                                              }
+                                            : undefined
+                                    }
+                                />
                             </div>
                         )}
-                        <input
-                            aria-label="Document title"
-                            value={title}
-                            maxLength={255}
-                            onChange={(event) => setTitle(event.target.value)}
-                            onBlur={() => {
-                                const clean = title.trim();
-                                if (clean) {
-                                    setTitle(clean);
-                                    void saveHeader({ title: clean });
-                                } else {
-                                    setTitle(node.title);
+                        <div className="absolute top-3 right-3 z-20">
+                            <DocumentMediaMenu
+                                hasIcon={Boolean(
+                                    iconAttachmentId || legacyIcon,
+                                )}
+                                hasCover={Boolean(coverId)}
+                                iconUploading={iconUploading}
+                                coverUploading={coverUploading}
+                                onChooseIcon={() => iconInput.current?.click()}
+                                onRemoveIcon={() => void removeIcon()}
+                                onChooseCover={() =>
+                                    coverInput.current?.click()
                                 }
-                            }}
-                            className={`mb-8 w-full border-0 bg-transparent text-4xl font-semibold tracking-tight shadow-none outline-none placeholder:text-muted-foreground focus-visible:outline-none md:text-5xl ${coverId && !iconAttachmentId && !legacyIcon ? 'mt-8' : ''}`}
-                            placeholder="Untitled"
-                        />
-                        {headerError && (
-                            <p
-                                role="alert"
-                                className="mb-5 text-sm text-destructive"
-                            >
-                                {headerError}
-                            </p>
-                        )}
-                        {databaseProperties.length > 0 &&
-                            node.parent_id !== null && (
-                                <DatabasePropertyHeader
-                                    workspaceId={workspace.id}
-                                    databaseId={node.parent_id}
-                                    documentId={node.id}
-                                    properties={databaseProperties}
-                                    values={databaseValues}
-                                    candidates={mentionCandidates}
-                                    files={databaseFiles}
-                                />
+                                onRemoveCover={() => void removeCover()}
+                            />
+                        </div>
+                        <div className="mx-auto flow-root max-w-[780px]">
+                            {(iconAttachmentId || legacyIcon) && (
+                                <div
+                                    className={`relative z-10 mb-5 ml-4 flex size-24 items-center justify-center overflow-hidden rounded-2xl border-4 border-background bg-muted shadow-md ${coverId && !coverRatio ? '-mt-12' : ''}`}
+                                >
+                                    {iconAttachmentId ? (
+                                        <img
+                                            src={attachmentUrl(
+                                                workspace.id,
+                                                node.id,
+                                                iconAttachmentId,
+                                            )}
+                                            alt="Document icon"
+                                            className="h-full w-full object-cover"
+                                        />
+                                    ) : (
+                                        <span
+                                            className="text-5xl"
+                                            aria-label="Document icon"
+                                        >
+                                            {legacyIcon}
+                                        </span>
+                                    )}
+                                </div>
                             )}
-                        {savedDocument.content_format_version === 2 ? (
-                            previewOnly ? (
-                                <MarkdownOpeningPreview />
+                            <input
+                                aria-label="Document title"
+                                value={title}
+                                maxLength={255}
+                                onChange={(event) =>
+                                    setTitle(event.target.value)
+                                }
+                                onBlur={() => {
+                                    const clean = title.trim();
+                                    if (clean) {
+                                        setTitle(clean);
+                                        void saveHeader({ title: clean });
+                                    } else {
+                                        setTitle(node.title);
+                                    }
+                                }}
+                                className={`mb-8 w-full border-0 bg-transparent text-4xl font-semibold tracking-tight shadow-none outline-none placeholder:text-muted-foreground focus-visible:outline-none md:text-5xl ${coverId && !iconAttachmentId && !legacyIcon ? 'mt-8' : ''}`}
+                                placeholder="Untitled"
+                            />
+                            {headerError && (
+                                <p
+                                    role="alert"
+                                    className="mb-5 text-sm text-destructive"
+                                >
+                                    {headerError}
+                                </p>
+                            )}
+                            {databaseProperties.length > 0 &&
+                                node.parent_id !== null && (
+                                    <DatabasePropertyHeader
+                                        workspaceId={workspace.id}
+                                        databaseId={node.parent_id}
+                                        documentId={node.id}
+                                        properties={databaseProperties}
+                                        values={databaseValues}
+                                        candidates={mentionCandidates}
+                                        files={databaseFiles}
+                                    />
+                                )}
+                            {savedDocument.content_format_version === 2 ? (
+                                previewOnly ? (
+                                    <MarkdownOpeningPreview />
+                                ) : (
+                                    <MarkdownEditorLoader
+                                        title={title}
+                                        workspaceId={workspace.id}
+                                        nodeId={node.id}
+                                        markdown={savedDocument.markdown}
+                                        revision={savedDocument.revision}
+                                        limits={savedDocument.markdown_limits}
+                                    />
+                                )
+                            ) : previewOnly ? (
+                                <DocumentOpeningPreview
+                                    content={savedDocument.content}
+                                />
                             ) : (
-                                <MarkdownEditorLoader
-                                    title={title}
+                                <DocumentEditorLoader
                                     workspaceId={workspace.id}
                                     nodeId={node.id}
-                                    markdown={savedDocument.markdown}
+                                    title={title}
+                                    content={savedDocument.content}
                                     revision={savedDocument.revision}
-                                    limits={savedDocument.markdown_limits}
                                 />
-                            )
-                        ) : previewOnly ? (
-                            <DocumentOpeningPreview
-                                content={savedDocument.content}
-                            />
-                        ) : (
-                            <DocumentEditorLoader
-                                workspaceId={workspace.id}
-                                nodeId={node.id}
-                                title={title}
-                                content={savedDocument.content}
-                                revision={savedDocument.revision}
-                            />
-                        )}
+                            )}
+                        </div>
                     </div>
-                </div>
-                <input
-                    ref={iconInput}
-                    type="file"
-                    accept="image/png,image/jpeg,image/gif,image/webp"
-                    aria-label="Upload document icon"
-                    className="hidden"
-                    onChange={(event) => {
-                        const file = event.target.files?.[0];
-                        if (file) void prepareImage(file, 'icon');
-                        event.target.value = '';
-                    }}
-                />
-                <input
-                    ref={coverInput}
-                    type="file"
-                    accept="image/png,image/jpeg,image/gif,image/webp"
-                    aria-label="Upload cover"
-                    className="hidden"
-                    onChange={(event) => {
-                        const file = event.target.files?.[0];
-                        if (file) void prepareImage(file, 'cover');
-                        event.target.value = '';
-                    }}
-                />
+                    <input
+                        ref={iconInput}
+                        type="file"
+                        accept="image/png,image/jpeg,image/gif,image/webp"
+                        aria-label="Upload document icon"
+                        className="hidden"
+                        onChange={(event) => {
+                            const file = event.target.files?.[0];
+                            if (file) void prepareImage(file, 'icon');
+                            event.target.value = '';
+                        }}
+                    />
+                    <input
+                        ref={coverInput}
+                        type="file"
+                        accept="image/png,image/jpeg,image/gif,image/webp"
+                        aria-label="Upload cover"
+                        className="hidden"
+                        onChange={(event) => {
+                            const file = event.target.files?.[0];
+                            if (file) void prepareImage(file, 'cover');
+                            event.target.value = '';
+                        }}
+                    />
+                </DocumentOutlineLayout>
             </div>
             {active && pendingCrop && (
                 <DocumentImageCropDialog

@@ -1,4 +1,5 @@
 import { useEditorTabShortcuts } from './use-editor-tab-shortcuts';
+import { RichTextTableOfContents } from './rich-text-table-of-contents';
 import { useEditorTabActivity } from './use-editor-tab-activity';
 import { BlockStyleClasses } from './styles/block-style-extension';
 import { useEditorReadiness } from './use-editor-readiness';
@@ -344,7 +345,8 @@ export default function DocumentEditor({
                         </button>
                     )}
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3">
+                    <RichTextTableOfContents editor={editor} />
                     {editor?.isEmpty && (
                         <button
                             type="button"

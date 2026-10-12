@@ -395,7 +395,23 @@
     margin-bottom: 2rem;
 }
 .orbium-markdown-content .orbium-table-container .tableWrapper {
+    max-width: 100%;
     margin-bottom: 0;
+}
+.orbium-markdown-content .orbium-table-frame {
+    position: relative;
+    width: max-content;
+    max-width: 100%;
+    padding-inline-end: 27px;
+    padding-bottom: 27px;
+}
+.orbium-markdown-content .orbium-table-edges {
+    pointer-events: none;
+    position: absolute;
+    inset: 0;
+    inset-inline-end: 27px;
+    bottom: 27px;
+    z-index: 10;
 }
 .orbium-markdown-content .orbium-table-add-row {
     left: 0;
@@ -417,6 +433,21 @@
     .table-edge-control,
 .orbium-markdown-content .orbium-table-container:hover .table-edge-control {
     visibility: visible;
+}
+.orbium-markdown-content
+    .orbium-table-container:has([data-table-options-open])
+    .table-edge-control,
+.orbium-markdown-content
+    .orbium-table-container[data-table-options-open]
+    .table-edge-control {
+    visibility: visible;
+}
+.orbium-table-toolbar {
+    position: fixed;
+    z-index: 60;
+}
+.orbium-table-toolbar[hidden] {
+    display: none;
 }
 
 .orbium-markdown-content .cm-md-divider[data-custom-divider] {

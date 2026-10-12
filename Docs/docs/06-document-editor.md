@@ -29,6 +29,50 @@ Icons that do not match 512×512 open a crop dialog. Every new cover opens the c
 
 No permanent formatting toolbar.
 
+Each visible document has a small outline rail inside its document layout, at
+the right edge of the document surface below the navbar. A reserved gutter keeps
+it beside the content in both single-document and split views. It stays accessible while scrolling; non-document pages have
+no rail. The rail and panel include every H1 and H2, with no sampling or heading
+count limit. Two mark lengths distinguish the levels; the current reading section
+is highlighted. Long rails show a portion of the outline in a container capped at 180px
+(or the available height in a short viewport) and smoothly follow the current section when its mark reaches the visible edge.
+Manual wheel/touch scrolling over the rail stays inside it. Resizing keeps the
+current mark visible, and reduced motion makes automatic rail scrolling immediate.
+
+Hovering or focusing the rail opens a compact floating outline beside it.
+Clicking or tapping pins it open. Pointer departure collapses an unpinned preview
+after a short grace period; keyboard focus keeps it reachable. Each panel has a
+document title, Pin/Unpin and Close buttons. Hierarchy uses indentation and text
+weight without H1/H2/H3 aliases. Long labels wrap and the list scrolls independently.
+Documents remain mounted, readable and editable while panels are open.
+
+Selecting a heading smoothly scrolls its own document to that section and closes
+an unpinned preview. A pinned panel remains open. Close, Escape or clicking outside
+the outline dismisses it. Tab, arrows, Home/End and Enter support keyboard
+navigation. Rail marks gently expand and fade between interaction/reading states.
+The panel fades and slides from the rail on both opening and closing; quick
+direction changes reverse the transition smoothly. Closed panels are inert and
+hidden from assistive technology. Reduced motion disables these transitions and
+makes heading navigation immediate. Wheel, touch, pointer or scrolling-key input
+interrupts automated scrolling.
+
+Split panes have independent rails and panels: opening one does not open the other
+or change its scroll position. Panels fit their pane below the navbar without
+blocking the editor or replacing the document. Same-origin iframe-backed document
+panes keep their rail attached to the embedded document within the parent pane
+and scroll that pane when
+navigating to a heading.
+
+Both JSON/Tiptap and Markdown/CodeMirror documents support Contents. Markdown
+outlines read the full source for visible documents, including headings outside the
+rendered viewport and inside editable presentation wrappers. Literal code,
+math and other non-editable directive bodies are excluded. H3–H6 remain in
+Markdown content but are omitted from this two-level outline. Extraction is
+cached against the current document snapshot; updates are debounced by 150 ms
+while the document is visible. Scroll updates reuse the cached headings; hidden
+tabs do not scan outlines. Hidden tabs cancel pending animation work and preserve
+document content and selection.
+
 The editor is the final area on document pages, with a 16px outer bottom margin
 and 16px of padding inside the island. A short document island grows to fill
 the remaining viewport height; longer documents scroll naturally and finish
