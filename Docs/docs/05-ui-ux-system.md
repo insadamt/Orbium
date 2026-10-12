@@ -1,5 +1,46 @@
 # UI/UX system
 
+Orbit-circle follow-up (2026-10-12): the user requested visible orbit circle lines.
+Faint dashed circles now trace visible children's exact paths around their moving
+parents. Solid mention links remain separate; no straight containment links are
+added. See [the follow-up report](../reports/05-orbing-orbit-circles.md).
+
+
+The latest Orbing correction (2026-10-12) restores recursive orbital motion for
+contained entities while removing containment lines. Lines now represent saved
+document mentions between visible nodes in the owned current workspace. Type
+icons and Orbium's own styling remain. Interaction/reduced motion pauses movement.
+This user-requested correction supersedes the static icon prototype and its
+no-mention restriction. See [the correction report](../reports/05-orbing-orbits-and-links.md).
+
+
+> Orbing icon-constellation prototype (2026-10-12): The user requested Orbium's own
+> style and reference Folder, Database, and FileText icons instead of dots. Loose,
+> static clusters and thin parent-child connections replace revolving planets,
+> rings, and stars. Icons remain recognizable while labels/deeper branches reveal
+> with zoom. Hover/selection highlights nearby relationships. Existing floating
+> controls, themes, navigation, and menus remain. This supersedes earlier Orbing
+> styling and motion descriptions below. See [the prototype report](../reports/05-orbing-icon-constellations.md).
+
+
+> Orbing style correction (2026-10-12): The workspace is the space, with no central
+> workspace planet. Root documents float independently; folders and databases are
+> entities with their children in orbit, including nested systems. Compact planets,
+> quiet titles, faint tracks, sparse static stars, and small camera controls replace
+> the original hub. Hover/selection, keyboard interaction, panning, search, and
+> menus/dialogs pause motion; reduced motion keeps the scene static. Opening a
+> folder focuses its system within the workspace space. This user-requested correction
+> supersedes the direct-child hub description below. See [the current report](../reports/05-orbing-workspace-space.md).
+
+> Original Orbing Milestone 1 (2026-10-12): Workspace and folder explorers now offer Orbing
+> beside Grid, List, and Gallery. It shows the current container and direct
+> children in a stable 2D solar-system layout. Click selects; double-click or Enter
+> opens, and modified opening uses existing app tabs. Folder opening retains
+> Orbing and updates the location/breadcrumbs. Pan/zoom alone does not navigate.
+> Camera and selection restore per account/tab/workspace/container in this browser.
+> Orbing presents the folder title in its center instead of the media header;
+> other views retain their existing headers. See the [manual review report](../reports/05-orbing-m1-navigation.md).
+
 > Cover and Gallery review (2026-10-02): Documents, folders, and databases can crop a cover to 16:9, 9:16, 3:2, 4:3, 1:1, or 4:5. Opened pages show the full saved crop centered with a height limit; older wide covers keep their banner layout. Workspace-root and folder Galleries have persisted appearance settings for natural masonry or uniform cards. Uniform cards offer all six ratios and whole-image or fill cropping. These settings change previews only, never child cover data.
 
 > Current home/workspace/folder override (2026-09-30): the floating workspace brief supersedes older native-selector, sidebar, card/row, and orbital-carousel guidance below for these routes. Render only direct children as compact horizontal objects. Use a custom workspace menu, independent floating top controls, a separate breadcrumb-path island immediately right of the workspace selector, and a centered tab island whose plus button opens workspace home in a new tab. Ancestor breadcrumbs navigate directly to their hierarchy location. The in-app Back button hides at workspace roots and when the current tab has no earlier page. Create items through the empty-space context menu, contextual user menu, or Search Master. Right-click an item for Open, New tab, Rename, and Delete; do not show Move. Click/Enter opens an entity in the current tab; Ctrl+click or Ctrl+Enter opens a new app tab. Space selects a focused item. Empty containers stay visually empty. Document and database pages share these floating top controls; their existing work surfaces sit inside one spacious floating island. See `../reports/05-floating-workspace.md`.

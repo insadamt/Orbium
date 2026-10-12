@@ -1,4 +1,5 @@
 import type { MermaidPreviewEntry } from './mermaid-preview-entry';
+import { getMermaidPreviewPriority } from './mermaid-preview-proximity';
 
 export function mountNextMermaidPreview(
     entry: MermaidPreviewEntry,
@@ -18,7 +19,9 @@ export function mountNextMermaidPreview(
         if (
             !element.isConnected ||
             element.dataset.mermaidEditing === 'true' ||
-            (observed && !near.has(element)) ||
+            (observed &&
+                !near.has(element) &&
+                !getMermaidPreviewPriority(element)?.visible) ||
             entry.displayed.has(element)
         )
             continue;

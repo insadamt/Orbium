@@ -4,6 +4,14 @@
 
 ## Inline current-page search
 
+Orbing (revised 2026-10-12) uses the same direct-child title search. Filtering keeps
+matching branches and their ancestor context, hiding unrelated systems without
+rearranging orbital positions. Search pauses motion; mention lines appear only
+when both endpoints are in visible matching branches. Search Master
+and normal document/database opening retain their existing behavior. Orbing
+folder opening navigates to that folder with the Orbing preference selected;
+camera movement alone adds no navigation-history entry.
+
 The floating top Search control expands to a focused inline input. It is separate from Search Master. It filters only direct children on explorer pages, current database document titles, and settings categories. On a document it counts text matches while typing; Enter/Shift+Enter selects the next/previous match. Closing clears the query. Changing routes resets the input. `Ctrl + Space` remains the global Search Master shortcut.
 
 

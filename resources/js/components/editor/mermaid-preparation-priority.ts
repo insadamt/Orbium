@@ -1,6 +1,7 @@
 import { measureEditorWork } from '@/lib/editor-performance';
 import type { MermaidPreviewEntry } from './mermaid-preview-entry';
 import { rankMermaidElements } from './mermaid-viewport';
+import { getMermaidPreviewPriority } from './mermaid-preview-proximity';
 
 type PreparationViewport = {
     entries: Iterable<MermaidPreviewEntry>;
@@ -45,6 +46,17 @@ function rankEntries(viewport: PreparationViewport) {
             root,
             viewport.direction,
         );
+        if (
+            priority.rank === 3 &&
+            elements.some(
+                (element) =>
+                    element.isConnected &&
+                    getMermaidPreviewPriority(element)?.visible,
+            )
+        ) {
+            priority.rank = 0;
+            priority.distance = 0;
+        }
         if (priority.rank === 3 && entry.state === 'display') continue;
         ranked.push({ entry, ...priority });
     }

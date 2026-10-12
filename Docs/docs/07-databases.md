@@ -220,6 +220,14 @@ New document:
 - configured property defaults may be applied;
 - free-form body exists immediately.
 
+Table view settings include **Inline adding**, disabled by default. When enabled,
+creating a document from Table stays on the database page and focuses a blank
+inline title input with an Untitled placeholder. Enter or blur saves a non-empty
+title; Escape keeps the created document as Untitled. New rows remain visible
+while naming even when search or filters exclude them, then return to the normal
+filtered and sorted result. Gallery creation continues to open the document.
+The preference is saved per database in Table view configuration.
+
 ## Integrity
 
 On every property write:

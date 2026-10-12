@@ -1,5 +1,34 @@
 # Phase 5 — Explorer review
 
+Orbit-circle follow-up (2026-10-12): the user requested visible orbit circle lines.
+Faint dashed circles now trace visible children's exact paths around their moving
+parents. Solid mention links remain separate; no straight containment links are
+added. See [the follow-up report](../reports/05-orbing-orbit-circles.md).
+
+
+The latest Orbing correction (2026-10-12) restores recursive orbital motion for
+contained entities while removing containment lines. Lines now represent saved
+document mentions between visible nodes in the owned current workspace. Type
+icons and Orbium's own styling remain. Interaction/reduced motion pauses movement.
+This user-requested correction supersedes the static icon prototype and its
+no-mention restriction. See [the correction report](../reports/05-orbing-orbits-and-links.md).
+
+
+The 2026-10-12 [icon-constellation prototype](../reports/05-orbing-icon-constellations.md)
+replaces the orbital presentation after the user requested Orbium's own style,
+accepted a prototype, and specified type icons instead of dots. Static loose
+clusters, subtle hierarchy connections, and zoom disclosure are ready for manual
+visual review. Stay in Phase 5; no mention overlays or later phase is authorized.
+This supersedes earlier Orbing presentation and motion guidance below.
+
+
+The 2026-10-12 [Orbing style correction](../reports/05-orbing-workspace-space.md)
+replaces the first milestone's workspace hub with free workspace space, independently
+floating documents, and folders/databases carrying nested orbital systems. The
+user explicitly requested this revision, including the hierarchy motion required
+for it, within the current review. Manual acceptance is pending. Stay in Phase 5;
+do not add mention overlays or start a later product phase.
+
 Current Performance Engine status (2026-10-07): Phase 1 **KEEP**, Phase 2 **KEEP**. [Phase 3 browser block containment experiment](../reports/05-performance-engine-phase-3-content-visibility.md) is **REVERT / NO-GO** after P3-1: TEST interaction improved only ~0.7%, UpdateLayoutTree was unchanged, and Layout worsened ~9%. Runtime containment is removed; the benchmark report and Inertia page-prop typing fix remain. P3-2 through P3-6 are cancelled because the performance prerequisite failed. Custom Tiptap viewport virtualization is paused while CodeMirror 6 + canonical Markdown is evaluated on `editor/codemirror-markdown`; see the [migration contract](../reports/06-codemirror-markdown-migration.md). This status supersedes the historical phase gates below. Stop here; no Phase 4 or virtualization implementation.
 
 The 2026-10-06 [Performance Engine Phase 1, final Task 3 report](../reports/05-performance-engine-phase-1-background-work.md) follows acceptance of Task 3A and suspends optional Mermaid, local search, helper, and math preview work through the stable activity controller. Lifecycle diagnostics and exact Chrome/manual acceptance procedures are included; runtime numbers remain pending user measurement. Stop for Phase 1 acceptance; Performance Engine Phase 2 has not started.

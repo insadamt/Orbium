@@ -37,6 +37,7 @@ export type Filter = {
 };
 export type Sort = { field: string; direction: 'asc' | 'desc' };
 export type ViewConfig = {
+    inline_adding?: boolean;
     visible_property_ids?: number[];
     widths?: Record<string, number>;
     preview?: 'cover' | 'body' | 'none';

@@ -60,11 +60,15 @@ class DatabaseController extends Controller
         ]);
     }
 
-    public function createDocument(Request $request, int $workspace, int $node, ManageHierarchy $hierarchy): RedirectResponse
+    public function createDocument(Request $request, int $workspace, int $node, ManageHierarchy $hierarchy): RedirectResponse|JsonResponse
     {
         $database = $this->ownedDatabase($request, $workspace, $node);
         $data = $request->validate(['title' => ['nullable', 'string', 'max:255']]);
         $document = $hierarchy->create($database->workspace, 'document', trim($data['title'] ?? '') ?: 'Untitled', $node);
+
+        if ($request->expectsJson()) {
+            return response()->json(['document_id' => $document->id], 201);
+        }
 
         return to_route('documents.show', [$workspace, $document]);
     }
@@ -129,6 +133,7 @@ class DatabaseController extends Controller
             'visible_property_ids' => ['sometimes', 'array'],
             'visible_property_ids.*' => ['integer'],
             'widths' => ['sometimes', 'array'],
+            'inline_adding' => ['sometimes', 'boolean'],
             'preview' => ['sometimes', Rule::in(['cover', 'body', 'none'])],
             'gallery_layout' => ['sometimes', Rule::in(['natural', 'uniform'])],
             'gallery_ratio' => ['sometimes', Rule::in(['16:9', '9:16', '3:2', '4:3', '1:1', '4:5'])],

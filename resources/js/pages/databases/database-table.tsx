@@ -15,6 +15,8 @@ import type { DatabaseDocument, Property, ViewConfig } from './types';
 
 type Props = {
     workspaceId: number;
+    inlineDocumentId: number | null;
+    onFinishInlineAdding: () => void;
     documents: DatabaseDocument[];
     properties: Property[];
     config: ViewConfig;
@@ -28,6 +30,8 @@ type Props = {
 
 export default function DatabaseTable({
     workspaceId,
+    inlineDocumentId,
+    onFinishInlineAdding,
     documents,
     properties,
     config,
@@ -43,6 +47,13 @@ export default function DatabaseTable({
     const [draftTitle, setDraftTitle] = useState('');
     const cancelRename = useRef(false);
     useEffect(() => setWidths(config.widths ?? {}), [config.widths]);
+    useEffect(() => {
+        if (inlineDocumentId !== null) {
+            cancelRename.current = false;
+            setDraftTitle('');
+            setRenamingId(inlineDocumentId);
+        }
+    }, [inlineDocumentId]);
     const visibleIds = properties.map((property) => property.id);
 
     function rename(document: DatabaseDocument) {
@@ -52,12 +63,13 @@ export default function DatabaseTable({
         }
         const title = draftTitle.trim();
         setRenamingId(null);
-        if (title && title !== document.title)
+        if (title && title !== document.title) {
             router.patch(
                 `/workspaces/${workspaceId}/nodes/${document.id}`,
                 { title },
-                { preserveScroll: true },
+                { preserveScroll: true, onSuccess: onFinishInlineAdding },
             );
+        } else onFinishInlineAdding();
     }
 
     return (
@@ -125,6 +137,7 @@ export default function DatabaseTable({
                                             autoFocus
                                             aria-label="Document title"
                                             value={draftTitle}
+                                            placeholder="Untitled"
                                             maxLength={255}
                                             onChange={(event) =>
                                                 setDraftTitle(
@@ -138,6 +151,7 @@ export default function DatabaseTable({
                                                 if (event.key === 'Escape') {
                                                     cancelRename.current = true;
                                                     setRenamingId(null);
+                                                    onFinishInlineAdding();
                                                 }
                                             }}
                                             className="min-w-0 flex-1 rounded bg-background px-1 py-1 outline-1 outline-ring"
@@ -189,6 +203,7 @@ export default function DatabaseTable({
                                                 <DropdownMenu.Item
                                                     className="db-menu-item"
                                                     onSelect={() => {
+                                                        cancelRename.current = false;
                                                         setDraftTitle(
                                                             document.title,
                                                         );

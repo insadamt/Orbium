@@ -14,8 +14,9 @@ const interactionEvents = [
     'compositionstart',
     'compositionend',
     'dragstart',
-    'dragend',
 ];
+
+const interactionEndEvents = ['pointerup', 'pointercancel', 'dragend', 'blur'];
 
 export class MermaidSessionViewport {
     readonly near = new Set<HTMLElement>();
@@ -53,12 +54,12 @@ export class MermaidSessionViewport {
             passive: true,
         });
         window.addEventListener('resize', this.onResize, { passive: true });
-        window.addEventListener('pointerup', this.onInteraction, {
-            passive: true,
-        });
-        window.addEventListener('pointercancel', this.onInteraction, {
-            passive: true,
-        });
+        // Editor controls can consume release events before they reach window.
+        for (const event of interactionEndEvents)
+            window.addEventListener(event, this.onInteraction, {
+                capture: true,
+                passive: true,
+            });
         for (const event of interactionEvents)
             this.editorDom.addEventListener(event, this.onInteraction, {
                 passive: true,
@@ -95,8 +96,8 @@ export class MermaidSessionViewport {
         this.near.clear();
         window.removeEventListener('scroll', this.onScroll, true);
         window.removeEventListener('resize', this.onResize);
-        window.removeEventListener('pointerup', this.onInteraction);
-        window.removeEventListener('pointercancel', this.onInteraction);
+        for (const event of interactionEndEvents)
+            window.removeEventListener(event, this.onInteraction, true);
         for (const event of interactionEvents)
             this.editorDom?.removeEventListener(event, this.onInteraction);
     }

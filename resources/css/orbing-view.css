@@ -1,0 +1,257 @@
+.floating-workspace:has(.orbing-viewport) {
+    padding-bottom: 24px;
+}
+.orbing-viewport {
+    position: relative;
+    isolation: isolate;
+    height: 600px;
+    min-height: 360px;
+    margin-top: 8px;
+    overflow: clip;
+    touch-action: none;
+    overscroll-behavior: contain;
+    cursor: grab;
+}
+.orbing-viewport[data-dragging='true'] {
+    cursor: grabbing;
+}
+.orbing-tracks {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: visible;
+    fill: none;
+    stroke: color-mix(in srgb, var(--foreground) 10%, transparent);
+    stroke-width: 1;
+}
+.orbing-tracks line[data-highlighted='true'] {
+    stroke: color-mix(in srgb, var(--foreground) 48%, transparent);
+}
+.orbing-tracks line[data-dimmed='true'] {
+    opacity: 0.3;
+}
+.orbing-orbit-path {
+    stroke: color-mix(in srgb, var(--foreground) 12%, transparent);
+    stroke-dasharray: 3 6;
+}
+.orbing-orbit-path[data-highlighted='true'] {
+    stroke: color-mix(in srgb, var(--foreground) 28%, transparent);
+}
+.orbing-entity {
+    position: absolute;
+    width: 136px;
+    transform: translate(-50%, -22px);
+    color: var(--foreground);
+    text-align: center;
+    user-select: none;
+}
+.orbing-entity[hidden] {
+    display: none;
+}
+.orbing-entity-target {
+    display: flex;
+    width: 100%;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    border-radius: 12px;
+    cursor: pointer;
+}
+.orbing-entity-body {
+    display: grid;
+    width: 44px;
+    height: 44px;
+    place-items: center;
+}
+.orbing-entity-icon {
+    display: grid;
+    width: var(--entity-size);
+    height: var(--entity-size);
+    place-items: center;
+    color: var(--foreground);
+}
+.orbing-entity-body {
+    border-radius: 12px;
+    background: var(--background);
+    transition:
+        background 140ms ease,
+        box-shadow 140ms ease;
+}
+.orbing-entity[data-dimmed='true'] {
+    opacity: 0.35;
+}
+.orbing-entity:hover,
+.orbing-entity:focus-within {
+    opacity: 1;
+    z-index: 1;
+}
+.orbing-entity:hover .orbing-entity-body,
+.orbing-entity:focus-within .orbing-entity-body,
+.orbing-entity[data-selected='true'] .orbing-entity-body {
+    background: var(--accent);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--foreground) 5%, transparent);
+}
+.orbing-entity-target:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 3px;
+}
+.orbing-entity-title {
+    max-width: 132px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--muted-foreground);
+}
+.orbing-entity[data-type='folder'] .orbing-entity-title,
+.orbing-entity[data-selected='true'] .orbing-entity-title,
+.orbing-entity:hover .orbing-entity-title {
+    color: var(--foreground);
+}
+.orbing-entity[data-labels='false'] .orbing-entity-title {
+    visibility: hidden;
+}
+.orbing-entity[data-labels='false']:hover .orbing-entity-title,
+.orbing-entity[data-labels='false']:focus-within .orbing-entity-title {
+    visibility: visible;
+}
+.orbing-child-count {
+    display: none;
+    margin-inline-start: 6px;
+    color: var(--muted-foreground);
+    font-size: 10px;
+    font-variant-numeric: tabular-nums;
+}
+.orbing-entity[data-collapsed='true'] .orbing-child-count {
+    display: inline;
+}
+.orbing-entity-actions {
+    position: absolute;
+    top: -6px;
+    right: 20px;
+    display: grid;
+    width: 28px;
+    height: 28px;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--background);
+    opacity: 0;
+}
+.orbing-entity:hover .orbing-entity-actions,
+.orbing-entity:focus-within .orbing-entity-actions,
+.orbing-entity[data-selected='true'] .orbing-entity-actions {
+    opacity: 1;
+}
+.orbing-camera-controls {
+    position: absolute;
+    z-index: 2;
+    bottom: 12px;
+    left: 8px;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 4px;
+    border-radius: 12px;
+    cursor: default;
+}
+.orbing-camera-controls button {
+    display: grid;
+    width: 30px;
+    height: 32px;
+    place-items: center;
+    border-radius: 8px;
+}
+.orbing-camera-controls button:hover,
+.orbing-selection button:hover {
+    background: var(--accent);
+}
+.orbing-camera-controls button:disabled {
+    opacity: 0.3;
+}
+.orbing-camera-controls output {
+    width: 42px;
+    text-align: center;
+    font-size: 11px;
+    color: var(--muted-foreground);
+    font-variant-numeric: tabular-nums;
+}
+.orbing-control-divider {
+    height: 16px;
+    margin: 0 4px;
+    border-inline-start: 1px solid var(--border);
+}
+.orbing-selection {
+    position: absolute;
+    z-index: 2;
+    right: 8px;
+    bottom: 12px;
+    display: flex;
+    width: min(260px, calc(100% - 32px));
+    max-height: 140px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+    padding: 12px 14px;
+    overflow: auto;
+    overscroll-behavior: contain;
+    border-radius: 12px;
+    cursor: default;
+    overflow-wrap: anywhere;
+}
+.orbing-selection-path {
+    color: var(--muted-foreground);
+    font-size: 10px;
+}
+.orbing-selection strong {
+    font-size: 13px;
+    font-weight: 500;
+}
+.orbing-selection-actions {
+    display: flex;
+    gap: 8px;
+}
+.orbing-selection button {
+    padding: 3px 6px;
+    border-radius: 5px;
+    font-size: 11px;
+}
+.orbing-instructions {
+    position: absolute;
+    z-index: 2;
+    top: 8px;
+    left: 12px;
+    margin: 0;
+    color: var(--muted-foreground);
+    font-size: 11px;
+    pointer-events: none;
+}
+.orbing-empty,
+.orbing-no-results {
+    position: absolute;
+    top: 45%;
+    right: 16px;
+    left: 16px;
+    text-align: center;
+    color: var(--muted-foreground);
+    font-size: 13px;
+}
+@media (max-width: 600px) {
+    .orbing-selection {
+        bottom: 66px;
+    }
+    .orbing-camera-controls {
+        left: 0;
+    }
+    .orbing-instructions {
+        right: 8px;
+        left: 8px;
+        font-size: 10px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .orbing-entity-body {
+        transition: none;
+    }
+}

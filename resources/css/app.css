@@ -7,6 +7,7 @@
 @import './trash.css';
 @import './node-media.css';
 @import './explorer-views.css';
+@import './orbing-view.css';
 @import './appearance-surfaces.css';
 @import './editor-text-colors.css';
 @import './appearance-settings.css';
@@ -14,6 +15,7 @@
 @import './editor-styles.css';
 @import './editor-styles-responsive.css';
 @import './editor-document.css';
+@import './editor-table.css';
 @import './editor-scroll-layout.css';
 @import './document-outline.css';
 @import './mermaid-preview.css';

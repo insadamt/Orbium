@@ -129,6 +129,30 @@ export default function DatabaseViewSettings({
                 )}
                 {section === 'properties' && (
                     <div className="space-y-4">
+                        {view === 'table' && (
+                            <label className="flex items-start gap-3 border-b border-border/60 pb-4">
+                                <input
+                                    type="checkbox"
+                                    checked={draft.inline_adding ?? false}
+                                    onChange={(event) =>
+                                        setDraft({
+                                            ...draft,
+                                            inline_adding: event.target.checked,
+                                        })
+                                    }
+                                    className="mt-1"
+                                />
+                                <span>
+                                    <span className="block text-sm font-medium">
+                                        Inline adding
+                                    </span>
+                                    <span className="text-xs text-muted-foreground">
+                                        Keep new documents in the table and edit
+                                        their titles immediately.
+                                    </span>
+                                </span>
+                            </label>
+                        )}
                         {view === 'gallery' && (
                             <div className="border-b border-border/60 pb-4">
                                 <p className="mb-2 text-xs font-medium text-muted-foreground">

@@ -159,17 +159,27 @@ export class MermaidPreviewSession {
 
     private onInteraction = (event: Event) => {
         if (!this.active || this.destroyed) return;
+        if (event.type === 'blur' && event.target !== window) return;
         if (event.type === 'wheel') {
             this.onViewportChange();
             return;
         }
-        if (event.type === 'pointermove' && !this.manipulating) return;
+        if (event.type === 'pointermove') {
+            if (!this.manipulating) return;
+            if ((event as PointerEvent).buttons === 0)
+                this.manipulating = false;
+        }
         if (event.type === 'compositionstart') this.composing = true;
         if (event.type === 'compositionend') this.composing = false;
         if (event.type === 'pointerdown' || event.type === 'dragstart')
             this.manipulating = true;
-        if (['pointerup', 'pointercancel', 'dragend'].includes(event.type))
+        if (
+            ['pointerup', 'pointercancel', 'dragend', 'blur'].includes(
+                event.type,
+            )
+        )
             this.manipulating = false;
+        if (event.type === 'blur') this.composing = false;
         this.lastInteraction = performance.now();
         this.cancelScheduledJob();
         this.schedule();

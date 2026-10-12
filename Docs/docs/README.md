@@ -19,3 +19,4 @@
 | `14-phase-report-template.md` | Required phase completion report |
 | `15-deferred-features.md` | Explicit non-goals |
 | `16-decision-log.md` | Locked planning decisions |
+| `17-orbing-view-plan.md` | Proposed additional 2D spatial explorer and milestone acceptance |

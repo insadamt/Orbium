@@ -70,6 +70,10 @@ function DatabasePage({ page }: { page: DatabasePageProps }) {
         Property | 'new' | null
     >(null);
     const [creating, setCreating] = useState(false);
+    const [inlineDocumentId, setInlineDocumentId] = useState<number | null>(
+        null,
+    );
+    const [creationError, setCreationError] = useState('');
     const [documentToTrash, setDocumentToTrash] =
         useState<DatabaseDocument | null>(null);
     const [savingView, setSavingView] = useState(false);
@@ -127,7 +131,43 @@ function DatabasePage({ page }: { page: DatabasePageProps }) {
         setSettingsSection(null);
         setPropertyEditor(property ?? 'new');
     }
-    function createDocument() {
+    async function createDocument() {
+        if (creating) return;
+        setCreationError('');
+        if (view === 'table' && config.inline_adding) {
+            setCreating(true);
+            try {
+                const response = await fetch(`${base}/documents`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken(),
+                        Accept: 'application/json',
+                    },
+                    body: JSON.stringify({ title: 'Untitled' }),
+                });
+                if (!response.ok)
+                    throw new Error(
+                        'Could not create the document. Please try again.',
+                    );
+                const created = (await response.json()) as {
+                    document_id: number;
+                };
+                router.reload({
+                    only: ['documents', 'values', 'candidates'],
+                    onSuccess: () => setInlineDocumentId(created.document_id),
+                    onFinish: () => setCreating(false),
+                });
+            } catch (error) {
+                setCreationError(
+                    error instanceof Error
+                        ? error.message
+                        : 'Could not create the document.',
+                );
+                setCreating(false);
+            }
+            return;
+        }
         router.post(
             `${base}/documents`,
             { title: 'Untitled' },
@@ -201,6 +241,11 @@ function DatabasePage({ page }: { page: DatabasePageProps }) {
                     detail={`${documents.length} ${documents.length === 1 ? 'document' : 'documents'} · ${properties.length} ${properties.length === 1 ? 'property' : 'properties'}`}
                     layout="document"
                 />
+                {creationError && (
+                    <p role="alert" className="mb-4 text-sm text-destructive">
+                        {creationError}
+                    </p>
+                )}
                 {Object.keys(errors).length > 0 &&
                     !propertyEditor &&
                     !settingsSection && (
@@ -295,7 +340,22 @@ function DatabasePage({ page }: { page: DatabasePageProps }) {
                 {view === 'table' && (
                     <DatabaseTable
                         workspaceId={workspace.id}
-                        documents={shownDocuments}
+                        documents={
+                            inlineDocumentId === null
+                                ? shownDocuments
+                                : [
+                                      ...documents.filter(
+                                          (document) =>
+                                              document.id === inlineDocumentId,
+                                      ),
+                                      ...shownDocuments.filter(
+                                          (document) =>
+                                              document.id !== inlineDocumentId,
+                                      ),
+                                  ]
+                        }
+                        inlineDocumentId={inlineDocumentId}
+                        onFinishInlineAdding={() => setInlineDocumentId(null)}
                         properties={visibleProperties}
                         config={config}
                         renderCell={propertyCell}
@@ -346,7 +406,7 @@ function DatabasePage({ page }: { page: DatabasePageProps }) {
                                 if (documents.length) {
                                     setQuery('');
                                     saveView({ ...config, filters: [] });
-                                } else createDocument();
+                                } else void createDocument();
                             }}
                             className="mt-5 inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm hover:bg-muted"
                         >

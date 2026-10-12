@@ -186,6 +186,7 @@ export function canUseGfmTable(table: RichTable): boolean {
                 Number(cell.metadata.rowspan ?? 1) === 1 &&
                 !cell.metadata.colwidth &&
                 !cell.source.includes('\n') &&
+                cell.source === cell.source.trim() &&
                 String(cell.metadata.align ?? '') ===
                     (table.alignments[column] ?? '') &&
                 !/^\s*(?:#{1,6} |[-+*] |\d+[.)] |>|`{3,}|~{3,}|:{3,}orbium)/.test(

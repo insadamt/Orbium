@@ -1,5 +1,57 @@
 # Product decision log
 
+## 2026-10-12 — Visible Orbing paths
+
+The user requested orbit circle lines. Add faint dashed circles for each visible
+child's actual orbital radius, centered on its live parent position. Hide circles
+when the child or parent is filtered/collapsed. Solid lines still represent saved
+mentions; hierarchy gains no straight links. No domain or persistence changes.
+
+
+The latest Orbing correction (2026-10-12) restores recursive orbital motion for
+contained entities while removing containment lines. Lines now represent saved
+document mentions between visible nodes in the owned current workspace. Type
+icons and Orbium's own styling remain. Interaction/reduced motion pauses movement.
+This user-requested correction supersedes the static icon prototype and its
+no-mention restriction. See [the correction report](../reports/05-orbing-orbits-and-links.md).
+
+
+## 2026-10-12 — Orbing icon-constellation prototype
+
+The user rejected copying Obsidian's design and approved a prototype in Orbium's
+own style, explicitly asking for folder/database/document reference icons instead
+of dots. Use existing Lucide type icons, loose static hierarchy clusters, thin
+parent-child connections, and existing theme/floating controls. Remove planetary
+bodies, rings, stars, and continuous motion. Preserve navigation and local camera
+state with constellation-v3 keys. Type icons override custom icons only in this
+view. No physics engine or mention edges are introduced. This supersedes the
+workspace-space correction's orbital movement; visual acceptance remains pending.
+
+
+## 2026-10-12 — Orbing workspace-space correction
+
+The user rejected the Milestone 1 style and requested that the workspace be the
+space itself. Root documents float independently; folders are entities whose
+contents revolve around them, recursively. This explicitly revises the previous
+direct-child/static milestone restriction within the current Phase 5 review.
+The implementation now includes nested systems, free root drift, parent-child
+orbiting, zoom-dependent detail, and interaction/reduced-motion pausing. Orbing
+remains additional to Grid/List/Gallery; mentions and 3D Orbit remain outside this
+change. See [the replacement plan](17-orbing-view-plan.md) and
+[current report](../reports/05-orbing-workspace-space.md). Stop for manual review.
+
+## 2026-10-12 — Additional 2D Orbing explorer
+
+The user approved Orbing as an additional explorer view beside Grid, List, and
+Gallery, then authorized implementation of the staged plan. Milestone 1 adds a
+stable current-container/direct-child system with free pan, pointer-centered zoom,
+select-first planet interaction, existing node actions, and browser-local camera
+restoration per tab and container. Opening folders retains Orbing; documents and
+databases open their existing work surfaces. This does not reactivate the suspended
+3D Orbit or add a database view. Stop for manual review before nested systems
+(Milestone 2) or orbital atmosphere (Milestone 3). Mention overlays remain deferred.
+See [the plan](17-orbing-view-plan.md) and [the report](../reports/05-orbing-m1-navigation.md).
+
 ## 2026-09-30 — Workspace home redesign
 
 The user approved a dark, three-area workspace layout inspired by a file management reference: a narrow navigation rail, collapsible folder tree, and primary content area. Workspace and folder pages show folders as cards and documents/databases as a compact list. Items open with a single click. The sidebar may be hidden to give the explorer more room. The editor and database work surfaces keep the compact top shell. This approval replaces the earlier no-sidebar decision for workspace and folder pages; the spatial UI remains suspended.

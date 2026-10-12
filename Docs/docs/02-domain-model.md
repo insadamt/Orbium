@@ -221,9 +221,13 @@ Permanent deletion behavior must clean up:
 - mentions;
 - attachment references/files when no longer referenced.
 
-## 14. Future 2D graph
+## 14. 2D Orbing and future graph scope
 
-Not part of v0.1.0.
+Review correction (2026-10-12): the user explicitly requested lines for linked
+objects and orbital placement for contained objects in the additional 2D Orbing
+view. Workspace-local saved document mentions are now authorized as its lines;
+parentage remains unchanged and containment produces no line. A global graph and
+cross-workspace connections remain deferred.
 
 When introduced:
 

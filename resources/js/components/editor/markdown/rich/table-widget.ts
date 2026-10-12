@@ -1,7 +1,8 @@
-import { emptyTableCell, mountTableCellActions } from './table-cell-actions';
+import { mountTableFullscreenView } from './table-fullscreen-view';
+import { mountTableColumnMenu } from './table-column-menu';
+import { emptyTableCell } from './table-cell-actions';
 import { mountRichTextInput } from './rich-text-input';
 import { widgetIcon } from './widget-icons';
-import { mountTableOptionsToolbar } from './table-options-toolbar';
 import { EditorView } from '@codemirror/view';
 import { serializeOrbiumBlock } from '../dialect/metadata';
 import type {
@@ -32,7 +33,6 @@ const cloneTable = (table: RichTable): RichTable => ({
 export function mountTable(mount: RichWidgetMount): RichController {
     let block = mount.block;
     let table = block.table!;
-    let selected: CellPosition = { row: 0, column: 0 };
     let structure = '';
     function disposeCells() {
         activeInput?.destroy();
@@ -43,8 +43,6 @@ export function mountTable(mount: RichWidgetMount): RichController {
     const controls = sourceControls(mount, 'Table', false);
     controls.toolbar.hidden = true;
     mount.root.classList.add('group');
-    const tableToolbar = mountTableOptionsToolbar(mount.root, mount.view);
-    const { toolbar: actions, options } = tableToolbar;
     const frame = element('div', 'orbium-table-frame');
     const scroller = element('div', 'tableWrapper overflow-x-auto');
     const grid = element('table', 'orbium-table orbium-rich-table');
@@ -105,19 +103,16 @@ export function mountTable(mount: RichWidgetMount): RichController {
         change(next);
         write(next, rich);
     }
-    const cellActions = mountTableCellActions({
-        host: actions,
+    const columnMenu = mountTableColumnMenu({
+        grid,
+        view: mount.view,
         table: () => table,
-        selected: () => selected,
-        editTable,
         hasSpans,
-        onSelectCell: setSelected,
+        editTable,
+        beforeAction: () => {
+            closeCell();
+        },
     });
-    actions.append(tableToolbar.closeButton);
-    function setSelected(row: number, column: number) {
-        selected = { row, column };
-        cellActions.selectCell(row, column);
-    }
     function closeCell() {
         if (!activePosition) return;
         const { row, column } = activePosition;
@@ -135,12 +130,12 @@ export function mountTable(mount: RichWidgetMount): RichController {
     const dismiss = (event: PointerEvent) => {
         if (
             mount.root.contains(event.target as Node) ||
-            actions.contains(event.target as Node)
+            activeInput?.containsFormattingTarget(event.target as Node) ||
+            columnMenu.contains(event.target as Node)
         )
             return;
         closeCell();
-        tableToolbar.close();
-        options.hidden = true;
+        columnMenu.close();
     };
     document.addEventListener('pointerdown', dismiss);
     const edges = element('div', 'orbium-table-edges');
@@ -156,7 +151,8 @@ export function mountTable(mount: RichWidgetMount): RichController {
         control.title = label;
         control.className = `table-edge-control ${className}`;
         control.append(widgetIcon('plus', 15));
-        cellActions.registerStructuralControl(control);
+        control.disabled =
+            hasSpans() || !mount.view.state.facet(EditorView.editable);
         edges.append(control);
     }
     edgeButton(
@@ -174,6 +170,15 @@ export function mountTable(mount: RichWidgetMount): RichController {
         },
         'orbium-table-add-column',
     );
+    const fullscreenView = mountTableFullscreenView({
+        root: mount.root,
+        edges,
+        grid,
+        beforeOpen: () => {
+            closeCell();
+            columnMenu.close();
+        },
+    });
     frame.append(edges);
     mount.root.addEventListener('orbium-edit-rich', () =>
         renderers[0]?.[0]?.output.click(),
@@ -207,17 +212,16 @@ export function mountTable(mount: RichWidgetMount): RichController {
                     `Edit row ${y + 1}, cell ${x + 1}`,
                 );
                 const input = element('div', 'min-h-7');
+                const content = element('div', 'orbium-table-cell-content');
                 input.hidden = true;
                 editors[y][x] = input;
                 renderers[y][x] = { output, source: '' };
                 const open = () => {
                     if (!mount.view.state.facet(EditorView.editable)) return;
                     closeCell();
-                    setSelected(y, x);
                     activePosition = { row: y, column: x };
                     input.hidden = false;
                     output.hidden = true;
-                    options.hidden = false;
                     activeInput = mountRichTextInput({
                         host: input,
                         source: table.rows[y][x].source,
@@ -250,7 +254,6 @@ export function mountTable(mount: RichWidgetMount): RichController {
                     if (event.key === 'Escape') {
                         event.preventDefault();
                         closeCell();
-                        tableToolbar.close();
                         output.focus();
                     }
                     if (event.key !== 'Tab' || event.defaultPrevented) return;
@@ -265,12 +268,13 @@ export function mountTable(mount: RichWidgetMount): RichController {
                         );
                     else {
                         closeCell();
-                        tableToolbar.close();
                         mount.view.focus();
                     }
                 });
-                td.append(output, input);
+                content.append(output, input);
+                td.append(content);
                 tr.append(td);
+                if (y === 0) columnMenu.attach(td, x);
             });
         });
     }
@@ -308,7 +312,15 @@ export function mountTable(mount: RichWidgetMount): RichController {
             rebuild();
         }
         const disabled = !mount.view.state.facet(EditorView.editable);
-        cellActions.update(disabled);
+        for (const control of edges.querySelectorAll<HTMLButtonElement>(
+            'button:not(.orbium-table-fullscreen-trigger)',
+        )) {
+            control.disabled = disabled || hasSpans();
+            control.title = hasSpans()
+                ? 'Split spanning cells before changing table structure.'
+                : (control.getAttribute('aria-label') ?? '');
+        }
+        columnMenu.refreshSortIndicator();
         table.rows.forEach((row, y) =>
             row.forEach((cell, x) => {
                 if (activePosition?.row === y && activePosition.column === x)
@@ -322,8 +334,9 @@ export function mountTable(mount: RichWidgetMount): RichController {
     return {
         update,
         destroy() {
+            fullscreenView.destroy();
             controls.destroy();
-            tableToolbar.destroy();
+            columnMenu.destroy();
             disposeCells();
             document.removeEventListener('pointerdown', dismiss);
         },

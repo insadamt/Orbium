@@ -1,4 +1,6 @@
 const paths = {
+    sortAscending: ['M12 20V4', 'm6 10 6-6 6 6'],
+    sortDescending: ['M12 4v16', 'm6 14 6 6 6-6'],
     close: ['M18 6 6 18', 'm6 6 12 12'],
     rowAdd: ['M3 3h18v12H3Z', 'M3 9h18', 'M12 18v6', 'M9 21h6'],
     columnAdd: ['M3 3h12v18H3Z', 'M9 3v18', 'M18 12h6', 'M21 9v6'],

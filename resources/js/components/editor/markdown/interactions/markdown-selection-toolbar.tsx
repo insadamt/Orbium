@@ -26,6 +26,18 @@ import { TextColorMenu } from '../../ui/text-color-menu';
 import { FormatButton } from '../../ui/format-button';
 import { markdownSelectionFormatting } from './markdown-selection-formatting';
 
+const selectionToolbarOwners = new WeakMap<HTMLElement, EditorView>();
+
+export function isSelectionToolbarTarget(
+    view: EditorView,
+    target: Node,
+): boolean {
+    const toolbar = (
+        target instanceof Element ? target : target.parentElement
+    )?.closest<HTMLElement>('.orbium-selection-toolbar');
+    return Boolean(toolbar && selectionToolbarOwners.get(toolbar) === view);
+}
+
 function createSelectionToolbar(
     view: EditorView,
     onNotice: (message: string) => void,
@@ -33,6 +45,7 @@ function createSelectionToolbar(
     const dom = document.createElement('div');
     dom.className =
         'orbium-selection-toolbar orbium-editor-toolbar glass-surface flex items-center gap-1 rounded-xl border border-border p-1 shadow-lg';
+    selectionToolbarOwners.set(dom, view);
     dom.setAttribute('role', 'toolbar');
     dom.setAttribute('aria-label', 'Text formatting');
     const root = createRoot(dom);
@@ -165,6 +178,7 @@ function createSelectionToolbar(
         dom,
         update: render,
         destroy: () => {
+            selectionToolbarOwners.delete(dom);
             queueMicrotask(() => root.unmount());
         },
     };

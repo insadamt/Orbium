@@ -12,7 +12,10 @@ import { markdownPreviewTheme } from '../preview/markdown-preview-theme';
 import { markdownWritingCommands } from '../preview/markdown-writing-commands';
 import { markdownTypingShortcuts } from '../markdown-typing-commands';
 import { markdownDividerToolbar } from '../interactions/markdown-divider-toolbar';
-import { markdownSelectionToolbar } from '../interactions/markdown-selection-toolbar';
+import {
+    isSelectionToolbarTarget,
+    markdownSelectionToolbar,
+} from '../interactions/markdown-selection-toolbar';
 import type { RichContext } from './rich-model';
 
 export function mountRichTextInput({
@@ -73,6 +76,8 @@ export function mountRichTextInput({
     return {
         view,
         focus: () => view.focus(),
+        containsFormattingTarget: (target: Node) =>
+            isSelectionToolbarTarget(view, target),
         update(next: string, disabled: boolean) {
             pendingUpdate = { source: next, disabled };
             // Parent serialization can normalize the cell during this editor's update listener.
