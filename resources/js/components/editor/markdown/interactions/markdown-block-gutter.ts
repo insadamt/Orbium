@@ -15,6 +15,7 @@ import { markdownBlockControlTop } from './markdown-block-drag';
 import { MarkdownBlockHandleMotion } from './markdown-block-handle-motion';
 import { MarkdownBlockDragController } from './markdown-block-drag-controller';
 import { markdownBlockMotion } from './markdown-block-motion';
+import { markdownBlockHoverPosition } from './markdown-block-hover-position';
 import {
     adjacentMarkdownBlock,
     markdownBlockAt,
@@ -38,7 +39,14 @@ export function markdownBlockGutter(onNotice: (message: string) => void) {
             hoveredPosition: number | null = null;
             destroyed = false;
             animateNextMove = false;
+            hoverSurface: HTMLElement;
             constructor(readonly view: EditorView) {
+                this.hoverSurface =
+                    view.dom.closest<HTMLElement>(
+                        '.floating-document-island',
+                    ) ??
+                    view.dom.parentElement ??
+                    view.dom;
                 this.dom.className =
                     'orbium-markdown-gutter absolute left-0 z-10 flex items-center rounded-lg text-muted-foreground sm:-left-12';
                 this.dom.hidden = true;
@@ -94,8 +102,8 @@ export function markdownBlockGutter(onNotice: (message: string) => void) {
                 document.body.append(this.panel);
                 this.panel.hidden = true;
                 view.dom.append(this.dom);
-                view.dom.addEventListener('pointermove', this.hover);
-                view.dom.addEventListener('pointerleave', this.leave);
+                this.hoverSurface.addEventListener('pointermove', this.hover);
+                this.hoverSurface.addEventListener('pointerleave', this.leave);
                 view.dom.addEventListener('focusin', this.focusChanged);
                 this.refreshActiveBlock();
                 view.dom.addEventListener('contextmenu', this.contextMenu);
@@ -340,19 +348,13 @@ export function markdownBlockGutter(onNotice: (message: string) => void) {
                     !this.view.state.facet(EditorView.editable)
                 )
                     return;
-                const widget = (event.target as Element).closest<HTMLElement>(
-                    '[data-rich-from]',
-                );
-                const position = widget
-                    ? Number(widget.dataset.richFrom)
-                    : this.view.posAtCoords({
-                          x: event.clientX,
-                          y: event.clientY,
-                      });
-                if (
-                    position === null ||
-                    isStructuralMarkdownSeparator(this.view.state, position)
-                )
+                const position = markdownBlockHoverPosition(this.view, event);
+                if (position === null) {
+                    if (this.hoveredPosition !== null)
+                        this.refreshActiveBlock();
+                    return;
+                }
+                if (isStructuralMarkdownSeparator(this.view.state, position))
                     return;
                 const block = markdownBlockAt(this.view.state, position);
                 if (this.hoveredPosition === block.from) return;
@@ -396,8 +398,14 @@ export function markdownBlockGutter(onNotice: (message: string) => void) {
                 this.destroyed = true;
                 this.motion.hide();
                 this.view.dom.removeEventListener('focusin', this.focusChanged);
-                this.view.dom.removeEventListener('pointermove', this.hover);
-                this.view.dom.removeEventListener('pointerleave', this.leave);
+                this.hoverSurface.removeEventListener(
+                    'pointermove',
+                    this.hover,
+                );
+                this.hoverSurface.removeEventListener(
+                    'pointerleave',
+                    this.leave,
+                );
                 this.view.dom.removeEventListener(
                     'contextmenu',
                     this.contextMenu,
