@@ -1,19 +1,12 @@
 import * as ToggleGroup from '@radix-ui/react-toggle-group';
-import {
-    Images,
-    LayoutGrid,
-    List,
-    Orbit,
-    SlidersHorizontal,
-} from 'lucide-react';
+import { Images, LayoutGrid, List, SlidersHorizontal } from 'lucide-react';
 
-export type ExplorerView = 'grid' | 'list' | 'gallery' | 'orbing';
+export type ExplorerView = 'grid' | 'list' | 'gallery';
 
 const views = [
     { value: 'grid', label: 'Grid', Icon: LayoutGrid },
     { value: 'list', label: 'List', Icon: List },
     { value: 'gallery', label: 'Gallery', Icon: Images },
-    { value: 'orbing', label: 'Orbing', Icon: Orbit },
 ] as const;
 
 export function ExplorerViewControls({

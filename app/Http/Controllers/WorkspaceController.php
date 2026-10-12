@@ -8,7 +8,6 @@ use App\Models\Workspace;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
@@ -163,13 +162,6 @@ class WorkspaceController extends Controller
             'workspace' => $workspace->only(['id', 'name', 'position', 'gallery_config']),
             'galleryConfig' => $currentNode !== null ? $currentNode->gallery_config : $workspace->gallery_config,
             'nodes' => $visibleNodes->map(fn (Node $node) => $this->explorerNode($node))->values(),
-            'mentionLinks' => DB::table('mentions')
-                ->whereIn('source_document_node_id', $visibleNodes->pluck('id'))
-                ->whereIn('target_node_id', $visibleNodes->pluck('id'))
-                ->whereColumn('source_document_node_id', '!=', 'target_node_id')
-                ->orderBy('source_document_node_id')->orderBy('target_node_id')
-                ->get(['source_document_node_id', 'target_node_id'])
-                ->map(fn ($mention) => ['sourceId' => (int) $mention->source_document_node_id, 'targetId' => (int) $mention->target_node_id]),
             'trashedNodes' => Node::query()->onlyTrashed()->where('workspace_id', $workspace->id)->orderByDesc('deleted_at')->get(['id', 'parent_id', 'type', 'title', 'deleted_at']),
             'currentNode' => $currentNode ? $this->explorerNode($currentNode) : null,
             'breadcrumbs' => [...$breadcrumbs, ...$nodeCrumbs],

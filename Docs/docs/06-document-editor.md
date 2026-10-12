@@ -518,15 +518,14 @@ tracked when text color controls are outside the editor DOM.
 The Markdown editor grip uses pointer capture with an Orbium block controller.
 A fixed insertion line targets complete top-level source blocks. Edge dragging
 and mouse-wheel/trackpad input scroll the enclosing document pane; wheel deltas
-retain their pixel, line or page units. Every pointer drop anchors the block
-above the insertion line so content below moves downward, regardless of the
-pane half or drag direction. The insertion line still controls block order.
-When there is no preceding anchor, or it cannot be measured, offsets are retained
-as fallback. Scroll limits can constrain compensation. Drops do not focus the
-editor or select/reveal the moved block. After anchoring, the moved block's top
-is kept visible with a small pane-edge inset. If its beginning would be clipped,
-top visibility takes priority over keeping the preceding block stationary;
-a block that is already visible causes no additional scrolling. This runs again
+retain their pixel, line or page units. Pointer drops retain the scroll offsets
+reached during the drag in both directions. The insertion line controls block
+order. The previous policy of anchoring the preceding block was removed during
+motion review because deleting content above that anchor compensated downward
+moves differently from upward moves. Scroll limits can constrain restoration.
+Drops do not focus the editor or select/reveal the moved block. The moved block's
+top is kept visible with a small pane-edge inset when it would otherwise be
+clipped; a block that is already visible causes no additional scrolling. This runs again
 after the layout frame. Keyboard/menu moves retain their caret and scroll
 behavior. A source change
 cancels a pending drag; drops on another document do not move content. Existing
@@ -534,3 +533,35 @@ block-menu and Alt+Shift+Up/Down movement remain available. Nested reparenting a
 multi-block selection dragging are not implemented. Touch behavior is not yet
 manually verified. Manual acceptance is tracked in
 `../reports/06-codemirror-block-drag-drop.md`.
+
+### Block deletion and reorder motion (2026-10-12)
+
+The Markdown block menu deletes the complete block and its surrounding blank
+separator lines, leaving one normal Markdown separator between surviving blocks.
+Deleting the first or last block removes its outer separators; deleting the only
+block leaves an editable empty document. Explicit empty-block directives remain
+independent blocks. Deletion is one undoable autosave transaction.
+
+Deletion shrinks and fades the outgoing block for 80 ms, then nearby blocks slide
+into the new layout for 140 ms. Pointer drops, menu moves and Alt+Shift+Up/Down use
+the same consecutive sequence, followed by a 100 ms destination entrance without
+bounce. GSAP stages the surviving live rows immediately after the edit, before
+the next paint, then slides them into place. The editor container is never hidden
+or faded. Only the moved block is temporarily transparent until its entrance;
+unchanged blocks remain visible. One inert outgoing-block snapshot uses a fixed
+screen position clipped to the originating pane, so drop compensation cannot
+carry the outgoing pop downward. The outgoing/destination pop scales between 100% and
+65% around the center of visible text/media, rather than the full-width row box.
+The entrance explicitly clears horizontal and vertical translation; only surrounding blocks
+translate up/down. The outgoing snapshot retains the editor theme and interface
+scale. Completion or interruption restores original row styles and requests a
+fresh CodeMirror measurement.
+No persistent block identifiers or new
+content format are required. Source edits, selection changes, pointer interaction,
+actual scroll offset changes during animation, resize, editor destruction and reduced-motion changes
+release temporary visuals. Reduced motion applies edits immediately without
+snapshots or animation. Manual acceptance is tracked in
+`../reports/06-block-deletion-reorder-motion.md`.
+
+The animation records scroll offsets after drop restoration. Queued scroll events
+with unchanged offsets do not cancel playback; actual scrolling still cancels it.

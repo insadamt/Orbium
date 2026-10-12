@@ -1,5 +1,12 @@
 # UI/UX system
 
+Orbing removal (2026-10-12): At the user’s request, the Orbing explorer view
+has been removed. Workspace and folder explorers offer Grid, List, and Gallery;
+saved Orbing selections fall back to Grid. Its renderer, camera/motion controls,
+styles, and explorer-only mention-link query are removed. Earlier Orbing entries
+below are historical and superseded. See [the removal report](../reports/05-orbing-removal.md).
+
+
 > Focus styling review (2026-10-12): At the user's request, app controls no longer
 > draw focus outlines, rings, or focus-only border changes. This supersedes earlier
 > guidance requiring visible keyboard focus borders. Keyboard navigation, focus

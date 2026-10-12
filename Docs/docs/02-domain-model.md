@@ -223,6 +223,10 @@ Permanent deletion behavior must clean up:
 
 ## 14. 2D Orbing and future graph scope
 
+Review removal (2026-10-12): The user removed the additional Orbing view.
+The correction below records historical scope; mention persistence remains for
+editor references and search. No graph view is currently implemented.
+
 Review correction (2026-10-12): the user explicitly requested lines for linked
 objects and orbital placement for contained objects in the additional 2D Orbing
 view. Workspace-local saved document mentions are now authorized as its lines;

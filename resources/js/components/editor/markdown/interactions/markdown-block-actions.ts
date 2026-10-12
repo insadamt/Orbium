@@ -5,6 +5,7 @@ import { EditorView } from '@codemirror/view';
 import type { SyntaxNode } from '@lezer/common';
 import { readRichBlock } from '../rich/read-rich-block';
 import { fencedCodeSource } from '../rich/code-widget';
+import { markdownBlockMotion } from './markdown-block-motion';
 import {
     readOrbiumMetadata,
     serializeOrbiumBlock,
@@ -106,6 +107,48 @@ export function adjacentMarkdownBlock(
     return neighbor ? markdownBlockAt(view.state, neighbor.from) : null;
 }
 
+export function deleteMarkdownBlock(
+    view: EditorView,
+    block: MarkdownBlockRange,
+) {
+    if (
+        !view.state.facet(EditorView.editable) ||
+        view.state.readOnly ||
+        view.compositionStarted ||
+        view.state.sliceDoc(block.from, block.to) !== block.source
+    )
+        return false;
+    let from = block.from;
+    let to = block.to;
+    while (from > 0) {
+        const previous = view.state.doc.lineAt(from - 1);
+        from = previous.to;
+        if (previous.text.trim()) break;
+        from = previous.from;
+    }
+    while (to < view.state.doc.length) {
+        const next = view.state.doc.lineAt(to + 1);
+        to = next.from;
+        if (next.text.trim()) break;
+        to = next.to;
+    }
+    const insert = from > 0 && to < view.state.doc.length ? '\n\n' : '';
+    const changes = view.state.changes({ from, to, insert });
+    const motion = view.plugin(markdownBlockMotion);
+    const snapshot = motion?.capture(block);
+    view.dispatch({
+        changes,
+        selection: {
+            anchor: Math.min(from + insert.length, changes.newLength),
+        },
+        annotations: isolateHistory.of('full'),
+        userEvent: 'delete.block',
+    });
+    if (snapshot) motion?.play(snapshot, changes);
+    view.focus();
+    return true;
+}
+
 export function moveMarkdownBlock(
     view: EditorView,
     block: MarkdownBlockRange,
@@ -165,6 +208,8 @@ export function moveMarkdownBlock(
     ]);
     const anchor =
         changes.mapPos(destination, -1) + (placement === 'before' ? 0 : 2);
+    const motion = view.plugin(markdownBlockMotion);
+    const snapshot = motion?.capture(block);
     view.dispatch({
         changes,
         selection: options.preserveViewport ? undefined : { anchor },
@@ -172,6 +217,11 @@ export function moveMarkdownBlock(
         userEvent: 'move.block',
         scrollIntoView: !options.preserveViewport,
     });
+    if (snapshot)
+        motion?.play(snapshot, changes, {
+            from: anchor,
+            to: anchor + block.source.length,
+        });
     if (!options.preserveViewport) view.focus();
     return changes;
 }

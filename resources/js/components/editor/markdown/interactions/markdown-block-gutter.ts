@@ -14,6 +14,7 @@ import { GripVertical, Plus } from 'lucide-react';
 import { markdownBlockControlTop } from './markdown-block-drag';
 import { MarkdownBlockHandleMotion } from './markdown-block-handle-motion';
 import { MarkdownBlockDragController } from './markdown-block-drag-controller';
+import { markdownBlockMotion } from './markdown-block-motion';
 import {
     adjacentMarkdownBlock,
     markdownBlockAt,
@@ -418,6 +419,7 @@ export function markdownBlockGutter(onNotice: (message: string) => void) {
         },
     );
     return [
+        markdownBlockMotion,
         gutter,
         Prec.high(
             keymap.of([

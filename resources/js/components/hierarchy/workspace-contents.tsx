@@ -14,7 +14,6 @@ import {
 import { openLocation } from '@/components/navigation/tab-navigation';
 import { usePageSearch } from '@/components/navigation/page-search';
 import { useContainerView } from '@/components/navigation/use-container-view';
-import { useNavigation } from '@/components/navigation/navigation-store';
 import { FloatingItem } from './floating-item';
 import {
     ExplorerContextMenu,
@@ -33,14 +32,11 @@ import {
     ExplorerViewControls,
     type ExplorerView,
 } from './explorer-view-controls';
-import { OrbingView } from './orbing/orbing-view';
 import type { WorkspaceContentsProps } from './workspace-contents-types';
 
 export function WorkspaceContents({
     workspaceId,
-    workspaceName,
     nodes,
-    mentionLinks = [],
     parentId,
     initialGalleryConfig,
 }: WorkspaceContentsProps) {
@@ -61,7 +57,7 @@ export function WorkspaceContents({
         `explorer.${workspaceId}.${parentId ?? 'root'}.view`,
         'grid',
     );
-    const view = ['grid', 'list', 'gallery', 'orbing'].includes(savedView)
+    const view = ['grid', 'list', 'gallery'].includes(savedView)
         ? savedView
         : 'grid';
     const focusId = Number(
@@ -93,9 +89,7 @@ export function WorkspaceContents({
     useEffect(() => {
         search.setResultCount(normalizedQuery ? children.length : null);
     }, [children.length, normalizedQuery, search.setResultCount]);
-    const menuNode = (view === 'orbing' ? nodes : children).find(
-        (node) => node.id === menuPosition?.nodeId,
-    );
+    const menuNode = children.find((node) => node.id === menuPosition?.nodeId);
     const deleteNode = nodes.find((node) => node.id === deleteId);
     function move(
         nodeId: number,
@@ -132,17 +126,6 @@ export function WorkspaceContents({
               'parent folder');
     function openNode(node: TreeNode, newTab: boolean) {
         openLocation(nodeUrl(workspaceId, node), newTab);
-    }
-    function openNodeFromOrbing(node: TreeNode, newTab: boolean) {
-        if (node.type === 'folder') {
-            useNavigation
-                .getState()
-                .setContainerView(
-                    `explorer.${workspaceId}.${node.id}.view`,
-                    'orbing',
-                );
-        }
-        openNode(node, newTab);
     }
     function openActionsAt(nodeId: number | null, target: HTMLElement) {
         const bounds = target.getBoundingClientRect();
@@ -211,7 +194,7 @@ export function WorkspaceContents({
             <FloatingItem
                 key={node.id}
                 workspaceId={workspaceId}
-                view={view === 'orbing' ? 'grid' : view}
+                view={view}
                 appearance={appearance}
                 legacyPreview={legacyPreview}
                 node={node}
@@ -241,122 +224,97 @@ export function WorkspaceContents({
                 onChange={setView}
                 onGalleryAppearance={() => setAppearanceDraft(appearance)}
             />
-            {view === 'orbing' ? (
-                <OrbingView
-                    workspaceId={workspaceId}
-                    workspaceName={workspaceName}
-                    parentId={parentId}
-                    containerTitle={currentFolder?.title ?? workspaceName}
-                    nodes={nodes}
-                    mentionLinks={mentionLinks}
-                    paused={Boolean(
-                        menuPosition || createType || renameId || deleteId,
-                    )}
-                    query={normalizedQuery}
-                    initialSelectedId={focusId || null}
-                    onOpen={openNodeFromOrbing}
-                    onActions={(nodeId, target) =>
-                        openActionsAt(nodeId, target)
-                    }
-                    onContextMenu={setMenuPosition}
-                />
-            ) : (
-                <section
-                    className="floating-contents"
-                    data-view={view}
-                    data-layout={
-                        view === 'gallery' ? appearance.layout : undefined
-                    }
-                    aria-label="Current container contents"
-                    aria-busy={moving}
-                    tabIndex={0}
-                    onDragEndCapture={() => setParentDropActive(false)}
-                    onContextMenu={(event) => {
-                        event.preventDefault();
-                        const item = (
-                            event.target as HTMLElement
-                        ).closest<HTMLElement>('[data-node-id]');
-                        const nodeId = item
-                            ? Number(item.dataset.nodeId)
-                            : null;
-                        setMenuPosition({
-                            nodeId,
-                            x: event.clientX,
-                            y: event.clientY,
-                            direction: getComputedStyle(event.target as Element)
-                                .direction as 'ltr' | 'rtl',
-                        });
-                    }}
-                    onKeyDown={(event) => {
-                        if (
-                            event.target !== event.currentTarget ||
-                            !event.shiftKey ||
-                            event.key !== 'F10'
-                        )
-                            return;
-                        event.preventDefault();
-                        openActionsAt(null, event.currentTarget);
-                    }}
-                >
-                    {draggedId !== null && currentFolder?.type === 'folder' && (
-                        <div
-                            className="floating-parent-drop-zone"
-                            data-active={parentDropActive}
-                            onDragOver={(event) => {
-                                event.preventDefault();
-                                event.dataTransfer.dropEffect = 'move';
-                                setParentDropActive(true);
-                            }}
-                            onDragLeave={(event) => {
-                                if (
-                                    !(event.relatedTarget instanceof Node) ||
-                                    !event.currentTarget.contains(
-                                        event.relatedTarget,
-                                    )
+            <section
+                className="floating-contents"
+                data-view={view}
+                data-layout={view === 'gallery' ? appearance.layout : undefined}
+                aria-label="Current container contents"
+                aria-busy={moving}
+                tabIndex={0}
+                onDragEndCapture={() => setParentDropActive(false)}
+                onContextMenu={(event) => {
+                    event.preventDefault();
+                    const item = (
+                        event.target as HTMLElement
+                    ).closest<HTMLElement>('[data-node-id]');
+                    const nodeId = item ? Number(item.dataset.nodeId) : null;
+                    setMenuPosition({
+                        nodeId,
+                        x: event.clientX,
+                        y: event.clientY,
+                        direction: getComputedStyle(event.target as Element)
+                            .direction as 'ltr' | 'rtl',
+                    });
+                }}
+                onKeyDown={(event) => {
+                    if (
+                        event.target !== event.currentTarget ||
+                        !event.shiftKey ||
+                        event.key !== 'F10'
+                    )
+                        return;
+                    event.preventDefault();
+                    openActionsAt(null, event.currentTarget);
+                }}
+            >
+                {draggedId !== null && currentFolder?.type === 'folder' && (
+                    <div
+                        className="floating-parent-drop-zone"
+                        data-active={parentDropActive}
+                        onDragOver={(event) => {
+                            event.preventDefault();
+                            event.dataTransfer.dropEffect = 'move';
+                            setParentDropActive(true);
+                        }}
+                        onDragLeave={(event) => {
+                            if (
+                                !(event.relatedTarget instanceof Node) ||
+                                !event.currentTarget.contains(
+                                    event.relatedTarget,
                                 )
-                                    setParentDropActive(false);
-                            }}
-                            onDrop={(event) => {
+                            )
                                 setParentDropActive(false);
-                                dropIntoParent(
-                                    event,
-                                    currentFolder.id,
-                                    parentDestination,
-                                );
-                            }}
-                        >
-                            Move to {parentName}
-                        </div>
-                    )}
-                    {view === 'gallery' && appearance.layout === 'natural' ? (
-                        <MasonryLayout
-                            items={children.map((node) => ({
-                                ...node,
-                                estimatedHeight: (width: number) =>
-                                    width /
-                                        ratioNumber(
-                                            node.cover_attachment_id
-                                                ? node.cover_aspect_ratio
-                                                : '16:9',
-                                        ) +
-                                    70,
-                            }))}
-                            render={(node) =>
-                                renderChild(
-                                    node,
-                                    children.findIndex(
-                                        (child) => child.id === node.id,
-                                    ),
-                                )
-                            }
-                            minimumWidth={252}
-                        />
-                    ) : (
-                        children.map(renderChild)
-                    )}
-                </section>
-            )}
-            {view !== 'orbing' && normalizedQuery && children.length === 0 && (
+                        }}
+                        onDrop={(event) => {
+                            setParentDropActive(false);
+                            dropIntoParent(
+                                event,
+                                currentFolder.id,
+                                parentDestination,
+                            );
+                        }}
+                    >
+                        Move to {parentName}
+                    </div>
+                )}
+                {view === 'gallery' && appearance.layout === 'natural' ? (
+                    <MasonryLayout
+                        items={children.map((node) => ({
+                            ...node,
+                            estimatedHeight: (width: number) =>
+                                width /
+                                    ratioNumber(
+                                        node.cover_attachment_id
+                                            ? node.cover_aspect_ratio
+                                            : '16:9',
+                                    ) +
+                                70,
+                        }))}
+                        render={(node) =>
+                            renderChild(
+                                node,
+                                children.findIndex(
+                                    (child) => child.id === node.id,
+                                ),
+                            )
+                        }
+                        minimumWidth={252}
+                    />
+                ) : (
+                    children.map(renderChild)
+                )}
+            </section>
+            {normalizedQuery && children.length === 0 && (
                 <p className="floating-no-results" role="status">
                     No items match this search.
                 </p>
@@ -371,8 +329,7 @@ export function WorkspaceContents({
                 onCreate={setCreateType}
                 onOpen={(newTab) => {
                     if (!menuNode) return;
-                    if (view === 'orbing') openNodeFromOrbing(menuNode, newTab);
-                    else openNode(menuNode, newTab);
+                    openNode(menuNode, newTab);
                 }}
                 onRename={() => {
                     if (!menuNode) return;

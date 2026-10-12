@@ -232,7 +232,6 @@ export class MarkdownBlockDragController {
             return;
         try {
             preserveMarkdownDropViewport(this.options.view, {
-                draggedBlock: session.block,
                 targetBlock: target.block,
                 placement: target.placement,
                 moveBlock: () =>

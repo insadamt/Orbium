@@ -9,6 +9,7 @@ import { Text } from '@codemirror/state';
 import { logicalMarkdownText } from './markdown-logical-text';
 import {
     adjacentMarkdownBlock,
+    deleteMarkdownBlock,
     markdownBlockPresentation,
     moveMarkdownBlock,
     replaceMarkdownBlock,
@@ -81,7 +82,7 @@ export function mountMarkdownBlockMenu({
         }
     }
     function runAction(action: BlockMenuAction) {
-        if (action === 'delete') replaceMarkdownBlock(view, block, '');
+        if (action === 'delete') deleteMarkdownBlock(view, block);
         else if (action === 'duplicate')
             replaceMarkdownBlock(
                 view,

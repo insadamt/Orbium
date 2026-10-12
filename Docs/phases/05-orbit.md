@@ -1,5 +1,12 @@
 # Phase 5 — Explorer review
 
+Orbing removal (2026-10-12): At the user’s request, the Orbing explorer view
+has been removed. Workspace and folder explorers offer Grid, List, and Gallery;
+saved Orbing selections fall back to Grid. Its renderer, camera/motion controls,
+styles, and explorer-only mention-link query are removed. Earlier Orbing entries
+below are historical and superseded. See [the removal report](../reports/05-orbing-removal.md).
+
+
 Orbit-circle follow-up (2026-10-12): the user requested visible orbit circle lines.
 Faint dashed circles now trace visible children's exact paths around their moving
 parents. Solid mention links remain separate; no straight containment links are
