@@ -1,22 +1,27 @@
-import type { SVGAttributes } from 'react';
+import type { ImgHTMLAttributes } from 'react';
+import { cn } from '@/lib/utils';
 
-export default function AppLogoIcon(props: SVGAttributes<SVGElement>) {
+export default function AppLogoIcon({
+    className,
+    alt = '',
+    ...props
+}: ImgHTMLAttributes<HTMLImageElement>) {
     return (
-        <svg
-            {...props}
-            viewBox="0 0 48 48"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-        >
-            <circle cx="24" cy="24" r="5" fill="currentColor" />
-            <circle
-                cx="24"
-                cy="24"
-                r="17"
-                stroke="currentColor"
-                strokeWidth="1.5"
+        <>
+            <img
+                {...props}
+                src="/imgs/logos/orbium-black.png"
+                alt={alt}
+                draggable={false}
+                className={cn('object-contain dark:hidden', className)}
             />
-            <circle cx="39" cy="16" r="3" fill="currentColor" />
-        </svg>
+            <img
+                {...props}
+                src="/imgs/logos/orbium-white.png"
+                alt={alt}
+                draggable={false}
+                className={cn('hidden object-contain dark:block', className)}
+            />
+        </>
     );
 }

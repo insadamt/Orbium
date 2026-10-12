@@ -151,7 +151,7 @@ export function FloatingTopControls({
                             );
                         }}
                     >
-                        <AppLogoIcon className="size-7" />
+                        <AppLogoIcon className="size-11 shrink-0 max-sm:size-9" />
                     </Link>
                     <Menu.Root>
                         <Menu.Trigger

@@ -29,7 +29,8 @@
             }
         </style>
 
-        <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+        <link rel="icon" href="/imgs/logos/orbium-black.png" type="image/png">
+        <link rel="icon" href="/imgs/logos/orbium-white.png" type="image/png" media="(prefers-color-scheme: dark)">
 
         @viteReactRefresh
         @vite(['resources/css/app.css', 'resources/js/app.tsx', "resources/js/pages/{$page['component']}.tsx"])

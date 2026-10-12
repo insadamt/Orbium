@@ -16,11 +16,11 @@ export default function AuthSimpleLayout({
                         <Link
                             href={home()}
                             className="flex flex-col items-center gap-2 font-medium"
+                            aria-label="Orbium home"
                         >
-                            <div className="mb-1 flex h-9 w-9 items-center justify-center rounded-md">
-                                <AppLogoIcon className="size-9 fill-current text-[var(--foreground)] dark:text-white" />
+                            <div className="mb-1 flex size-20 items-center justify-center">
+                                <AppLogoIcon className="size-20" />
                             </div>
-                            <span className="sr-only">{title}</span>
                         </Link>
 
                         <div className="space-y-2 text-center">
