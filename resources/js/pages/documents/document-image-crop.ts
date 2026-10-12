@@ -12,6 +12,7 @@ const coverImageTargets: Record<
     { width: number; height: number; label: string }
 > = {
     '16:9': { width: 1200, height: 675, label: 'cover' },
+    '5:2': { width: 1200, height: 480, label: 'cover' },
     '9:16': { width: 675, height: 1200, label: 'cover' },
     '3:2': { width: 1200, height: 800, label: 'cover' },
     '4:3': { width: 1200, height: 900, label: 'cover' },

@@ -23,9 +23,11 @@ Document Title
 Body...
 ```
 
-The document image menu opens pickers for PNG, JPEG, GIF, or WebP icons and covers. A selected icon overlaps the cover edge by half its height and sits beside the title column. Existing text icons remain visible until replaced or removed.
+The document image menu opens pickers for PNG, JPEG, GIF, or WebP icons and covers. A selected icon overlaps the cover edge by half its height for every cover ratio. A rounded cutout in the cover leaves a transparent gap around the icon. For narrow centered covers, the icon shifts horizontally to stay on the cover's edge. Existing text icons remain visible until replaced or removed.
 
-Icons that do not match 512×512 open a crop dialog. Every new cover opens the crop dialog with 16:9, 9:16, 3:2, 4:3, 1:1, and 4:5 choices. The user can change ratio, position and zoom the crop, or cancel without changing the current image. Opened pages show the entire saved crop centered with a height limit; covers saved before this feature retain their wide banner layout.
+Icons that do not match 512×512 open a crop dialog. Every new cover opens the crop dialog with 16:9, 5:2, 9:16, 3:2, 4:3, 1:1, and 4:5 choices. The user can change ratio, position and zoom the crop, or cancel without changing the current image. Opened pages show the entire saved crop centered with a height limit; covers saved before this feature retain their wide banner layout.
+
+The seven cover ratio buttons occupy one row on wider screens and two rows (four then three) on smaller screens. Documents, folders, and databases share these crop controls and the transparent icon cutout treatment.
 
 No permanent formatting toolbar.
 

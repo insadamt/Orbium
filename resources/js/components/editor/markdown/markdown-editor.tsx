@@ -129,6 +129,12 @@ export default function MarkdownEditor(props: MarkdownEditorProps) {
 
     useEffect(() => {
         if (!host.current) return;
+        // Strict Mode repeats setup after cleanup, which permanently destroys the session.
+        const mermaidSession = new MermaidPreviewSession(
+            initial.current.workspaceId,
+            initial.current.nodeId,
+        );
+        richContext.mermaid = mermaidSession;
         const editor = measureEditorWork(
             'codemirror.mount',
             () =>
@@ -233,7 +239,7 @@ export default function MarkdownEditor(props: MarkdownEditorProps) {
                     }),
                 }),
         );
-        richContext.mermaid.start(editor.dom);
+        mermaidSession.start(editor.dom);
         editorView.current = editor;
         setView(editor);
         adjustEditorPerformanceCounter('codemirror.mounted-editors', 1);
@@ -247,7 +253,7 @@ export default function MarkdownEditor(props: MarkdownEditorProps) {
             cancelAnimationFrame(frame);
             editorView.current = null;
             editor.destroy();
-            richContext.mermaid.destroy();
+            mermaidSession.destroy();
             adjustEditorPerformanceCounter('codemirror.mounted-editors', -1);
         };
     }, [richContext, richExtensions]);

@@ -136,7 +136,7 @@ class DatabaseController extends Controller
             'inline_adding' => ['sometimes', 'boolean'],
             'preview' => ['sometimes', Rule::in(['cover', 'body', 'none'])],
             'gallery_layout' => ['sometimes', Rule::in(['natural', 'uniform'])],
-            'gallery_ratio' => ['sometimes', Rule::in(['16:9', '9:16', '3:2', '4:3', '1:1', '4:5'])],
+            'gallery_ratio' => ['sometimes', Rule::in(['16:9', '5:2', '9:16', '3:2', '4:3', '1:1', '4:5'])],
             'gallery_fit' => ['sometimes', Rule::in(['contain', 'crop'])],
             'gallery_legacy_preview' => ['sometimes', 'boolean'],
             'filters' => ['sometimes', 'array', 'max:10'],

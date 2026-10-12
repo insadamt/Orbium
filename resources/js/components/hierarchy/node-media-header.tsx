@@ -12,6 +12,7 @@ import {
 import DocumentMediaMenu from '@/pages/documents/document-media-menu';
 import { nodeImageUrl, uploadNodeImage } from './node-media-api';
 import { ratioNumber, type CoverRatio } from './cover-presentation';
+import { useCoverIconCutout } from './use-cover-icon-cutout';
 
 export type MediaContainer = {
     id: number;
@@ -50,6 +51,7 @@ export function NodeMediaHeader({
     const [iconId, setIconId] = useState(node.icon_attachment_id);
     const [coverId, setCoverId] = useState(node.cover_attachment_id);
     const [coverRatio, setCoverRatio] = useState(node.cover_aspect_ratio);
+    const { coverRef, iconRef } = useCoverIconCutout();
     const [error, setError] = useState('');
     const [iconUploading, setIconUploading] = useState(false);
     const [coverUploading, setCoverUploading] = useState(false);
@@ -186,6 +188,7 @@ export function NodeMediaHeader({
         <div className="node-media-header" data-layout={layout}>
             {coverId && (
                 <img
+                    ref={coverRef}
                     className="node-media-cover"
                     data-ratio={coverRatio ?? 'legacy'}
                     style={
@@ -212,7 +215,8 @@ export function NodeMediaHeader({
             </div>
             <div className="node-media-body">
                 <div
-                    className={`node-media-icon ${coverId && !coverRatio ? 'node-media-icon-overlap' : ''}`}
+                    ref={iconRef}
+                    className={`node-media-icon ${coverId ? 'node-media-icon-overlap' : ''}`}
                 >
                     {iconId ? (
                         <img

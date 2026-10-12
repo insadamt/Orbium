@@ -29,6 +29,7 @@ import {
 } from '@/components/hierarchy/cover-presentation';
 import DatabasePropertyHeader from '@/pages/documents/database-property-header';
 import DocumentOpeningPreview from '@/pages/documents/document-opening-preview';
+import { useCoverIconCutout } from '@/components/hierarchy/use-cover-icon-cutout';
 import DocumentEditorLoader from '@/pages/documents/document-editor-loader';
 import type {
     Candidate,
@@ -97,6 +98,7 @@ export function DocumentPage({
         savedDocument.icon_attachment_id,
     );
     const [coverId, setCoverId] = useState(savedDocument.cover_attachment_id);
+    const { coverRef, iconRef } = useCoverIconCutout();
     const [coverRatio, setCoverRatio] = useState(
         savedDocument.cover_aspect_ratio,
     );
@@ -311,6 +313,7 @@ export function DocumentPage({
                                 className={`flex justify-center ${coverRatio ? '' : 'aspect-[980/288]'}`}
                             >
                                 <img
+                                    ref={coverRef}
                                     src={attachmentUrl(
                                         workspace.id,
                                         node.id,
@@ -352,7 +355,8 @@ export function DocumentPage({
                         <div className="mx-auto flow-root max-w-[780px]">
                             {(iconAttachmentId || legacyIcon) && (
                                 <div
-                                    className={`relative z-10 mb-5 ml-4 flex size-24 items-center justify-center overflow-hidden rounded-2xl border-4 border-background bg-muted shadow-md ${coverId && !coverRatio ? '-mt-12' : ''}`}
+                                    ref={iconRef}
+                                    className={`relative z-10 mb-5 ml-4 flex size-24 items-center justify-center overflow-hidden rounded-2xl border-4 border-transparent bg-muted bg-clip-padding ${coverId ? '-mt-12' : 'shadow-md'}`}
                                 >
                                     {iconAttachmentId ? (
                                         <img

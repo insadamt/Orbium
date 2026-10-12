@@ -222,7 +222,7 @@ export default function DocumentImageCropDialog({
                     </Dialog.Description>
                     {kind === 'cover' && (
                         <div
-                            className="mt-5 grid grid-cols-3 gap-2 sm:grid-cols-6"
+                            className="mt-5 grid grid-cols-4 gap-2 sm:grid-cols-7"
                             role="group"
                             aria-label="Cover aspect ratio"
                         >
