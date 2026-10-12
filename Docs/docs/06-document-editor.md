@@ -47,8 +47,10 @@ weight without H1/H2/H3 aliases. Long labels wrap and the list scrolls independe
 Documents remain mounted, readable and editable while panels are open.
 
 Selecting a heading smoothly scrolls its own document to that section and closes
-an unpinned preview. A pinned panel remains open. Close, Escape or clicking outside
-the outline dismisses it. Tab, arrows, Home/End and Enter support keyboard
+an unpinned preview. A pinned panel remains open when clicking outside, editing
+the document or selecting headings. Close or Escape dismisses it; outside clicks
+dismiss only an unpinned preview. Unpin restores the normal preview behavior.
+Tab, arrows, Home/End and Enter support keyboard
 navigation. Rail marks gently expand and fade between interaction/reading states.
 The panel fades and slides from the rail on both opening and closing; quick
 direction changes reverse the transition smoothly. Closed panels are inert and

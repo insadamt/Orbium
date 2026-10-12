@@ -110,7 +110,7 @@ export function TableOfContents({
     }, [visible, outline]);
 
     useEffect(() => {
-        if (!expanded) return;
+        if (!expanded || pinned) return;
         const dismissOutside = (event: PointerEvent) => {
             if (
                 event.target instanceof Node &&
@@ -124,7 +124,7 @@ export function TableOfContents({
         document.addEventListener('pointerdown', dismissOutside);
         return () =>
             document.removeEventListener('pointerdown', dismissOutside);
-    }, [expanded]);
+    }, [expanded, pinned]);
 
     const currentHeading = headings.findLast(
         (heading) => heading.position <= currentPosition,
