@@ -18,7 +18,7 @@ export function element<K extends keyof HTMLElementTagNameMap>(
 export function button(label: string, action: () => void) {
     const result = element(
         'button',
-        'rounded p-1.5 text-xs hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring',
+        'rounded p-1.5 text-xs hover:bg-accent',
         label,
     );
     result.type = 'button';
@@ -86,7 +86,7 @@ export function sourceControls(
     let customEditor = false;
     let input = element(
         'textarea',
-        'w-full rounded-md bg-muted p-3 font-mono text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring',
+        'w-full rounded-md bg-muted p-3 font-mono text-sm outline-none',
     );
     input.setAttribute('aria-label', `${label} Markdown source`);
     input.dir = 'ltr';
@@ -103,7 +103,7 @@ export function sourceControls(
     preview.prepend(widgetIcon('preview'));
     for (const control of [edit, preview])
         control.className =
-            'orbium-rich-mode inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 transition-colors focus-visible:outline-2 focus-visible:outline-ring hover:bg-accent hover:text-foreground';
+            'orbium-rich-mode inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 transition-colors hover:bg-accent hover:text-foreground';
     group.append(edit, preview);
     toolbar.append(group);
     mount.root.append(toolbar, error, input, output);

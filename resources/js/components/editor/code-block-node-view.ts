@@ -70,7 +70,7 @@ export function createCodeBlockNodeView({
     const select = document.createElement('select');
     select.setAttribute('aria-label', 'Code language');
     select.className =
-        'min-h-7 cursor-pointer appearance-none rounded border-0 bg-transparent py-1 pr-6 pl-2 text-xs text-foreground uppercase outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring';
+        'min-h-7 cursor-pointer appearance-none rounded border-0 bg-transparent py-1 pr-6 pl-2 text-xs text-foreground uppercase outline-none hover:bg-accent';
     fillLanguageOptions(
         select,
         normalizeCodeLanguage(String(node.attrs.language || 'plaintext')),

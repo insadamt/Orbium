@@ -7,9 +7,6 @@
     border: 0;
     outline: none;
 }
-.orbium-editor:focus-visible {
-    outline: none;
-}
 
 .orbium-editor:where(:not(.orbium-markdown-content)) > * + * {
     margin-top: 0.75em;
@@ -349,17 +346,8 @@
 .orbium-markdown-trailing-paragraph:hover {
     color: var(--foreground);
 }
-.orbium-markdown-trailing-paragraph:focus-visible {
-    outline: 2px solid var(--ring);
-    outline-offset: 2px;
-}
 .orbium-markdown-trailing-paragraph[hidden] {
     display: none;
-}
-
-.orbium-rich-block:focus {
-    outline: 2px solid var(--ring);
-    outline-offset: 3px;
 }
 .orbium-rich-source-input {
     field-sizing: content;
@@ -373,9 +361,6 @@
     padding: 0.5rem 0;
     outline: none;
     line-height: 1.55;
-}
-.orbium-rich-source-input:focus {
-    border-bottom-color: var(--ring);
 }
 .orbium-markdown-content .editor-block-dragging {
     opacity: 0.45;

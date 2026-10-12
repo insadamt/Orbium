@@ -52,7 +52,7 @@ export default function MathBlockView({
                             type="button"
                             aria-pressed={isEditing}
                             onClick={() => setIsEditing(true)}
-                            className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 transition-colors focus-visible:outline-2 focus-visible:outline-ring ${isEditing ? 'bg-background text-foreground shadow-sm' : 'hover:bg-accent hover:text-foreground'}`}
+                            className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 transition-colors ${isEditing ? 'bg-background text-foreground shadow-sm' : 'hover:bg-accent hover:text-foreground'}`}
                         >
                             <Pencil size={13} aria-hidden="true" /> Edit
                         </button>
@@ -60,7 +60,7 @@ export default function MathBlockView({
                             type="button"
                             aria-pressed={!isEditing}
                             onClick={() => setIsEditing(false)}
-                            className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 transition-colors focus-visible:outline-2 focus-visible:outline-ring ${!isEditing ? 'bg-background text-foreground shadow-sm' : 'hover:bg-accent hover:text-foreground'}`}
+                            className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 transition-colors ${!isEditing ? 'bg-background text-foreground shadow-sm' : 'hover:bg-accent hover:text-foreground'}`}
                         >
                             <Eye size={14} aria-hidden="true" /> Preview
                         </button>
@@ -77,7 +77,7 @@ export default function MathBlockView({
                         }}
                         rows={4}
                         dir="ltr"
-                        className="w-full rounded-md bg-muted p-3 font-mono text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        className="w-full rounded-md bg-muted p-3 font-mono text-sm outline-none"
                     />
                 ) : !activated ? (
                     <p className="min-h-12 text-sm text-muted-foreground">

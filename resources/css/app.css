@@ -66,8 +66,6 @@
 .editor-image-resize-handle:hover,
 .editor-image-resize-handle:focus-visible {
     background: var(--foreground);
-    outline: 2px solid var(--ring);
-    outline-offset: 2px;
 }
 .editor-image-resize-handle--top-left {
     top: -7px;
@@ -212,11 +210,11 @@
             transparent;
         scrollbar-width: thin;
     }
+    :focus {
+        outline: none;
+    }
     body {
         @apply bg-background text-foreground;
-    }
-    :focus-visible {
-        outline-color: var(--ring);
     }
 }
 
@@ -367,6 +365,6 @@
 
 @layer components {
     .trash-button {
-        @apply inline-flex min-h-9 items-center justify-center rounded-lg px-3 py-2 text-sm transition-colors hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring disabled:cursor-not-allowed disabled:opacity-40;
+        @apply inline-flex min-h-9 items-center justify-center rounded-lg px-3 py-2 text-sm transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-40;
     }
 }

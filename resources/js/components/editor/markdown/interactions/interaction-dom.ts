@@ -5,8 +5,7 @@ export function interactionButton(
 ) {
     const button = document.createElement('button');
     button.type = 'button';
-    button.className =
-        'rounded px-2 py-1.5 text-sm hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring';
+    button.className = 'rounded px-2 py-1.5 text-sm hover:bg-accent';
     button.setAttribute('aria-label', label);
     button.title = label;
     button.textContent = text;

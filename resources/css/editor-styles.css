@@ -400,12 +400,6 @@
     gap: 8px;
     margin-top: 22px;
 }
-.editor-style-dialog button:focus-visible,
-.editor-style-discard button:focus-visible,
-.editor-style-help summary:focus-visible {
-    outline: 2px solid var(--ring);
-    outline-offset: 2px;
-}
 .editor-style-dialog button:disabled {
     cursor: not-allowed;
 }

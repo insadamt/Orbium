@@ -76,9 +76,6 @@
     letter-spacing: -0.04em;
     outline: none;
 }
-.node-media-title-row > input:focus-visible {
-    outline: none;
-}
 .node-media-header[data-layout='document'] {
     max-width: none;
 }

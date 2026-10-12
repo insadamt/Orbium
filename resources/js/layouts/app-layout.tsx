@@ -149,7 +149,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
             {!isPane && !isFloatingPage && (
                 <header className="glass-surface sticky top-0 z-20 border-b border-border/70">
                     <div className="flex h-14 items-center gap-2 px-3 md:gap-3 md:px-5">
-                        <NavigationBackButton className="flex size-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring disabled:opacity-40" />
+                        <NavigationBackButton className="flex size-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-40" />
                         <WorkspaceSelector />
                         <NavigationTabStrip />
                         <button
@@ -161,7 +161,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                                     new Event('orbium:open-search'),
                                 )
                             }
-                            className="flex size-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
+                            className="flex size-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground"
                         >
                             <Search size={18} />
                         </button>
@@ -174,7 +174,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                                 onClick={() =>
                                     setAccountMenuOpen(!accountMenuOpen)
                                 }
-                                className="flex items-center gap-2 rounded-full border border-border bg-background/70 px-3 py-2 text-xs font-medium hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                                className="flex items-center gap-2 rounded-full border border-border bg-background/70 px-3 py-2 text-xs font-medium hover:bg-accent"
                             >
                                 <span className="hidden max-w-28 truncate sm:inline">
                                     {auth.user.name}

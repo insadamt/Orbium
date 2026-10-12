@@ -49,7 +49,7 @@ export default function MathInlineView({
                     aria-label={`Edit inline math: ${latex}`}
                     aria-expanded={isEditing}
                     onClick={() => setIsEditing(true)}
-                    className="rounded-sm px-0.5 hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring"
+                    className="rounded-sm px-0.5 hover:bg-accent"
                 >
                     {renderedMath ? (
                         <span
@@ -86,7 +86,7 @@ export default function MathInlineView({
                                         setIsEditing(false);
                                     }
                                 }}
-                                className="mt-2 w-full rounded-md border border-border bg-background px-2 py-1.5 font-mono text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                className="mt-2 w-full rounded-md border border-border bg-background px-2 py-1.5 font-mono text-sm outline-none"
                             />
                         </label>
                         {!renderedMath && latex && (

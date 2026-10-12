@@ -15,10 +15,6 @@
     letter-spacing: -0.025em;
     outline: none;
 }
-.trash-page-header h1:focus-visible {
-    outline: 2px solid var(--ring);
-    outline-offset: 5px;
-}
 .trash-page-header p {
     margin-top: 5px;
     font-size: 0.78rem;
@@ -57,14 +53,6 @@
 .trash-control-button:hover,
 .trash-control-button[data-active='true'] {
     background: var(--accent);
-}
-.trash-control-button:focus-visible,
-.trash-entry-identity:focus-visible,
-.trash-tree-toggle:focus-visible,
-.trash-entry-restore:focus-visible,
-.trash-overflow:focus-visible {
-    outline: 2px solid var(--ring);
-    outline-offset: 3px;
 }
 .trash-control-button:disabled,
 .trash-entry-restore:disabled,

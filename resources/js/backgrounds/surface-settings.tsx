@@ -57,7 +57,7 @@ export function SurfaceSettings() {
                                 selectSurfaceStyle(style),
                             )
                         }
-                        className="appearance-choice flex min-h-16 items-center gap-3 rounded-xl px-4 py-3 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                        className="appearance-choice flex min-h-16 items-center gap-3 rounded-xl px-4 py-3 text-left"
                     >
                         <Icon
                             size={19}

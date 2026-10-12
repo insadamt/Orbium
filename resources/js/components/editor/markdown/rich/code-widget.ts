@@ -35,7 +35,7 @@ export function mountCode(mount: RichWidgetMount): RichController {
     mount.root.append(toolbar, error, codeHost);
     const language = element(
         'select',
-        'min-h-7 cursor-pointer rounded border-0 bg-transparent px-2 py-1 text-xs text-foreground uppercase outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring',
+        'min-h-7 cursor-pointer rounded border-0 bg-transparent px-2 py-1 text-xs text-foreground uppercase outline-none hover:bg-accent',
     );
     language.setAttribute('aria-label', 'Code language');
     for (const name of codeLanguages) {
@@ -67,8 +67,7 @@ export function mountCode(mount: RichWidgetMount): RichController {
         );
     });
     toolbar.append(copy);
-    copy.className =
-        'rounded-md px-2.5 py-1.5 text-xs hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring';
+    copy.className = 'rounded-md px-2.5 py-1.5 text-xs hover:bg-accent';
     copy.setAttribute('aria-live', 'polite');
     const input = mountCodeInput({
         host: codeHost,

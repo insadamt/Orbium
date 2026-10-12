@@ -93,7 +93,7 @@ export function DeleteWorkspaceDialog({
                             onChange={(event) =>
                                 setConfirmedName(event.target.value)
                             }
-                            className="w-full rounded-xl border border-border/70 bg-background px-3 py-2.5 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            className="w-full rounded-xl border border-border/70 bg-background px-3 py-2.5 outline-none"
                         />
                         {error && (
                             <p

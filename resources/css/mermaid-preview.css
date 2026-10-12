@@ -78,12 +78,6 @@
 .mermaid-expand-button:disabled {
     opacity: 0.3;
 }
-.mermaid-expand-button:focus-visible,
-.mermaid-full-dialog button:focus-visible,
-.mermaid-full-viewport:focus-visible {
-    outline: 2px solid var(--ring);
-    outline-offset: 3px;
-}
 .mermaid-full-overlay {
     position: fixed;
     inset: 0;

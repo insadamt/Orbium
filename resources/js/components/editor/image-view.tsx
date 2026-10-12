@@ -208,7 +208,7 @@ export default function ImageView({
                                                 alignment: value,
                                             })
                                         }
-                                        className={`rounded-md p-1.5 hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring ${alignment === value ? 'bg-accent text-foreground' : 'text-muted-foreground'}`}
+                                        className={`rounded-md p-1.5 hover:bg-accent ${alignment === value ? 'bg-accent text-foreground' : 'text-muted-foreground'}`}
                                     >
                                         <Icon size={16} aria-hidden="true" />
                                     </button>
@@ -232,7 +232,7 @@ export default function ImageView({
                                             width: availableWidth(),
                                         })
                                     }
-                                    className="rounded-md p-1.5 text-muted-foreground hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring"
+                                    className="rounded-md p-1.5 text-muted-foreground hover:bg-accent"
                                 >
                                     <Maximize2 size={16} aria-hidden="true" />
                                 </button>
@@ -245,7 +245,7 @@ export default function ImageView({
                                     download
                                     title="Download image"
                                     aria-label="Download image"
-                                    className="rounded-md p-1.5 text-muted-foreground hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring"
+                                    className="rounded-md p-1.5 text-muted-foreground hover:bg-accent"
                                 >
                                     <Download size={16} aria-hidden="true" />
                                 </a>
@@ -254,7 +254,7 @@ export default function ImageView({
                                     aria-label="Delete image"
                                     title="Delete image"
                                     onClick={deleteNode}
-                                    className="rounded-md p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive focus-visible:outline-2 focus-visible:outline-ring"
+                                    className="rounded-md p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
                                 >
                                     <Trash2 size={16} aria-hidden="true" />
                                 </button>
@@ -310,7 +310,7 @@ export default function ImageView({
                                     });
                                 }}
                                 placeholder="Add a caption…"
-                                className="w-full bg-transparent text-center outline-none placeholder:text-muted-foreground/70 focus-visible:rounded focus-visible:outline-2 focus-visible:outline-ring"
+                                className="w-full bg-transparent text-center outline-none placeholder:text-muted-foreground/70 focus-visible:rounded"
                             />
                         </figcaption>
                     )}

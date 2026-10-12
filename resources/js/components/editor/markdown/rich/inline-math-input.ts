@@ -13,8 +13,7 @@ export function mountInlineMathInput(
         edit.setAttribute('aria-expanded', 'true');
         input.focus();
     });
-    edit.className =
-        'rounded-sm px-0.5 hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring';
+    edit.className = 'rounded-sm px-0.5 hover:bg-accent';
     edit.setAttribute('aria-label', `Edit inline math: ${block.content}`);
     edit.setAttribute('aria-expanded', 'false');
     edit.append(output);
@@ -30,7 +29,7 @@ export function mountInlineMathInput(
     );
     const input = element(
         'input',
-        'mt-2 w-full rounded-md border border-border bg-background px-2 py-1.5 font-mono text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring',
+        'mt-2 w-full rounded-md border border-border bg-background px-2 py-1.5 font-mono text-sm outline-none',
     );
     input.value = block.content;
     input.dir = 'ltr';

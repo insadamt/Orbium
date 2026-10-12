@@ -136,7 +136,7 @@ function SortableTab({
                 aria-selected={selected}
                 title={entry.title}
                 onClick={() => activateTab(tab.id)}
-                className="tab-drag-surface flex min-w-0 flex-1 items-center gap-2 py-2 pr-1 pl-3 text-left text-sm focus-visible:outline-2 focus-visible:outline-ring"
+                className="tab-drag-surface flex min-w-0 flex-1 items-center gap-2 py-2 pr-1 pl-3 text-left text-sm"
             >
                 <NavigationTabIcon entry={entry} />
                 <span className="truncate">{entry.title}</span>
@@ -154,7 +154,7 @@ function SortableTab({
                     type="button"
                     aria-label={`Close ${entry.title}`}
                     onClick={() => closeTab(tab.id)}
-                    className="mr-1 rounded-md p-1 text-muted-foreground hover:bg-background hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                    className="mr-1 rounded-md p-1 text-muted-foreground hover:bg-background hover:text-foreground"
                 >
                     <X size={13} aria-hidden="true" />
                 </button>

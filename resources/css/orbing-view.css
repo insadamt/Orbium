@@ -86,14 +86,12 @@
     z-index: 1;
 }
 .orbing-entity:hover .orbing-entity-body,
-.orbing-entity:focus-within .orbing-entity-body,
 .orbing-entity[data-selected='true'] .orbing-entity-body {
     background: var(--accent);
     box-shadow: 0 0 0 4px color-mix(in srgb, var(--foreground) 5%, transparent);
 }
-.orbing-entity-target:focus-visible {
-    outline: 2px solid var(--ring);
-    outline-offset: 3px;
+.orbing-entity:focus-within .orbing-entity-body {
+    background: var(--accent);
 }
 .orbing-entity-title {
     max-width: 132px;

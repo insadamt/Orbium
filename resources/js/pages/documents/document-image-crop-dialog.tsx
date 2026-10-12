@@ -259,7 +259,7 @@ export default function DocumentImageCropDialog({
                                 dragSession.current = null;
                             }}
                             onKeyDown={moveWithKeyboard}
-                            className={`block h-auto max-h-[min(45vh,440px)] w-auto max-w-full touch-none rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring ${kind === 'icon' ? 'max-w-80' : ''} ${image ? 'cursor-grab active:cursor-grabbing' : ''}`}
+                            className={`block h-auto max-h-[min(45vh,440px)] w-auto max-w-full touch-none rounded-md outline-none ${kind === 'icon' ? 'max-w-80' : ''} ${image ? 'cursor-grab active:cursor-grabbing' : ''}`}
                         />
                     </div>
                     <label className="mt-5 flex items-center gap-3 text-sm">
@@ -291,7 +291,7 @@ export default function DocumentImageCropDialog({
                         <button
                             type="button"
                             onClick={onCancel}
-                            className="rounded-lg px-4 py-2 text-sm hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring"
+                            className="rounded-lg px-4 py-2 text-sm hover:bg-accent"
                         >
                             Cancel
                         </button>

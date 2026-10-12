@@ -266,7 +266,7 @@ export function ReactBitsSettings({
                 </div>
             )}
             <Collapsible.Root>
-                <Collapsible.Trigger className="appearance-disclosure flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-sm font-medium focus-visible:outline-2 focus-visible:outline-ring [&[data-state=open]>svg]:rotate-180">
+                <Collapsible.Trigger className="appearance-disclosure flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-sm font-medium [&[data-state=open]>svg]:rotate-180">
                     Customize all settings
                     <ChevronDown
                         aria-hidden="true"

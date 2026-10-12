@@ -32,7 +32,7 @@ export default function AppearanceToggleTab({
                     aria-pressed={appearance === value}
                     onClick={() => updateAppearance(value)}
                     className={cn(
-                        'flex items-center rounded-lg px-3.5 py-2 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
+                        'flex items-center rounded-lg px-3.5 py-2 text-sm transition-colors',
                         appearance === value
                             ? 'bg-accent text-foreground shadow-xs'
                             : 'text-muted-foreground hover:bg-accent/60 hover:text-foreground',

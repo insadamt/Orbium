@@ -49,7 +49,7 @@ export function AppSelect({
                 id={id ?? generatedId}
                 aria-label={label}
                 className={cn(
-                    'flex min-h-9 min-w-0 w-full items-center justify-between gap-2 rounded-lg border border-border bg-card px-3 py-2 text-left text-sm text-foreground shadow-sm outline-none transition-colors hover:bg-accent/50 focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 data-[placeholder]:text-muted-foreground',
+                    'flex min-h-9 min-w-0 w-full items-center justify-between gap-2 rounded-lg border border-border bg-card px-3 py-2 text-left text-sm text-foreground shadow-sm outline-none transition-colors hover:bg-accent/50 disabled:cursor-not-allowed disabled:opacity-50 data-[placeholder]:text-muted-foreground',
                     className,
                 )}
             >

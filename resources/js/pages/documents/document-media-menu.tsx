@@ -34,7 +34,7 @@ export default function DocumentMediaMenu({
                     type="button"
                     aria-label={`${entityLabel} image options`}
                     title={`${entityLabel} image options`}
-                    className="glass-surface inline-flex size-9 items-center justify-center rounded-lg border border-border text-foreground shadow-sm hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring"
+                    className="glass-surface inline-flex size-9 items-center justify-center rounded-lg border border-border text-foreground shadow-sm hover:bg-accent"
                 >
                     <Ellipsis size={19} aria-hidden="true" />
                 </button>

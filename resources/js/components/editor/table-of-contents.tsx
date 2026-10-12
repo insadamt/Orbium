@@ -195,7 +195,7 @@ export function TableOfContents({
             <button
                 ref={trigger}
                 type="button"
-                className="document-outline-rail focus-visible:outline-2 focus-visible:outline-ring"
+                className="document-outline-rail"
                 aria-label={
                     pinned
                         ? 'Collapse document outline'
@@ -251,7 +251,7 @@ export function TableOfContents({
                     </span>
                     <button
                         type="button"
-                        className="document-outline-close focus-visible:outline-2 focus-visible:outline-ring"
+                        className="document-outline-close"
                         aria-label={
                             pinned
                                 ? 'Unpin document outline'
@@ -268,7 +268,7 @@ export function TableOfContents({
                     </button>
                     <button
                         type="button"
-                        className="document-outline-close focus-visible:outline-2 focus-visible:outline-ring"
+                        className="document-outline-close"
                         aria-label="Close document outline"
                         title="Close"
                         onClick={() => closePanel()}
@@ -287,7 +287,7 @@ export function TableOfContents({
                                 <li key={heading.position}>
                                     <button
                                         type="button"
-                                        className="document-outline-heading focus-visible:outline-2 focus-visible:outline-ring"
+                                        className="document-outline-heading"
                                         data-level={heading.level}
                                         aria-current={
                                             heading === currentHeading

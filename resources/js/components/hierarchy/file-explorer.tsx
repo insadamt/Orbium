@@ -193,7 +193,7 @@ export default function FileExplorer({
                                     <Link
                                         href={nodeUrl(workspaceId, node)}
                                         title={node.title}
-                                        className="block min-w-0 focus-visible:rounded-lg focus-visible:outline-2 focus-visible:outline-ring"
+                                        className="block min-w-0 focus-visible:rounded-lg"
                                     >
                                         <span className="mb-5 flex h-24 items-center justify-center rounded-xl border border-border/60 bg-muted/60 text-muted-foreground group-hover:text-foreground">
                                             <Folder
@@ -262,7 +262,7 @@ export default function FileExplorer({
                                     <Link
                                         href={nodeUrl(workspaceId, node)}
                                         title={node.title}
-                                        className="flex min-w-0 items-center gap-3 py-4 text-sm font-medium focus-visible:outline-2 focus-visible:outline-ring"
+                                        className="flex min-w-0 items-center gap-3 py-4 text-sm font-medium"
                                     >
                                         <Icon
                                             size={18}
@@ -280,7 +280,7 @@ export default function FileExplorer({
                                         type="button"
                                         aria-label={`Actions for ${node.title}`}
                                         onClick={() => onActions(node.id)}
-                                        className="flex size-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-background hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
+                                        className="flex size-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-background hover:text-foreground"
                                     >
                                         <MoreHorizontal size={17} />
                                     </button>

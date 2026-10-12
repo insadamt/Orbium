@@ -102,7 +102,7 @@ export function TextColorMenu({
                                 title={name}
                                 onMouseDown={(event) => event.preventDefault()}
                                 onClick={() => chooseColor(value)}
-                                className="flex size-7 items-center justify-center rounded-full border border-border/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                                className="flex size-7 items-center justify-center rounded-full border border-border/60"
                                 style={{
                                     backgroundColor: displayedTextColor(value),
                                 }}

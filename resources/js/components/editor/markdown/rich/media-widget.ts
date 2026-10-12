@@ -113,8 +113,7 @@ export function mountMedia(mount: RichWidgetMount): RichController {
             writeImageMetadata();
         });
         control.setAttribute('aria-label', `Align image ${value}`);
-        control.className =
-            'rounded-md p-1.5 hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring';
+        control.className = 'rounded-md p-1.5 hover:bg-accent';
         control.append(widgetIcon(value, 16));
         alignmentButtons.push(control);
         overlay.append(control);
@@ -164,7 +163,7 @@ export function mountMedia(mount: RichWidgetMount): RichController {
     };
     if (imageMode) {
         captionInput.className =
-            'w-full bg-transparent text-center outline-none placeholder:text-muted-foreground/70 focus-visible:rounded focus-visible:outline-2 focus-visible:outline-ring';
+            'w-full bg-transparent text-center outline-none placeholder:text-muted-foreground/70 focus-visible:rounded';
         caption.append(captionInput);
         frame.append(overlay);
         mount.root.addEventListener('orbium-edit-rich', () =>

@@ -168,7 +168,7 @@ export function TrashActionDialog({ action, onClose, onCompleted }: Props) {
                                                         event.target.value,
                                                 })
                                             }
-                                            className="mt-2 w-full rounded-lg bg-accent/50 px-3 py-2 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                            className="mt-2 w-full rounded-lg bg-accent/50 px-3 py-2 outline-none"
                                         />
                                     </label>
                                 ))}

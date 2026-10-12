@@ -167,7 +167,7 @@ export default function DatabaseGallery({
                     aria-label={`Move ${document.title} to Trash`}
                     title="Move to Trash"
                     onClick={() => onTrashDocument(document)}
-                    className="db-icon-button absolute top-2 right-2 bg-popover/90 hover:!text-destructive focus-visible:outline-2 focus-visible:outline-ring"
+                    className="db-icon-button absolute top-2 right-2 bg-popover/90 hover:!text-destructive"
                 >
                     <Trash2 size={15} />
                 </button>

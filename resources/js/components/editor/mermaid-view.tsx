@@ -94,7 +94,7 @@ export default function MermaidView({
                                 type="button"
                                 aria-pressed={editing}
                                 onClick={() => setEditing(true)}
-                                className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 transition-colors focus-visible:outline-2 focus-visible:outline-ring ${editing ? 'bg-background text-foreground shadow-sm' : 'hover:bg-accent hover:text-foreground'}`}
+                                className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 transition-colors ${editing ? 'bg-background text-foreground shadow-sm' : 'hover:bg-accent hover:text-foreground'}`}
                             >
                                 <Pencil size={13} aria-hidden="true" /> Edit
                             </button>
@@ -102,7 +102,7 @@ export default function MermaidView({
                                 type="button"
                                 aria-pressed={!editing}
                                 onClick={() => setEditing(false)}
-                                className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 transition-colors focus-visible:outline-2 focus-visible:outline-ring ${!editing ? 'bg-background text-foreground shadow-sm' : 'hover:bg-accent hover:text-foreground'}`}
+                                className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 transition-colors ${!editing ? 'bg-background text-foreground shadow-sm' : 'hover:bg-accent hover:text-foreground'}`}
                             >
                                 <Eye size={14} aria-hidden="true" /> Preview
                             </button>

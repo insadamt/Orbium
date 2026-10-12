@@ -84,10 +84,6 @@
     color: var(--muted-foreground);
     background: var(--background);
 }
-.wallpaper-search:focus-within {
-    outline: 2px solid var(--ring);
-    outline-offset: 2px;
-}
 .wallpaper-search input {
     width: 100%;
     min-width: 0;
@@ -119,9 +115,12 @@
         background-color 180ms ease,
         transform 180ms ease;
 }
-.wallpaper-tile:hover,
-.wallpaper-tile:focus-visible {
+.wallpaper-tile:hover {
     border-color: color-mix(in srgb, var(--foreground) 48%, var(--border));
+    background: var(--accent);
+    transform: translateY(-1px);
+}
+.wallpaper-tile:focus-visible {
     background: var(--accent);
     transform: translateY(-1px);
 }

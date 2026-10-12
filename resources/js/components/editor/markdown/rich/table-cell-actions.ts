@@ -19,7 +19,7 @@ function tableActionButton(
 ) {
     const control = button('', action);
     control.className =
-        'rounded p-2 hover:bg-accent disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-ring';
+        'rounded p-2 hover:bg-accent disabled:cursor-not-allowed disabled:opacity-40';
     control.setAttribute('aria-label', label);
     control.title = label;
     control.append(widgetIcon(tableActionIcons[label], 16));
@@ -152,7 +152,7 @@ export function mountTableCellActions({
     actions.append(split);
     const alignment = element(
         'select',
-        'h-8 rounded border-0 bg-transparent px-2 text-xs hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring',
+        'h-8 rounded border-0 bg-transparent px-2 text-xs hover:bg-accent',
     );
     alignment.setAttribute('aria-label', 'Cell alignment');
     for (const value of ['', 'left', 'center', 'right']) {
@@ -173,7 +173,7 @@ export function mountTableCellActions({
     actions.append(alignment);
     const width = element(
         'input',
-        'h-8 w-24 rounded border border-border bg-transparent px-2 text-xs hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring',
+        'h-8 w-24 rounded border border-border bg-transparent px-2 text-xs hover:bg-accent',
     );
     width.type = 'number';
     width.min = '0';

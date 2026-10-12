@@ -70,14 +70,6 @@
     color: var(--foreground);
     outline: none;
 }
-.appearance-select:focus-visible,
-.appearance-color-input:focus-visible,
-.appearance-range:focus-visible,
-.appearance-checkbox:focus-visible,
-.appearance-switch input:focus-visible + span {
-    outline: 2px solid var(--ring);
-    outline-offset: 2px;
-}
 .appearance-color-input {
     width: 38px;
     height: 32px;

@@ -154,7 +154,7 @@ export default function DatabaseTable({
                                                     onFinishInlineAdding();
                                                 }
                                             }}
-                                            className="min-w-0 flex-1 rounded bg-background px-1 py-1 outline-1 outline-ring"
+                                            className="min-w-0 flex-1 rounded bg-background px-1 py-1 outline-none"
                                         />
                                     ) : (
                                         <Link

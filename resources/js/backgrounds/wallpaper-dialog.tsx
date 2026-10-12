@@ -158,7 +158,7 @@ export function WallpaperDialog() {
                 <Dialog.Trigger asChild>
                     <button
                         type="button"
-                        className="appearance-choice flex w-full items-center gap-4 rounded-2xl p-4 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                        className="appearance-choice flex w-full items-center gap-4 rounded-2xl p-4 text-left"
                     >
                         <span className="min-w-0 flex-1">
                             <span className="block text-sm font-semibold">

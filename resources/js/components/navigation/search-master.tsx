@@ -230,7 +230,7 @@ export function SearchMaster({
                             }
                         }}
                         placeholder="Search anything…"
-                        className="min-w-0 flex-1 border-0 bg-transparent text-base shadow-none outline-none placeholder:text-muted-foreground focus-visible:outline-none"
+                        className="min-w-0 flex-1 border-0 bg-transparent text-base shadow-none outline-none placeholder:text-muted-foreground"
                     />
                     <kbd className="hidden rounded-md border border-border px-2 py-1 text-[11px] text-muted-foreground sm:block">
                         ESC
@@ -322,7 +322,7 @@ export function SearchMaster({
                                                                 : result.id,
                                                         )
                                                     }
-                                                    className="rounded-md p-2 text-muted-foreground hover:bg-background hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                                                    className="rounded-md p-2 text-muted-foreground hover:bg-background hover:text-foreground"
                                                 >
                                                     <MoreHorizontal size={16} />
                                                 </button>

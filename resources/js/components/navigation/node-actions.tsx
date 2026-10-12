@@ -29,7 +29,7 @@ type Props = {
 };
 type Editor = 'rename' | 'tags' | 'trash' | 'move' | null;
 const actionClass =
-    'flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-foreground hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
+    'flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-foreground hover:bg-accent';
 
 export function NodeActions({
     workspaceId,
@@ -156,7 +156,7 @@ export function NodeActions({
                         value={title}
                         onChange={(event) => setTitle(event.target.value)}
                         maxLength={255}
-                        className="w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        className="w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none"
                     />
                     <div className="flex justify-end gap-2">
                         <button
@@ -191,7 +191,7 @@ export function NodeActions({
                         value={tags}
                         onChange={(event) => setTags(event.target.value)}
                         placeholder="e.g. work, reference"
-                        className="w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        className="w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none"
                     />
                     <div className="flex justify-end gap-2">
                         <button

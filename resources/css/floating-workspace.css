@@ -190,10 +190,6 @@
     background: var(--accent);
     color: var(--foreground);
 }
-.tab-scroll-button:focus-visible {
-    outline: 2px solid var(--ring);
-    outline-offset: -2px;
-}
 .tab-scroll-button-left {
     left: 0;
 }
@@ -290,9 +286,6 @@
     border: 0;
     outline: none;
     box-shadow: none;
-}
-.floating-page-search input:focus-visible {
-    outline: none;
 }
 .floating-page-search input::-webkit-search-cancel-button {
     display: none;
@@ -500,10 +493,6 @@
 }
 .floating-item-actions:hover {
     background: var(--background);
-}
-.floating-workspace :focus-visible {
-    outline: 2px solid var(--ring);
-    outline-offset: 4px;
 }
 .floating-drag-preview {
     position: fixed;

@@ -1,5 +1,11 @@
 # UI/UX system
 
+> Focus styling review (2026-10-12): At the user's request, app controls no longer
+> draw focus outlines, rings, or focus-only border changes. This supersedes earlier
+> guidance requiring visible keyboard focus borders. Keyboard navigation, focus
+> management, existing background/text cues, ordinary borders, selection indicators,
+> and validation-error styling remain. See [the review report](../reports/06-focus-border-removal.md).
+
 Orbit-circle follow-up (2026-10-12): the user requested visible orbit circle lines.
 Faint dashed circles now trace visible children's exact paths around their moving
 parents. Solid mention links remain separate; no straight containment links are

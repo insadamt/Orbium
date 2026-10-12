@@ -20,10 +20,6 @@
         #08090d 85%
     );
 }
-.orbital-explorer:focus-visible {
-    outline: 2px solid #c8b6e8;
-    outline-offset: -4px;
-}
 .orbital-ambient {
     position: absolute;
     inset: 0;
@@ -187,11 +183,6 @@
 }
 .orbital-workspace-orb--1 {
     opacity: 0.76;
-}
-.orbital-workspace-orb:focus-visible,
-.orbital-workspace-navigation button:focus-visible {
-    outline: 2px solid #e6d4fa;
-    outline-offset: 5px;
 }
 .orbital-workspace-surface {
     position: absolute;

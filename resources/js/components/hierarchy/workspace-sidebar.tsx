@@ -89,7 +89,7 @@ export default function WorkspaceSidebar({
                                             return next;
                                         })
                                     }
-                                    className="flex size-8 shrink-0 items-center justify-center rounded-md hover:bg-background/70 focus-visible:outline-2 focus-visible:outline-ring"
+                                    className="flex size-8 shrink-0 items-center justify-center rounded-md hover:bg-background/70"
                                 >
                                     {expanded ? (
                                         <ChevronDown size={14} />
@@ -107,7 +107,7 @@ export default function WorkspaceSidebar({
                                         ? 'page'
                                         : undefined
                                 }
-                                className="flex min-w-0 flex-1 items-center gap-2 py-2 text-sm focus-visible:outline-2 focus-visible:outline-ring"
+                                className="flex min-w-0 flex-1 items-center gap-2 py-2 text-sm"
                             >
                                 <Icon
                                     size={16}
@@ -146,7 +146,7 @@ export default function WorkspaceSidebar({
                     {workspaceName}
                 </Link>
             </div>
-            <label className="mx-3 mt-4 flex items-center gap-2 rounded-lg border border-border bg-background/70 px-3 py-2 text-muted-foreground focus-within:ring-2 focus-within:ring-ring">
+            <label className="mx-3 mt-4 flex items-center gap-2 rounded-lg border border-border bg-background/70 px-3 py-2 text-muted-foreground">
                 <Search size={16} aria-hidden="true" />
                 <input
                     type="search"

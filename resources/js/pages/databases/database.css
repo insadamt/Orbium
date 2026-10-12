@@ -71,10 +71,7 @@
     color: var(--foreground);
     font-size: 0.875rem;
 }
-.db-field:focus {
-    outline: 2px solid var(--ring);
-    outline-offset: 2px;
-}
+
 .db-chip {
     display: inline-flex;
     align-items: center;
@@ -108,7 +105,6 @@
 }
 .db-cell-input:focus {
     background: var(--background);
-    box-shadow: inset 0 0 0 1.5px var(--ring);
 }
 .db-table {
     border-collapse: collapse;
@@ -168,10 +164,7 @@
 .db-gallery-card:hover {
     box-shadow: 0 4px 18px rgb(0 0 0 / 0.04);
 }
-.db-gallery-card:focus-visible {
-    outline: 2px solid var(--ring);
-    outline-offset: 2px;
-}
+
 .db-gallery-preview {
     height: 9rem;
     overflow: hidden;
