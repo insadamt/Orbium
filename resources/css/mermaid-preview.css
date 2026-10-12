@@ -102,6 +102,61 @@
     color: var(--foreground);
     box-shadow: 0 24px 80px rgb(0 0 0 / 0.2);
 }
+.mermaid-full-overlay[data-state='open'] {
+    animation: full-preview-backdrop-enter 220ms ease-out both;
+}
+.mermaid-full-overlay[data-state='closed'] {
+    animation: full-preview-backdrop-exit 160ms ease-in both;
+}
+.mermaid-full-dialog[data-state='open'] {
+    animation: full-preview-window-enter 220ms cubic-bezier(0.16, 1, 0.3, 1)
+        both;
+}
+.mermaid-full-dialog[data-state='closed'] {
+    animation: full-preview-window-exit 160ms ease-in both;
+}
+@keyframes full-preview-backdrop-enter {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+@keyframes full-preview-backdrop-exit {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0;
+    }
+}
+@keyframes full-preview-window-enter {
+    from {
+        opacity: 0;
+        transform: translateY(12px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+@keyframes full-preview-window-exit {
+    from {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(8px) scale(0.985);
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .mermaid-full-overlay[data-state],
+    .mermaid-full-dialog[data-state] {
+        animation: none;
+    }
+}
 .mermaid-full-header {
     position: absolute;
     inset: 0 0 auto;

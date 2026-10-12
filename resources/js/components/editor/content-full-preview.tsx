@@ -1,6 +1,6 @@
 import * as Dialog from '@radix-ui/react-dialog';
 import { Maximize, Minus, Plus, X } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 type ContentFullPreviewOptions = {
     content: HTMLElement;
@@ -17,12 +17,13 @@ const maximumScale = 8;
 
 function ContentFullPreview({
     options,
-    close,
+    dispose,
 }: {
     options: ContentFullPreviewOptions;
-    close: () => void;
+    dispose: () => void;
 }) {
     const { content, dimensions, title, canvasLabel, fitLabel } = options;
+    const [open, setOpen] = useState(true);
     const viewport = useRef<HTMLDivElement>(null);
     const drawing = useRef<HTMLDivElement>(null);
     const drag = useRef<{ pointerId: number; x: number; y: number } | null>(
@@ -72,10 +73,11 @@ function ContentFullPreview({
         });
     }
 
-    useEffect(() => {
+    useLayoutEffect(() => {
         if (drawing.current) drawing.current.replaceChildren(content);
         const area = viewport.current;
         if (!area) return;
+        fitToView();
         const observer = new ResizeObserver(fitToView);
         observer.observe(area);
         const handleWheel = (event: WheelEvent) => {
@@ -97,17 +99,15 @@ function ContentFullPreview({
     }, [content, dimensions]);
 
     return (
-        <Dialog.Root
-            open
-            onOpenChange={(open) => {
-                if (!open) close();
-            }}
-        >
+        <Dialog.Root open={open} onOpenChange={setOpen}>
             <Dialog.Portal container={document.body}>
                 <Dialog.Overlay className="mermaid-full-overlay" />
                 <Dialog.Content
                     className="mermaid-full-dialog"
-                    onCloseAutoFocus={(event) => event.preventDefault()}
+                    onCloseAutoFocus={(event) => {
+                        event.preventDefault();
+                        dispose();
+                    }}
                 >
                     <header className="mermaid-full-header">
                         <div>
@@ -262,17 +262,17 @@ export function openContentFullPreview(
     const host = document.createElement('div');
     document.body.append(host);
     const root = createRoot(host);
-    let closed = false;
-    const close = () => {
-        if (closed) return;
-        closed = true;
-        // Defer unmounting until Radix finishes the event that requested closing.
+    let disposed = false;
+    const dispose = () => {
+        if (disposed) return;
+        disposed = true;
+        // Radix retains the dialog through its exit animation; widget teardown skips it.
         queueMicrotask(() => {
             root.unmount();
             host.remove();
             if (trigger.isConnected) trigger.focus({ preventScroll: true });
         });
     };
-    root.render(<ContentFullPreview options={options} close={close} />);
-    return close;
+    root.render(<ContentFullPreview options={options} dispose={dispose} />);
+    return dispose;
 }
