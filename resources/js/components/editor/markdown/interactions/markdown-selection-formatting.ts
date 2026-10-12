@@ -1,53 +1,27 @@
-import type { EditorState } from '@codemirror/state';
-import type { SyntaxNode } from '@lezer/common';
-import { markdownNodeAt } from '../markdown-syntax';
-import { readOrbiumMetadata } from '../dialect/metadata';
+import type { EditorSelection, EditorState } from '@codemirror/state';
+import { selectedTextRuns } from './markdown-formatting-transaction';
 
-export function markdownSelectionFormatting(state: EditorState) {
-    const range = state.selection.main;
-    const result = {
-        bold: false,
-        italic: false,
-        underline: false,
-        strike: false,
-        code: false,
-        link: false,
-        color: undefined as string | undefined,
-        href: undefined as string | undefined,
+export function markdownSelectionFormatting(
+    state: EditorState,
+    selection: EditorSelection = state.selection,
+) {
+    const runs = selectedTextRuns(state, selection);
+    const allHave = (
+        mark: 'bold' | 'italic' | 'underline' | 'strike' | 'code',
+    ) => runs.length > 0 && runs.every((run) => Boolean(run.marks[mark]));
+    const first = runs[0]?.marks;
+    return {
+        bold: allHave('bold'),
+        italic: allHave('italic'),
+        underline: allHave('underline'),
+        strike: allHave('strike'),
+        code: allHave('code'),
+        link: runs.length > 0 && runs.every((run) => Boolean(run.marks.href)),
+        color: runs.every((run) => run.marks.color === first?.color)
+            ? first?.color
+            : undefined,
+        href: runs.every((run) => run.marks.href === first?.href)
+            ? first?.href
+            : undefined,
     };
-    for (
-        let node: SyntaxNode | null = markdownNodeAt(
-            state,
-            Math.min(range.from + 1, range.to),
-        );
-        node;
-        node = node.parent
-    ) {
-        if (node.to < range.to) continue;
-        if (node.name === 'StrongEmphasis') result.bold = true;
-        if (node.name === 'Emphasis') result.italic = true;
-        if (node.name === 'Strikethrough') result.strike = true;
-        if (node.name === 'InlineCode') result.code = true;
-        if (node.name === 'Link') {
-            result.link = true;
-            const url = node.getChild('URL');
-            if (url)
-                result.href = state
-                    .sliceDoc(url.from, url.to)
-                    .replace(/^<|>$/g, '');
-        }
-        if (node.name === 'OrbiumSpan') {
-            const json = node.getChild('OrbiumMetadata');
-            const metadata =
-                json &&
-                readOrbiumMetadata(
-                    state.sliceDoc(json.from, json.to),
-                    'inline',
-                );
-            if (metadata?.color && !result.color)
-                result.color = String(metadata.color);
-            if (metadata?.underline) result.underline = true;
-        }
-    }
-    return result;
 }

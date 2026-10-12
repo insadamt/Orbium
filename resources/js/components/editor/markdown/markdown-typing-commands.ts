@@ -20,10 +20,11 @@ function toggleInlineDelimiter(delimiter: '**' | '*' | '~~'): Command {
         if (
             view.state.selection.ranges.some(
                 (range) =>
-                    isMarkdownLiteralPosition(view.state, range.head) ||
-                    isMarkdownSourceOnlyLine(
-                        view.state.doc.lineAt(range.head).text,
-                    ),
+                    range.empty &&
+                    (isMarkdownLiteralPosition(view.state, range.head) ||
+                        isMarkdownSourceOnlyLine(
+                            view.state.doc.lineAt(range.head).text,
+                        )),
             )
         )
             return true;

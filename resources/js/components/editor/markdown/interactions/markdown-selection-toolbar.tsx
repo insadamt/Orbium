@@ -49,6 +49,21 @@ function createSelectionToolbar(
     dom.setAttribute('role', 'toolbar');
     dom.setAttribute('aria-label', 'Text formatting');
     const root = createRoot(dom);
+    let selectedText = {
+        document: view.state.doc,
+        selection: view.state.selection,
+    };
+    dom.addEventListener('pointerdown', (event) => {
+        if (
+            !view.state.selection.main.empty &&
+            !dom.contains(document.activeElement)
+        )
+            selectedText = {
+                document: view.state.doc,
+                selection: view.state.selection,
+            };
+        if ((event.target as Element).closest('button')) event.preventDefault();
+    });
     const run = (command: () => void) => {
         try {
             onNotice('');
@@ -62,14 +77,32 @@ function createSelectionToolbar(
         }
     };
     function render() {
-        const formatting = markdownSelectionFormatting(view.state);
+        if (
+            selectedText.document !== view.state.doc ||
+            (!dom.contains(document.activeElement) &&
+                !view.state.selection.main.empty)
+        )
+            selectedText = {
+                document: view.state.doc,
+                selection: view.state.selection,
+            };
+        const formatting = markdownSelectionFormatting(
+            view.state,
+            selectedText.selection,
+        );
         root.render(
             <>
                 <FormatButton
                     label="Bold"
                     active={formatting.bold}
                     onClick={() =>
-                        run(() => formatMarkdownSelection(view, '**'))
+                        run(() =>
+                            formatMarkdownSelection(
+                                view,
+                                '**',
+                                selectedText.selection,
+                            ),
+                        )
                     }
                 >
                     <Bold size={16} />
@@ -78,7 +111,13 @@ function createSelectionToolbar(
                     label="Italic"
                     active={formatting.italic}
                     onClick={() =>
-                        run(() => formatMarkdownSelection(view, '*'))
+                        run(() =>
+                            formatMarkdownSelection(
+                                view,
+                                '*',
+                                selectedText.selection,
+                            ),
+                        )
                     }
                 >
                     <Italic size={16} />
@@ -88,9 +127,13 @@ function createSelectionToolbar(
                     active={formatting.underline}
                     onClick={() =>
                         run(() =>
-                            setMarkdownInlineMetadata(view, {
-                                underline: true,
-                            }),
+                            setMarkdownInlineMetadata(
+                                view,
+                                {
+                                    underline: true,
+                                },
+                                selectedText.selection,
+                            ),
                         )
                     }
                 >
@@ -100,7 +143,13 @@ function createSelectionToolbar(
                     label="Strike"
                     active={formatting.strike}
                     onClick={() =>
-                        run(() => formatMarkdownSelection(view, '~~'))
+                        run(() =>
+                            formatMarkdownSelection(
+                                view,
+                                '~~',
+                                selectedText.selection,
+                            ),
+                        )
                     }
                 >
                     <Strikethrough size={16} />
@@ -109,7 +158,13 @@ function createSelectionToolbar(
                     label="Inline code"
                     active={formatting.code}
                     onClick={() =>
-                        run(() => formatMarkdownSelection(view, '`'))
+                        run(() =>
+                            formatMarkdownSelection(
+                                view,
+                                '`',
+                                selectedText.selection,
+                            ),
+                        )
                     }
                 >
                     <Code2 size={16} />
@@ -118,6 +173,7 @@ function createSelectionToolbar(
                     label="Link"
                     active={formatting.link}
                     onClick={() => {
+                        const selection = selectedText.selection;
                         const destination = window.prompt(
                             'Link URL (https://, http:// or mailto:)',
                             formatting.href ?? '',
@@ -127,6 +183,7 @@ function createSelectionToolbar(
                                 setMarkdownLink(
                                     view,
                                     destination.trim() || null,
+                                    selection,
                                 ),
                             );
                     }}
@@ -139,7 +196,13 @@ function createSelectionToolbar(
                     onOpen={() => {}}
                     onChoose={(color, keepOpen) => {
                         const input = document.activeElement;
-                        run(() => setMarkdownInlineMetadata(view, { color }));
+                        run(() =>
+                            setMarkdownInlineMetadata(
+                                view,
+                                { color },
+                                selectedText.selection,
+                            ),
+                        );
                         if (keepOpen && input instanceof HTMLInputElement)
                             input.focus();
                     }}
@@ -188,31 +251,40 @@ export function markdownSelectionToolbar(onNotice: (message: string) => void) {
     const createToolbar = (view: EditorView) =>
         createSelectionToolbar(view, onNotice);
     const setFocused = StateEffect.define<boolean>();
+    const setSelecting = StateEffect.define<boolean>();
     const field = StateField.define<{
         focused: boolean;
+        selecting: boolean;
         tooltip: Tooltip | null;
     }>({
-        create: () => ({ focused: false, tooltip: null }),
+        create: () => ({ focused: false, selecting: false, tooltip: null }),
         update(previous, transaction) {
             let focused = previous.focused;
-            for (const effect of transaction.effects)
+            let selecting = previous.selecting;
+            for (const effect of transaction.effects) {
                 if (effect.is(setFocused)) focused = effect.value;
+                if (effect.is(setSelecting)) selecting = effect.value;
+            }
             if (
                 !transaction.docChanged &&
                 !transaction.selection &&
                 focused === previous.focused &&
+                selecting === previous.selecting &&
                 transaction.startState.facet(EditorView.editable) ===
                     transaction.state.facet(EditorView.editable)
             )
                 return previous;
-            const range = inlineFormattingRange({
-                state: transaction.state,
-                compositionStarted: false,
-            });
+            const range = selecting
+                ? null
+                : inlineFormattingRange({
+                      state: transaction.state,
+                      compositionStarted: false,
+                  });
             return {
                 focused,
+                selecting,
                 tooltip:
-                    focused && range
+                    focused && !selecting && range
                         ? {
                               pos: range.from,
                               end: range.to,
@@ -227,8 +299,39 @@ export function markdownSelectionToolbar(onNotice: (message: string) => void) {
     const focus = ViewPlugin.fromClass(
         class {
             destroyed = false;
+            releaseFrame = 0;
+            finishPointerSelection = () => {
+                if (!this.view.state.field(field).selecting) return;
+                cancelAnimationFrame(this.releaseFrame);
+                this.releaseFrame = requestAnimationFrame(() => {
+                    this.releaseFrame = 0;
+                    if (!this.destroyed)
+                        this.view.dispatch({ effects: setSelecting.of(false) });
+                });
+            };
             constructor(readonly view: EditorView) {
+                document.addEventListener(
+                    'pointerup',
+                    this.finishPointerSelection,
+                );
+                document.addEventListener(
+                    'pointercancel',
+                    this.finishPointerSelection,
+                );
+                window.addEventListener('blur', this.finishPointerSelection);
                 this.schedule();
+            }
+            beginPointerSelection(event: PointerEvent) {
+                if (
+                    event.button !== 0 ||
+                    !(event.target instanceof Element) ||
+                    !this.view.contentDOM.contains(event.target)
+                )
+                    return false;
+                cancelAnimationFrame(this.releaseFrame);
+                this.releaseFrame = 0;
+                this.view.dispatch({ effects: setSelecting.of(true) });
+                return false;
             }
             update() {
                 this.schedule();
@@ -251,7 +354,24 @@ export function markdownSelectionToolbar(onNotice: (message: string) => void) {
             }
             destroy() {
                 this.destroyed = true;
+                cancelAnimationFrame(this.releaseFrame);
+                document.removeEventListener(
+                    'pointerup',
+                    this.finishPointerSelection,
+                );
+                document.removeEventListener(
+                    'pointercancel',
+                    this.finishPointerSelection,
+                );
+                window.removeEventListener('blur', this.finishPointerSelection);
             }
+        },
+        {
+            eventHandlers: {
+                pointerdown(event) {
+                    return this.beginPointerSelection(event);
+                },
+            },
         },
     );
     return [field, focus, tooltips({ parent: document.body })];

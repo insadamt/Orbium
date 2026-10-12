@@ -74,7 +74,12 @@ export function mountCallout(mount: RichWidgetMount) {
         mount.view.requestMeasure();
     }
     const dismiss = (event: PointerEvent) => {
-        if (!mount.root.contains(event.target as Node)) close();
+        const target = event.target as Node;
+        if (
+            !mount.root.contains(target) &&
+            !editor?.containsFormattingTarget(target)
+        )
+            close();
     };
     document.addEventListener('pointerdown', dismiss);
     preview.addEventListener('click', open);
