@@ -44,6 +44,15 @@ One option from configured options.
 
 Multiple configured options.
 
+Select and Multi-select value pickers offer **Create “name”** when a non-empty,
+trimmed search has no matching option. Creating saves the option to the shared
+property configuration and selects it for the current document in one
+transaction. Multi-select keeps its current selections and stays open; Select
+replaces its value and closes. Empty searches do not offer creation. Existing
+names are reused without regard to case when concurrent creation requests meet.
+The existing limits of 100 options per property and 100 characters per option
+still apply. This behavior is available in Table cells and document properties.
+
 ### Checkbox
 
 Boolean.

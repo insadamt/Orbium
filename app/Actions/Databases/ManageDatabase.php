@@ -107,6 +107,42 @@ class ManageDatabase
         });
     }
 
+    public function createOptionAndWriteValue(Node $database, Node $document, DatabaseProperty $property, string $option, array $selectedOptions): array
+    {
+        return DB::transaction(function () use ($database, $document, $property, $option, $selectedOptions): array {
+            $this->lockDatabase($database);
+            $property->refresh();
+            if (! in_array($property->type, ['select', 'multi_select'], true)) {
+                throw ValidationException::withMessages(['option' => 'Only select properties can have options.']);
+            }
+
+            $option = trim($option);
+            if ($option === '') {
+                throw ValidationException::withMessages(['option' => 'Enter an option name.']);
+            }
+            $config = $property->config;
+            $options = $config['options'] ?? [];
+            $existingOption = collect($options)->first(fn (string $existing): bool => mb_strtolower(trim($existing)) === mb_strtolower($option));
+            if ($existingOption !== null) {
+                $option = $existingOption;
+            } else {
+                $config['options'] = [...$options, $option];
+                $this->assertConfig($property->type, $config);
+                $property->update(['config' => $config]);
+            }
+
+            $value = $property->type === 'select'
+                ? $option
+                : array_values(array_unique([...$selectedOptions, $option]));
+            $this->writeValue($database, $document, $property, $value);
+
+            return [
+                'property' => $property->only(['id', 'name', 'type', 'position', 'config']),
+                'value' => $value,
+            ];
+        });
+    }
+
     public function initializeDocument(Node $database, Node $document): void
     {
         foreach (DatabaseProperty::query()->where('database_node_id', $database->id)->get() as $property) {

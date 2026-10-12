@@ -11,6 +11,8 @@ import {
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { displayValue } from './database-data';
+import type { CreatedPropertyOption } from './create-property-option';
+import CreatePropertyOptionItem from './create-property-option-item';
 import { selectedValues } from './property-presentation';
 import PropertyValue from './property-value';
 import type { Candidate, FileReference, Property } from './types';
@@ -25,6 +27,10 @@ type Props = {
     documentId: number;
     onSave: (value: unknown) => Promise<void>;
     onUpload?: (file: File) => Promise<number>;
+    onCreateOption?: (
+        option: string,
+        selectedOptions: string[],
+    ) => Promise<CreatedPropertyOption>;
 };
 
 export default function PropertyInput({
@@ -36,6 +42,7 @@ export default function PropertyInput({
     documentId,
     onSave,
     onUpload,
+    onCreateOption,
 }: Props) {
     const [draft, setDraft] = useState(value);
     const [error, setError] = useState('');
@@ -43,10 +50,15 @@ export default function PropertyInput({
     const { active } = useDocumentTab();
     const [open, setOpen] = useState(false);
     const [query, setQuery] = useState('');
+    const [options, setOptions] = useState(property.config.options ?? []);
     const [uploadedFiles, setUploadedFiles] = useState<FileReference[]>([]);
     const fileInput = useRef<HTMLInputElement>(null);
     const cancelBlur = useRef(false);
     useEffect(() => setDraft(value), [value]);
+    useEffect(
+        () => setOptions(property.config.options ?? []),
+        [property.config.options],
+    );
     const selected = selectedValues(draft);
     const knownFiles = uploadedFiles.length
         ? [...files, ...uploadedFiles]
@@ -122,15 +134,20 @@ export default function PropertyInput({
                 label: candidate.title,
                 kind: candidate.type,
             }))
-          : (property.config.options ?? []).map((option) => ({
+          : options.map((option) => ({
                 id: option,
                 label: option,
                 kind: '',
             }));
-    const normalizedQuery = query.toLocaleLowerCase();
+    const normalizedQuery = query.trim().toLocaleLowerCase();
     const filteredChoices = choices.filter((choice) =>
         choice.label.toLocaleLowerCase().includes(normalizedQuery),
     );
+    const canCreateOption =
+        onCreateOption &&
+        ['select', 'multi_select'].includes(property.type) &&
+        normalizedQuery !== '' &&
+        !filteredChoices.length;
 
     return (
         <div className="relative min-w-0 text-[13px]" aria-busy={busy}>
@@ -264,6 +281,7 @@ export default function PropertyInput({
                                         <input
                                             aria-label={`Search ${property.name}`}
                                             value={query}
+                                            disabled={busy}
                                             onChange={(event) =>
                                                 setQuery(event.target.value)
                                             }
@@ -332,13 +350,37 @@ export default function PropertyInput({
                                                 </DropdownMenu.Item>
                                             );
                                         })}
-                                        {!filteredChoices.length && (
-                                            <p className="px-3 py-5 text-center text-xs text-muted-foreground">
-                                                {choices.length
-                                                    ? 'No matches.'
-                                                    : 'No options yet. Add options in the property settings.'}
-                                            </p>
+                                        {canCreateOption && (
+                                            <CreatePropertyOptionItem
+                                                option={query.trim()}
+                                                selectedOptions={selected}
+                                                busy={busy}
+                                                onCreate={onCreateOption}
+                                                onBusyChange={setBusy}
+                                                onError={setError}
+                                                onCreated={(result) => {
+                                                    setOptions(
+                                                        result.property.config
+                                                            .options ?? [],
+                                                    );
+                                                    setDraft(result.value);
+                                                    setQuery('');
+                                                    if (
+                                                        property.type ===
+                                                        'select'
+                                                    )
+                                                        setOpen(false);
+                                                }}
+                                            />
                                         )}
+                                        {!filteredChoices.length &&
+                                            !canCreateOption && (
+                                                <p className="px-3 py-5 text-center text-xs text-muted-foreground">
+                                                    {choices.length
+                                                        ? 'No matches.'
+                                                        : 'No options yet. Add options in the property settings.'}
+                                                </p>
+                                            )}
                                     </div>
                                     {property.type === 'mention' &&
                                         selected.length > 0 && (

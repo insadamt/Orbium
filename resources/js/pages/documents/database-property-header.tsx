@@ -3,6 +3,7 @@ import { ChevronDown, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
 import { csrfToken, uploadAttachment } from '@/components/editor/editor-api';
 import PropertyInput from '../databases/property-input';
+import { createPropertyOption } from '../databases/create-property-option';
 import type { Candidate, FileReference, Property } from '../databases/types';
 import { propertyTypes } from '../databases/property-presentation';
 
@@ -88,6 +89,27 @@ export default function DatabasePropertyHeader({
                                     candidates={candidates}
                                     files={files}
                                     onSave={(value) => save(property.id, value)}
+                                    onCreateOption={async (
+                                        option,
+                                        selectedOptions,
+                                    ) => {
+                                        const result =
+                                            await createPropertyOption({
+                                                workspaceId,
+                                                databaseId,
+                                                documentId,
+                                                propertyId: property.id,
+                                                option,
+                                                selectedOptions,
+                                            });
+                                        router.reload({
+                                            only: [
+                                                'databaseProperties',
+                                                'databaseValues',
+                                            ],
+                                        });
+                                        return result;
+                                    }}
                                     onUpload={
                                         property.type === 'files'
                                             ? async (file) =>

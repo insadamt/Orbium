@@ -42,6 +42,7 @@ Route::middleware('auth')->group(function () {
     Route::patch('workspaces/{workspace}/databases/{node}/properties/{property}/order', [DatabaseController::class, 'reorderProperty'])->name('databases.properties.order');
     Route::delete('workspaces/{workspace}/databases/{node}/properties/{property}', [DatabaseController::class, 'deleteProperty'])->name('databases.properties.destroy');
     Route::put('workspaces/{workspace}/databases/{node}/documents/{document}/properties/{property}', [DatabaseController::class, 'writeValue'])->name('databases.values.update');
+    Route::post('workspaces/{workspace}/databases/{node}/documents/{document}/properties/{property}/options', [DatabaseController::class, 'createOption'])->name('databases.options.store');
     Route::put('workspaces/{workspace}/databases/{node}/views/{view}', [DatabaseController::class, 'saveView'])->name('databases.views.update');
     Route::get('workspaces/{workspace}/documents/{node}', [DocumentController::class, 'show'])->name('documents.show');
     Route::put('workspaces/{workspace}/documents/{node}', [DocumentController::class, 'update'])->name('documents.update');

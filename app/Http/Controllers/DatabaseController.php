@@ -125,6 +125,22 @@ class DatabaseController extends Controller
         return response()->json(['ok' => true]);
     }
 
+    public function createOption(Request $request, int $workspace, int $node, int $document, int $property, ManageDatabase $action): JsonResponse
+    {
+        $database = $this->ownedDatabase($request, $workspace, $node);
+        $documentNode = $database->workspace->nodes()->findOrFail($document);
+        $data = $request->validate([
+            'option' => ['required', 'string', 'max:100'],
+            'selected_options' => ['sometimes', 'array', 'list', 'max:100'],
+            'selected_options.*' => ['string', 'max:100'],
+        ]);
+
+        return response()->json($action->createOptionAndWriteValue(
+            $database, $documentNode, $action->property($database, $property),
+            $data['option'], $data['selected_options'] ?? [],
+        ));
+    }
+
     public function saveView(Request $request, int $workspace, int $node, string $view, ManageDatabase $action): RedirectResponse
     {
         $database = $this->ownedDatabase($request, $workspace, $node);

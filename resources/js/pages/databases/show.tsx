@@ -27,6 +27,7 @@ import DatabaseViewSettings, {
     type SettingsSection,
 } from './database-view-settings';
 import PropertyInput from './property-input';
+import { createPropertyOption } from './create-property-option';
 import type {
     DatabaseDocument,
     DatabasePageProps,
@@ -215,6 +216,18 @@ function DatabasePage({ page }: { page: DatabasePageProps }) {
                 candidates={candidates}
                 files={fileReferences}
                 onSave={(value) => saveValue(documentId, property.id, value)}
+                onCreateOption={async (option, selectedOptions) => {
+                    const result = await createPropertyOption({
+                        workspaceId: workspace.id,
+                        databaseId: database.id,
+                        documentId,
+                        propertyId: property.id,
+                        option,
+                        selectedOptions,
+                    });
+                    router.reload({ only: ['properties', 'values'] });
+                    return result;
+                }}
                 onUpload={
                     property.type === 'files'
                         ? async (file) =>
