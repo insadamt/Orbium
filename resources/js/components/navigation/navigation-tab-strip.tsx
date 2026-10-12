@@ -304,11 +304,11 @@ export function NavigationTabStrip({
                                             className="mr-2 shrink-0 text-muted-foreground"
                                         />
                                     ) : (
-                                        tabs.length > 1 && (
-                                            <span className="mr-1 rounded-md p-1 text-muted-foreground">
-                                                <X size={13} />
-                                            </span>
-                                        )
+                                        <span
+                                            className={`mr-1 rounded-md p-1 text-muted-foreground ${tabs.length === 1 ? 'invisible' : ''}`}
+                                        >
+                                            <X size={13} />
+                                        </span>
                                     )}
                                 </div>
                             )}

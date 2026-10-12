@@ -107,12 +107,15 @@ export function SortableNavigationTab({
                     aria-label="Pinned tab"
                 />
             )}
-            {tabCount > 1 && !tab.pinned && (
+            {!tab.pinned && (
                 <button
                     type="button"
                     aria-label={`Close ${entry.title}`}
+                    aria-hidden={tabCount === 1 || undefined}
+                    disabled={tabCount === 1}
+                    tabIndex={tabCount === 1 ? -1 : undefined}
                     onClick={() => closeTab(tab.id)}
-                    className="mr-1 rounded-md p-1 text-muted-foreground hover:bg-background hover:text-foreground"
+                    className={`mr-1 rounded-md p-1 text-muted-foreground hover:bg-background hover:text-foreground ${tabCount === 1 ? 'invisible' : ''}`}
                 >
                     <X size={13} aria-hidden="true" />
                 </button>
