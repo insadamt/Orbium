@@ -73,7 +73,6 @@ export type MarkdownEditorProps = {
 export default function MarkdownEditor(props: MarkdownEditorProps) {
     const host = useRef<HTMLDivElement>(null);
     const [view, setView] = useState<EditorView | null>(null);
-    const [outlineRequest, setOutlineRequest] = useState(0);
     const [notice, setNotice] = useState('');
     const [transferDialog, setTransferDialog] = useState<
         'import' | 'export' | null
@@ -372,7 +371,6 @@ export default function MarkdownEditor(props: MarkdownEditorProps) {
                     <MarkdownTableOfContents
                         view={view}
                         updates={outlineUpdates.current}
-                        openRequest={outlineRequest}
                     />
                 }
                 status={autosave.status}
@@ -381,17 +379,6 @@ export default function MarkdownEditor(props: MarkdownEditorProps) {
                 importing={transfer.busy}
                 onRetry={() => void autosave.saveNow()}
                 onTogglePreview={() => setLivePreview((current) => !current)}
-                onFind={finder.openSearch}
-                onOutline={() => setOutlineRequest((value) => value + 1)}
-                onUpload={() => {
-                    if (view)
-                        upload.chooseFile({
-                            view,
-                            from: view.state.selection.main.from,
-                            to: view.state.selection.main.to,
-                            kind: 'file',
-                        });
-                }}
                 onImport={() => setTransferDialog('import')}
                 onExport={() => setTransferDialog('export')}
             />

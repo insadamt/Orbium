@@ -21,7 +21,7 @@ import TaskItem from '@tiptap/extension-task-item';
 import { ReactNodeViewRenderer, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { common, createLowlight } from 'lowlight';
-import { Download, FileInput, FileUp, Search } from 'lucide-react';
+import { Download, FileInput } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
 import 'katex/dist/katex.min.css';
 import EditorBlockGutter from './editor-block-gutter';
@@ -363,21 +363,6 @@ export default function DocumentEditor({
                         className="flex items-center gap-1 rounded p-1 hover:bg-accent disabled:opacity-50"
                     >
                         <Download size={16} /> Export Markdown
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => setSearchOpen(true)}
-                        aria-label="Find in document"
-                        className="rounded p-1 hover:bg-accent"
-                    >
-                        <Search size={16} />
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => fileInput.current?.click()}
-                        className="flex items-center gap-1 rounded p-1 hover:bg-accent"
-                    >
-                        <FileUp size={16} /> Add file
                     </button>
                 </div>
             </div>

@@ -4,13 +4,14 @@ export type DocumentImageKind = 'icon' | 'cover';
 
 export const documentImageTargets = {
     icon: { width: 512, height: 512, label: 'icon' },
-    cover: { width: 1470, height: 432, label: 'cover' },
+    cover: { width: 1320, height: 360, label: 'cover' },
 } as const;
 
 const coverImageTargets: Record<
     CoverRatio,
     { width: number; height: number; label: string }
 > = {
+    '11:3': { width: 1320, height: 360, label: 'cover' },
     '16:9': { width: 1200, height: 675, label: 'cover' },
     '5:2': { width: 1200, height: 480, label: 'cover' },
     '9:16': { width: 675, height: 1200, label: 'cover' },

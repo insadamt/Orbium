@@ -23,10 +23,7 @@ import {
     type DocumentImageKind,
 } from '@/pages/documents/document-image-crop';
 import DocumentMediaMenu from '@/pages/documents/document-media-menu';
-import {
-    ratioNumber,
-    type CoverRatio,
-} from '@/components/hierarchy/cover-presentation';
+import { type CoverRatio } from '@/components/hierarchy/cover-presentation';
 import DatabasePropertyHeader from '@/pages/documents/database-property-header';
 import DocumentOpeningPreview from '@/pages/documents/document-opening-preview';
 import { useCoverIconCutout } from '@/components/hierarchy/use-cover-icon-cutout';
@@ -99,9 +96,6 @@ export function DocumentPage({
     );
     const [coverId, setCoverId] = useState(savedDocument.cover_attachment_id);
     const { coverRef, iconRef } = useCoverIconCutout();
-    const [coverRatio, setCoverRatio] = useState(
-        savedDocument.cover_aspect_ratio,
-    );
     const [headerError, setHeaderError] = useState('');
     const [iconUploading, setIconUploading] = useState(false);
     const [coverUploading, setCoverUploading] = useState(false);
@@ -204,7 +198,6 @@ export function DocumentPage({
                 })
             ) {
                 setCoverId(attachment.id);
-                setCoverRatio(ratio);
             }
         } catch (error) {
             setHeaderError(
@@ -298,7 +291,6 @@ export function DocumentPage({
     async function removeCover() {
         if (await saveHeader({ cover_attachment_id: null })) {
             setCoverId(null);
-            setCoverRatio(null);
         }
     }
 
@@ -309,9 +301,7 @@ export function DocumentPage({
                 <DocumentOutlineLayout title={title}>
                     <div className="relative">
                         {coverId && (
-                            <div
-                                className={`flex justify-center ${coverRatio ? '' : 'aspect-[980/288]'}`}
-                            >
+                            <div className="relative aspect-[11/3]">
                                 <img
                                     ref={coverRef}
                                     src={attachmentUrl(
@@ -320,19 +310,7 @@ export function DocumentPage({
                                         coverId,
                                     )}
                                     alt="Document cover"
-                                    className={
-                                        coverRatio
-                                            ? 'block h-auto max-h-[min(480px,55dvh)] max-w-full rounded-2xl object-contain'
-                                            : 'h-full w-full rounded-2xl object-cover'
-                                    }
-                                    style={
-                                        coverRatio
-                                            ? {
-                                                  aspectRatio:
-                                                      ratioNumber(coverRatio),
-                                              }
-                                            : undefined
-                                    }
+                                    className="absolute inset-0 h-full w-full rounded-2xl object-cover"
                                 />
                             </div>
                         )}

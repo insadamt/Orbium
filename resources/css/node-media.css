@@ -10,17 +10,9 @@
 .node-media-cover {
     display: block;
     width: 100%;
-    aspect-ratio: 980 / 288;
+    aspect-ratio: 11 / 3;
     border-radius: 14px;
     object-fit: cover;
-}
-.node-media-cover:not([data-ratio='legacy']) {
-    width: auto;
-    max-width: 100%;
-    max-height: min(480px, 55dvh);
-    height: auto;
-    margin-inline: auto;
-    object-fit: contain;
 }
 .node-media-menu {
     position: absolute;

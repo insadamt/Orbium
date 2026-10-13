@@ -1,4 +1,5 @@
 export const coverRatios = [
+    '11:3',
     '16:9',
     '5:2',
     '9:16',

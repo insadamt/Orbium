@@ -44,7 +44,7 @@ class NodeController extends Controller
             'title' => ['sometimes', 'required', 'string', 'max:255'],
             'icon' => ['sometimes', 'nullable', 'string', 'max:16'],
             'cover_attachment_id' => ['sometimes', 'nullable', 'integer'],
-            'cover_aspect_ratio' => ['sometimes', 'nullable', Rule::in(['16:9', '5:2', '9:16', '3:2', '4:3', '1:1', '4:5'])],
+            'cover_aspect_ratio' => ['sometimes', 'nullable', Rule::in(['11:3', '16:9', '5:2', '9:16', '3:2', '4:3', '1:1', '4:5'])],
             'icon_attachment_id' => ['sometimes', 'nullable', 'integer'],
         ]);
         if (isset($data['cover_attachment_id']) && $data['cover_attachment_id'] !== $container->cover_attachment_id && empty($data['cover_aspect_ratio'])) {

@@ -48,10 +48,8 @@ function focusAdjacentHeading(event: KeyboardEvent<HTMLElement>) {
 
 export function TableOfContents({
     outline,
-    openRequest = 0,
 }: {
     outline: DocumentOutline | null;
-    openRequest?: number;
 }) {
     const { visible } = useDocumentTab();
     const { panelHost, title } = useOutlinePanelHost();
@@ -68,12 +66,6 @@ export function TableOfContents({
     const [focused, setFocused] = useState(false);
     const [pinned, setPinned] = useState(false);
     const [dismissed, setDismissed] = useState(false);
-    useEffect(() => {
-        if (openRequest > 0) {
-            setPinned(true);
-            setDismissed(false);
-        }
-    }, [openRequest]);
     const expanded = visible && !dismissed && (pinned || hovered || focused);
 
     useEffect(
@@ -85,7 +77,7 @@ export function TableOfContents({
     );
 
     useEffect(() => {
-        if (!visible) {
+        if (!visible || !headings.length) {
             clearTimeout(leaveTimer.current);
             navigation.current?.();
             setPinned(false);
@@ -93,7 +85,7 @@ export function TableOfContents({
             setFocused(false);
             setDismissed(false);
         }
-    }, [visible]);
+    }, [visible, headings.length]);
 
     useEffect(() => {
         if (!visible || !outline) return;
@@ -156,7 +148,7 @@ export function TableOfContents({
         navigation.current = outline?.navigateToHeading(heading) ?? null;
     }
 
-    if (!visible || !outline || !panelHost) return null;
+    if (!visible || !outline || !panelHost || !headings.length) return null;
     return createPortal(
         <div
             ref={widget}
@@ -220,26 +212,15 @@ export function TableOfContents({
                     }
                 }}
             >
-                {headings.length ? (
-                    headings.map((heading) => (
-                        <span
-                            key={heading.position}
-                            aria-hidden="true"
-                            className="document-outline-rail-mark"
-                            data-level={heading.level}
-                            data-current={heading === currentHeading}
-                        />
-                    ))
-                ) : (
+                {headings.map((heading) => (
                     <span
-                        className="document-outline-empty-marks"
+                        key={heading.position}
                         aria-hidden="true"
-                    >
-                        <i />
-                        <i />
-                        <i />
-                    </span>
-                )}
+                        className="document-outline-rail-mark"
+                        data-level={heading.level}
+                        data-current={heading === currentHeading}
+                    />
+                ))}
             </button>
             <nav
                 id={panelId}
@@ -285,32 +266,26 @@ export function TableOfContents({
                     </button>
                 </div>
                 <div className="document-outline-list-scroll">
-                    {!headings.length ? (
-                        <p className="px-3 py-4 text-xs leading-relaxed text-muted-foreground">
-                            Add headings to navigate your document here.
-                        </p>
-                    ) : (
-                        <ol>
-                            {headings.map((heading) => (
-                                <li key={heading.position}>
-                                    <button
-                                        type="button"
-                                        className="document-outline-heading"
-                                        data-level={heading.level}
-                                        aria-current={
-                                            heading === currentHeading
-                                                ? 'location'
-                                                : undefined
-                                        }
-                                        title={heading.label}
-                                        onClick={() => selectHeading(heading)}
-                                    >
-                                        <span dir="auto">{heading.label}</span>
-                                    </button>
-                                </li>
-                            ))}
-                        </ol>
-                    )}
+                    <ol>
+                        {headings.map((heading) => (
+                            <li key={heading.position}>
+                                <button
+                                    type="button"
+                                    className="document-outline-heading"
+                                    data-level={heading.level}
+                                    aria-current={
+                                        heading === currentHeading
+                                            ? 'location'
+                                            : undefined
+                                    }
+                                    title={heading.label}
+                                    onClick={() => selectHeading(heading)}
+                                >
+                                    <span dir="auto">{heading.label}</span>
+                                </button>
+                            </li>
+                        ))}
+                    </ol>
                 </div>
             </nav>
         </div>,

@@ -27,16 +27,16 @@ Body...
 
 The document image menu opens pickers for PNG, JPEG, GIF, or WebP icons and covers. A selected icon overlaps the cover edge by half its height for every cover ratio. A rounded cutout in the cover leaves a transparent gap around the icon. For narrow centered covers, the icon shifts horizontally to stay on the cover's edge. Existing text icons remain visible until replaced or removed.
 
-Icons that do not match 512×512 open a crop dialog. Every new cover opens the crop dialog with 16:9, 5:2, 9:16, 3:2, 4:3, 1:1, and 4:5 choices. The user can change ratio, position and zoom the crop, or cancel without changing the current image. Opened pages show the entire saved crop centered with a height limit; covers saved before this feature retain their wide banner layout.
+Icons that do not match 512×512 open a crop dialog. Every new cover opens the crop dialog with 11:3 (the default), 16:9, 5:2, 9:16, 3:2, 4:3, 1:1, and 4:5 choices. The user can change ratio, position and zoom the crop, or cancel without changing the current image. Document, folder, and database pages display covers in a full-width 11:3 frame with centered fill cropping, including older covers. Saved crop ratios remain available to Gallery previews.
 
-The seven cover ratio buttons occupy one row on wider screens and two rows (four then three) on smaller screens. Documents, folders, and databases share these crop controls and the transparent icon cutout treatment.
+The eight cover ratio buttons occupy one row on wider screens and two rows of four on smaller screens. Documents, folders, and databases share these crop controls and the transparent icon cutout treatment.
 
-No permanent formatting toolbar.
+No permanent formatting toolbar. The document actions menu offers Import, Export and Source/Live Preview; it omits Document outline, Find in document and Add file. Outline navigation remains on the rail, and existing find shortcuts and attachment insertion flows remain available.
 
 Each visible document has a small outline rail inside its document layout, at
 the right edge of the document surface below the navbar. A reserved gutter keeps
 it beside the content in both single-document and split views. It stays accessible while scrolling; non-document pages have
-no rail. The rail and panel include every H1 and H2, with no sampling or heading
+no rail. Documents without H1/H2 headings also have no rail or panel; adding a heading restores the rail and removing the last one hides it. The rail and panel include every H1 and H2, with no sampling or heading
 count limit. Two mark lengths distinguish the levels; the current reading section
 is highlighted. Long rails show a portion of the outline in a container capped at 180px
 (or the available height in a short viewport) and smoothly follow the current section when its mark reaches the visible edge.

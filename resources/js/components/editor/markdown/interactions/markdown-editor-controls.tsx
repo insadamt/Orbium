@@ -9,9 +9,6 @@ type MarkdownEditorControlsProps = {
     importing: boolean;
     onRetry: () => void;
     onTogglePreview: () => void;
-    onFind: () => void;
-    onOutline: () => void;
-    onUpload: () => void;
     onImport: () => void;
     onExport: () => void;
     tableOfContents: ReactNode;
@@ -19,15 +16,12 @@ type MarkdownEditorControlsProps = {
 
 export function MarkdownEditorControls(props: MarkdownEditorControlsProps) {
     const actions = [
-        { label: 'Document outline', run: props.onOutline, disabled: false },
         {
             label: 'Import document…',
             run: props.onImport,
             disabled: props.disabled || props.importing,
         },
         { label: 'Export…', run: props.onExport, disabled: props.disabled },
-        { label: 'Find in document', run: props.onFind, disabled: false },
-        { label: 'Add file…', run: props.onUpload, disabled: props.disabled },
         {
             label: props.livePreview ? 'Markdown source' : 'Live Preview',
             run: props.onTogglePreview,

@@ -11,7 +11,7 @@ import {
 } from '@/pages/documents/document-image-crop';
 import DocumentMediaMenu from '@/pages/documents/document-media-menu';
 import { nodeImageUrl, uploadNodeImage } from './node-media-api';
-import { ratioNumber, type CoverRatio } from './cover-presentation';
+import { type CoverRatio } from './cover-presentation';
 import { useCoverIconCutout } from './use-cover-icon-cutout';
 
 export type MediaContainer = {
@@ -50,7 +50,6 @@ export function NodeMediaHeader({
     const [legacyIcon, setLegacyIcon] = useState(node.icon);
     const [iconId, setIconId] = useState(node.icon_attachment_id);
     const [coverId, setCoverId] = useState(node.cover_attachment_id);
-    const [coverRatio, setCoverRatio] = useState(node.cover_aspect_ratio);
     const { coverRef, iconRef } = useCoverIconCutout();
     const [error, setError] = useState('');
     const [iconUploading, setIconUploading] = useState(false);
@@ -120,7 +119,6 @@ export function NodeMediaHeader({
                 })
             ) {
                 setCoverId(attachment.id);
-                setCoverRatio(ratio);
             }
         } catch (error) {
             setError(
@@ -170,7 +168,6 @@ export function NodeMediaHeader({
     async function removeCover() {
         if (await saveHeader({ cover_attachment_id: null })) {
             setCoverId(null);
-            setCoverRatio(null);
         }
     }
 
@@ -190,12 +187,6 @@ export function NodeMediaHeader({
                 <img
                     ref={coverRef}
                     className="node-media-cover"
-                    data-ratio={coverRatio ?? 'legacy'}
-                    style={
-                        coverRatio
-                            ? { aspectRatio: ratioNumber(coverRatio) }
-                            : undefined
-                    }
                     src={nodeImageUrl(workspaceId, node.id, coverId)}
                     alt={`${label} cover`}
                 />

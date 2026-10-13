@@ -37,7 +37,7 @@ export default function DocumentImageCropDialog({
     onCancel,
     onConfirm,
 }: Props) {
-    const [ratio, setRatio] = useState<CoverRatio>('16:9');
+    const [ratio, setRatio] = useState<CoverRatio>('11:3');
     const target = imageTarget(kind, ratio);
     const outputMimeType =
         file.type === 'image/png' || file.type === 'image/webp'
@@ -222,7 +222,7 @@ export default function DocumentImageCropDialog({
                     </Dialog.Description>
                     {kind === 'cover' && (
                         <div
-                            className="mt-5 grid grid-cols-4 gap-2 sm:grid-cols-7"
+                            className="mt-5 grid grid-cols-4 gap-2 sm:grid-cols-8"
                             role="group"
                             aria-label="Cover aspect ratio"
                         >

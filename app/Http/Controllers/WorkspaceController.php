@@ -41,7 +41,7 @@ class WorkspaceController extends Controller
         }
         $data = $request->validate([
             'layout' => ['required', Rule::in(['natural', 'uniform'])],
-            'ratio' => ['required', Rule::in(['16:9', '5:2', '9:16', '3:2', '4:3', '1:1', '4:5'])],
+            'ratio' => ['required', Rule::in(['11:3', '16:9', '5:2', '9:16', '3:2', '4:3', '1:1', '4:5'])],
             'fit' => ['required', Rule::in(['contain', 'crop'])],
         ]);
         $container->update(['gallery_config' => $data]);
