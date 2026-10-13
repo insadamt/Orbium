@@ -51,7 +51,7 @@ class DatabaseController extends Controller
             'views' => $views,
             'candidates' => $database->workspace->nodes()->get(['id', 'title', 'type']),
             'fileReferences' => Attachment::query()->where('workspace_id', $workspace)
-                ->whereIn('owner_node_id', $documents->pluck('id'))->get(['id', 'original_name']),
+                ->get(['id', 'original_name']),
             'breadcrumbs' => [
                 ['title' => $database->workspace->name, 'href' => route('workspaces.show', $workspace)],
                 ...$ancestors,

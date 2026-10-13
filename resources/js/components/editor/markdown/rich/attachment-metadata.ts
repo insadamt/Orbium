@@ -19,7 +19,7 @@ export async function loadAttachmentMetadata(
     });
     if (!response.ok)
         throw new Error(
-            'Attachment unavailable. It may have been removed or belong to another document.',
+            'Attachment unavailable. It may have been removed or belong to another workspace.',
         );
     const metadata = (await response.json()) as AttachmentMetadata;
     if (

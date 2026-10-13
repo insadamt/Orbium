@@ -25,7 +25,7 @@ final class DocumentPackageContent
             } catch (\Throwable) {
                 $this->invalid('An Orbium document header is invalid.');
             }
-            if (! is_array($header) || ($header['version'] ?? null) !== $version || ($header['title'] ?? null) !== $document['title']) {
+            if (! is_array($header) || ($header['version'] ?? null) !== min($version, 2) || ($header['title'] ?? null) !== $document['title']) {
                 $this->invalid('An Orbium document header does not match the package.');
             }
             $body = substr($body, strlen($match[0]));

@@ -95,9 +95,9 @@ class ManageDatabase
             $validated = $this->validateValue($database, $property, $value);
             if ($property->type === 'files') {
                 $ownedCount = Attachment::query()->where('workspace_id', $database->workspace_id)
-                    ->where('owner_node_id', $document->id)->whereIn('id', $validated)->count();
+                    ->whereIn('id', $validated)->count();
                 if ($ownedCount !== count($validated)) {
-                    throw ValidationException::withMessages(['value' => 'Files must be uploaded to this document.']);
+                    throw ValidationException::withMessages(['value' => 'Files must belong to this workspace.']);
                 }
             }
             DatabaseValue::query()->updateOrCreate(

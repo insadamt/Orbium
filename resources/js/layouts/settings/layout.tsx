@@ -10,8 +10,7 @@ const settingsSections = [
     {
         title: 'AI skills',
         href: '/settings/ai-skills',
-        searchText:
-            'ai skills assistant orbie documents packages zip copy download',
+        searchText: 'ai skills assistant orbie documents packages zip download',
     },
     {
         title: 'Editor styles',

@@ -1,6 +1,6 @@
 import { Link, router, usePage } from '@inertiajs/react';
 import * as Menu from '@radix-ui/react-dropdown-menu';
-import { Check, ChevronDown, Plus, Settings2 } from 'lucide-react';
+import { Library, Check, ChevronDown, Plus, Settings2 } from 'lucide-react';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import AppLogoIcon from '@/components/app-logo-icon';
@@ -231,6 +231,20 @@ export function FloatingTopControls({
                     data-search-open={pageSearch.open}
                 >
                     <FloatingPageSearch pageType={pageType} />
+                    {workspace && (
+                        <button
+                            type="button"
+                            onClick={() =>
+                                openLocation(
+                                    `/workspaces/${workspace.id}/library`,
+                                )
+                            }
+                            className="floating-icon-button floating-surface"
+                            aria-label="Library"
+                        >
+                            <Library size={18} />
+                        </button>
+                    )}
                     <button
                         type="button"
                         onClick={() => openLocation('/settings/profile')}

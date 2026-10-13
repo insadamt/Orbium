@@ -4,7 +4,7 @@
 
 Download `create-orbium-documents.zip` from Settings → AI skills. Extract it; the root folder contains SKILL.md, references, and assets. For assistants with filesystem skills, put that complete folder in the assistant's configured skills directory. For Codex's default personal setup this is `~/.codex/skills/create-orbium-documents/`; a configured CODEX_HOME uses its `skills` directory. Other assistants have different installation workflows: follow their own skill import UI. Attaching a ZIP only works when that assistant can read archives. Ask it to read SKILL.md and the relevant references before authoring.
 
-For a chat-only assistant, Copy skill in Orbium copies the entrypoint and all Markdown references together. Paste that into the conversation and add your task. If it cannot write files, it can return complete text or a generation script; you must save/run it in your own environment to obtain the artifact. A ZIP extension alone does not make an archive a usable skill or document package.
+For a chat-only assistant that cannot read ZIPs, extract the bundle and attach SKILL.md plus the relevant Markdown references, or paste their text into the conversation with your task. If it cannot write files, it can return complete text or a generation script; you must save/run it in your own environment to obtain the artifact. A ZIP extension alone does not make an archive a usable skill or document package.
 
 The skill ZIP is for the assistant. The `assets/block-showcase.orbie` inside it is for Orbium's Single document importer. The bundled `.css` is for Editor styles. A generated document-package ZIP uses manifest.json at its root and goes into Whole package import. Keep these three destinations distinct.
 

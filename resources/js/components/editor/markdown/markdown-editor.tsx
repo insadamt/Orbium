@@ -1,3 +1,4 @@
+import { LibraryPicker } from '@/components/library/library-picker';
 import { ExportDialog } from '@/components/document-transfer/export-dialog';
 import { ImportDialog } from '@/components/document-transfer/import-dialog';
 import {
@@ -421,6 +422,15 @@ export default function MarkdownEditor(props: MarkdownEditorProps) {
                 <p role="alert" className="mb-2 text-sm text-destructive">
                     {upload.error}
                 </p>
+            )}
+            {upload.libraryOpen && (
+                <LibraryPicker
+                    workspaceId={props.workspaceId}
+                    imagesOnly={upload.kind === 'image'}
+                    onClose={upload.closeLibrary}
+                    onChoose={upload.chooseLibraryFile}
+                    onUpload={upload.uploadNewFile}
+                />
             )}
             <input
                 ref={upload.fileInput}

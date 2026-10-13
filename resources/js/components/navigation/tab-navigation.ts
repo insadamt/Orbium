@@ -59,6 +59,9 @@ export function locationForPage(page: {
     return {
         url: page.url,
         title:
+            (page.url.split('?')[0].endsWith('/library')
+                ? 'Library'
+                : undefined) ??
             context?.title ??
             page.props.workspace?.name ??
             (page.url.split('?')[0] === '/trash'

@@ -13,6 +13,28 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class AttachmentController extends Controller
 {
+    public function storeLibraryFile(Request $request, int $workspace): JsonResponse
+    {
+        $request->user()->workspaces()->findOrFail($workspace);
+        $data = $request->validate(['file' => ['required', 'file', 'max:'.(config('uploads.max_attachment_mb') * 1024)]]);
+
+        return $this->persistAttachment($workspace, null, $data['file']);
+    }
+
+    public function showLibraryFile(Request $request, int $workspace, int $attachment): BinaryFileResponse
+    {
+        $request->user()->workspaces()->findOrFail($workspace);
+
+        if ($request->boolean('download')) {
+            $file = Attachment::query()->where('workspace_id', $workspace)->findOrFail($attachment);
+            abort_unless(Storage::disk('local')->exists($file->storage_key), 404);
+
+            return response()->download(Storage::disk('local')->path($file->storage_key), $file->original_name, ['X-Content-Type-Options' => 'nosniff', 'Content-Security-Policy' => "default-src 'none'"]);
+        }
+
+        return $this->serveAttachment($workspace, $attachment, false);
+    }
+
     public function store(Request $request, int $workspace, int $node): JsonResponse
     {
         $documentNode = $request->user()->workspaces()->findOrFail($workspace)
@@ -20,7 +42,7 @@ class AttachmentController extends Controller
         $this->assertVisible($documentNode);
         $data = $request->validate(['file' => ['required', 'file', 'max:'.(config('uploads.max_attachment_mb') * 1024)]]);
 
-        return $this->persistAttachment($workspace, $node, $data['file'], 'attachments.show');
+        return $this->persistAttachment($workspace, $node, $data['file']);
     }
 
     public function storeNodeImage(Request $request, int $workspace, int $node): JsonResponse
@@ -30,10 +52,10 @@ class AttachmentController extends Controller
         $this->assertVisible($container);
         $data = $request->validate(['file' => ['required', 'file', 'mimetypes:image/png,image/jpeg,image/gif,image/webp', 'max:10240']]);
 
-        return $this->persistAttachment($workspace, $node, $data['file'], 'nodes.images.show');
+        return $this->persistAttachment($workspace, $node, $data['file']);
     }
 
-    private function persistAttachment(int $workspace, int $node, UploadedFile $file, string $showRoute): JsonResponse
+    private function persistAttachment(int $workspace, ?int $node, UploadedFile $file): JsonResponse
     {
         $mime = $file->getMimeType() ?: 'application/octet-stream';
         $isImage = in_array($mime, ['image/png', 'image/jpeg', 'image/gif', 'image/webp'], true);
@@ -63,7 +85,7 @@ class AttachmentController extends Controller
             'name' => $attachment->original_name,
             'mime_type' => $attachment->mime_type,
             'size_bytes' => $attachment->size_bytes,
-            'url' => route($showRoute, [$workspace, $node, $attachment]),
+            'url' => route('library.files.show', [$workspace, $attachment]),
         ], 201);
     }
 
@@ -73,7 +95,7 @@ class AttachmentController extends Controller
             ->nodes()->where('type', 'document')->findOrFail($node);
         $this->assertVisible($documentNode);
 
-        return $this->serveAttachment($workspace, $node, $attachment, false);
+        return $this->serveAttachment($workspace, $attachment, false);
     }
 
     public function metadata(Request $request, int $workspace, int $node, int $attachment): JsonResponse
@@ -82,7 +104,7 @@ class AttachmentController extends Controller
             ->nodes()->where('type', 'document')->findOrFail($node);
         $this->assertVisible($documentNode);
         $file = Attachment::query()->where('workspace_id', $workspace)
-            ->where('owner_node_id', $node)->findOrFail($attachment);
+            ->findOrFail($attachment);
 
         return response()->json([
             'id' => $file->id,
@@ -99,12 +121,12 @@ class AttachmentController extends Controller
             ->nodes()->whereIn('type', ['folder', 'database'])->findOrFail($node);
         $this->assertVisible($container);
 
-        return $this->serveAttachment($workspace, $node, $attachment, true);
+        return $this->serveAttachment($workspace, $attachment, true);
     }
 
-    private function serveAttachment(int $workspace, int $node, int $attachment, bool $imageOnly): BinaryFileResponse
+    private function serveAttachment(int $workspace, int $attachment, bool $imageOnly): BinaryFileResponse
     {
-        $file = Attachment::query()->where('workspace_id', $workspace)->where('owner_node_id', $node)->findOrFail($attachment);
+        $file = Attachment::query()->where('workspace_id', $workspace)->findOrFail($attachment);
         abort_if($imageOnly && $file->purpose !== 'image', 404);
         $path = Storage::disk('local')->path($file->storage_key);
         abort_unless(is_file($path), 404);

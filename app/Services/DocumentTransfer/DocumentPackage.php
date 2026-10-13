@@ -38,7 +38,7 @@ final class DocumentPackage
                 $inspection = app(MarkdownDocumentInspector::class)->inspect($row['source']);
                 $previous = is_string($node->document?->markdown) ? app(MarkdownDocumentInspector::class)->inspect($node->document->markdown) : null;
                 app(MarkdownReferenceValidator::class)->validate($node, $inspection, $previous);
-                $includedFiles = Attachment::query()->where('workspace_id', $workspace->id)->where('owner_node_id', $node->id)->whereIn('id', array_intersect($inspection->derived->attachmentIds, $data['attachment_ids']))->get()->filter(fn ($file) => app(OwnedReferenceAvailability::class)->findAttachment($workspace, $node->id, $file->id) !== null);
+                $includedFiles = Attachment::query()->where('workspace_id', $workspace->id)->whereIn('id', array_intersect($inspection->derived->attachmentIds, $data['attachment_ids']))->get()->filter(fn ($file) => app(OwnedReferenceAvailability::class)->findAttachment($workspace, $node->id, $file->id) !== null);
                 $includedAssetIds = $includedFiles->pluck('id')->all();
                 $nodeDestinations = [];
                 $attachmentDestinations = [];
@@ -71,6 +71,9 @@ final class DocumentPackage
                 $zip->addFromString($entry, $body);
                 $documents[] = ['id' => $node->id, 'title' => $node->title, 'source' => $source, 'path' => $entry, 'sha256' => hash('sha256', $body)];
                 foreach ($includedFiles as $file) {
+                    if (in_array($file->id, array_column($assets, 'id'), true)) {
+                        continue;
+                    }
                     $binary = Storage::disk('local')->path($file->storage_key);
                     $this->ensure(is_file($binary) && hash_file('sha256', $binary) === $file->sha256, 'An attachment is missing or damaged.');
                     $entry = 'assets/'.$file->id;
@@ -78,7 +81,7 @@ final class DocumentPackage
                     $assets[] = ['id' => $file->id, 'owner' => $node->id, 'path' => $entry, 'name' => $file->original_name, 'sha256' => $file->sha256];
                 }
             }
-            $zip->addFromString('manifest.json', json_encode(['kind' => 'orbium-document-package', 'version' => 2, 'documents' => $documents, 'assets' => $assets], JSON_THROW_ON_ERROR));
+            $zip->addFromString('manifest.json', json_encode(['kind' => 'orbium-document-package', 'version' => 3, 'documents' => $documents, 'assets' => $assets], JSON_THROW_ON_ERROR));
             $closed = $zip->close();
             $zipOpen = false;
             $this->ensure($closed, 'Could not finish package.');
@@ -126,7 +129,7 @@ final class DocumentPackage
             $this->ensure(is_array($manifest), 'The package manifest must be an object.');
             $this->ensure(array_diff(array_keys($manifest), ['kind', 'version', 'documents', 'assets']) === [], 'The manifest contains unsupported fields.');
             Validator::make($manifest, [
-                'kind' => ['required', 'in:orbium-document-package'], 'version' => ['required', 'integer', 'in:1,2'],
+                'kind' => ['required', 'in:orbium-document-package'], 'version' => ['required', 'integer', 'in:1,2,3'],
                 'documents' => ['required', 'array', 'min:1', 'max:101'], 'documents.*' => ['array:id,title,source,path,sha256'], 'documents.*.id' => ['required', 'integer', 'min:1', 'distinct'],
                 'documents.*.title' => ['required', 'string', 'max:255'], 'documents.*.source' => ['present', 'string', 'max:2097152'],
                 'documents.*.path' => ['required', 'string', 'distinct'], 'documents.*.sha256' => ['required', 'regex:/^[a-f0-9]{64}$/'],
@@ -191,7 +194,7 @@ final class DocumentPackage
             foreach ($manifest['documents'] as $row) {
                 $inspection = app(MarkdownDocumentInspector::class)->inspect($row['source']);
                 $this->ensure(array_diff(array_keys($inspection->derived->mentions), $owners) === [], 'A document reference is missing from the package.');
-                $assetIds = array_column(array_filter($manifest['assets'], fn ($asset) => $asset['owner'] === $row['id']), 'id');
+                $assetIds = array_column($manifest['version'] >= 3 ? $manifest['assets'] : array_filter($manifest['assets'], fn ($asset) => $asset['owner'] === $row['id']), 'id');
                 $this->ensure(array_diff($inspection->derived->attachmentIds, $assetIds) === [], 'An attachment reference is missing from the package.');
                 if ($inspection->derived->mentions !== [] || $inspection->derived->attachmentIds !== []) {
                     $identityNodes = array_combine($owners, $owners);

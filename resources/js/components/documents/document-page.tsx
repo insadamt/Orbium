@@ -1,3 +1,5 @@
+import { applyLibraryPageImage } from '@/components/library/library-page-media';
+import type { LibraryFile } from '@/components/library/library-api';
 import { DocumentOutlineLayout } from '@/components/editor/document-outline-layout';
 import { Head } from '@inertiajs/react';
 import { useRef, useState } from 'react';
@@ -178,6 +180,21 @@ export function DocumentPage({
         return false;
     }
 
+    function reuseImage(file: LibraryFile, kind: DocumentImageKind) {
+        return applyLibraryPageImage({
+            file,
+            kind,
+            saveHeader,
+            setSaving: kind === 'icon' ? setIconUploading : setCoverUploading,
+            onApplied: () => {
+                if (kind === 'icon') {
+                    setIconAttachmentId(file.id);
+                    setLegacyIcon(null);
+                } else setCoverId(file.id);
+            },
+        });
+    }
+
     async function addCover(file: File, ratio: CoverRatio) {
         setHeaderError('');
         setCoverUploading(true);
@@ -303,6 +320,10 @@ export function DocumentPage({
                 <DocumentOutlineLayout title={title}>
                     <div className="relative">
                         <PageMediaCover
+                            workspaceId={workspace.id}
+                            onChooseLibrary={(file) =>
+                                void reuseImage(file, 'cover')
+                            }
                             imageUrl={
                                 coverId
                                     ? attachmentUrl(
@@ -349,6 +370,10 @@ export function DocumentPage({
                                 )}
                                 <div className="page-media-icon-edit">
                                     <PageMediaEditButton
+                                        workspaceId={workspace.id}
+                                        onChooseLibrary={(file) =>
+                                            void reuseImage(file, 'icon')
+                                        }
                                         entityLabel="Document"
                                         kind="icon"
                                         hasCustomImage={Boolean(

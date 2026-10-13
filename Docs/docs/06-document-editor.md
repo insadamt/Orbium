@@ -567,3 +567,8 @@ snapshots or animation. Manual acceptance is tracked in
 
 The animation records scroll offsets after drop restoration. Queued scroll events
 with unchanged offsets do not cancel playback; actual scrolling still cancels it.
+
+
+## Workspace Library reuse (2026-10-13)
+
+Image/file insertion now offers existing workspace uploads or a new upload. Cover/icon Edit menus add Choose from Library alongside the existing Change upload/crop action. References reuse the attachment ID; removing one use leaves the Library file intact. See `docs/19-library.md` for lifecycle and limits.

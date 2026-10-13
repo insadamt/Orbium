@@ -58,7 +58,7 @@ class NodeController extends Controller
                 continue;
             }
             $validImage = Attachment::query()->where('workspace_id', $container->workspace_id)
-                ->where('owner_node_id', $container->id)->where('purpose', 'image')
+                ->where('purpose', 'image')
                 ->whereKey($data[$field])->exists();
             abort_unless($validImage, 422);
         }

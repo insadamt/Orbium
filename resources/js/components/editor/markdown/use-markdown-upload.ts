@@ -5,7 +5,7 @@ import { router } from '@inertiajs/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useDocumentTab } from '@/components/navigation/document-tab-context';
 import { useNavigation } from '@/components/navigation/navigation-store';
-import { uploadAttachment } from '../editor-api';
+import { type UploadedAttachment, uploadAttachment } from '../editor-api';
 import type { MarkdownUploadRequest } from './markdown-slash-commands';
 import {
     markdownUploadAnchor,
@@ -22,6 +22,7 @@ export function useMarkdownUpload(workspaceId: number, nodeId: number) {
     const request = useRef<(MarkdownUploadRequest & { id: string }) | null>(
         null,
     );
+    const [libraryOpen, setLibraryOpen] = useState(false);
     const [kind, setKind] = useState<'image' | 'file'>('file');
     const [uploading, setUploading] = useState(false);
     const [error, setError] = useState('');
@@ -69,7 +70,7 @@ export function useMarkdownUpload(workspaceId: number, nodeId: number) {
         [clearUploadRequest],
     );
 
-    const chooseFile = useCallback(
+    const openFileInput = useCallback(
         (next: MarkdownUploadRequest) => {
             if (!fileInput.current || !prepareUpload(next)) return;
             fileInput.current.multiple = next.kind === 'file';
@@ -83,8 +84,21 @@ export function useMarkdownUpload(workspaceId: number, nodeId: number) {
         [prepareUpload],
     );
 
+    const chooseFile = useCallback(
+        (next: MarkdownUploadRequest) => {
+            if (prepareUpload(next)) setLibraryOpen(true);
+        },
+        [prepareUpload],
+    );
+
+    function uploadNewFile() {
+        const current = request.current;
+        setLibraryOpen(false);
+        if (current) openFileInput(current);
+    }
+
     const uploadFile = useCallback(
-        async (file: File) => {
+        async (file: File | UploadedAttachment) => {
             const current = request.current;
             if (!current || uploadingNow.current) return;
             if (
@@ -94,7 +108,7 @@ export function useMarkdownUpload(workspaceId: number, nodeId: number) {
                     'image/jpeg',
                     'image/gif',
                     'image/webp',
-                ].includes(file.type)
+                ].includes(file instanceof File ? file.type : file.mime_type)
             ) {
                 setError('Choose a PNG, JPEG, GIF, or WebP image.');
                 clearUploadRequest();
@@ -103,11 +117,10 @@ export function useMarkdownUpload(workspaceId: number, nodeId: number) {
             uploadingNow.current = true;
             setUploading(true);
             try {
-                const attachment = await uploadAttachment(
-                    workspaceId,
-                    nodeId,
-                    file,
-                );
+                const attachment =
+                    file instanceof File
+                        ? await uploadAttachment(workspaceId, nodeId, file)
+                        : file;
                 const label = escapeMarkdownLabel(attachment.name || file.name);
                 let source = `${current.kind === 'image' ? '!' : ''}[${label}](orbium:attachment/${attachment.id})`;
                 if (
@@ -297,6 +310,16 @@ export function useMarkdownUpload(workspaceId: number, nodeId: number) {
     );
 
     return {
+        libraryOpen,
+        uploadNewFile,
+        closeLibrary: () => {
+            setLibraryOpen(false);
+            clearUploadRequest();
+        },
+        chooseLibraryFile: (file: UploadedAttachment) => {
+            setLibraryOpen(false);
+            void uploadFile(file);
+        },
         uploadDroppedFiles,
         uploadSelectedFiles,
         fileInput,

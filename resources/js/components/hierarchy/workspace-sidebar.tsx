@@ -171,6 +171,12 @@ export default function WorkspaceSidebar({
                 >
                     <Folder size={16} aria-hidden="true" /> All items
                 </Link>
+                <Link
+                    href={`/workspaces/${workspaceId}/library`}
+                    className="mb-2 flex items-center gap-2 rounded-lg px-4 py-2 text-sm text-muted-foreground hover:bg-accent"
+                >
+                    Library
+                </Link>
                 {renderBranch(null, 0)}
                 {visibleNodes.length > 0 &&
                     !visibleNodes.some(

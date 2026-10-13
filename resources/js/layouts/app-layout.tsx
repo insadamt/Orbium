@@ -70,6 +70,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
     const isFloatingPage =
         isHomePage ||
         page.component === 'trash/index' ||
+        page.component === 'library/index' ||
         page.component === 'documents/show' ||
         page.component === 'databases/show' ||
         page.component.startsWith('settings/');

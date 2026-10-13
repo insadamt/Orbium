@@ -84,7 +84,7 @@ class SaveDocument
             return;
         }
         $count = Attachment::query()->where('workspace_id', $source->workspace_id)
-            ->where('owner_node_id', $source->id)->whereIn('id', $attachmentIds)->count();
+            ->whereIn('id', $attachmentIds)->count();
         if ($count !== count($attachmentIds)) {
             throw ValidationException::withMessages(['content' => 'A file is unavailable in this document.']);
         }

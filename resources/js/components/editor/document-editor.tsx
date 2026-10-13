@@ -1,3 +1,4 @@
+import { LibraryPicker } from '@/components/library/library-picker';
 import { useEditorTabShortcuts } from './use-editor-tab-shortcuts';
 import { RichTextTableOfContents } from './rich-text-table-of-contents';
 import { useEditorTabActivity } from './use-editor-tab-activity';
@@ -113,6 +114,7 @@ export default function DocumentEditor({
     const [uploadError, setUploadError] = useState('');
     const [importError, setImportError] = useState('');
     const [exportError, setExportError] = useState('');
+    const [libraryOpen, setLibraryOpen] = useState(false);
     const fileInput = useRef<HTMLInputElement>(null);
     const markdownInput = useRef<HTMLInputElement>(null);
     const { status, error, navigationNotice, queueSave, saveNow } =
@@ -188,7 +190,7 @@ export default function DocumentEditor({
                 workspaceId,
                 activityController,
                 onMenuChange: setMenu,
-                onUpload: () => fileInput.current?.click(),
+                onUpload: () => setLibraryOpen(true),
             }),
         ],
         [workspaceId, nodeId, mermaidSession, activityController],
@@ -391,6 +393,20 @@ export default function DocumentEditor({
                     event.target.value = '';
                 }}
             />
+            {libraryOpen && editor && (
+                <LibraryPicker
+                    workspaceId={workspaceId}
+                    onClose={() => setLibraryOpen(false)}
+                    onChoose={(file) => {
+                        setLibraryOpen(false);
+                        insertAttachment(editor, file);
+                    }}
+                    onUpload={() => {
+                        setLibraryOpen(false);
+                        fileInput.current?.click();
+                    }}
+                />
+            )}
             <input
                 ref={fileInput}
                 aria-label="Upload document file"

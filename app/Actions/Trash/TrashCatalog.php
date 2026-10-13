@@ -95,7 +95,8 @@ class TrashCatalog
             return $this->attachments->where('workspace_id', (int) substr($key, 10));
         }
 
-        return $this->attachments->whereIn('owner_node_id', $nodes->pluck('id')->all());
+        // Uploads belong to Library and survive deletion of their original page.
+        return collect();
     }
 
     public function parentPath(Node $node): string

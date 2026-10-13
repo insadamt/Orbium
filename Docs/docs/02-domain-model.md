@@ -206,6 +206,8 @@ A binary file has:
 - storage key;
 - purpose where useful (attachment/image/cover/avatar).
 
+Library approval (2026-10-13): attachments are workspace-owned reusable files. Optional `owner_node_id` records original upload provenance; multiple pages in the same workspace may reference one attachment. Page deletion retains its uploads. Library deletion is permitted only when no saved body, cover, icon, or database Files value references it, including content in Trash. See `docs/19-library.md`.
+
 Document body references attachment IDs, so portability restore must remap embedded attachment IDs just as it remaps mention target IDs.
 
 ## 13. Trash

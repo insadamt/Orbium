@@ -19,7 +19,7 @@ This ZIP is an AI skill bundle, not a document ZIP to import into Orbium. Extrac
 - [Showcase](assets/block-showcase.orbie): ready-to-import standalone document demonstrating portable formatting without live foreign references.
 - [Starter theme](assets/orbium-editor-theme.css): separate account-wide CSS theme to import through Settings → Editor styles.
 
-Read colors-and-effects before generating CSS. Deliver CSS separately from document packages, with application instructions. Do not invent blur, animation, gradient, or background metadata in `.orbie`; only the declared body keys below are valid. A skill-capable assistant should retain the entire folder so relative reference links work. When provided a combined text copy, the references follow this entrypoint.
+Read colors-and-effects before generating CSS. Deliver CSS separately from document packages, with application instructions. Do not invent blur, animation, gradient, or background metadata in `.orbie`; only the declared body keys below are valid. A skill-capable assistant should retain the entire folder so relative reference links work. For chat-only use, supply this entrypoint and the relevant references together.
 
 ## Choose the deliverable
 

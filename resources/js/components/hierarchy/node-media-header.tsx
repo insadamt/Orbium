@@ -1,3 +1,5 @@
+import { applyLibraryPageImage } from '@/components/library/library-page-media';
+import type { LibraryFile } from '@/components/library/library-api';
 import { router } from '@inertiajs/react';
 import { Database, Folder } from 'lucide-react';
 import { useRef, useState } from 'react';
@@ -132,6 +134,21 @@ export function NodeMediaHeader({
         }
     }
 
+    function reuseImage(file: LibraryFile, kind: DocumentImageKind) {
+        return applyLibraryPageImage({
+            file,
+            kind,
+            saveHeader,
+            setSaving: kind === 'icon' ? setIconUploading : setCoverUploading,
+            onApplied: () => {
+                if (kind === 'icon') {
+                    setIconId(file.id);
+                    setLegacyIcon(null);
+                } else setCoverId(file.id);
+            },
+        });
+    }
+
     async function prepareImage(file: File, kind: DocumentImageKind) {
         setError('');
         if (!supportedDocumentImageTypes.has(file.type)) {
@@ -185,6 +202,8 @@ export function NodeMediaHeader({
     return (
         <div className="node-media-header" data-layout={layout}>
             <PageMediaCover
+                workspaceId={workspaceId}
+                onChooseLibrary={(file) => void reuseImage(file, 'cover')}
                 imageUrl={
                     coverId ? nodeImageUrl(workspaceId, node.id, coverId) : null
                 }
@@ -215,6 +234,10 @@ export function NodeMediaHeader({
                     )}
                     <div className="page-media-icon-edit">
                         <PageMediaEditButton
+                            workspaceId={workspaceId}
+                            onChooseLibrary={(file) =>
+                                void reuseImage(file, 'icon')
+                            }
                             entityLabel={label}
                             kind="icon"
                             hasCustomImage={Boolean(iconId || legacyIcon)}

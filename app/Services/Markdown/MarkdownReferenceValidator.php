@@ -22,7 +22,7 @@ final class MarkdownReferenceValidator
             }
         }
         $attachments = Attachment::query()->where('workspace_id', $source->workspace_id)
-            ->where('owner_node_id', $source->id)->whereIn('id', $inspection->derived->attachmentIds)->get()->keyBy('id');
+            ->whereIn('id', $inspection->derived->attachmentIds)->get()->keyBy('id');
         foreach ($inspection->derived->attachmentIds as $id) {
             if (! $attachments->has($id) && ! in_array($id, $previous?->derived->attachmentIds ?? [], true)) {
                 MarkdownContract::invalid('A file is unavailable in this document.');

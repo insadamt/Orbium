@@ -52,7 +52,7 @@ class DocumentController extends Controller
                 ? DatabaseValue::query()->where('document_node_id', $documentNode->id)->get(['property_id', 'value']) : [],
             'mentionCandidates' => $documentNode->parent?->type === 'database' ? $workspaceModel->nodes()->get(['id', 'title', 'type']) : [],
             'databaseFiles' => $documentNode->parent?->type === 'database' ? Attachment::query()->where('workspace_id', $workspaceModel->id)
-                ->where('owner_node_id', $documentNode->id)->get(['id', 'original_name']) : [],
+                ->get(['id', 'original_name']) : [],
             'breadcrumbs' => [...$breadcrumbs, ...$ancestors],
         ]);
     }
@@ -168,7 +168,7 @@ class DocumentController extends Controller
                 continue;
             }
             $validImage = Attachment::query()->where('workspace_id', $documentNode->workspace_id)
-                ->where('owner_node_id', $documentNode->id)->where('purpose', 'image')
+                ->where('purpose', 'image')
                 ->whereKey($data[$attachmentField])->exists();
             abort_unless($validImage, 422);
         }

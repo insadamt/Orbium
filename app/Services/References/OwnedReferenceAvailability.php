@@ -41,7 +41,7 @@ final class OwnedReferenceAvailability
         if ($owner === null || $owner->type !== 'document') {
             return null;
         }
-        $file = Attachment::query()->where('workspace_id', $workspace->id)->where('owner_node_id', $ownerId)->whereKey($id)->first();
+        $file = Attachment::query()->where('workspace_id', $workspace->id)->whereKey($id)->first();
 
         return $file !== null && Storage::disk('local')->exists($file->storage_key) ? $file : null;
     }

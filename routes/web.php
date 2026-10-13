@@ -4,17 +4,25 @@ use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\DatabaseController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\DocumentTransferController;
+use App\Http\Controllers\LibraryController;
 use App\Http\Controllers\MentionCandidateController;
 use App\Http\Controllers\NavigationController;
 use App\Http\Controllers\NodeController;
 use App\Http\Controllers\ReferenceAvailabilityController;
 use App\Http\Controllers\TrashController;
 use App\Http\Controllers\WorkspaceController;
+use App\Http\Middleware\SerializeWorkspaceWrites;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/dashboard')->name('home');
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', SerializeWorkspaceWrites::class])->group(function () {
+    Route::get('workspaces/{workspace}/library', [LibraryController::class, 'index'])->name('library.index');
+    Route::get('workspaces/{workspace}/library/files', [LibraryController::class, 'files'])->name('library.files');
+    Route::post('workspaces/{workspace}/library/files', [AttachmentController::class, 'storeLibraryFile']);
+    Route::get('workspaces/{workspace}/library/files/{attachment}', [AttachmentController::class, 'showLibraryFile'])->name('library.files.show');
+    Route::patch('workspaces/{workspace}/library/files/{attachment}', [LibraryController::class, 'rename']);
+    Route::post('workspaces/{workspace}/library/delete', [LibraryController::class, 'destroy']);
     Route::get('workspaces/{workspace}/references/availability', [ReferenceAvailabilityController::class, 'show']);
     Route::post('workspaces/{workspace}/documents/{node}/transfer-data', [DocumentTransferController::class, 'exportData']);
     Route::post('workspaces/{workspace}/document-packages/export', [DocumentTransferController::class, 'exportPackage']);

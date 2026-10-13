@@ -1,7 +1,10 @@
+import type { LibraryFile } from '@/components/library/library-api';
 import type { Ref } from 'react';
 import { PageMediaEditButton } from './page-media-edit-button';
 
 export function PageMediaCover({
+    workspaceId,
+    onChooseLibrary,
     imageUrl,
     entityLabel,
     coverRef,
@@ -9,6 +12,8 @@ export function PageMediaCover({
     onChooseImage,
     onResetImage,
 }: {
+    workspaceId?: number;
+    onChooseLibrary?: (file: LibraryFile) => void;
     imageUrl: string | null;
     entityLabel: string;
     coverRef: Ref<HTMLImageElement>;
@@ -26,6 +31,8 @@ export function PageMediaCover({
             />
             <div className="page-media-cover-edit">
                 <PageMediaEditButton
+                    workspaceId={workspaceId}
+                    onChooseLibrary={onChooseLibrary}
                     entityLabel={entityLabel}
                     kind="cover"
                     hasCustomImage={Boolean(imageUrl)}
