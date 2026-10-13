@@ -9,7 +9,8 @@ import {
     supportedDocumentImageTypes,
     type DocumentImageKind,
 } from '@/pages/documents/document-image-crop';
-import DocumentMediaMenu from '@/pages/documents/document-media-menu';
+import { PageMediaCover } from './page-media-cover';
+import { PageMediaEditButton } from './page-media-edit-button';
 import { nodeImageUrl, uploadNodeImage } from './node-media-api';
 import { type CoverRatio } from './cover-presentation';
 import { useCoverIconCutout } from './use-cover-icon-cutout';
@@ -183,31 +184,20 @@ export function NodeMediaHeader({
 
     return (
         <div className="node-media-header" data-layout={layout}>
-            {coverId && (
-                <img
-                    ref={coverRef}
-                    className="node-media-cover"
-                    src={nodeImageUrl(workspaceId, node.id, coverId)}
-                    alt={`${label} cover`}
-                />
-            )}
-            <div className="node-media-menu">
-                <DocumentMediaMenu
-                    entityLabel={label}
-                    hasIcon={Boolean(iconId || legacyIcon)}
-                    hasCover={Boolean(coverId)}
-                    iconUploading={iconUploading}
-                    coverUploading={coverUploading}
-                    onChooseIcon={() => iconInput.current?.click()}
-                    onRemoveIcon={() => void removeIcon()}
-                    onChooseCover={() => coverInput.current?.click()}
-                    onRemoveCover={() => void removeCover()}
-                />
-            </div>
+            <PageMediaCover
+                imageUrl={
+                    coverId ? nodeImageUrl(workspaceId, node.id, coverId) : null
+                }
+                entityLabel={label}
+                coverRef={coverRef}
+                uploading={coverUploading}
+                onChooseImage={() => coverInput.current?.click()}
+                onResetImage={() => void removeCover()}
+            />
             <div className="node-media-body">
                 <div
                     ref={iconRef}
-                    className={`node-media-icon ${coverId ? 'node-media-icon-overlap' : ''}`}
+                    className="node-media-icon node-media-icon-overlap page-media-editable"
                 >
                     {iconId ? (
                         <img
@@ -223,6 +213,16 @@ export function NodeMediaHeader({
                             aria-hidden="true"
                         />
                     )}
+                    <div className="page-media-icon-edit">
+                        <PageMediaEditButton
+                            entityLabel={label}
+                            kind="icon"
+                            hasCustomImage={Boolean(iconId || legacyIcon)}
+                            uploading={iconUploading}
+                            onChooseImage={() => iconInput.current?.click()}
+                            onResetImage={() => void removeIcon()}
+                        />
+                    </div>
                 </div>
                 <div className="node-media-title-row">
                     <input

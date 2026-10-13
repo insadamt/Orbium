@@ -1,5 +1,7 @@
 # Editor review — Empty outlines and 11:3 page covers
 
+The [default page media follow-up](06-default-page-media.md) supersedes the optional-cover layout and three-dot image controls described here.
+
 Date: 2026-10-13. User-requested refinement within the current review; no phase advancement.
 
 ## Changes

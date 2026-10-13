@@ -22,7 +22,9 @@ import {
     supportedDocumentImageTypes,
     type DocumentImageKind,
 } from '@/pages/documents/document-image-crop';
-import DocumentMediaMenu from '@/pages/documents/document-media-menu';
+import { FileText } from 'lucide-react';
+import { PageMediaCover } from '@/components/hierarchy/page-media-cover';
+import { PageMediaEditButton } from '@/components/hierarchy/page-media-edit-button';
 import { type CoverRatio } from '@/components/hierarchy/cover-presentation';
 import DatabasePropertyHeader from '@/pages/documents/database-property-header';
 import DocumentOpeningPreview from '@/pages/documents/document-opening-preview';
@@ -300,62 +302,66 @@ export function DocumentPage({
             <div className="floating-body-island floating-document-island mx-auto max-w-[1120px]">
                 <DocumentOutlineLayout title={title}>
                     <div className="relative">
-                        {coverId && (
-                            <div className="relative aspect-[11/3]">
-                                <img
-                                    ref={coverRef}
-                                    src={attachmentUrl(
-                                        workspace.id,
-                                        node.id,
-                                        coverId,
-                                    )}
-                                    alt="Document cover"
-                                    className="absolute inset-0 h-full w-full rounded-2xl object-cover"
-                                />
-                            </div>
-                        )}
-                        <div className="absolute top-3 right-3 z-20">
-                            <DocumentMediaMenu
-                                hasIcon={Boolean(
-                                    iconAttachmentId || legacyIcon,
-                                )}
-                                hasCover={Boolean(coverId)}
-                                iconUploading={iconUploading}
-                                coverUploading={coverUploading}
-                                onChooseIcon={() => iconInput.current?.click()}
-                                onRemoveIcon={() => void removeIcon()}
-                                onChooseCover={() =>
-                                    coverInput.current?.click()
-                                }
-                                onRemoveCover={() => void removeCover()}
-                            />
-                        </div>
+                        <PageMediaCover
+                            imageUrl={
+                                coverId
+                                    ? attachmentUrl(
+                                          workspace.id,
+                                          node.id,
+                                          coverId,
+                                      )
+                                    : null
+                            }
+                            entityLabel="Document"
+                            coverRef={coverRef}
+                            uploading={coverUploading}
+                            onChooseImage={() => coverInput.current?.click()}
+                            onResetImage={() => void removeCover()}
+                        />
                         <div className="mx-auto flow-root max-w-[780px]">
-                            {(iconAttachmentId || legacyIcon) && (
-                                <div
-                                    ref={iconRef}
-                                    className={`relative z-10 mb-5 ml-4 flex size-24 items-center justify-center overflow-hidden rounded-2xl border-4 border-transparent bg-muted bg-clip-padding ${coverId ? '-mt-12' : 'shadow-md'}`}
-                                >
-                                    {iconAttachmentId ? (
-                                        <img
-                                            src={attachmentUrl(
-                                                workspace.id,
-                                                node.id,
-                                                iconAttachmentId,
-                                            )}
-                                            alt="Document icon"
-                                            className="h-full w-full object-cover"
-                                        />
-                                    ) : (
-                                        <span
-                                            className="text-5xl"
-                                            aria-label="Document icon"
-                                        >
-                                            {legacyIcon}
-                                        </span>
-                                    )}
+                            <div
+                                ref={iconRef}
+                                className="page-media-editable relative z-10 -mt-12 mb-5 ml-4 flex size-24 items-center justify-center overflow-hidden rounded-2xl border-4 border-transparent bg-muted bg-clip-padding"
+                            >
+                                {iconAttachmentId ? (
+                                    <img
+                                        src={attachmentUrl(
+                                            workspace.id,
+                                            node.id,
+                                            iconAttachmentId,
+                                        )}
+                                        alt="Document icon"
+                                        className="h-full w-full object-cover"
+                                    />
+                                ) : legacyIcon ? (
+                                    <span
+                                        className="text-5xl"
+                                        aria-label="Document icon"
+                                    >
+                                        {legacyIcon}
+                                    </span>
+                                ) : (
+                                    <FileText
+                                        size={42}
+                                        strokeWidth={1.4}
+                                        aria-label="Document icon"
+                                    />
+                                )}
+                                <div className="page-media-icon-edit">
+                                    <PageMediaEditButton
+                                        entityLabel="Document"
+                                        kind="icon"
+                                        hasCustomImage={Boolean(
+                                            iconAttachmentId || legacyIcon,
+                                        )}
+                                        uploading={iconUploading}
+                                        onChooseImage={() =>
+                                            iconInput.current?.click()
+                                        }
+                                        onResetImage={() => void removeIcon()}
+                                    />
                                 </div>
-                            )}
+                            </div>
                             <input
                                 aria-label="Document title"
                                 value={title}
@@ -372,7 +378,7 @@ export function DocumentPage({
                                         setTitle(node.title);
                                     }
                                 }}
-                                className={`mb-8 w-full border-0 bg-transparent text-4xl font-semibold tracking-tight shadow-none outline-none placeholder:text-muted-foreground md:text-5xl ${coverId && !iconAttachmentId && !legacyIcon ? 'mt-8' : ''}`}
+                                className="mb-8 w-full border-0 bg-transparent text-4xl font-semibold tracking-tight shadow-none outline-none placeholder:text-muted-foreground md:text-5xl"
                                 placeholder="Untitled"
                             />
                             {headerError && (

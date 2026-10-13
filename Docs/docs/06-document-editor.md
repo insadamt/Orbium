@@ -10,7 +10,7 @@ The Orbit is where Orbium may be visually expressive. The editor should get out 
 
 ## Layout
 
-The document page uses the shared floating top controls. The title, optional cover/icon, database properties, and editor sit inside one spacious floating island. Back remains in the top controls. Search expands there into a document-local finder with a match count and Enter/Shift+Enter navigation.
+The document page uses the shared floating top controls. The title, cover/icon, database properties, and editor sit inside one spacious floating island. Back remains in the top controls. Search expands there into a document-local finder with a match count and Enter/Shift+Enter navigation.
 
 
 Typical document:
@@ -18,14 +18,14 @@ Typical document:
 ```text
 breadcrumbs / tabs
 
-optional icon   optional cover
+page icon       11:3 cover
 
 Document Title
 
 Body...
 ```
 
-The document image menu opens pickers for PNG, JPEG, GIF, or WebP icons and covers. A selected icon overlaps the cover edge by half its height for every cover ratio. A rounded cutout in the cover leaves a transparent gap around the icon. For narrow centered covers, the icon shifts horizontally to stay on the cover's edge. Existing text icons remain visible until replaced or removed.
+Every document, folder and database page shows a neutral default 11:3 cover and a type-specific icon when no custom media is set. The icon overlaps the cover edge by half its height, with a rounded transparent cutout around it. Each cover and icon reveals its own Edit button on hover or keyboard focus; touch devices keep these controls visible. Edit offers Change cover/icon and, for custom media, Reset to default. These controls replace the three-dot image menu and open PNG, JPEG, GIF or WebP pickers. Reset clears the custom media reference and restores the default appearance. Existing text icons remain visible until replaced or reset.
 
 Icons that do not match 512×512 open a crop dialog. Every new cover opens the crop dialog with 11:3 (the default), 16:9, 5:2, 9:16, 3:2, 4:3, 1:1, and 4:5 choices. The user can change ratio, position and zoom the crop, or cancel without changing the current image. Document, folder, and database pages display covers in a full-width 11:3 frame with centered fill cropping, including older covers. Saved crop ratios remain available to Gallery previews.
 

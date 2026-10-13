@@ -7,18 +7,67 @@
     max-width: 760px;
     margin: 0 auto 26px;
 }
-.node-media-cover {
-    display: block;
+.page-media-cover {
+    position: relative;
     width: 100%;
     aspect-ratio: 11 / 3;
+}
+.page-media-cover-image {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
     border-radius: 14px;
     object-fit: cover;
 }
-.node-media-menu {
+.page-media-cover-edit {
     position: absolute;
     z-index: 5;
     top: 12px;
     right: 12px;
+}
+.page-media-icon-edit {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.page-media-edit-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    min-height: 28px;
+    padding: 4px 7px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--foreground);
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 1;
+    opacity: 0;
+    transition: opacity 150ms ease;
+}
+.page-media-edit-button:disabled {
+    cursor: wait;
+}
+.page-media-editable:hover .page-media-edit-button,
+.page-media-editable:focus-within .page-media-edit-button,
+.page-media-edit-button[data-state='open'],
+.page-media-edit-button[data-uploading='true'] {
+    opacity: 1;
+}
+@media (hover: none) {
+    .page-media-edit-button {
+        opacity: 1;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .page-media-edit-button {
+        transition: none;
+    }
 }
 .node-media-body {
     display: flow-root;
@@ -71,7 +120,8 @@
 .node-media-header[data-layout='document'] {
     max-width: none;
 }
-.node-media-header[data-layout='document'] .node-media-cover {
+.node-media-header[data-layout='document'] .page-media-cover-image,
+.floating-document-island .page-media-cover-image {
     border-radius: 16px;
 }
 .node-media-header[data-layout='document'] .node-media-body {
@@ -126,7 +176,7 @@
     .node-media-icon-overlap {
         margin-top: -27px;
     }
-    .node-media-menu {
+    .page-media-cover-edit {
         top: 8px;
         right: 8px;
     }
