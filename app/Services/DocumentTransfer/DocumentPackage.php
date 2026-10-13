@@ -10,6 +10,7 @@ use App\Services\Markdown\MarkdownDocumentInspector;
 use App\Services\Markdown\MarkdownReferenceRemapper;
 use App\Services\Markdown\MarkdownReferenceValidator;
 use App\Services\Markdown\MarkdownSaveData;
+use App\Services\References\OwnedReferenceAvailability;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -35,40 +36,41 @@ final class DocumentPackage
             foreach ($data['documents'] as $row) {
                 $node = $workspace->nodes()->where('type', 'document')->whereKey($row['id'])->firstOrFail();
                 $inspection = app(MarkdownDocumentInspector::class)->inspect($row['source']);
-                app(MarkdownReferenceValidator::class)->validate($node, $inspection);
+                $previous = is_string($node->document?->markdown) ? app(MarkdownDocumentInspector::class)->inspect($node->document->markdown) : null;
+                app(MarkdownReferenceValidator::class)->validate($node, $inspection, $previous);
+                $includedFiles = Attachment::query()->where('workspace_id', $workspace->id)->where('owner_node_id', $node->id)->whereIn('id', array_intersect($inspection->derived->attachmentIds, $data['attachment_ids']))->get()->filter(fn ($file) => app(OwnedReferenceAvailability::class)->findAttachment($workspace, $node->id, $file->id) !== null);
+                $includedAssetIds = $includedFiles->pluck('id')->all();
                 $nodeDestinations = [];
                 $attachmentDestinations = [];
-                $excludedAssets = [];
                 foreach (array_keys($inspection->derived->mentions) as $id) {
                     if (! in_array($id, $includedNodes, true)) {
-                        $nodeDestinations[$id] = url('/workspaces/'.$workspace->id.'/nodes/'.$id);
+                        $nodeDestinations[$id] = '#orbium-missing-page-'.$id;
                     }
                 }
                 foreach ($inspection->derived->attachmentIds as $id) {
-                    if (! in_array($id, $data['attachment_ids'], true)) {
-                        $attachmentDestinations[$id] = url('/workspaces/'.$workspace->id.'/documents/'.$node->id.'/attachments/'.$id);
-                        $excludedAssets[] = $id;
+                    if (! in_array($id, $includedAssetIds, true)) {
+                        $attachmentDestinations[$id] = '#orbium-missing-file-'.$id;
                     }
                 }
                 $serializer = app(DocumentMarkdownSerializer::class);
                 $native = $data['format'] === 'orbie';
-                $source = $serializer->serialize($row['source'], new TransferSerializationOptions($native, $nodeDestinations, $attachmentDestinations, $excludedAssets));
+                $source = $serializer->serialize($row['source'], new TransferSerializationOptions($native, $nodeDestinations, $attachmentDestinations));
                 $body = $source;
                 if (! $native) {
                     foreach ($includedNodes as $id) {
                         $nodeDestinations[$id] = $id.'.md';
                     }
-                    foreach ($data['attachment_ids'] as $id) {
+                    foreach ($includedAssetIds as $id) {
                         $attachmentDestinations[$id] = '../assets/'.$id;
                     }
-                    $body = $serializer->serialize($row['source'], new TransferSerializationOptions(false, $nodeDestinations, $attachmentDestinations, $excludedAssets));
+                    $body = $serializer->serialize($row['source'], new TransferSerializationOptions(false, $nodeDestinations, $attachmentDestinations));
                 } else {
-                    $body = '<!-- orbium-document '.json_encode(['version' => 1, 'title' => $node->title], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR)." -->\n".$body;
+                    $body = '<!-- orbium-document '.json_encode(['version' => 2, 'title' => $node->title], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR)." -->\n".$body;
                 }
                 $entry = 'documents/'.$node->id.'.'.$data['format'];
                 $zip->addFromString($entry, $body);
                 $documents[] = ['id' => $node->id, 'title' => $node->title, 'source' => $source, 'path' => $entry, 'sha256' => hash('sha256', $body)];
-                foreach (Attachment::query()->where('workspace_id', $workspace->id)->where('owner_node_id', $node->id)->whereIn('id', array_intersect($inspection->derived->attachmentIds, $data['attachment_ids']))->get() as $file) {
+                foreach ($includedFiles as $file) {
                     $binary = Storage::disk('local')->path($file->storage_key);
                     $this->ensure(is_file($binary) && hash_file('sha256', $binary) === $file->sha256, 'An attachment is missing or damaged.');
                     $entry = 'assets/'.$file->id;
@@ -76,7 +78,7 @@ final class DocumentPackage
                     $assets[] = ['id' => $file->id, 'owner' => $node->id, 'path' => $entry, 'name' => $file->original_name, 'sha256' => $file->sha256];
                 }
             }
-            $zip->addFromString('manifest.json', json_encode(['kind' => 'orbium-document-package', 'version' => 1, 'documents' => $documents, 'assets' => $assets], JSON_THROW_ON_ERROR));
+            $zip->addFromString('manifest.json', json_encode(['kind' => 'orbium-document-package', 'version' => 2, 'documents' => $documents, 'assets' => $assets], JSON_THROW_ON_ERROR));
             $closed = $zip->close();
             $zipOpen = false;
             $this->ensure($closed, 'Could not finish package.');
@@ -124,13 +126,14 @@ final class DocumentPackage
             $this->ensure(is_array($manifest), 'The package manifest must be an object.');
             $this->ensure(array_diff(array_keys($manifest), ['kind', 'version', 'documents', 'assets']) === [], 'The manifest contains unsupported fields.');
             Validator::make($manifest, [
-                'kind' => ['required', 'in:orbium-document-package'], 'version' => ['required', 'integer', 'in:1'],
+                'kind' => ['required', 'in:orbium-document-package'], 'version' => ['required', 'integer', 'in:1,2'],
                 'documents' => ['required', 'array', 'min:1', 'max:101'], 'documents.*' => ['array:id,title,source,path,sha256'], 'documents.*.id' => ['required', 'integer', 'min:1', 'distinct'],
                 'documents.*.title' => ['required', 'string', 'max:255'], 'documents.*.source' => ['present', 'string', 'max:2097152'],
                 'documents.*.path' => ['required', 'string', 'distinct'], 'documents.*.sha256' => ['required', 'regex:/^[a-f0-9]{64}$/'],
                 'assets' => ['present', 'array', 'max:398'], 'assets.*' => ['array:id,owner,name,path,sha256'], 'assets.*.id' => ['required', 'integer', 'min:1', 'distinct'], 'assets.*.owner' => ['required', 'integer'],
                 'assets.*.name' => ['required', 'string', 'max:255'], 'assets.*.path' => ['required', 'string', 'distinct'], 'assets.*.sha256' => ['required', 'regex:/^[a-f0-9]{64}$/'],
-            ])->validate();
+            ], ['version.in' => 'This package version is unsupported. Update Orbium before importing it.'])->validate();
+            $this->ensure(is_int($manifest['version']), 'The package version must be a JSON integer.');
             $declared = ['manifest.json'];
             $actualExpandedBytes = strlen($this->readEntry($zip, 'manifest.json', 8 * 1024 * 1024));
             $owners = array_column($manifest['documents'], 'id');
@@ -176,7 +179,7 @@ final class DocumentPackage
                         $actualExpandedBytes += strlen($content);
                         $this->ensure($actualExpandedBytes <= 100 * 1024 * 1024, 'The expanded package exceeds import size limits.');
                         $this->ensure(hash('sha256', $content) === $row['sha256'], 'Document checksum verification failed.');
-                        app(DocumentPackageContent::class)->validate($row, $content, $manifest['documents']);
+                        app(DocumentPackageContent::class)->validate($row, $content, $manifest['documents'], $manifest['version']);
                     }
                 }
             }

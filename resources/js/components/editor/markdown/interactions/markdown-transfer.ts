@@ -36,7 +36,11 @@ export function prepareMarkdownImport(input: string) {
                 source
                     .slice(destination.from, destination.to)
                     .replace(/^<|>$/g, '');
-            if (url?.startsWith('orbium:attachment/')) return false;
+            if (
+                url?.startsWith('orbium:attachment/') ||
+                /^#orbium-missing-image-[1-9]\d*$/.test(url ?? '')
+            )
+                return false;
             const text = source.slice(node.from, node.to);
             const fence = '`'.repeat(
                 Math.max(

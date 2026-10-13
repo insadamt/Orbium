@@ -80,7 +80,10 @@ final class DocumentMarkdownSerializer
         }
         if ($node instanceof Image || $node instanceof Link) {
             $destination = $this->destination($node->getUrl());
-            $isImage = $node instanceof Image && ! $this->excludedImage($node);
+            $isImage = $node instanceof Image;
+            if ($isImage && str_starts_with($destination, '#orbium-missing-file-')) {
+                $destination = str_replace('#orbium-missing-file-', '#orbium-missing-image-', $destination);
+            }
             $title = $node->getTitle() === '' ? '' : ' "'.addcslashes($node->getTitle(), '\\"').'"';
 
             return ($isImage ? '!' : '').'['.$this->children($node, '').'](<'.str_replace(['<', '>'], ['%3C', '%3E'], $destination).'>'.$title.')';
@@ -115,13 +118,6 @@ final class DocumentMarkdownSerializer
         }
         if ($node instanceof OrbiumBlock && $this->options->preserveFormatting) {
             $body = $this->children($node, "\n\n");
-            if ($node->kind() === 'image') {
-                $paragraph = $node->firstChild();
-                $image = $paragraph?->firstChild();
-                if ($image instanceof Image && $this->excludedImage($image)) {
-                    return $body.(! empty($node->metadata['caption']) ? ' — '.$this->escapeText($node->metadata['caption']) : '');
-                }
-            }
             preg_match_all('/:{3,}/', $body, $runs);
             $length = max([3, ...array_map(fn ($run) => strlen($run) + 1, $runs[0])]);
             $fence = str_repeat(':', $length);
@@ -161,11 +157,6 @@ final class DocumentMarkdownSerializer
         $destinations = $match[1] === 'node' ? $this->options->nodeDestinations : $this->options->attachmentDestinations;
 
         return $destinations[(int) $match[2]] ?? $url;
-    }
-
-    private function excludedImage(Image $image): bool
-    {
-        return preg_match('~^orbium:attachment/([1-9][0-9]*)$~D', $image->getUrl(), $match) && in_array((int) $match[1], $this->options->excludedAttachmentIds, true);
     }
 
     private function escapeText(string $text): string

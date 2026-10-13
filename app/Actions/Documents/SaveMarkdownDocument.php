@@ -45,7 +45,8 @@ final class SaveMarkdownDocument
             if ($liveSource === null) {
                 MarkdownContract::invalid('The source document is in Trash.');
             }
-            $this->references->validate($liveSource, $inspection);
+            $previous = is_string($document->markdown) ? $this->inspector->inspect($document->markdown) : null;
+            $this->references->validate($liveSource, $inspection, $previous);
             $document->update([
                 'markdown' => $inspection->source,
                 'content_format_version' => MarkdownContract::FORMAT_VERSION,
@@ -54,7 +55,11 @@ final class SaveMarkdownDocument
             ]);
             $this->mermaidPreviewCache->removeObsoleteHashes($node->id, array_keys($inspection->derived->mermaidSourcesByHash));
             DB::table('mentions')->where('source_document_node_id', $node->id)->delete();
+            $existingTargetIds = Node::query()->withTrashed()->where('workspace_id', $node->workspace_id)->whereIn('id', array_keys($inspection->derived->mentions))->pluck('id')->all();
             foreach ($inspection->derived->mentions as $targetId => $label) {
+                if (! in_array($targetId, $existingTargetIds, true)) {
+                    continue;
+                }
                 DB::table('mentions')->insert([
                     'source_document_node_id' => $node->id,
                     'target_node_id' => $targetId,

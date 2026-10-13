@@ -39,6 +39,7 @@ export type RichBlock = {
     language?: string;
     languageInfo?: string;
     attachmentId?: string;
+    missingReference?: 'image' | 'file';
     label?: string;
     labelSource?: string;
     table?: RichTable;

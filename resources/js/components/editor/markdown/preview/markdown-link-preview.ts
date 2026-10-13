@@ -1,3 +1,11 @@
+import {
+    missingReferenceKind,
+    showMissingReferenceDialog,
+} from './missing-reference-dialog';
+import {
+    checkReferenceAvailability,
+    referenceAvailabilityRequest,
+} from './reference-availability';
 import { markdownReferenceDestination } from '../interactions/markdown-reference-links';
 import { router } from '@inertiajs/react';
 import type { EditorState } from '@codemirror/state';
@@ -28,6 +36,7 @@ export function markdownLinkDestination(
     const source = raw
         .replace(/^<|>$/g, '')
         .replace(/\\([\\`*_{}[\]()#+.!<>-])/g, '$1');
+    if (missingReferenceKind(source)) return source;
     const mention = /^orbium:node\/([1-9]\d*)$/.exec(source);
     if (mention)
         return `/workspaces/${context.workspaceId}/nodes/${mention[1]}`;
@@ -51,24 +60,73 @@ export function markdownLinkDestination(
     }
 }
 
+export function isMarkdownPageDestination(destination: string): boolean {
+    return (
+        missingReferenceKind(destination) === 'page' ||
+        (destination.startsWith('/workspaces/') &&
+            !destination.includes('/attachments/'))
+    );
+}
+
 export function openMarkdownPreviewLink(
     event: MouseEvent,
     link: HTMLAnchorElement,
 ) {
     event.preventDefault();
-    if (
-        link.dataset.orbiumMention === 'true' &&
-        !event.ctrlKey &&
-        !event.metaKey
-    ) {
-        router.visit(new URL(link.href).pathname);
+    const href = link.href;
+    const missing = missingReferenceKind(new URL(href).hash);
+    if (missing) {
+        showMissingReferenceDialog(
+            link.ownerDocument,
+            missing,
+            link.textContent ?? '',
+        );
         return true;
     }
-    if (event.ctrlKey || event.metaKey || event.detail === 0) {
-        window.open(link.href, '_blank', 'noopener,noreferrer');
+    const isPage = link.dataset.orbiumMention === 'true';
+    const shouldOpen =
+        isPage || event.ctrlKey || event.metaKey || event.detail === 0;
+    if (!shouldOpen) return false;
+    const origin = window.location.origin;
+    if (!referenceAvailabilityRequest(href, origin)) {
+        window.open(href, '_blank', 'noopener,noreferrer');
         return true;
     }
-    return false;
+    const newTab = event.ctrlKey || event.metaKey;
+    const tab = newTab ? window.open('about:blank', '_blank') : null;
+    if (tab) tab.opener = null;
+    void checkReferenceAvailability(href, origin)
+        .then((available) => {
+            if (!available) {
+                tab?.close();
+                showMissingReferenceDialog(
+                    link.ownerDocument,
+                    isPage ? 'page' : 'file',
+                    link.textContent ?? '',
+                );
+                return;
+            }
+            if (newTab) {
+                if (tab) tab.location.replace(href);
+            } else if (isPage) router.visit(new URL(href).pathname);
+            else window.open(href, '_blank', 'noopener,noreferrer');
+        })
+        .catch((failure: unknown) => {
+            tab?.close();
+            showMissingReferenceDialog(
+                link.ownerDocument,
+                isPage ? 'page' : 'file',
+                '',
+                {
+                    title: 'Could not open this item',
+                    message:
+                        failure instanceof Error
+                            ? failure.message
+                            : 'Please try again.',
+                },
+            );
+        });
+    return true;
 }
 
 export const markdownLinkNavigation = EditorView.domEventHandlers({

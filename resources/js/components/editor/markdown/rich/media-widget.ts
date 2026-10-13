@@ -1,3 +1,4 @@
+import { installMediaAvailability } from './media-availability';
 import { widgetIcon } from './widget-icons';
 import { EditorView } from '@codemirror/view';
 import { escapeMarkdownLabel } from '../markdown-syntax';
@@ -36,8 +37,7 @@ export function mountMedia(mount: RichWidgetMount): RichController {
     });
     image.addEventListener('error', () => {
         if (destroyed) return;
-        controls.error.textContent = 'Image unavailable.';
-        controls.error.hidden = false;
+        setMissing(true);
     });
     const frame = element('div', 'group relative max-w-full rounded-lg');
     let resize: {
@@ -63,6 +63,16 @@ export function mountMedia(mount: RichWidgetMount): RichController {
         figure.append(frame, caption);
         controls.output.append(figure);
     } else controls.output.append(download, details);
+    const availability = installMediaAvailability(mount, {
+        imageMode,
+        frame,
+        output: controls.output,
+        image,
+        download,
+        details,
+        readBlock: () => block,
+    });
+    const setMissing = availability.setMissing;
     if (imageMode) controls.toolbar.append(download);
     const replace = button('Replace', () =>
         mount.context.onUpload({
@@ -354,7 +364,16 @@ export function mountMedia(mount: RichWidgetMount): RichController {
                 : '';
         if (document.activeElement !== captionInput)
             captionInput.value = String(next.metadata.caption ?? '');
+        if (next.missingReference) {
+            request?.abort();
+            loadingId = '';
+            image.removeAttribute('src');
+            download.removeAttribute('href');
+            setMissing(true);
+            return true;
+        }
         if (!next.attachmentId || loadingId === next.attachmentId) return true;
+        setMissing(false);
         loadingId = next.attachmentId;
         request?.abort();
         request = new AbortController();
@@ -390,6 +409,7 @@ export function mountMedia(mount: RichWidgetMount): RichController {
                         error.name === 'AbortError')
                 )
                     return;
+                setMissing(true);
                 controls.error.textContent =
                     error instanceof Error
                         ? error.message
@@ -402,6 +422,7 @@ export function mountMedia(mount: RichWidgetMount): RichController {
     return {
         update,
         destroy() {
+            availability.destroy();
             widthObserver.disconnect();
             controls.destroy();
             destroyed = true;

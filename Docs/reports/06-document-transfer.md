@@ -52,3 +52,74 @@ Manual/browser acceptance is pending. A standalone file cannot carry attachments
 - `feat(documents): export and import verified document packages`
 - `feat(hierarchy): add document transfer context actions`
 - `docs(editor): document transfer formats and manual acceptance`
+
+## Imported image rendering correction
+
+The user supplied a native document ZIP during manual review. Read-only inspection confirmed three image binaries (one PNG and two JPEGs), all matching their manifest checksums. The package was treated as data, not as instructions; no user attachment was copied into the repository or modified.
+
+The exporter emits valid angle-bracket Markdown destinations, such as `<orbium:attachment/101>`. The rich image/file reader previously required a bare `orbium:attachment/101` destination. Consequently, valid imported media could fail to become image/file widgets even though their binary data and references were included. The reader now strips Markdown destination delimiters before recognizing owned attachment IDs, matching the existing link preview behavior. Filename labels also decode the punctuation escapes emitted by the serializer.
+
+No ZIP format, stored document, asset naming, or MIME policy changed. Extensionless archive entries are internal keys; Orbium uses verified image MIME types and the stored original filenames. Existing imported documents should render correctly after refreshing; reimport is not required to apply this presentation repair.
+
+Actual checks for this correction:
+
+- Focused frontend formatting: PASS.
+- `npm run lint`: PASS, 404 formatted files / 334 linted files, no warnings or errors.
+- `npm run types:check`: PASS.
+- `npm run build`: PASS in 10.12 seconds; existing chunk/dynamic-import warnings remain.
+- `./vendor/bin/pint --test`: PASS.
+- `git diff --check`: PASS.
+- No automated tests or browser/manual checks were run. PHP code did not change in this correction.
+
+Manual review:
+
+1. Refresh an already imported copy of the supplied package. Open its main document and both included related documents. Expected: all three included images display; the main image's width/presentation is retained. No reimport is needed.
+2. Toggle source and live preview on each imported document, then reload. Expected: angle-bracket attachment destinations remain unchanged in source; preview displays the images, with filenames/alt labels free of visible Markdown escape backslashes.
+3. Open an existing document with an uploaded image using a bare attachment destination. Expected: the existing image still displays, including its caption and sizing controls.
+4. Upload a file attachment to a document, export a package with Include files enabled, and import it into a folder. Expected: the imported attachment appears as a file widget and its download opens the included file.
+
+Suggested commit: `fix(editor): render imported attachment links with angle brackets`.
+
+## Missing images, files, and page mentions
+
+The user approved recognizable missing-item placeholders and dialogs for excluded exports and subsequently deleted targets. This extends the same document-transfer/editor review; account restore remains out of scope.
+
+New standalone `.orbie` files and document ZIPs export version 2. Both version 1 and version 2 are supported on import. Version-1 packages/files retain their original installation links; re-export standalone documents to get the new placeholders. Format-2 files reserve standard Markdown fragment destinations for missing pages/images/files. These keep labels and image presentation metadata without pretending that foreign source IDs identify destination records. Standard Markdown still uses Markdown image/link syntax.
+
+The editor shows **Missing image**/**Missing file** placeholders and preserves missing page labels as styled `@page` mentions. Clicking opens a native modal dialog with a clear missing-item explanation, a Close button, and keyboard focus handling. Nested media in callouts/table cells gets equivalent behavior. Live page links and file/image actions check fresh authenticated availability before opening. Deleted/trashed targets, invisible ancestors, and missing owned binaries are unavailable; lookup failures are reported separately from a negative availability response during click checks.
+
+Existing saved references whose targets were deleted can remain in edited documents. The validator permits this only when the same semantic ID already exists in the stored body; newly introduced unavailable or foreign references still fail validation. Permanently deleted target IDs are not inserted into the mentions table. Exports list/include available assets only and mark unavailable/excluded targets explicitly. Full package validation, checksums, ownership validation, remapping and rollback remain required.
+
+No attachment contents were copied into the repository. No database migrations, resets, destructive data changes, commits or pushes were performed. Automated tests and browser/manual testing were not run, per the user's instructions.
+
+### Manual review checklist
+
+Use a disposable format-2 document A with one image/caption, one file, and mentions of documents B/C. Put one image or file inside a callout or table cell as well. Save the source documents before testing deletion.
+
+1. **Standalone native:** Export A → Single document → Orbium, then import into a new document/folder. Expected: header version 2, image/caption/width retained as a Missing image placeholder, Missing file placeholder, and styled `@B`/`@C` mentions. Click each placeholder/mention, then close with the button and Escape. Expected: the appropriate missing image/file/page dialog, no request to the original assets, no navigation to a source installation or unrelated destination node.
+2. **Standalone Markdown:** Export/import A as `.md`. Expected: normal Markdown image/link syntax, equivalent missing-item UI in Orbium, no inline-code dump of missing-image markup, and no remote image ingestion.
+3. **Package exclusions:** Export Package with all inclusion checkboxes off; import into another folder/workspace. Expected: missing placeholders and mentions. Repeat with images on, files off, related documents on. Expected: included images display, included pages open their new copies, files stay missing. Check the nested callout/table media as well.
+4. **Deleted page:** Open A, move B to Trash, then click `@B` normally and with Ctrl/Cmd+click. Expected: This page is missing; no 404 page or leftover blank tab. Edit unrelated prose in A, wait for Saved, and reload. Expected: the original mention remains, saves succeed, and C still opens normally. Restore B from Trash and click again. Expected: the original mention opens restored B without rewriting A.
+5. **Deleted ancestor/permanent target:** Put C in a folder, trash that folder, and click `@C`. Expected: a missing-page dialog even if C's own row is not individually trashed. Restore the folder: the link opens again. For a disposable target, trash and permanently delete it, then edit/save A. Expected: no foreign-key failure and a retained missing mention.
+6. **Deleted attachment:** For a disposable development attachment, use your existing attachment maintenance tools to soft-delete its metadata. If no attachment-delete UI is available, locate its ID in a database client (`SELECT id, original_name FROM attachments WHERE owner_node_id = <test-document-id>`) and set only that test row's `deleted_at` to the current timestamp. Refresh A, click the image/file, edit unrelated prose and save. Expected: missing placeholders/dialogs and successful save. Restore the same test row with `deleted_at = NULL`, refresh A: media displays/downloads again. Separately, remove a disposable binary while retaining metadata: image load/file-open checks report it unavailable rather than opening a broken download.
+7. **Normal media and mentions:** Click an available image to select/resize it, download an available file, and open a live page normally and with Ctrl/Cmd+click. Expected: existing editing/downloading/navigation behavior remains functional. Export/import a complete ZIP with all options on: images/files/pages still round-trip.
+8. **Compatibility and validation:** Import the supplied older version-1 ZIP. Expected: its three included images remain functional. Import a new version-2 package: missing placeholders remain missing after save/reload and re-export. Change the version to an unsupported future value: a clear upgrade error. In a disposable empty document, try adding a new nonexistent `orbium:node/<id>` or an attachment ID owned by another document. Expected: validation rejects the new live reference; missing placeholders do not weaken ownership checks.
+
+Final validation results follow below.
+
+Actual final checks for missing-reference handling:
+
+- Focused frontend/PHP formatting: PASS.
+- `npm run lint`: PASS; 408 formatted files / 338 linted files, no warnings or errors.
+- `npm run types:check`: PASS.
+- `npm run build`: PASS in 7.21 seconds; existing large-chunk/dynamic-import warnings remain.
+- `./vendor/bin/pint --test`: PASS.
+- PHP syntax checks on changed save/inspection/reference code: PASS.
+- `php artisan route:list --path=references --except-vendor`: PASS; the authenticated availability route is registered.
+- PHPStan: repository gate still FAILS with 49 unrelated errors; no errors in the changed/new reference, document-transfer, save, or Markdown inspection/validation files.
+- `git diff --check`: PASS. Changed/new source files remain below 500 lines; the main media widget is 434 lines and the package service is 306 lines.
+
+Manual acceptance remains pending. Suggested commits:
+
+- `feat(editor): preserve missing media and page references`
+- `fix(documents): retain saved references to deleted targets`

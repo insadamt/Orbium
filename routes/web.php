@@ -7,6 +7,7 @@ use App\Http\Controllers\DocumentTransferController;
 use App\Http\Controllers\MentionCandidateController;
 use App\Http\Controllers\NavigationController;
 use App\Http\Controllers\NodeController;
+use App\Http\Controllers\ReferenceAvailabilityController;
 use App\Http\Controllers\TrashController;
 use App\Http\Controllers\WorkspaceController;
 use Illuminate\Support\Facades\Route;
@@ -14,6 +15,7 @@ use Illuminate\Support\Facades\Route;
 Route::redirect('/', '/dashboard')->name('home');
 
 Route::middleware('auth')->group(function () {
+    Route::get('workspaces/{workspace}/references/availability', [ReferenceAvailabilityController::class, 'show']);
     Route::post('workspaces/{workspace}/documents/{node}/transfer-data', [DocumentTransferController::class, 'exportData']);
     Route::post('workspaces/{workspace}/document-packages/export', [DocumentTransferController::class, 'exportPackage']);
     Route::post('workspaces/{workspace}/document-packages/import', [DocumentTransferController::class, 'import']);

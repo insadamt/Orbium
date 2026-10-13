@@ -1,3 +1,4 @@
+import { missingReferenceKind } from '../preview/missing-reference-dialog';
 import type { EditorState } from '@codemirror/state';
 import type { SyntaxNode } from '@lezer/common';
 import { readOrbiumMetadata } from '../dialect/metadata';
@@ -228,10 +229,13 @@ export function readRichBlock(
             return null;
         const destination = child.getChild('URL');
         if (!destination) return null;
-        const attachment = /^orbium:attachment\/([1-9]\d*)$/.exec(
-            state.sliceDoc(destination.from, destination.to),
-        );
-        if (!attachment) return null;
+        const url = state
+            .sliceDoc(destination.from, destination.to)
+            .replace(/^<|>$/g, '');
+        const attachment = /^orbium:attachment\/([1-9]\d*)$/.exec(url);
+        const missing = missingReferenceKind(url);
+        if (!attachment && missing !== 'image' && missing !== 'file')
+            return null;
         const source = state.sliceDoc(child.from, child.to);
         const labelStart = source.indexOf('[') + 1;
         const labelEnd =
@@ -241,11 +245,13 @@ export function readRichBlock(
                 ?.from ?? destination.from - 2;
         return {
             ...model(state, node, child.name === 'Image' ? 'image' : 'file'),
-            attachmentId: attachment[1],
+            attachmentId: attachment?.[1],
+            missingReference:
+                missing === 'image' || missing === 'file' ? missing : undefined,
             labelSource: state.sliceDoc(child.from + labelStart, labelEnd),
             label: state
                 .sliceDoc(child.from + labelStart, labelEnd)
-                .replace(/\\([\\[\]*_`])/g, '$1'),
+                .replace(/\\([\\`*_{}[\]()#+.!<>:=-])/g, '$1'),
         };
     }
     return null;

@@ -4,27 +4,35 @@ namespace App\Services\Markdown;
 
 use App\Models\Attachment;
 use App\Models\Node;
+use App\Services\References\OwnedReferenceAvailability;
 
 final class MarkdownReferenceValidator
 {
-    public function validate(Node $source, MarkdownInspectionResult $inspection): void
+    public function validate(Node $source, MarkdownInspectionResult $inspection, ?MarkdownInspectionResult $previous = null): void
     {
         $this->validateLiveAncestry($source, $source->workspace_id);
         $targets = Node::query()->where('workspace_id', $source->workspace_id)
             ->whereIn('id', array_keys($inspection->derived->mentions))->get();
-        if ($targets->count() !== count($inspection->derived->mentions)) {
-            MarkdownContract::invalid('A mentioned item is unavailable in this workspace.');
-        }
-        foreach ($targets as $target) {
-            $this->validateLiveAncestry($target, $source->workspace_id);
+        $targetsById = $targets->keyBy('id');
+        foreach (array_keys($inspection->derived->mentions) as $id) {
+            $target = $targetsById->get($id);
+            $available = $target !== null && app(OwnedReferenceAvailability::class)->hasVisibleAncestry($target);
+            if (! $available && ! isset($previous?->derived->mentions[$id])) {
+                MarkdownContract::invalid('A mentioned item is unavailable in this workspace.');
+            }
         }
         $attachments = Attachment::query()->where('workspace_id', $source->workspace_id)
             ->where('owner_node_id', $source->id)->whereIn('id', $inspection->derived->attachmentIds)->get()->keyBy('id');
-        if ($attachments->count() !== count($inspection->derived->attachmentIds)) {
-            MarkdownContract::invalid('A file is unavailable in this document.');
+        foreach ($inspection->derived->attachmentIds as $id) {
+            if (! $attachments->has($id) && ! in_array($id, $previous?->derived->attachmentIds ?? [], true)) {
+                MarkdownContract::invalid('A file is unavailable in this document.');
+            }
         }
         foreach ($inspection->attachmentReferences as $reference) {
-            $attachment = $attachments[$reference->id];
+            $attachment = $attachments->get($reference->id);
+            if ($attachment === null) {
+                continue;
+            }
             if ($reference->isImage && ($attachment->purpose !== 'image'
                 || ! in_array($attachment->mime_type, ['image/png', 'image/jpeg', 'image/gif', 'image/webp'], true))) {
                 MarkdownContract::invalid('An image reference must use an owned PNG, JPEG, GIF, or WebP image attachment.', $reference->sourceLine);

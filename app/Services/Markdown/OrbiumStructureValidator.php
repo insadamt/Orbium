@@ -43,7 +43,7 @@ final class OrbiumStructureValidator
                     $this->invalid($block, 'Image metadata must wrap one attachment image.');
                 }
                 $inlines = iterator_to_array($children[0]->children(), false);
-                if (count($inlines) !== 1 || ! $inlines[0] instanceof Image || ! str_starts_with($inlines[0]->getUrl(), 'orbium:attachment/')) {
+                if (count($inlines) !== 1 || ! $inlines[0] instanceof Image || (! str_starts_with($inlines[0]->getUrl(), 'orbium:attachment/') && ! preg_match('/^#orbium-missing-image-[1-9][0-9]*$/D', $inlines[0]->getUrl()))) {
                     $this->invalid($block, 'Image metadata must wrap one attachment image.');
                 }
                 break;

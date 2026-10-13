@@ -13,6 +13,7 @@ use App\Services\DocumentTransfer\TransferSerializationOptions;
 use App\Services\Markdown\MarkdownDocumentInspector;
 use App\Services\Markdown\MarkdownReferenceValidator;
 use App\Services\Markdown\MarkdownSaveData;
+use App\Services\References\OwnedReferenceAvailability;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -30,19 +31,23 @@ final class DocumentTransferController extends Controller
         $markdown = is_string($source) ? $source : $main->document?->markdown;
         abort_unless(is_string($markdown), 422, 'Export requires a Markdown document.');
         $inspection = $inspector->inspect($markdown);
-        $references->validate($main, $inspection);
+        $previous = is_string($main->document?->markdown) ? $inspector->inspect($main->document->markdown) : null;
+        $references->validate($main, $inspection, $previous);
         $documents[] = ['id' => $main->id, 'title' => $main->title, 'source' => $markdown, 'plain' => $this->singleSource($workspace, $main, $markdown, false), 'single' => $this->singleSource($workspace, $main, $markdown, true),
-            'attachments' => Attachment::query()->where('owner_node_id', $main->id)->whereIn('id', $inspection->derived->attachmentIds)->get(['id', 'original_name', 'mime_type', 'size_bytes', 'sha256', 'purpose'])->toArray()];
+            'attachments' => Attachment::query()->where('owner_node_id', $main->id)->whereIn('id', $inspection->derived->attachmentIds)->get(['id', 'original_name', 'mime_type', 'size_bytes', 'sha256', 'purpose'])->filter(fn ($file) => app(OwnedReferenceAvailability::class)->findAttachment($workspace, $main->id, $file->id) !== null)->values()->toArray()];
         $relatedIds = array_keys($inspector->inspect($documents[0]['source'])->derived->mentions);
         foreach ($workspace->nodes()->where('type', 'document')->whereIn('id', $relatedIds)->whereKeyNot($node)->limit(100)->get() as $related) {
+            if (! app(OwnedReferenceAvailability::class)->hasVisibleAncestry($related)) {
+                continue;
+            }
             $markdown = $related->document?->markdown;
             if (! is_string($markdown)) {
                 continue;
             }
             $inspection = $inspector->inspect($markdown);
-            $references->validate($related, $inspection);
+            $references->validate($related, $inspection, $inspection);
             $documents[] = ['id' => $related->id, 'title' => $related->title, 'source' => $markdown, 'plain' => $this->singleSource($workspace, $related, $markdown, false),
-                'attachments' => Attachment::query()->where('owner_node_id', $related->id)->whereIn('id', $inspection->derived->attachmentIds)->get(['id', 'original_name', 'mime_type', 'size_bytes', 'sha256', 'purpose'])->toArray()];
+                'attachments' => Attachment::query()->where('owner_node_id', $related->id)->whereIn('id', $inspection->derived->attachmentIds)->get(['id', 'original_name', 'mime_type', 'size_bytes', 'sha256', 'purpose'])->filter(fn ($file) => app(OwnedReferenceAvailability::class)->findAttachment($workspace, $related->id, $file->id) !== null)->values()->toArray()];
         }
 
         return response()->json(['documents' => $documents]);
@@ -113,13 +118,13 @@ final class DocumentTransferController extends Controller
         $nodes = [];
         $attachments = [];
         foreach (array_keys($inspection->derived->mentions) as $id) {
-            $nodes[$id] = url('/workspaces/'.$workspace->id.'/nodes/'.$id);
+            $nodes[$id] = '#orbium-missing-page-'.$id;
         }
         foreach ($inspection->derived->attachmentIds as $id) {
-            $attachments[$id] = url('/workspaces/'.$workspace->id.'/documents/'.$node->id.'/attachments/'.$id);
+            $attachments[$id] = '#orbium-missing-file-'.$id;
         }
 
-        return app(DocumentMarkdownSerializer::class)->serialize($source, new TransferSerializationOptions($native, $nodes, $attachments, $native ? $inspection->derived->attachmentIds : []));
+        return app(DocumentMarkdownSerializer::class)->serialize($source, new TransferSerializationOptions($native, $nodes, $attachments));
     }
 
     private function assertVisible(Workspace $workspace, Node $node): void

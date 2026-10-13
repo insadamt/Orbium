@@ -1,3 +1,4 @@
+import { mountNestedMedia } from './nested-media-preview';
 import { applyMarkdownDividerAppearance } from '../preview/markdown-divider-appearance';
 import { EditorState } from '@codemirror/state';
 import { markdownLanguage } from '@codemirror/lang-markdown';
@@ -8,15 +9,11 @@ import { readOrbiumMetadata, type OrbiumMetadata } from '../dialect/metadata';
 import {
     markdownLinkDestination,
     openMarkdownPreviewLink,
+    isMarkdownPageDestination,
 } from '../preview/markdown-link-preview';
 import { createMermaidPreviewControls } from '../../mermaid-preview-controls';
 import { instantiateMermaidSvg } from '../../mermaid-preview-renderer';
 import { applyMermaidPreviewDimensions } from '../../mermaid-preview-layout';
-import {
-    loadAttachmentMetadata,
-    isDisplayImage,
-    richAttachmentUrl,
-} from './attachment-metadata';
 import type { RichContext } from './rich-model';
 import { readRichBlock } from './read-rich-block';
 import { renderMath } from './math-widget';
@@ -163,51 +160,9 @@ export function renderRichBody(
                 return;
             }
             if (block.kind === 'image' || block.kind === 'file') {
-                const id = block.attachmentId!;
-                const abort = new AbortController();
-                disposals.push(() => abort.abort());
-                const link = element(
-                    'a',
-                    'cm-md-link',
-                    block.label || 'Attachment',
+                disposals.push(
+                    mountNestedMedia(target, block, context, measure),
                 );
-                target.append(link);
-                void loadAttachmentMetadata(context, id, abort.signal)
-                    .then((metadata) => {
-                        if (destroyed) return;
-                        link.href = richAttachmentUrl(context, id);
-                        link.download = metadata.name;
-                        if (
-                            block.kind === 'image' &&
-                            isDisplayImage(metadata.mime_type)
-                        ) {
-                            const image = element(
-                                'img',
-                                'h-auto max-w-full rounded-xl',
-                            );
-                            image.alt = block.label ?? '';
-                            image.loading = 'lazy';
-                            image.src = link.href;
-                            image.style.width = block.metadata.width
-                                ? `${Number(block.metadata.width)}px`
-                                : '';
-                            image.addEventListener('load', measure);
-                            target.replaceChildren(image);
-                            if (block.metadata.caption)
-                                target.append(
-                                    element(
-                                        'p',
-                                        'text-sm text-muted-foreground',
-                                        String(block.metadata.caption),
-                                    ),
-                                );
-                        }
-                        measure();
-                    })
-                    .catch(() => {
-                        if (!destroyed)
-                            target.textContent = 'Attachment unavailable.';
-                    });
                 return;
             }
             if (block.kind === 'table' && block.table) {
@@ -331,11 +286,9 @@ export function renderRichBody(
                 link.target = '_blank';
                 link.rel = 'noopener noreferrer';
                 link.dataset.orbiumPreviewLink = '';
-                link.dataset.orbiumMention =
-                    url.startsWith('/workspaces/') &&
-                    !url.includes('/attachments/')
-                        ? 'true'
-                        : 'false';
+                link.dataset.orbiumMention = isMarkdownPageDestination(url)
+                    ? 'true'
+                    : 'false';
                 if (link.dataset.orbiumMention === 'true')
                     link.classList.add('editor-mention');
                 link.addEventListener('click', (event) => {

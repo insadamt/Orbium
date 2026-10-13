@@ -13,7 +13,7 @@ final class DocumentPackageContent
      * @param  array<string, mixed>  $document
      * @param  list<array<string, mixed>>  $documents
      */
-    public function validate(array $document, string $body, array $documents): void
+    public function validate(array $document, string $body, array $documents, int $version): void
     {
         $native = str_ends_with($document['path'], '.orbie');
         if ($native) {
@@ -25,7 +25,7 @@ final class DocumentPackageContent
             } catch (\Throwable) {
                 $this->invalid('An Orbium document header is invalid.');
             }
-            if (! is_array($header) || ($header['version'] ?? null) !== 1 || ($header['title'] ?? null) !== $document['title']) {
+            if (! is_array($header) || ($header['version'] ?? null) !== $version || ($header['title'] ?? null) !== $document['title']) {
                 $this->invalid('An Orbium document header does not match the package.');
             }
             $body = substr($body, strlen($match[0]));

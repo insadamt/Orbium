@@ -109,6 +109,16 @@ final class MarkdownDocumentInspector
     public function semanticReference(AbstractWebResource $node): ?array
     {
         $url = $node->getUrl();
+        if (str_starts_with($url, '#orbium-missing-')) {
+            if (! preg_match('/^#orbium-missing-(page|image|file)-([1-9][0-9]*)$/D', $url, $missing) || filter_var($missing[2], FILTER_VALIDATE_INT) === false) {
+                MarkdownContract::invalid('A missing-reference destination is malformed.', $this->sourceLine($node));
+            }
+            if (($node instanceof Image) !== ($missing[1] === 'image')) {
+                MarkdownContract::invalid('Missing images require image syntax; missing pages and files require link syntax.', $this->sourceLine($node));
+            }
+
+            return null;
+        }
         if (! str_starts_with(strtolower($url), 'orbium:')) {
             if (! $this->isSafeUrl($url)) {
                 MarkdownContract::invalid('A Markdown link has an unsafe URL.', $this->sourceLine($node));

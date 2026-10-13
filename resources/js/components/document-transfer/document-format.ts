@@ -1,6 +1,6 @@
 export type TransferFormat = 'orbie' | 'md';
 export function encodeOrbie(title: string, source: string): string {
-    return `<!-- orbium-document ${JSON.stringify({ version: 1, title })} -->\n${source}`;
+    return `<!-- orbium-document ${JSON.stringify({ version: 2, title })} -->\n${source}`;
 }
 export function decodeDocumentFile(
     filename: string,
@@ -16,7 +16,7 @@ export function decodeDocumentFile(
         version?: unknown;
         title?: unknown;
     };
-    if (metadata.version !== 1)
+    if (metadata.version !== 1 && metadata.version !== 2)
         throw new Error(
             'This Orbium document version is unsupported. Update Orbium first.',
         );

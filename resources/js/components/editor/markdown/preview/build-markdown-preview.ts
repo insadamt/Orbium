@@ -8,6 +8,7 @@ import type { SyntaxNode } from '@lezer/common';
 import { isMarkdownSourceOnlyLine } from '../markdown-syntax';
 import {
     markdownLinkDestination,
+    isMarkdownPageDestination,
     type MarkdownLinkContext,
 } from './markdown-link-preview';
 import {
@@ -261,11 +262,9 @@ export function buildMarkdownPreview(
                     if (!destination) return;
                     decorations.push(
                         Decoration.mark({
-                            class:
-                                destination.startsWith('/workspaces/') &&
-                                !destination.includes('/attachments/')
-                                    ? 'cm-md-link editor-mention'
-                                    : 'cm-md-link',
+                            class: isMarkdownPageDestination(destination)
+                                ? 'cm-md-link editor-mention'
+                                : 'cm-md-link',
                             tagName: 'a',
                             attributes: {
                                 href: destination,
@@ -273,8 +272,7 @@ export function buildMarkdownPreview(
                                 rel: 'noopener noreferrer',
                                 'data-orbium-preview-link': '',
                                 'data-orbium-mention':
-                                    destination.startsWith('/workspaces/') &&
-                                    !destination.includes('/attachments/')
+                                    isMarkdownPageDestination(destination)
                                         ? 'true'
                                         : 'false',
                                 title: 'Ctrl/Cmd+click to open link',
