@@ -12,16 +12,31 @@ import {
     saveLibraryState,
 } from './library-browse-state';
 
-export function useLibraryGallery(
-    workspaceId: number,
-    storageKey: string,
-    imagesOnly: boolean,
-    picker: boolean,
-) {
+type LibraryGalleryOptions = {
+    workspaceId: number;
+    storageKey: string;
+    imagesOnly: boolean;
+    picker: boolean;
+    filesOnly: boolean;
+};
+
+export function useLibraryGallery({
+    workspaceId,
+    storageKey,
+    imagesOnly,
+    picker,
+    filesOnly,
+}: LibraryGalleryOptions) {
     const [initial] = useState(() =>
-        initialLibraryState(storageKey, imagesOnly, picker),
+        initialLibraryState(storageKey, { imagesOnly, picker, filesOnly }),
     );
-    const [filters, setFilters] = useState<LibraryFilters>(initial.filters);
+    const [draftFilters, setFilters] = useState<LibraryFilters>(
+        initial.filters,
+    );
+    const filters: LibraryFilters = {
+        ...draftFilters,
+        type: imagesOnly ? 'images' : filesOnly ? 'files' : draftFilters.type,
+    };
     const [files, setFiles] = useState<LibraryFile[]>([]);
     const [total, setTotal] = useState(0);
     const [pages, setPages] = useState(1);

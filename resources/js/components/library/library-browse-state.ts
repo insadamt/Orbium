@@ -41,12 +41,19 @@ export function saveLibraryState(key: string, state: LibraryBrowseState) {
 }
 export function initialLibraryState(
     key: string,
-    imagesOnly: boolean,
-    picker: boolean,
+    {
+        imagesOnly,
+        picker,
+        filesOnly,
+    }: {
+        imagesOnly: boolean;
+        picker: boolean;
+        filesOnly: boolean;
+    },
 ): LibraryBrowseState {
     const defaults: LibraryFilters = {
         q: '',
-        type: imagesOnly ? 'images' : 'all',
+        type: imagesOnly ? 'images' : filesOnly ? 'files' : 'all',
         sort: 'newest',
     };
     if (picker) return { filters: defaults, pages: 1, scroll: 0 };

@@ -427,6 +427,7 @@ export default function MarkdownEditor(props: MarkdownEditorProps) {
                 <LibraryPicker
                     workspaceId={props.workspaceId}
                     imagesOnly={upload.kind === 'image'}
+                    filesOnly={upload.kind === 'file'}
                     onClose={upload.closeLibrary}
                     onChoose={upload.chooseLibraryFile}
                     onUpload={upload.uploadNewFile}

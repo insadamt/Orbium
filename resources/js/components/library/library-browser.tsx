@@ -7,6 +7,7 @@ import { openLocation } from '@/components/navigation/tab-navigation';
 import type { Auth } from '@/types';
 import {
     libraryFilterParams,
+    isLibraryImage,
     uploadLibraryFile,
     type LibraryFile,
 } from './library-api';
@@ -27,20 +28,23 @@ import { useLibraryGallery } from './use-library-gallery';
 export function LibraryBrowser({
     workspaceId,
     imagesOnly = false,
+    filesOnly = false,
     onChoose,
 }: {
     workspaceId: number;
     imagesOnly?: boolean;
+    filesOnly?: boolean;
     onChoose?: (file: LibraryFile) => void;
 }) {
     const { auth } = usePage<{ auth: Auth }>().props;
     const picker = Boolean(onChoose);
-    const gallery = useLibraryGallery(
+    const gallery = useLibraryGallery({
         workspaceId,
-        libraryStateKey(workspaceId, auth.user.id),
+        storageKey: libraryStateKey(workspaceId, auth.user.id),
         imagesOnly,
         picker,
-    );
+        filesOnly,
+    });
     const [contextMenu, setContextMenu] = useState<LibraryMenuPosition | null>(
         null,
     );
@@ -55,6 +59,8 @@ export function LibraryBrowser({
     const busy = Boolean(upload);
     function select(file: LibraryFile) {
         if (!picker) return;
+        if (imagesOnly && !isLibraryImage(file)) return;
+        if (filesOnly && isLibraryImage(file)) return;
         setSelected((previous) => (previous[0]?.id === file.id ? [] : [file]));
     }
     function openFile(file: LibraryFile) {
@@ -136,6 +142,7 @@ export function LibraryBrowser({
                 onRefresh={gallery.refresh}
                 busy={busy || gallery.loading}
                 imagesOnly={imagesOnly}
+                filesOnly={filesOnly}
                 picker={picker}
             />
             <div className="library-collection-status" role="status">
@@ -198,7 +205,7 @@ export function LibraryBrowser({
                     {!picker && (
                         <button
                             type="button"
-                            className="library-button library-button-primary"
+                            className="library-button library-button-upload"
                             onClick={() => input.current?.click()}
                             disabled={busy}
                         >

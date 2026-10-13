@@ -122,6 +122,23 @@
 .library-button-primary:focus-visible {
     background: color-mix(in srgb, var(--foreground) 85%, var(--background));
 }
+.library-button-upload {
+    background: #171717;
+    color: #ffffff;
+    font-weight: 600;
+}
+.library-button-upload:hover,
+.library-button-upload:focus-visible {
+    background: #333333;
+}
+.dark .library-button-upload {
+    background: #f5f5f5;
+    color: #171717;
+}
+.dark .library-button-upload:hover,
+.dark .library-button-upload:focus-visible {
+    background: #dedede;
+}
 .library-button-danger {
     color: var(--destructive);
     background: color-mix(in srgb, var(--destructive) 9%, var(--card));

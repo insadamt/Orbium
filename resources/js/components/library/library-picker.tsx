@@ -5,12 +5,14 @@ import type { LibraryFile } from './library-api';
 export function LibraryPicker({
     workspaceId,
     imagesOnly,
+    filesOnly,
     onChoose,
     onClose,
     onUpload,
 }: {
     workspaceId: number;
     imagesOnly?: boolean;
+    filesOnly?: boolean;
     onChoose: (file: LibraryFile) => void;
     onClose: () => void;
     onUpload?: () => void;
@@ -38,7 +40,7 @@ export function LibraryPicker({
                     </Dialog.Description>
                     {onUpload && (
                         <button
-                            className="library-button mb-5"
+                            className="library-button library-button-upload mb-5"
                             onClick={onUpload}
                         >
                             Upload a new {imagesOnly ? 'image' : 'file'}
@@ -47,6 +49,7 @@ export function LibraryPicker({
                     <LibraryBrowser
                         workspaceId={workspaceId}
                         imagesOnly={imagesOnly}
+                        filesOnly={filesOnly}
                         onChoose={onChoose}
                     />
                 </Dialog.Content>

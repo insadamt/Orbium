@@ -9,6 +9,7 @@ export function LibraryToolbar({
     onRefresh,
     busy,
     imagesOnly,
+    filesOnly,
     picker,
 }: {
     filters: LibraryFilters;
@@ -17,6 +18,7 @@ export function LibraryToolbar({
     onRefresh: () => void;
     busy: boolean;
     imagesOnly: boolean;
+    filesOnly: boolean;
     picker: boolean;
 }) {
     return (
@@ -43,7 +45,7 @@ export function LibraryToolbar({
                     </button>
                 )}
             </label>
-            {!imagesOnly && (
+            {!imagesOnly && !filesOnly && (
                 <div className="library-type-tabs" aria-label="File type">
                     {(['all', 'images', 'files'] as const).map((type) => (
                         <button
@@ -91,7 +93,7 @@ export function LibraryToolbar({
             {!picker && (
                 <button
                     type="button"
-                    className="library-button library-button-primary"
+                    className="library-button library-button-upload"
                     onClick={onUpload}
                     disabled={busy}
                 >
