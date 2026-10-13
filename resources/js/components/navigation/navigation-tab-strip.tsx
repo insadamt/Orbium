@@ -17,7 +17,7 @@ import {
 } from '@dnd-kit/sortable';
 import { createPortal } from 'react-dom';
 import { ChevronLeft, ChevronRight, Pin, X } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
     NavigationTabContextMenu,
     type TabMenuPosition,
@@ -29,6 +29,7 @@ import { SplitEdgePreview, useSplitTabDrag } from './split-tab-drag';
 import { SplitNavigationTab } from './split-navigation-tab';
 import { SortableNavigationTab } from './sortable-navigation-tab';
 import { useNavigationTabPresence } from './use-navigation-tab-presence';
+import { useNavigationTabLayoutMotion } from './use-navigation-tab-layout-motion';
 
 const keepTabDragInsideStrip: Modifier = ({
     transform,
@@ -121,7 +122,7 @@ export function NavigationTabStrip({
         };
     }, [tabs, renderedTabs]);
 
-    useEffect(() => {
+    useLayoutEffect(() => {
         const tabList = tabListRef.current;
         const activeTab = Array.from(tabList?.children ?? []).find(
             (child) =>
@@ -132,12 +133,18 @@ export function NavigationTabStrip({
         );
         if (!tabList || !activeTab) return;
         const listBounds = tabList.getBoundingClientRect();
-        const tabBounds = activeTab.getBoundingClientRect();
-        if (tabBounds.left < listBounds.left)
-            tabList.scrollLeft += tabBounds.left - listBounds.left;
-        else if (tabBounds.right > listBounds.right)
-            tabList.scrollLeft += tabBounds.right - listBounds.right;
+        const tabElement = activeTab as HTMLElement;
+        const tabLeft = tabElement.offsetLeft - tabList.offsetLeft;
+        if (tabLeft < tabList.scrollLeft) tabList.scrollLeft = tabLeft;
+        else if (
+            tabLeft + tabElement.offsetWidth >
+            tabList.scrollLeft + listBounds.width
+        )
+            tabList.scrollLeft =
+                tabLeft + tabElement.offsetWidth - listBounds.width;
     }, [activeId]);
+
+    useNavigationTabLayoutMotion(tabListRef, Boolean(draggedTab));
 
     async function reorderTabs({ active, over }: DragEndEvent) {
         setDraggedTab(null);

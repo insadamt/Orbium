@@ -48,6 +48,7 @@ export function SortableNavigationTab({
             inert={exiting}
             aria-hidden={exiting || undefined}
             data-tab-exiting={exiting}
+            data-tab-motion-key={tab.id}
             data-dragging={isDragging}
             data-pinned={Boolean(tab.pinned)}
             data-tab-id={exiting ? undefined : tab.id}

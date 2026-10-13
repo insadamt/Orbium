@@ -73,6 +73,7 @@ export function SplitNavigationTab({
             inert={exiting}
             aria-hidden={exiting || undefined}
             data-tab-exiting={exiting}
+            data-tab-motion-key={`split-${left.id}-${right.id}`}
             data-dragging={isDragging}
             className={`navigation-tab-motion split-navigation-tab ${floating ? 'floating-tab' : 'my-1.5 rounded-lg'} ${isGroupActive ? 'bg-accent text-foreground' : 'text-muted-foreground hover:bg-accent/60'}`}
             data-split-tab-ids={exiting ? undefined : `${left.id} ${right.id}`}
