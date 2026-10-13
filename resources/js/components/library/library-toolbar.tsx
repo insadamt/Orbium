@@ -1,29 +1,23 @@
-import { CheckSquare, RefreshCw, Search, Upload, X } from 'lucide-react';
+import { RefreshCw, Search, Upload, X } from 'lucide-react';
 import { AppSelect } from '@/components/ui/app-select';
 import type { LibraryFilters } from './library-api';
 
 export function LibraryToolbar({
     filters,
     onChange,
-    selecting,
-    onSelectMode,
     onUpload,
     onRefresh,
     busy,
     imagesOnly,
     picker,
-    total,
 }: {
     filters: LibraryFilters;
     onChange: (filters: LibraryFilters) => void;
-    selecting: boolean;
-    onSelectMode: () => void;
     onUpload: () => void;
     onRefresh: () => void;
     busy: boolean;
     imagesOnly: boolean;
     picker: boolean;
-    total: number;
 }) {
     return (
         <div className="library-toolbar">
@@ -95,27 +89,15 @@ export function LibraryToolbar({
                 <RefreshCw size={16} />
             </button>
             {!picker && (
-                <>
-                    <button
-                        type="button"
-                        className="library-button"
-                        aria-pressed={selecting}
-                        onClick={onSelectMode}
-                        disabled={busy || !total}
-                    >
-                        <CheckSquare size={16} />
-                        {selecting ? 'Done' : 'Select'}
-                    </button>
-                    <button
-                        type="button"
-                        className="library-button library-button-primary"
-                        onClick={onUpload}
-                        disabled={busy}
-                    >
-                        <Upload size={16} />
-                        Upload
-                    </button>
-                </>
+                <button
+                    type="button"
+                    className="library-button library-button-primary"
+                    onClick={onUpload}
+                    disabled={busy}
+                >
+                    <Upload size={16} />
+                    Upload
+                </button>
             )}
         </div>
     );

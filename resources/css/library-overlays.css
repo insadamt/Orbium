@@ -72,3 +72,21 @@
     transform: none;
     border-radius: 12px;
 }
+.library-context-menu {
+    position: fixed;
+    max-width: calc(100vw - 16px);
+    max-height: calc(100dvh - 16px);
+    overflow: auto;
+}
+.library-context-menu [aria-disabled='true'] {
+    pointer-events: none;
+    opacity: 0.45;
+}
+.library-context-menu .library-menu-item {
+    width: 100%;
+    text-align: left;
+}
+.library-context-menu .library-menu-item:hover,
+.library-context-menu .library-menu-item:focus-visible {
+    background: var(--accent);
+}

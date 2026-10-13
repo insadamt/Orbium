@@ -9,9 +9,8 @@ import {
     Pencil,
     ScanEye,
     Trash2,
-    CheckSquare,
 } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { useRef, useState, type KeyboardEvent, type MouseEvent } from 'react';
 import {
     isLibraryImage,
     libraryFileLabel,
@@ -20,7 +19,6 @@ import {
 
 type Props = {
     file: LibraryFile;
-    selecting: boolean;
     selected: boolean;
     picker?: boolean;
     disabled?: boolean;
@@ -28,11 +26,13 @@ type Props = {
     onSelect: () => void;
     onRename: (trigger: HTMLElement | null) => void;
     onDelete: (trigger: HTMLElement | null) => void;
+    onContextMenu?: (
+        event: MouseEvent<HTMLElement> | KeyboardEvent<HTMLElement>,
+    ) => void;
 };
 
 export function LibraryCard({
     file,
-    selecting,
     selected,
     picker,
     disabled,
@@ -40,6 +40,7 @@ export function LibraryCard({
     onSelect,
     onRename,
     onDelete,
+    onContextMenu,
 }: Props) {
     const menuButton = useRef<HTMLButtonElement>(null);
     const [failed, setFailed] = useState(false);
@@ -51,12 +52,22 @@ export function LibraryCard({
             : /zip|compressed|archive/.test(file.mime_type)
               ? FileArchive
               : File;
-    const open = selecting || picker ? onSelect : onOpen;
+    const open = picker ? onSelect : onOpen;
     return (
         <article
             className="library-card"
             data-selected={selected}
-            data-selecting={selecting}
+            onContextMenu={onContextMenu}
+            onKeyDown={(event) => {
+                if (
+                    !picker &&
+                    !disabled &&
+                    (event.key === 'ContextMenu' ||
+                        (event.shiftKey && event.key === 'F10'))
+                ) {
+                    onContextMenu?.(event);
+                }
+            }}
         >
             <div className="library-card-media">
                 <button
@@ -64,8 +75,8 @@ export function LibraryCard({
                     className="library-card-open"
                     disabled={disabled || (picker && !file.available)}
                     onClick={open}
-                    aria-label={`${selecting || picker ? 'Select' : 'View details for'} ${file.name}`}
-                    aria-pressed={selecting || picker ? selected : undefined}
+                    aria-label={`${picker ? 'Select' : 'View details for'} ${file.name}`}
+                    aria-pressed={picker ? selected : undefined}
                 >
                     {image && file.available && !failed ? (
                         <img
@@ -88,7 +99,7 @@ export function LibraryCard({
                         </div>
                     )}
                 </button>
-                {(selecting || picker) && (
+                {picker && (
                     <button
                         type="button"
                         className="library-card-select"
@@ -141,13 +152,6 @@ export function LibraryCard({
                                     }
                                 >
                                     <Pencil size={15} /> Rename
-                                </Menu.Item>
-                                <Menu.Item
-                                    className="library-menu-item"
-                                    onSelect={onSelect}
-                                >
-                                    <CheckSquare size={15} />{' '}
-                                    {selected ? 'Deselect' : 'Select'}
                                 </Menu.Item>
                                 <Menu.Separator className="my-1 border-t border-border/50" />
                                 <Menu.Item

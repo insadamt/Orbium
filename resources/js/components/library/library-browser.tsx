@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { usePage } from '@inertiajs/react';
-import { Check, ImagePlus, Loader2, Trash2, X } from 'lucide-react';
+import { Check, ImagePlus, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { MasonryLayout } from '@/components/hierarchy/masonry-layout';
 import { openLocation } from '@/components/navigation/tab-navigation';
@@ -13,6 +13,10 @@ import {
 import { libraryStateKey } from './library-browse-state';
 import { LibraryCard } from './library-card';
 import { LibraryToolbar } from './library-toolbar';
+import {
+    LibraryContextMenu,
+    type LibraryMenuPosition,
+} from './library-context-menu';
 import {
     LibraryActionDialog,
     type LibraryAction,
@@ -37,7 +41,9 @@ export function LibraryBrowser({
         imagesOnly,
         picker,
     );
-    const [selecting, setSelecting] = useState(false);
+    const [contextMenu, setContextMenu] = useState<LibraryMenuPosition | null>(
+        null,
+    );
     const [selected, setSelected] = useState<LibraryFile[]>([]);
     const [action, setAction] = useState<LibraryAction | null>(null);
     const [upload, setUpload] = useState<{
@@ -48,15 +54,13 @@ export function LibraryBrowser({
     const input = useRef<HTMLInputElement>(null);
     const busy = Boolean(upload);
     function select(file: LibraryFile) {
-        if (!picker) setSelecting(true);
-        setSelected((previous) =>
-            previous.some((item) => item.id === file.id)
-                ? previous.filter((item) => item.id !== file.id)
-                : picker
-                  ? [file]
-                  : previous.length < 100
-                    ? [...previous, file]
-                    : previous,
+        if (!picker) return;
+        setSelected((previous) => (previous[0]?.id === file.id ? [] : [file]));
+    }
+    function openFile(file: LibraryFile) {
+        gallery.rememberPosition();
+        openLocation(
+            `/workspaces/${workspaceId}/library/items/${file.id}?${libraryFilterParams(gallery.filters)}`,
         );
     }
     function finishAction(result: LibraryActionResult) {
@@ -128,23 +132,16 @@ export function LibraryBrowser({
             <LibraryToolbar
                 filters={gallery.filters}
                 onChange={gallery.setFilters}
-                selecting={selecting}
-                onSelectMode={() => {
-                    setSelecting((value) => !value);
-                    setSelected([]);
-                }}
                 onUpload={() => input.current?.click()}
                 onRefresh={gallery.refresh}
                 busy={busy || gallery.loading}
                 imagesOnly={imagesOnly}
                 picker={picker}
-                total={gallery.total}
             />
             <div className="library-collection-status" role="status">
                 {gallery.loading
                     ? 'Loading your Library…'
                     : `${gallery.total} ${gallery.total === 1 ? 'file' : 'files'}`}
-                {selecting && ' · Select up to 100 files'}
             </div>
             {upload && (
                 <div className="library-upload-status" role="status">
@@ -218,17 +215,33 @@ export function LibraryBrowser({
                     render={(file) => (
                         <LibraryCard
                             file={file}
-                            selecting={selecting}
                             selected={selected.some(
                                 (item) => item.id === file.id,
                             )}
                             picker={picker}
                             disabled={busy || gallery.loading}
-                            onOpen={() => {
-                                gallery.rememberPosition();
-                                openLocation(
-                                    `/workspaces/${workspaceId}/library/items/${file.id}?${libraryFilterParams(gallery.filters)}`,
-                                );
+                            onOpen={() => openFile(file)}
+                            onContextMenu={(event) => {
+                                if (picker || busy || gallery.loading) return;
+                                event.preventDefault();
+                                event.stopPropagation();
+                                const bounds =
+                                    event.currentTarget.getBoundingClientRect();
+                                setContextMenu({
+                                    file,
+                                    x:
+                                        'clientX' in event
+                                            ? event.clientX
+                                            : bounds.left,
+                                    y:
+                                        'clientY' in event
+                                            ? event.clientY
+                                            : bounds.top,
+                                    returnFocusTo:
+                                        event.currentTarget.querySelector<HTMLButtonElement>(
+                                            '.library-card-open',
+                                        ),
+                                });
                             }}
                             onSelect={() => select(file)}
                             onRename={(trigger) =>
@@ -267,79 +280,48 @@ export function LibraryBrowser({
                     </button>
                 </div>
             )}
-            {(selecting || (picker && selected.length > 0)) && (
+            {picker && selected.length > 0 && (
                 <div
                     className="library-selection-bar"
                     role="region"
-                    aria-label={picker ? 'Chosen file' : 'Selected files'}
+                    aria-label="Chosen file"
                 >
-                    {picker ? (
-                        <>
-                            <span className="truncate">
-                                {selected[0]?.name}
-                            </span>
-                            <button
-                                type="button"
-                                className="library-button library-button-primary"
-                                disabled={!selected.length || gallery.loading}
-                                onClick={() => {
-                                    if (selected[0]) onChoose?.(selected[0]);
-                                }}
-                            >
-                                <Check size={15} />
-                                {imagesOnly ? 'Use image' : 'Use file'}
-                            </button>
-                        </>
-                    ) : (
-                        <>
-                            <span>{selected.length} selected</span>
-                            <button
-                                type="button"
-                                className="library-button"
-                                disabled={gallery.loading}
-                                onClick={() =>
-                                    setSelected(gallery.files.slice(0, 100))
-                                }
-                            >
-                                Select loaded
-                            </button>
-                            <button
-                                type="button"
-                                className="library-button"
-                                disabled={!selected.length}
-                                onClick={() => setSelected([])}
-                            >
-                                Clear
-                            </button>
-                            <button
-                                type="button"
-                                className="library-button library-button-danger"
-                                disabled={!selected.length || busy}
-                                onClick={(event) =>
-                                    setAction({
-                                        kind: 'delete',
-                                        files: selected,
-                                        returnFocusTo: event.currentTarget,
-                                    })
-                                }
-                            >
-                                <Trash2 size={15} />
-                                Delete
-                            </button>
-                            <button
-                                type="button"
-                                className="library-icon-button"
-                                aria-label="Exit selection"
-                                onClick={() => {
-                                    setSelecting(false);
-                                    setSelected([]);
-                                }}
-                            >
-                                <X size={17} />
-                            </button>
-                        </>
-                    )}
+                    <span className="truncate">{selected[0]?.name}</span>
+                    <button
+                        type="button"
+                        className="library-button library-button-primary"
+                        disabled={gallery.loading}
+                        onClick={() => {
+                            if (selected[0]) onChoose?.(selected[0]);
+                        }}
+                    >
+                        <Check size={15} />
+                        {imagesOnly ? 'Use image' : 'Use file'}
+                    </button>
                 </div>
+            )}
+            {contextMenu && (
+                <LibraryContextMenu
+                    position={contextMenu}
+                    onClose={() => setContextMenu(null)}
+                    onOpen={() => openFile(contextMenu.file)}
+                    onRename={() =>
+                        setAction({
+                            kind: 'rename',
+                            file: contextMenu.file,
+                            returnFocusTo:
+                                contextMenu.returnFocusTo ?? undefined,
+                        })
+                    }
+                    onDelete={() =>
+                        setAction({
+                            kind: 'delete',
+                            files: [contextMenu.file],
+                            returnFocusTo:
+                                contextMenu.returnFocusTo ?? undefined,
+                        })
+                    }
+                />
             )}
             {action && (
                 <LibraryActionDialog
