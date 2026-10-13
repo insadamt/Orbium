@@ -5,15 +5,15 @@ export default function LibraryPage() {
     const { workspace } = usePage<{ workspace: { id: number; name: string } }>()
         .props;
     return (
-        <main className="mx-auto w-full max-w-6xl px-5 pt-28 pb-12">
+        <main className="library-page">
             <Head title="Library" />
-            <div className="mb-8">
-                <h1 className="text-3xl font-semibold">Library</h1>
-                <p className="mt-2 text-muted-foreground">
-                    Files and images in {workspace.name}. Reuse uploads across
-                    your pages.
-                </p>
-            </div>
+            <header className="library-heading">
+                <div>
+                    <p className="library-eyebrow">{workspace.name}</p>
+                    <h1>Library</h1>
+                </div>
+                <p>Upload once. Reuse anywhere in this workspace.</p>
+            </header>
             <LibraryBrowser key={workspace.id} workspaceId={workspace.id} />
         </main>
     );

@@ -336,3 +336,8 @@ Mobile-first optimization is deferred. Do not break mobile unnecessarily, but do
 > Unified Trash update (2026-10-06): Trash is a standalone floating content island at `/trash`. The account menu provides All Trash and a workspace-scoped entry from the explorer. Use search, workspace/type filters, sorting, grouped container details, and an on-selection action strip. Permanent deletion previews exact scope and affected item/file totals; deleted workspaces require typed-name confirmation. Empty Trash is explicit about workspace/account scope and ignores search/type filters. See `../reports/05-unified-trash.md`.
 
 > Trash UI correction (2026-10-06): Use workspace-manager-style rows with avatars, compact dates, one Restore action, and overflow menus. Use the floating shell search; keep workspace scope visible and place type/sort in a compact menu. Details opens in a fixed drawer without reflowing the list. Ordinary recovery is immediate; ancestor recovery and permanent deletion retain confirmation. See `../reports/05-trash-ui-redesign.md`.
+
+
+## Library Gallery review (2026-10-13)
+
+Library uses natural borderless masonry, image proportions, quiet filenames, and three-dot image actions. Keep metadata and saved usage on the dedicated file detail page. Use a compact search/type/sort/action toolbar, explicit selection mode with a floating action bar, and centered rename/deletion dialogs. Reuse pickers share the visual cards with an explicit Use image/file confirmation. Touch keeps overflow controls visible; keyboard focus uses the existing background/text cue policy. Detail previews preserve the full image and support fit/zoom; metadata stacks below the preview in narrow panes. See `19-library.md` and `../reports/06-library-gallery.md`.

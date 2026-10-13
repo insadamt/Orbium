@@ -40,6 +40,7 @@ class ManageWorkspaces
         });
 
         Storage::disk('local')->deleteDirectory('attachments/'.$workspace->id);
+        Storage::disk('local')->deleteDirectory('library-previews/'.$workspace->id);
     }
 
     public function restore(Workspace $workspace): void

@@ -23,13 +23,13 @@ export function LibraryPicker({
             }}
         >
             <Dialog.Portal>
-                <Dialog.Overlay className="fixed inset-0 z-[80] bg-black/40" />
-                <Dialog.Content className="fixed top-1/2 left-1/2 z-[81] max-h-[85vh] w-[min(900px,94vw)] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl border bg-background p-6 shadow-xl">
+                <Dialog.Overlay className="library-dialog-overlay" />
+                <Dialog.Content className="library-picker-dialog">
                     <div className="mb-5 flex items-center justify-between gap-4">
                         <Dialog.Title className="text-xl font-semibold">
                             Choose from Library
                         </Dialog.Title>
-                        <Dialog.Close className="rounded-lg border px-3 py-2">
+                        <Dialog.Close className="library-button">
                             Close
                         </Dialog.Close>
                     </div>
@@ -38,7 +38,7 @@ export function LibraryPicker({
                     </Dialog.Description>
                     {onUpload && (
                         <button
-                            className="mb-5 rounded-lg border px-3 py-2"
+                            className="library-button mb-5"
                             onClick={onUpload}
                         >
                             Upload a new {imagesOnly ? 'image' : 'file'}

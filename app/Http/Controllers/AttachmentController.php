@@ -29,7 +29,7 @@ class AttachmentController extends Controller
             $file = Attachment::query()->where('workspace_id', $workspace)->findOrFail($attachment);
             abort_unless(Storage::disk('local')->exists($file->storage_key), 404);
 
-            return response()->download(Storage::disk('local')->path($file->storage_key), $file->original_name, ['X-Content-Type-Options' => 'nosniff', 'Content-Security-Policy' => "default-src 'none'"]);
+            return response()->download(Storage::disk('local')->path($file->storage_key), $file->original_name, ['X-Content-Type-Options' => 'nosniff', 'Content-Security-Policy' => "default-src 'none'", 'Cache-Control' => 'no-store'])->setPrivate();
         }
 
         return $this->serveAttachment($workspace, $attachment, false);
@@ -132,16 +132,17 @@ class AttachmentController extends Controller
         abort_unless(is_file($path), 404);
 
         $headers = [
+            'Cache-Control' => 'no-cache',
             'Content-Type' => $file->mime_type,
             'X-Content-Type-Options' => 'nosniff',
             'Content-Security-Policy' => "default-src 'none'",
         ];
 
         if (in_array($file->mime_type, ['image/png', 'image/jpeg', 'image/gif', 'image/webp'], true)) {
-            return response()->file($path, $headers);
+            return response()->file($path, $headers)->setPrivate();
         }
 
-        return response()->download($path, $file->original_name, $headers);
+        return response()->download($path, $file->original_name, $headers)->setPrivate();
     }
 
     private function assertVisible(Node $node): void

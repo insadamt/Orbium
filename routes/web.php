@@ -18,6 +18,9 @@ Route::redirect('/', '/dashboard')->name('home');
 
 Route::middleware(['auth', SerializeWorkspaceWrites::class])->group(function () {
     Route::get('workspaces/{workspace}/library', [LibraryController::class, 'index'])->name('library.index');
+    Route::get('workspaces/{workspace}/library/items/{attachment}', [LibraryController::class, 'show'])->name('library.show');
+    Route::post('workspaces/{workspace}/library/selection', [LibraryController::class, 'selection']);
+    Route::get('workspaces/{workspace}/library/files/{attachment}/thumbnail', [LibraryController::class, 'thumbnail'])->name('library.files.thumbnail');
     Route::get('workspaces/{workspace}/library/files', [LibraryController::class, 'files'])->name('library.files');
     Route::post('workspaces/{workspace}/library/files', [AttachmentController::class, 'storeLibraryFile']);
     Route::get('workspaces/{workspace}/library/files/{attachment}', [AttachmentController::class, 'showLibraryFile'])->name('library.files.show');

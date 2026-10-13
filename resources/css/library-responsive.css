@@ -1,0 +1,68 @@
+@media (hover: none) {
+    .library-card-menu {
+        opacity: 1;
+    }
+    .library-card-menu,
+    .library-card-select {
+        width: 44px;
+        height: 44px;
+    }
+    .library-button,
+    .library-icon-button {
+        min-height: 44px;
+    }
+}
+@media (max-width: 850px) {
+    .library-detail-layout {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 28px;
+    }
+    .library-preview-stage {
+        min-height: 280px;
+    }
+    .library-detail-panel {
+        max-width: 600px;
+    }
+}
+@media (max-width: 600px) {
+    .library-page {
+        width: calc(100% - 32px);
+        padding-top: 122px;
+    }
+    .library-heading {
+        align-items: start;
+    }
+    .library-heading > p {
+        display: none;
+    }
+    .library-toolbar {
+        gap: 8px;
+    }
+    .library-search {
+        flex-basis: calc(100% - 48px);
+    }
+    .library-type-tabs {
+        flex: 1;
+    }
+    .library-sort {
+        min-width: 115px;
+    }
+    .library-picker-dialog,
+    .library-action-dialog {
+        padding: 20px;
+    }
+    .library-selection-bar {
+        gap: 5px;
+        bottom: 14px;
+    }
+    .library-selection-bar .library-button {
+        padding: 9px;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .library-button,
+    .library-icon-button,
+    .library-card-menu {
+        transition: none;
+    }
+}

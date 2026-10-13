@@ -14,6 +14,7 @@ import { groupForTab } from './split-group-state';
 type PageContext = {
     [key: string]: unknown;
     workspace?: { id: number; name: string };
+    file?: { name: string };
     node?: { id: number; title: string; icon?: string | null };
     document?: { icon_attachment_id?: number | null };
     database?: {
@@ -59,8 +60,8 @@ export function locationForPage(page: {
     return {
         url: page.url,
         title:
-            (page.url.split('?')[0].endsWith('/library')
-                ? 'Library'
+            (page.url.split('?')[0].includes('/library')
+                ? (page.props.file?.name ?? 'Library')
                 : undefined) ??
             context?.title ??
             page.props.workspace?.name ??

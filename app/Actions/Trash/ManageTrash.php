@@ -7,6 +7,7 @@ use App\Actions\Workspaces\ManageWorkspaces;
 use App\Models\Attachment;
 use App\Models\Node;
 use App\Models\User;
+use App\Services\Library\LibraryImagePreview;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -95,6 +96,7 @@ class ManageTrash
                 foreach ($catalog->containedAttachments($entry['key'], $nodes) as $attachment) {
                     $attachmentIds[] = $attachment->id;
                     $storageKeys[] = $attachment->storage_key;
+                    $storageKeys[] = app(LibraryImagePreview::class)->cacheKey($attachment);
                 }
             }
             // Unlink only the subtree being removed to satisfy the restrictive parent FK.

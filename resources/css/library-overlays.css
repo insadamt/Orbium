@@ -1,0 +1,74 @@
+.library-dialog-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    background: #0005;
+    backdrop-filter: blur(4px);
+}
+.library-action-dialog,
+.library-picker-dialog {
+    position: fixed;
+    z-index: 101;
+    top: 50%;
+    left: 50%;
+    width: min(460px, calc(100vw - 32px));
+    max-height: 85vh;
+    overflow-y: auto;
+    transform: translate(-50%, -50%);
+    border-radius: 20px;
+    padding: 26px;
+    background: var(--background);
+    color: var(--foreground);
+    box-shadow: 0 20px 70px #0003;
+}
+.library-action-dialog {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+.library-action-dialog > h2 {
+    padding-right: 28px;
+}
+.library-dialog-close {
+    position: absolute;
+    top: 18px;
+    right: 18px;
+    padding: 6px;
+    border-radius: 8px;
+}
+.library-dialog-close:hover,
+.library-dialog-close:focus-visible {
+    background: var(--accent);
+}
+.library-text-input {
+    display: block;
+    width: 100%;
+    border-radius: 10px;
+    padding: 11px 12px;
+    background: var(--muted);
+    color: var(--foreground);
+}
+.library-picker-dialog {
+    display: flex;
+    width: min(980px, calc(100vw - 32px));
+    flex-direction: column;
+    overflow: hidden;
+}
+.library-picker-dialog > div:first-child {
+    flex-shrink: 0;
+}
+.library-browser[data-picker='true'] {
+    min-height: 0;
+    overflow-y: auto;
+    padding: 0 2px;
+}
+.library-browser[data-picker='true'] .library-selection-bar {
+    position: sticky;
+    bottom: 0;
+    left: auto;
+    width: 100%;
+    max-width: 100%;
+    margin-top: 16px;
+    transform: none;
+    border-radius: 12px;
+}

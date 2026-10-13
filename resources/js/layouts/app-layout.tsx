@@ -70,7 +70,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
     const isFloatingPage =
         isHomePage ||
         page.component === 'trash/index' ||
-        page.component === 'library/index' ||
+        page.component.startsWith('library/') ||
         page.component === 'documents/show' ||
         page.component === 'databases/show' ||
         page.component.startsWith('settings/');
@@ -102,9 +102,11 @@ export default function AppLayout({ children }: AppLayoutProps) {
           ? 'document'
           : page.component === 'databases/show'
             ? 'database'
-            : page.component === 'trash/index'
-              ? 'trash'
-              : 'settings';
+            : page.component.startsWith('library/')
+              ? 'library'
+              : page.component === 'trash/index'
+                ? 'trash'
+                : 'settings';
     const breadcrumbLinks = page.props.breadcrumbs ?? [];
     const currentPath = page.url.split('?')[0];
     const floatingBreadcrumbs: BreadcrumbItem[] = page.component.startsWith(

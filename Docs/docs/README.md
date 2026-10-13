@@ -20,3 +20,5 @@
 | `15-deferred-features.md` | Explicit non-goals |
 | `16-decision-log.md` | Locked planning decisions |
 | `17-orbing-view-plan.md` | Proposed additional 2D spatial explorer and milestone acceptance |
+| `18-document-transfer.md` | Individual documents and linked-page ZIP packages |
+| `19-library.md` | Workspace uploads, reuse, gallery, details, and safe bulk deletion |

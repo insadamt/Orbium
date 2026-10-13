@@ -5,6 +5,10 @@
 @import './split-workspace.css';
 @import './workspace-manager.css';
 @import './trash.css';
+@import './library.css';
+@import './library-overlays.css';
+@import './library-detail.css';
+@import './library-responsive.css';
 @import './node-media.css';
 @import './explorer-views.css';
 @import './appearance-surfaces.css';

@@ -28,11 +28,13 @@ export function MasonryLayout<T extends MasonryItem>({
     render,
     minimumWidth = 240,
     gap = 20,
+    compactMinimumWidth,
 }: {
     items: T[];
     render: (item: T) => ReactNode;
     minimumWidth?: number;
     gap?: number;
+    compactMinimumWidth?: number;
 }) {
     const container = useRef<HTMLDivElement>(null);
     const [width, setWidth] = useState(0);
@@ -46,9 +48,11 @@ export function MasonryLayout<T extends MasonryItem>({
         return () => observer.disconnect();
     }, []);
 
+    const responsiveMinimumWidth =
+        width <= 600 ? (compactMinimumWidth ?? minimumWidth) : minimumWidth;
     const columns = Math.max(
         1,
-        Math.floor((width + gap) / (minimumWidth + gap)),
+        Math.floor((width + gap) / (responsiveMinimumWidth + gap)),
     );
     const cardWidth = width
         ? (width - gap * (columns - 1)) / columns

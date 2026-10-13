@@ -10,7 +10,7 @@ Library provides a workspace-owned collection of existing uploads and new files.
 - Search filenames, filter images/files, and sort newest, name, or largest first.
 - Show image thumbnails, filename, MIME type, size, upload date, storage availability, and saved usage links.
 - Upload, preview, download, rename, and permanently delete unused files.
-- Select up to 100 files and delete them together after confirmation. Selection includes used files, but deletion is disabled until only unused files remain.
+- Select up to 100 files and review them together before deletion. Review fetches current saved usage; any used file blocks permanent deletion of the entire selection.
 - Reuse an existing upload from document image/file insertion, document/folder/database cover and icon menus, and database Files property choices. In Markdown, slash image/file commands open a Library picker with an Upload a new image/file action. Drag/drop and paste uploads retain their existing flow.
 
 Reuse references the original attachment ID and binary. It does not copy the file or move its original upload provenance. Ownership and authorization are workspace scoped. `owner_node_id` records optional upload provenance, not an exclusive access boundary. Renaming changes the Library name/download filename; persisted captions and Markdown labels remain as written.
@@ -32,3 +32,20 @@ New document ZIP packages use manifest version 3 for shared attachment reference
 Whole-account portability and inclusion of unused Library uploads remain governed by the separate portability phase. Document ZIP exports include selected referenced files only.
 
 Favorites, duplicate detection, collections/tags, and other bulk actions are outside this first version.
+
+
+## Gallery and details review (approved 2026-10-13)
+
+Library now uses borderless natural masonry cards with compact filenames and a three-dot menu. The menu offers View details, Download, Rename, Select/Deselect, and Delete review. Image proportions are preserved; narrow containers use a compact two-column layout where space allows. Touch keeps menus visible and increases control targets. Keyboard focus uses background/text cues in accordance with the existing focus-style review.
+
+The toolbar groups filename search, All/Images/Files filters, sorting, refresh, selection mode, and Upload. Metadata and usage lists have moved out of cards into authenticated detail pages at `/workspaces/{workspace}/library/items/{attachment}`. Detail pages offer the original image preview, fit/zoom controls, file information, usage links, protected deletion, Back to Library, and previous/next navigation within the current filtered sort order. Unsupported previews show a file tile and download action.
+
+Rename and delete use centered dialogs. Rename updates loaded cards without clearing selection or replacing the gallery with a loader. Delete review checks usage before enabling permanent deletion; the final write rechecks usage independently under the existing workspace lock. Successful deletion removes selected cards and revalidates loaded pages to avoid skipping items on the next Load more request.
+
+Reuse pickers use the same masonry cards with one selected file and an explicit Use image/file confirmation. They retain a separate Upload a new image/file action and exclude management menus.
+
+Filename/type/sort filters and gallery scroll position are stored per account/workspace in browser session storage. Returning from details and refresh restore loaded pages and scroll after masonry measurements settle. Restoration is capped at 20 pages (960 files); subsequent browsing can load additional pages. Filters travel in detail-page URLs; clearing browser session storage removes the remembered position. User scrolling or keyboard/pointer input cancels pending scroll restoration.
+
+The listing endpoint now returns paginated summaries (48 files per page) and does not scan saved document content. Detailed usage is fetched for a detail page or deletion review. Images reserve space using header dimensions and load lazily. Thumbnail requests authorize workspace ownership before using local cached derivatives; responses explicitly use private caching and revalidation. Where GD is available, eligible large static images are resized to at most 640px wide and 1600px tall. Small images, GIFs, large/unsupported decodes, JPEGs with unknown/non-default EXIF orientation, and installations without GD fall back to originals. JPEG orientation-aware dimensions require PHP EXIF support. Original uploads remain unchanged. Preview cache entries are removed alongside permanent file/workspace deletion and excluded from portable content.
+
+No migrations, new packages, or attachment/reference format changes were introduced by this UI review.

@@ -21,7 +21,7 @@ class TrashCatalog
         $this->nodes = Node::withTrashed()->whereIn('workspace_id', $this->workspaces->keys())
             ->orderBy('id')->get(['id', 'workspace_id', 'parent_id', 'type', 'title', 'deleted_at', 'updated_at'])->keyBy('id');
         $this->attachments = Attachment::withTrashed()->whereIn('workspace_id', $this->workspaces->keys())
-            ->get(['id', 'workspace_id', 'owner_node_id', 'storage_key', 'size_bytes', 'updated_at']);
+            ->get(['id', 'workspace_id', 'owner_node_id', 'storage_key', 'sha256', 'size_bytes', 'updated_at']);
     }
 
     public function roots(): array

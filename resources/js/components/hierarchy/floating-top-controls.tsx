@@ -30,7 +30,13 @@ type Props = {
     nodes: TreeNode[];
     breadcrumbs: BreadcrumbItem[];
     showContentActions?: boolean;
-    pageType: 'explorer' | 'document' | 'database' | 'settings' | 'trash';
+    pageType:
+        | 'explorer'
+        | 'document'
+        | 'database'
+        | 'settings'
+        | 'trash'
+        | 'library';
 };
 
 export function FloatingTopControls({
@@ -70,7 +76,12 @@ export function FloatingTopControls({
     }, []);
 
     useEffect(() => {
-        if (!workspace || pageType === 'settings' || pageType === 'trash')
+        if (
+            !workspace ||
+            pageType === 'settings' ||
+            pageType === 'trash' ||
+            pageType === 'library'
+        )
             return;
         try {
             localStorage.setItem(
@@ -230,7 +241,9 @@ export function FloatingTopControls({
                     className="floating-account-controls"
                     data-search-open={pageSearch.open}
                 >
-                    <FloatingPageSearch pageType={pageType} />
+                    {pageType !== 'library' && (
+                        <FloatingPageSearch pageType={pageType} />
+                    )}
                     {workspace && (
                         <button
                             type="button"
