@@ -8,7 +8,8 @@ import { MermaidPreviewSession } from '../mermaid-preview-session';
 import { orbiumMarkdownDialect } from './dialect/markdown-dialect';
 import { markdownRichBlocks } from './rich/rich-blocks';
 import type { RichContext } from './rich/rich-model';
-import { Compartment, EditorState } from '@codemirror/state';
+import { Compartment, EditorSelection, EditorState } from '@codemirror/state';
+import { normalizeMentionSelection } from './preview/markdown-mention-selection';
 import {
     EditorView,
     highlightActiveLine,
@@ -285,6 +286,18 @@ export default function MarkdownEditor(props: MarkdownEditorProps) {
     useEffect(() => {
         if (!view) return;
         view.dispatch({
+            selection: livePreview
+                ? EditorSelection.create(
+                      view.state.selection.ranges.map((range) =>
+                          normalizeMentionSelection(
+                              view.state,
+                              range,
+                              range.head,
+                          ),
+                      ),
+                      view.state.selection.mainIndex,
+                  )
+                : undefined,
             effects: presentation.current.reconfigure(
                 livePreview
                     ? [

@@ -289,8 +289,32 @@ export function renderRichBody(
                 link.dataset.orbiumMention = isMarkdownPageDestination(url)
                     ? 'true'
                     : 'false';
-                if (link.dataset.orbiumMention === 'true')
-                    link.classList.add('editor-mention');
+                if (link.dataset.orbiumMention === 'true') {
+                    link.classList.add(
+                        'editor-mention',
+                        'editor-mention-button',
+                    );
+                    link.contentEditable = 'false';
+                    link.tabIndex = 0;
+                    link.setAttribute('role', 'button');
+                    link.title =
+                        'Open page · Ctrl/Cmd+click to open in a new tab';
+                    link.addEventListener('mousedown', (event) =>
+                        event.preventDefault(),
+                    );
+                    link.addEventListener('keydown', (event) => {
+                        if (
+                            event.altKey ||
+                            (event.key !== 'Enter' &&
+                                (event.key !== ' ' ||
+                                    event.ctrlKey ||
+                                    event.metaKey))
+                        )
+                            return;
+                        event.stopPropagation();
+                        openMarkdownPreviewLink(event, link);
+                    });
+                }
                 link.addEventListener('click', (event) => {
                     event.stopPropagation();
                     openMarkdownPreviewLink(event, link);

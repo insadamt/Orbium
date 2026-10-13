@@ -368,3 +368,43 @@
         @apply inline-flex min-h-9 items-center justify-center rounded-lg px-3 py-2 text-sm transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-40;
     }
 }
+
+.orbium-editor .editor-mention-button {
+    display: inline-block;
+    max-width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    padding: 0.05rem 0.45rem;
+    background: var(--muted);
+    color: var(--foreground);
+    font-weight: 500;
+    line-height: 1.5;
+    text-decoration: none;
+    vertical-align: baseline;
+    overflow-wrap: anywhere;
+    unicode-bidi: isolate;
+    cursor: pointer;
+    transition:
+        background-color 120ms ease,
+        border-color 120ms ease;
+}
+.orbium-editor .editor-mention-button:hover {
+    border-color: var(--muted-foreground);
+    background: var(--accent);
+    text-decoration: none;
+}
+.orbium-editor .editor-mention-button:active {
+    background: var(--secondary);
+}
+.orbium-editor .editor-mention-button:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+}
+.orbium-editor .editor-mention-button[aria-busy='true'] {
+    cursor: progress;
+}
+@media (prefers-reduced-motion: reduce) {
+    .orbium-editor .editor-mention-button {
+        transition: none;
+    }
+}

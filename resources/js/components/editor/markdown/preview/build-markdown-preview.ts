@@ -260,10 +260,14 @@ export function buildMarkdownPreview(
                         linkContext,
                     );
                     if (!destination) return;
+                    if (isMarkdownPageDestination(destination))
+                        atomicRanges.push(
+                            Decoration.mark({}).range(node.from, node.to),
+                        );
                     decorations.push(
                         Decoration.mark({
                             class: isMarkdownPageDestination(destination)
-                                ? 'cm-md-link editor-mention'
+                                ? 'cm-md-link editor-mention editor-mention-button'
                                 : 'cm-md-link',
                             tagName: 'a',
                             attributes: {
@@ -275,7 +279,22 @@ export function buildMarkdownPreview(
                                     isMarkdownPageDestination(destination)
                                         ? 'true'
                                         : 'false',
-                                title: 'Ctrl/Cmd+click to open link',
+                                ...(isMarkdownPageDestination(destination)
+                                    ? {
+                                          contenteditable: 'false',
+                                          tabindex: '0',
+                                          role: 'button',
+                                          'data-orbium-mention-from': String(
+                                              node.from,
+                                          ),
+                                          'data-orbium-mention-to': String(
+                                              node.to,
+                                          ),
+                                      }
+                                    : {}),
+                                title: isMarkdownPageDestination(destination)
+                                    ? 'Open page · Ctrl/Cmd+click to open in a new tab'
+                                    : 'Ctrl/Cmd+click to open link',
                             },
                         }).range(node.from, node.to),
                     );

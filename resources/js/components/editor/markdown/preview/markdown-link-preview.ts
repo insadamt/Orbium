@@ -1,3 +1,5 @@
+import { isolateHistory } from '@codemirror/commands';
+import { pageMentionAtPosition } from './markdown-mention-selection';
 import {
     missingReferenceKind,
     showMissingReferenceDialog,
@@ -68,8 +70,13 @@ export function isMarkdownPageDestination(destination: string): boolean {
     );
 }
 
+type MarkdownLinkActivation = Pick<
+    MouseEvent,
+    'preventDefault' | 'ctrlKey' | 'metaKey' | 'detail'
+>;
+
 export function openMarkdownPreviewLink(
-    event: MouseEvent,
+    event: MarkdownLinkActivation,
     link: HTMLAnchorElement,
 ) {
     event.preventDefault();
@@ -92,11 +99,18 @@ export function openMarkdownPreviewLink(
         window.open(href, '_blank', 'noopener,noreferrer');
         return true;
     }
+    if (link.dataset.orbiumChecking === 'true') return true;
+    link.dataset.orbiumChecking = 'true';
+    link.setAttribute('aria-busy', 'true');
     const newTab = event.ctrlKey || event.metaKey;
     const tab = newTab ? window.open('about:blank', '_blank') : null;
     if (tab) tab.opener = null;
     void checkReferenceAvailability(href, origin)
         .then((available) => {
+            if (!link.isConnected) {
+                tab?.close();
+                return;
+            }
             if (!available) {
                 tab?.close();
                 showMissingReferenceDialog(
@@ -125,11 +139,72 @@ export function openMarkdownPreviewLink(
                             : 'Please try again.',
                 },
             );
+        })
+        .finally(() => {
+            delete link.dataset.orbiumChecking;
+            link.removeAttribute('aria-busy');
         });
     return true;
 }
 
 export const markdownLinkNavigation = EditorView.domEventHandlers({
+    mousedown(event) {
+        if (!(event.target instanceof Element) || event.button !== 0)
+            return false;
+        const mention = event.target.closest('a[data-orbium-mention="true"]');
+        if (!mention) return false;
+        event.preventDefault();
+        return true;
+    },
+    keydown(event, view) {
+        if (
+            event.target instanceof Element &&
+            ['Backspace', 'Delete'].includes(event.key)
+        ) {
+            const mention = event.target.closest<HTMLAnchorElement>(
+                'a[data-orbium-mention="true"]',
+            );
+            if (mention) {
+                event.preventDefault();
+                event.stopPropagation();
+                const from = Number(mention.dataset.orbiumMentionFrom);
+                const to = Number(mention.dataset.orbiumMentionTo);
+                if (
+                    !view.state.facet(EditorView.editable) ||
+                    !Number.isSafeInteger(from) ||
+                    !Number.isSafeInteger(to) ||
+                    from < 0 ||
+                    to > view.state.doc.length ||
+                    from >= to
+                )
+                    return true;
+                const range = pageMentionAtPosition(view.state, from + 1);
+                if (!range || range.from !== from || range.to !== to)
+                    return true;
+                view.dispatch({
+                    changes: { from, to, insert: '' },
+                    selection: { anchor: from },
+                    annotations: isolateHistory.of('full'),
+                    userEvent: 'delete.selection',
+                });
+                view.focus();
+                return true;
+            }
+        }
+        if (
+            event.altKey ||
+            (event.key !== 'Enter' &&
+                (event.key !== ' ' || event.ctrlKey || event.metaKey)) ||
+            !(event.target instanceof Element)
+        )
+            return false;
+        const mention = event.target.closest<HTMLAnchorElement>(
+            'a[data-orbium-mention="true"]',
+        );
+        if (!mention) return false;
+        event.stopPropagation();
+        return openMarkdownPreviewLink(event, mention);
+    },
     click(event) {
         if (!(event.target instanceof Element)) return false;
         const link = event.target.closest<HTMLAnchorElement>(

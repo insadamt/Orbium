@@ -8,6 +8,7 @@ import { defaultKeymap } from '@codemirror/commands';
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
 import { orbiumMarkdownDialect } from '../dialect/markdown-dialect';
 import { markdownLivePreview } from '../preview/markdown-live-preview';
+import { markdownLinkNavigation } from '../preview/markdown-link-preview';
 import { markdownPreviewTheme } from '../preview/markdown-preview-theme';
 import { markdownWritingCommands } from '../preview/markdown-writing-commands';
 import { markdownTypingShortcuts } from '../markdown-typing-commands';
@@ -49,6 +50,7 @@ export function mountRichTextInput({
                     extensions: [orbiumMarkdownDialect],
                 }),
                 markdownLivePreview(context),
+                markdownLinkNavigation,
                 markdownPreviewTheme,
                 markdownWritingCommands,
                 markdownTypingShortcuts,

@@ -123,3 +123,45 @@ Manual acceptance remains pending. Suggested commits:
 
 - `feat(editor): preserve missing media and page references`
 - `fix(documents): retain saved references to deleted targets`
+
+## Clickable mention buttons
+
+Page mentions now use an inline button appearance: bordered rounded surface, pointer cursor, hover/pressed/focus states, and a progress cursor during availability checks. They remain source-backed anchors with button semantics and keyboard focus, including missing-page fragments and mentions inside rich callout/table bodies. Source text and relationship IDs are unchanged.
+
+Pointer-down on a mention prevents CodeMirror from selecting its editable label instead of activating the control. Normal clicks, Ctrl/Cmd+click, Enter and Space use the same missing-reference checks. Explicit missing pages show the dialog before any tab is opened. Deleted live targets close any reserved new tab and show the dialog in the original document. Duplicate activations are suppressed while a lookup is in flight. Ctrl+Space remains available for Search Master. Mention labels can still be edited through Markdown source mode.
+
+Manual checklist:
+
+1. Add a mention to a live page. Expected: a visible compact button with hover/focus feedback. Click: the page opens normally. Ctrl/Cmd+click: the existing page opens in a new tab.
+2. Export/import a standalone version-2 document containing a page mention. Click its missing-page button normally and with Ctrl/Cmd+click. Expected: This page is missing in the current document; no new tab or 404 navigation.
+3. Trash a referenced page while retaining the source document. Repeat normal and Ctrl/Cmd+click. Expected: the missing-page dialog, with no leftover blank tab. Restore the target: the same button opens the restored page.
+4. Repeat those interactions on mentions inside a callout and a table cell. Expected: equivalent styling and behavior.
+5. Tab to a mention and activate with Enter and Space. Expected: equivalent navigation/dialog behavior and visible keyboard focus. Ctrl+Space still opens Search Master. Switch to Markdown source, edit the label, save/reload, and switch back. Expected: edited label and unchanged target identity.
+6. In Light/Dark and reduced-motion modes, inspect long and RTL labels. Expected: readable wrapping, stable inline layout, and no required animation. Ordinary external links retain their existing behavior.
+
+Final checks for this follow-up are recorded below. No automated tests, browser checks, commits, or pushes were performed.
+
+Actual validation for mention buttons: focused formatting PASS; `npm run lint` PASS (408 formatted files, 338 linted files, no warnings/errors); `npm run types:check` PASS; `npm run build` PASS in 6.95 seconds with existing chunk/dynamic-import warnings; `./vendor/bin/pint --test` PASS; `git diff --check` PASS. PHP code did not change, so PHPStan was not rerun. All affected source files remain below 500 lines. Manual acceptance remains pending.
+
+Suggested commit: `feat(editor): add clickable mention buttons with missing-page prompts`.
+
+## Atomic mention deletion
+
+Mentions are now full atomic source ranges in live preview. Backspace immediately after a mention, Delete immediately before it, or deleting a selection across it removes its complete Markdown link rather than leaving part of its label/destination. Direct caret placements are normalized to mention boundaries and partial selections expand to include the whole mention. Returning from source mode also moves a caret out of the label. Mention buttons remain non-editable in preview.
+
+A keyboard-focused mention in a CodeMirror writing surface can also be removed with Backspace/Delete as one isolated undoable action. Local mention navigation/deletion handlers are registered on nested rich-text editors so relative cell/callout positions are not interpreted as positions in the parent document. Pending link lookups stop navigating if their mention has been removed.
+
+Manual checklist:
+
+1. Write `Before `, insert a page mention, then write ` after`. Put the caret immediately after the mention (before any trailing space) and press Backspace. Expected: the whole button and its Markdown link disappear, with surrounding prose retained. Undo: the complete mention returns.
+2. Put the caret immediately before the mention and press Delete. Expected: equivalent whole-mention removal and undo.
+3. Move left/right across a mention and attempt to click/drag a partial selection into its label. Expected: the caret never rests inside the label; selections include the complete mention rather than editable label characters. Typing beside it edits surrounding prose.
+4. Tab to a mention button in an editable CodeMirror surface and press Backspace/Delete. Expected: the complete mention is removed and keyboard focus returns to the editor. A read-only surface must not be changed.
+5. Repeat deletion with a missing-page button and within an editable callout/table cell. Expected: the intended mention disappears, no parent-document mention or unrelated prose is deleted, and undo restores it.
+6. Toggle to source mode, place the caret inside a mention label, then return to live preview. Expected: the caret moves to a mention boundary. Reload after deleting/saving: the removed mention stays removed. Click and Ctrl/Cmd+click a surviving live/missing mention: existing navigation/prompt behavior remains functional.
+
+No automated tests, browser checks, commits or pushes were performed. Final check results follow below.
+
+Suggested commit: `fix(editor): make mention buttons atomic and delete them as a whole`.
+
+Actual checks for atomic mentions: focused formatting PASS; `npm run types:check` PASS; `npm run lint` PASS (409 formatted files / 339 linted files, no warnings/errors); `npm run build` PASS in 7.67 seconds with existing chunk/dynamic-import warnings; `./vendor/bin/pint --test` PASS; `git diff --check` PASS. PHP code did not change; PHPStan was not rerun. Source files remain below 500 lines (main Markdown editor: 471; mention-selection helper: 65). Manual acceptance remains pending.

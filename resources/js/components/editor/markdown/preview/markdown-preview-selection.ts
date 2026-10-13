@@ -1,3 +1,4 @@
+import { normalizeMentionSelection } from './markdown-mention-selection';
 import { syntaxTree } from '@codemirror/language';
 import { EditorSelection, EditorState } from '@codemirror/state';
 import type { SyntaxNode } from '@lezer/common';
@@ -77,10 +78,15 @@ export const markdownPreviewSelection = EditorState.transactionFilter.of(
                     sequential: true,
                 },
             ];
-        const ranges = selection.ranges.map((range) =>
-            EditorSelection.range(
-                visibleSpanPosition(transaction.startState, range.anchor),
-                visibleSpanPosition(transaction.startState, range.head),
+        const ranges = selection.ranges.map((range, index) =>
+            normalizeMentionSelection(
+                transaction.startState,
+                EditorSelection.range(
+                    visibleSpanPosition(transaction.startState, range.anchor),
+                    visibleSpanPosition(transaction.startState, range.head),
+                ),
+                transaction.startState.selection.ranges[index]?.head ??
+                    transaction.startState.selection.main.head,
             ),
         );
         const visibleSelection = EditorSelection.create(
