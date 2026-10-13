@@ -1,3 +1,11 @@
+.surface-frosted .library-detail-panel,
+.surface-frosted .library-detail-viewer {
+    background: var(--frosted-panel);
+    backdrop-filter: blur(16px);
+}
+.surface-frosted .library-preview-stage {
+    background: transparent;
+}
 @media (hover: none) {
     .library-card-menu {
         opacity: 1;
@@ -15,13 +23,11 @@
 @media (max-width: 850px) {
     .library-detail-layout {
         grid-template-columns: minmax(0, 1fr);
-        gap: 28px;
-    }
-    .library-preview-stage {
-        min-height: 280px;
+        grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 16px;
     }
     .library-detail-panel {
-        max-width: 600px;
+        padding: 18px;
     }
 }
 @media (max-width: 600px) {

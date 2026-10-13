@@ -1,3 +1,7 @@
+.orbium-shell .orbium-main.floating-workspace.library-workspace {
+    background: transparent;
+}
+
 .library-page {
     width: min(1480px, calc(100% - 64px));
     margin: 0 auto;
