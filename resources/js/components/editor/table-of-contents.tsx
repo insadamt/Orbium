@@ -48,8 +48,10 @@ function focusAdjacentHeading(event: KeyboardEvent<HTMLElement>) {
 
 export function TableOfContents({
     outline,
+    openRequest = 0,
 }: {
     outline: DocumentOutline | null;
+    openRequest?: number;
 }) {
     const { visible } = useDocumentTab();
     const { panelHost, title } = useOutlinePanelHost();
@@ -66,6 +68,12 @@ export function TableOfContents({
     const [focused, setFocused] = useState(false);
     const [pinned, setPinned] = useState(false);
     const [dismissed, setDismissed] = useState(false);
+    useEffect(() => {
+        if (openRequest > 0) {
+            setPinned(true);
+            setDismissed(false);
+        }
+    }, [openRequest]);
     const expanded = visible && !dismissed && (pinned || hovered || focused);
 
     useEffect(

@@ -1,3 +1,5 @@
+import { ExportDialog } from '@/components/document-transfer/export-dialog';
+import { ImportDialog } from '@/components/document-transfer/import-dialog';
 import { router } from '@inertiajs/react';
 import { useEffect, useState, type FormEvent } from 'react';
 import { toast } from 'sonner';
@@ -68,6 +70,8 @@ export function WorkspaceContents({
     );
     const [menuPosition, setMenuPosition] =
         useState<ExplorerMenuPosition | null>(null);
+    const [importOpen, setImportOpen] = useState(false);
+    const [exportNodeId, setExportNodeId] = useState<number | null>(null);
     const [createType, setCreateType] = useState<TreeNode['type'] | null>(null);
     const [renameId, setRenameId] = useState<number | null>(null);
     const [deleteId, setDeleteId] = useState<number | null>(null);
@@ -326,6 +330,12 @@ export function WorkspaceContents({
                 position={menuPosition}
                 nodeTitle={menuNode?.title}
                 onClose={() => setMenuPosition(null)}
+                onImport={() => setImportOpen(true)}
+                onExport={
+                    menuNode?.type === 'document'
+                        ? () => setExportNodeId(menuNode.id)
+                        : undefined
+                }
                 onCreate={setCreateType}
                 onOpen={(newTab) => {
                     if (!menuNode) return;
@@ -338,6 +348,20 @@ export function WorkspaceContents({
                 }}
                 onDelete={() => menuNode && setDeleteId(menuNode.id)}
             />
+            {importOpen && (
+                <ImportDialog
+                    workspaceId={workspaceId}
+                    parentId={parentId}
+                    onClose={() => setImportOpen(false)}
+                />
+            )}
+            {exportNodeId !== null && (
+                <ExportDialog
+                    workspaceId={workspaceId}
+                    nodeId={exportNodeId}
+                    onClose={() => setExportNodeId(null)}
+                />
+            )}
             <Dialog
                 open={appearanceDraft !== null}
                 onOpenChange={(open) => {

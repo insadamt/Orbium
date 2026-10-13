@@ -1,3 +1,5 @@
+import { ExportDialog } from '@/components/document-transfer/export-dialog';
+import { ImportDialog } from '@/components/document-transfer/import-dialog';
 import {
     markdownSelectAll,
     orbiumSelectionAppearance,
@@ -70,13 +72,13 @@ export type MarkdownEditorProps = {
 export default function MarkdownEditor(props: MarkdownEditorProps) {
     const host = useRef<HTMLDivElement>(null);
     const [view, setView] = useState<EditorView | null>(null);
+    const [outlineRequest, setOutlineRequest] = useState(0);
     const [notice, setNotice] = useState('');
+    const [transferDialog, setTransferDialog] = useState<
+        'import' | 'export' | null
+    >(null);
     const transferContext = useRef(props);
-    const transfer = useMarkdownTransfer(
-        view,
-        transferContext.current,
-        props.title,
-    );
+    const transfer = useMarkdownTransfer(view, transferContext.current);
     const [livePreview, setLivePreview] = useState(true);
     const upload = useMarkdownUpload(props.workspaceId, props.nodeId);
     const { active, visible } = useDocumentTab();
@@ -357,16 +359,17 @@ export default function MarkdownEditor(props: MarkdownEditorProps) {
                     <MarkdownTableOfContents
                         view={view}
                         updates={outlineUpdates.current}
+                        openRequest={outlineRequest}
                     />
                 }
                 status={autosave.status}
                 livePreview={livePreview}
                 disabled={!active || !view || upload.uploading}
-                empty={transfer.empty}
                 importing={transfer.busy}
                 onRetry={() => void autosave.saveNow()}
                 onTogglePreview={() => setLivePreview((current) => !current)}
                 onFind={finder.openSearch}
+                onOutline={() => setOutlineRequest((value) => value + 1)}
                 onUpload={() => {
                     if (view)
                         upload.chooseFile({
@@ -376,8 +379,8 @@ export default function MarkdownEditor(props: MarkdownEditorProps) {
                             kind: 'file',
                         });
                 }}
-                onImport={() => transfer.input.current?.click()}
-                onExport={transfer.exportMarkdown}
+                onImport={() => setTransferDialog('import')}
+                onExport={() => setTransferDialog('export')}
             />
             {notice && (
                 <p role="status" className="mb-2 text-sm text-muted-foreground">
@@ -389,18 +392,26 @@ export default function MarkdownEditor(props: MarkdownEditorProps) {
                     {transfer.error}
                 </p>
             )}
-            <input
-                ref={transfer.input}
-                type="file"
-                accept=".md,.markdown,text/markdown"
-                className="hidden"
-                aria-label="Import Markdown document"
-                onChange={(event) => {
-                    const file = event.target.files?.[0];
-                    if (file) void transfer.importFile(file);
-                    event.target.value = '';
-                }}
-            />
+            {transferDialog === 'export' && view && (
+                <ExportDialog
+                    workspaceId={props.workspaceId}
+                    nodeId={props.nodeId}
+                    source={view.state.doc.toString()}
+                    onClose={() => setTransferDialog(null)}
+                />
+            )}
+            {transferDialog === 'import' && view && (
+                <ImportDialog
+                    workspaceId={props.workspaceId}
+                    replaceDocument={{
+                        hasContent: () =>
+                            Boolean(view.state.doc.toString().trim()),
+                        validate: transfer.validateReplacement,
+                        replace: transfer.replaceContent,
+                    }}
+                    onClose={() => setTransferDialog(null)}
+                />
+            )}
             {upload.uploading && (
                 <p role="status" className="mb-2 text-sm text-muted-foreground">
                     Uploading {upload.kind}…

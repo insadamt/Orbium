@@ -1,20 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { EditorView } from '@codemirror/view';
 import { isolateHistory } from '@codemirror/commands';
-import { downloadMarkdown } from '../../markdown-download';
 import {
     inspectMarkdownImport,
     prepareMarkdownImport,
-    serializeOnlineMarkdown,
     type MarkdownTransferContext,
 } from './markdown-transfer';
 
 export function useMarkdownTransfer(
     view: EditorView | null,
     context: MarkdownTransferContext,
-    title: string,
 ) {
-    const input = useRef<HTMLInputElement>(null);
     const controller = useRef<AbortController | null>(null);
     const [empty, setEmpty] = useState(!view?.state.doc.toString().trim());
     const [busy, setBusy] = useState(false);
@@ -78,46 +74,55 @@ export function useMarkdownTransfer(
         },
         [view, context],
     );
-    const importFile = useCallback(
-        async (file: File) => {
-            if (!/\.(?:md|markdown)$/i.test(file.name)) {
-                setError('Choose a .md or .markdown file.');
-                return;
-            }
-            if (file.size > 400000) {
-                setError('Markdown import accepts files up to 400 KB.');
-                return;
-            }
-            try {
-                const source = new TextDecoder('utf-8', { fatal: true }).decode(
-                    await file.arrayBuffer(),
-                );
-                await importSource(source);
-            } catch {
-                setError('The Markdown file could not be read as UTF-8.');
-            }
-        },
-        [importSource],
-    );
-    const exportMarkdown = useCallback(
-        (online: boolean) => {
-            if (!view) return;
-            const source = view.state.doc.toString();
-            downloadMarkdown(
-                title,
-                online ? serializeOnlineMarkdown(source, context) : source,
+    const replacementBaseline = useRef(view?.state.doc);
+    const validateReplacement = useCallback(
+        async (source: string) => {
+            if (!view || !view.state.facet(EditorView.editable))
+                throw new Error('The document is not editable.');
+            const baseline = view.state.doc;
+            const normalized = await inspectMarkdownImport(
+                source,
+                context,
+                new AbortController().signal,
             );
+            if (view.state.doc !== baseline)
+                throw new Error(
+                    'The document changed while verifying. Choose the file again.',
+                );
+            replacementBaseline.current = baseline;
+            return normalized;
         },
-        [view, title, context],
+        [view, context],
+    );
+    const replaceContent = useCallback(
+        async (source: string) => {
+            if (
+                !view ||
+                !view.dom.isConnected ||
+                !view.state.facet(EditorView.editable)
+            )
+                throw new Error('The document is no longer editable.');
+            if (view.state.doc !== replacementBaseline.current)
+                throw new Error(
+                    'The document changed after verification. Choose the file again.',
+                );
+            view.dispatch({
+                changes: { from: 0, to: view.state.doc.length, insert: source },
+                selection: { anchor: 0 },
+                annotations: isolateHistory.of('full'),
+                userEvent: 'input.import',
+            });
+            view.focus();
+        },
+        [view],
     );
     return {
-        input,
         empty,
         busy,
         error,
         updateEmpty,
         importSource,
-        importFile,
-        exportMarkdown,
+        validateReplacement,
+        replaceContent,
     };
 }

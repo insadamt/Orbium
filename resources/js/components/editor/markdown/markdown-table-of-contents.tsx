@@ -60,9 +60,11 @@ function readMarkdownHeadings(view: EditorView): DocumentHeading[] {
 export function MarkdownTableOfContents({
     view,
     updates,
+    openRequest = 0,
 }: {
     view: EditorView | null;
     updates: Compartment;
+    openRequest?: number;
 }) {
     const outline = useMemo<DocumentOutline | null>(() => {
         if (!view) return null;
@@ -147,5 +149,5 @@ export function MarkdownTableOfContents({
             },
         };
     }, [view, updates]);
-    return <TableOfContents outline={outline} />;
+    return <TableOfContents outline={outline} openRequest={openRequest} />;
 }

@@ -1,9 +1,17 @@
 # Phase 5 — Explorer review
 
-Navigation rearrangement follow-up (2026-10-13): the floating tab row centers while
-it fits, and existing tabs slide smoothly when new tabs pop in or closed tabs
-release their space. Reduced motion keeps changes immediate. See [the report and
-manual checklist](../reports/05-navigation-tab-layout-motion.md).
+Navigation entry correction (2026-10-13): opening tabs now use the reverse of
+the closing scale/fade motion, with matching 140 ms timing and no overshoot.
+See [the report and manual checklist](../reports/05-navigation-tab-entry-refinement.md).
+
+Navigation alignment correction (2026-10-13): tabs now start at the left edge of
+the floating tab island, including when only one tab is open. Existing pop and
+rearrangement motion remains. This supersedes the centered tab contents below.
+See [the report and manual checklist](../reports/05-navigation-tab-left-alignment.md).
+
+Navigation rearrangement follow-up (2026-10-13): existing tabs slide smoothly when
+new tabs pop in or closed tabs release their space. Reduced motion keeps changes
+immediate. See [the report and manual checklist](../reports/05-navigation-tab-layout-motion.md).
 
 Navigation motion follow-up (2026-10-12): opening and closing navigation tabs now
 use brief scale/fade pop animations, including split groups. Reduced motion keeps

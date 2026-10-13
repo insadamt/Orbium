@@ -10,7 +10,7 @@
 @media (prefers-reduced-motion: no-preference) {
     .navigation-tab-motion {
         transform-origin: center;
-        animation: navigation-tab-pop-in 180ms var(--motion-ease);
+        animation: navigation-tab-pop-in 140ms ease-out;
     }
 
     .navigation-tab-motion[data-tab-exiting='true'] {
@@ -22,10 +22,6 @@
     from {
         opacity: 0;
         scale: 0.84;
-    }
-    75% {
-        opacity: 1;
-        scale: 1.025;
     }
     to {
         opacity: 1;

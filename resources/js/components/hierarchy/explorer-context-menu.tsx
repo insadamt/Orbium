@@ -18,6 +18,8 @@ export function ExplorerContextMenu({
     onOpen,
     onRename,
     onDelete,
+    onImport,
+    onExport,
 }: {
     position: ExplorerMenuPosition | null;
     nodeTitle?: string;
@@ -26,6 +28,8 @@ export function ExplorerContextMenu({
     onOpen: (newTab: boolean) => void;
     onRename: () => void;
     onDelete: () => void;
+    onImport: () => void;
+    onExport?: () => void;
 }) {
     const menuRef = useRef<HTMLDivElement>(null);
     const previousFocus = useRef<HTMLElement | null>(null);
@@ -56,11 +60,13 @@ export function ExplorerContextMenu({
                   { label: 'New document', run: () => onCreate('document') },
                   { label: 'New folder', run: () => onCreate('folder') },
                   { label: 'New database', run: () => onCreate('database') },
+                  { label: 'Import…', run: onImport },
               ]
             : [
                   { label: 'Open', run: () => onOpen(false) },
                   { label: 'Open in new tab', run: () => onOpen(true) },
                   { label: 'Rename', run: onRename },
+                  ...(onExport ? [{ label: 'Export…', run: onExport }] : []),
                   { label: 'Delete', run: onDelete, destructive: true },
               ];
     const top = Math.max(

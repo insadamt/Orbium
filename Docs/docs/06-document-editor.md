@@ -1,3 +1,5 @@
+> The 2026-10-13 approved CodeMirror document transfer extension is specified in [18-document-transfer.md](18-document-transfer.md). Its `.orbie`, clean Markdown, package, and replacement-confirmation behavior supersedes the earlier single-file transfer description below for format-2 documents. Legacy format-1 editor behavior remains unchanged.
+
 # Document editor specification
 
 ## Product rule

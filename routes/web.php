@@ -3,6 +3,7 @@
 use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\DatabaseController;
 use App\Http\Controllers\DocumentController;
+use App\Http\Controllers\DocumentTransferController;
 use App\Http\Controllers\MentionCandidateController;
 use App\Http\Controllers\NavigationController;
 use App\Http\Controllers\NodeController;
@@ -13,6 +14,10 @@ use Illuminate\Support\Facades\Route;
 Route::redirect('/', '/dashboard')->name('home');
 
 Route::middleware('auth')->group(function () {
+    Route::post('workspaces/{workspace}/documents/{node}/transfer-data', [DocumentTransferController::class, 'exportData']);
+    Route::post('workspaces/{workspace}/document-packages/export', [DocumentTransferController::class, 'exportPackage']);
+    Route::post('workspaces/{workspace}/document-packages/import', [DocumentTransferController::class, 'import']);
+    Route::post('workspaces/{workspace}/documents/import', [DocumentTransferController::class, 'importDocument']);
     Route::get('trash', [TrashController::class, 'index'])->name('trash.index');
     Route::get('trash/details', [TrashController::class, 'details'])->name('trash.details');
     Route::get('trash/preview', [TrashController::class, 'preview'])->name('trash.preview');
