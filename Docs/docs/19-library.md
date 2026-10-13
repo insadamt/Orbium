@@ -52,4 +52,6 @@ No migrations, new packages, or attachment/reference format changes were introdu
 
 ## Background and viewport review (2026-10-13)
 
+Image cards in the Library gallery and reuse pickers omit visible filename captions following the user's review. Non-image cards retain filenames. Image filenames remain in accessible labels, image alternative text, detail pages, and management dialogs.
+
 Library and file details expose the app's existing appearance background, including the default subtle gradients and selected image/animated backgrounds. Details use the dynamic viewport height with space reserved for the measured floating navigation. The preview and metadata panel fill the remaining space; the page itself does not scroll. Long metadata/usage lists and zoomed previews scroll inside their respective panels. Narrow layouts stack the preview and metadata within the same viewport. Frosted surfaces retain translucent preview and metadata panels.

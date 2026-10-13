@@ -32,3 +32,18 @@ Date: 2026-10-13. Requested refinement of the current Library review; no phase a
 ## Commit suggestion
 
 `fix(library): expose backgrounds and fit details to viewport`
+
+## Follow-up: remove image captions
+
+Removed visible filename captions from image cards in the Library gallery and shared reuse pickers. Non-image cards retain their filename captions. Accessible labels and image alternative text retain image filenames, as do details and management dialogs.
+
+Validation: `npm run types:check`, `npm run lint`, `npm run build`, and `git diff --check` passed. Existing build warnings remain. No automated tests written or run; manual acceptance is pending.
+
+Manual checklist:
+
+1. Open Library with images and non-image files. Expected: images have no filename underneath; files still display filenames.
+2. Open an image's details and Rename dialog. Expected: its filename remains visible and editable there; returning to the gallery does not add a caption.
+3. Open a Library image picker and select an image. Expected: no caption under image thumbnails; selection and Use image still work.
+4. Tab through image cards and open the three-dot menu. Expected: focus and actions remain usable; screen-reader labels still identify each image by filename.
+
+Suggested commit: `fix(library): hide image filename captions in gallery`

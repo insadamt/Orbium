@@ -163,15 +163,17 @@ export function LibraryCard({
                     </Menu.Root>
                 )}
             </div>
-            <button
-                type="button"
-                className="library-card-name"
-                title={file.name}
-                disabled={disabled || (picker && !file.available)}
-                onClick={open}
-            >
-                {file.name}
-            </button>
+            {!image && (
+                <button
+                    type="button"
+                    className="library-card-name"
+                    title={file.name}
+                    disabled={disabled || (picker && !file.available)}
+                    onClick={open}
+                >
+                    {file.name}
+                </button>
+            )}
         </article>
     );
 }
