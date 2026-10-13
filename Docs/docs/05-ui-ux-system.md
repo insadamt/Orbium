@@ -1,5 +1,26 @@
 # UI/UX system
 
+Unified frosted review (2026-10-13): At the user's request, app surfaces now
+share one frosted treatment: light `rgb(250 250 251 / 61%)`, dark
+`rgb(3 6 9 / 53%)`, with 26px blur and 140% saturation. Panel, raised, inset,
+Settings, Library, text-background, menu, dialog and toolbar variations are
+superseded by this shared treatment. Portaled surfaces use the root preference.
+Hover/selection still has an accent cue; primary/destructive actions and authored
+media retain their meaning. Missing-blur and reduced-transparency fallbacks use
+the same shared tokens. See [the unification report](../reports/07-unified-frosted-glass.md).
+
+Text background review (2026-10-13): At the user's request, visible app text
+must sit on a background surface. Existing document, database, settings, Trash,
+authentication, menu, and dialog surfaces provide their shared text background.
+Folder titles/details, explorer feedback/drop targets, Library headings/status/
+filenames/empty states, page-media controls, and split loading/placement labels
+now also have neutral theme-aware backgrounds. Normal explorer cards and view
+controls are solid. Review correction: the user rejected the increased opacity;
+the subsequent unified frosted review above uses the original panel transparency
+throughout. Existing reduced-transparency and missing-blur
+fallbacks remain. See
+[the text background report](../reports/07-text-backgrounds.md).
+
 Orbing removal (2026-10-12): At the user’s request, the Orbing explorer view
 has been removed. Workspace and folder explorers offer Grid, List, and Gallery;
 saved Orbing selections fall back to Grid. Its renderer, camera/motion controls,

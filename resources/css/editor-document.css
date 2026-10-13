@@ -290,12 +290,6 @@
 :root[data-surface-style='normal'] .cm-tooltip.orbium-slash-menu {
     background: var(--card);
 }
-.surface-frosted .cm-tooltip.orbium-slash-menu,
-:root[data-surface-style='frosted'] .cm-tooltip.orbium-slash-menu {
-    background: var(--frosted-panel);
-    border-color: transparent;
-    box-shadow: none;
-}
 
 .orbium-editor .orbium-rich-block [hidden] {
     display: none !important;
@@ -463,10 +457,7 @@
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
 }
-:root[data-surface-style='frosted'] .orbium-editor-toolbar.glass-surface {
-    background: var(--frosted-raised);
-    border-color: transparent;
-}
+
 @media (prefers-reduced-transparency: reduce) {
     .orbium-editor-toolbar.glass-surface {
         -webkit-backdrop-filter: none;

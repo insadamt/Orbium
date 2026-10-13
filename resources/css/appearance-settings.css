@@ -1,11 +1,3 @@
-.surface-frosted .floating-settings-island {
-    background: color-mix(in srgb, var(--background) 86%, transparent);
-}
-.surface-frosted .appearance-control-panel,
-.surface-frosted .appearance-option-row,
-.surface-frosted .appearance-choice {
-    background: color-mix(in srgb, var(--card) 72%, transparent);
-}
 .appearance-choice {
     border: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
     background: color-mix(in srgb, var(--card) 68%, transparent);
@@ -19,15 +11,6 @@
 .appearance-choice[aria-pressed='true'] {
     border-color: color-mix(in srgb, var(--foreground) 52%, var(--border));
     background: color-mix(in srgb, var(--accent) 72%, var(--card));
-}
-.surface-frosted .appearance-choice,
-.surface-frosted .appearance-choice[aria-pressed='true'],
-.surface-frosted .appearance-control-panel,
-.surface-frosted .appearance-option-row,
-.surface-frosted .appearance-disclosure,
-.surface-frosted .appearance-select,
-.surface-frosted .appearance-color-input {
-    border-color: transparent;
 }
 .appearance-control-panel,
 .appearance-option-row {

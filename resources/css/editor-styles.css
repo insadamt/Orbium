@@ -403,6 +403,3 @@
 .editor-style-dialog button:disabled {
     cursor: not-allowed;
 }
-.surface-frosted .editor-style-dialog {
-    border-color: transparent;
-}

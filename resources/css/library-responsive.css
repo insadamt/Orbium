@@ -1,11 +1,3 @@
-.surface-frosted .library-detail-panel,
-.surface-frosted .library-detail-viewer {
-    background: var(--frosted-panel);
-    backdrop-filter: blur(16px);
-}
-.surface-frosted .library-preview-stage {
-    background: transparent;
-}
 @media (hover: none) {
     .library-card-menu {
         opacity: 1;

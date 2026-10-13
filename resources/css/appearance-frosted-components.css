@@ -1,0 +1,155 @@
+:root[data-surface-style='frosted']
+    :is(
+        .glass-surface,
+        .floating-surface,
+        .floating-body-island,
+        .floating-menu,
+        .floating-context-menu,
+        .floating-item,
+        .explorer-view-switcher,
+        .explorer-gallery-settings,
+        .floating-folder-header .node-media-title-row,
+        .floating-folder-header .node-media-detail,
+        .floating-folder-header .node-media-error,
+        .floating-no-results,
+        .floating-parent-drop-zone,
+        .page-media-edit-button,
+        .workspace-feedback,
+        .split-pane-loading > span,
+        .split-edge-zone span,
+        .tab-scroll-button,
+        .workspace-manager-row-surface,
+        .workspace-create-slot form,
+        .trash-details-drawer,
+        .trash-control-button,
+        .appearance-choice,
+        .appearance-control-panel,
+        .appearance-option-row,
+        .appearance-disclosure,
+        .appearance-select,
+        .appearance-color-input,
+        .wallpaper-dialog,
+        .wallpaper-search,
+        .wallpaper-tile,
+        .wallpaper-button-secondary,
+        .editor-style-summary,
+        .editor-style-dialog,
+        .editor-style-empty,
+        .editor-style-preview-panel,
+        .editor-style-preview-scroll,
+        .editor-style-discard,
+        .editor-style-code .cm-editor,
+        .editor-style-code .cm-gutters,
+        .editor-style-code .cm-tooltip,
+        .document-outline-panel,
+        .cm-tooltip.orbium-slash-menu,
+        .mermaid-full-dialog,
+        .mermaid-full-close,
+        .mermaid-full-actions,
+        .table-edge-control,
+        .orbium-table-full-preview,
+        .library-heading,
+        .library-collection-status,
+        .library-card-name,
+        .library-empty,
+        .library-search,
+        .library-type-tabs,
+        .library-sort,
+        .library-icon-button,
+        .library-button:where(
+            :not(.library-button-primary):not(.library-button-upload):not(
+                    .library-button-danger
+                )
+        ),
+        .library-menu,
+        .library-selection-bar,
+        .library-upload-status,
+        .library-detail-panel,
+        .library-detail-viewer,
+        .library-usage-link,
+        .library-picker-dialog,
+        .library-action-dialog,
+        .library-text-input,
+        .library-card-menu,
+        .library-card-select,
+        .db-menu,
+        .db-field,
+        .db-gallery-card,
+        .db-toolbar-button,
+        .db-icon-button,
+        .bg-card,
+        .bg-popover,
+        .bg-background:where(:not(body)),
+        [class*='bg-background/'],
+        [class*='bg-card/'],
+        [role='dialog'],
+        dialog,
+        [role='alertdialog'],
+        [role='menu'],
+        [role='listbox'],
+        [role='tooltip'],
+        [data-sonner-toast]
+    ) {
+    background: var(--frosted-surface);
+    border-color: transparent;
+    box-shadow: none;
+    -webkit-backdrop-filter: var(--frosted-filter);
+    backdrop-filter: var(--frosted-filter);
+}
+
+:root[data-surface-style='frosted'] [role='tooltip'] {
+    color: var(--foreground);
+}
+
+:root[data-surface-style='frosted'] .library-preview-stage {
+    background: transparent;
+}
+
+:root[data-surface-style='frosted']
+    :is(
+        .floating-item[data-selected='true'],
+        .floating-item[data-drop='inside'],
+        .floating-parent-drop-zone[data-active='true'],
+        .appearance-choice[aria-pressed='true'],
+        .appearance-choice:hover,
+        .appearance-disclosure:hover,
+        .wallpaper-tile:hover,
+        .wallpaper-tile:focus-visible,
+        .wallpaper-button-secondary:hover,
+        .library-usage-link:hover,
+        .library-usage-link:focus-visible,
+        .library-icon-button:hover,
+        .library-icon-button:focus-visible,
+        .library-button:where(
+                :not(.library-button-primary):not(.library-button-upload):not(
+                        .library-button-danger
+                    )
+            ):hover,
+        .library-button:where(
+                :not(.library-button-primary):not(.library-button-upload):not(
+                        .library-button-danger
+                    )
+            ):focus-visible,
+        .library-card-menu:focus-visible,
+        .floating-workspace-trigger:hover,
+        .floating-user-trigger:hover,
+        .floating-icon-button:hover,
+        .floating-logo:hover,
+        .tab-scroll-button:hover,
+        .explorer-gallery-settings:hover,
+        .trash-control-button:hover,
+        .trash-control-button:focus-visible,
+        .trash-control-button[data-active='true'],
+        .db-toolbar-button:hover,
+        .db-toolbar-button[data-active='true'],
+        .db-icon-button:hover,
+        button.bg-card:hover,
+        button.bg-background:hover
+    ) {
+    background: color-mix(in srgb, var(--accent) 35%, var(--frosted-surface));
+}
+
+:root[data-surface-style='frosted'] .library-card-select[aria-pressed='true'] {
+    background: var(--foreground);
+    color: var(--background);
+}

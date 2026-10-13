@@ -25,7 +25,10 @@ export default function Dashboard() {
         <>
             <Head title={currentNode?.title ?? workspace?.name ?? 'Home'} />
             {Object.keys(errors).length > 0 && (
-                <p role="alert" className="mx-8 mt-6 text-sm text-destructive">
+                <p
+                    role="alert"
+                    className="workspace-feedback mx-8 mt-6 text-sm text-destructive"
+                >
                     {Object.values(errors).join(' ')}
                 </p>
             )}

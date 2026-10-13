@@ -55,7 +55,7 @@ function PaneFrame({
         >
             {!isReady && (
                 <div className="split-pane-loading" role="status">
-                    Loading {location.title}…
+                    <span>Loading {location.title}…</span>
                 </div>
             )}
             <iframe

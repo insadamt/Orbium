@@ -25,6 +25,8 @@
 @import 'tw-animate-css';
 @import './interaction-motion.css';
 @import './navigation-tab-motion.css';
+@import './text-surfaces.css';
+@import './appearance-frosted-components.css';
 
 .table-edge-control {
     pointer-events: auto;

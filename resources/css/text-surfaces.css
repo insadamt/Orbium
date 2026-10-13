@@ -1,0 +1,68 @@
+:root {
+    --text-surface: var(--card);
+}
+
+:root[data-surface-style='frosted'] {
+    --text-surface: var(--frosted-surface);
+}
+
+:is(
+    .floating-folder-header .node-media-title-row,
+    .floating-folder-header .node-media-detail,
+    .floating-folder-header .node-media-error,
+    .floating-no-results,
+    .floating-parent-drop-zone,
+    .explorer-gallery-settings,
+    .library-heading,
+    .library-collection-status,
+    .library-card-name,
+    .library-empty,
+    .split-pane-loading > span,
+    .split-edge-zone span,
+    .page-media-edit-button,
+    .workspace-feedback
+) {
+    background: var(--text-surface);
+}
+
+:is(
+    .floating-folder-header .node-media-title-row,
+    .floating-folder-header .node-media-detail,
+    .floating-folder-header .node-media-error,
+    .floating-no-results,
+    .split-pane-loading > span,
+    .workspace-feedback
+) {
+    padding: 10px 14px;
+    border-radius: 12px;
+}
+
+.library-heading {
+    padding: 20px 24px;
+    border-radius: 18px;
+}
+
+.library-collection-status {
+    width: fit-content;
+    max-width: 100%;
+    margin: 12px 0;
+    padding: 10px 14px;
+    border-radius: 11px;
+}
+
+.library-card-name {
+    width: 100%;
+    margin-top: 6px;
+    padding: 10px 12px;
+    border-radius: 11px;
+}
+
+.library-empty {
+    border-radius: 18px;
+}
+
+@media (max-width: 600px) {
+    .library-heading {
+        padding: 16px;
+    }
+}
