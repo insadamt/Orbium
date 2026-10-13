@@ -10,6 +10,8 @@ Approved by the user on 2026-10-13. This is the document-transfer extension to t
 
 ## Single documents
 
+Settings → **AI skills** provides the `create-orbium-documents` skill bundle for external assistants to generate version-2 `.orbie` files, document ZIP packages, and separate editor CSS themes. **Download skill ZIP** downloads a folder containing `SKILL.md`, usage/block/color/effect references, an importable `.orbie` showcase, and a CSS starter theme. The authenticated download assembles the current maintained files from `resources/skills/create-orbium-documents/` and deletes its temporary archive after sending. **Copy skill** and the read-only instruction field include the entrypoint and every Markdown reference, so chat-only assistants receive complete instructions. The ZIP is installed in the assistant, not Orbium's Whole package importer. Import its showcase through Single document and its CSS through Editor styles. Documentation covers all supported native body metadata, preset Light/Dark colors, exact CSS selectors/properties, supported static effects, Appearance settings, package schema/checksums/limits, and manual usage. This does not connect an AI service or import generated files automatically.
+
 `.orbie` is UTF-8 text, with a versioned header and the Orbium Markdown body dialect. New files use version 2; version-1 files remain readable:
 
 ```text

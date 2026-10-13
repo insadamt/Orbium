@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Settings\AiSkillController;
 use App\Http\Controllers\Settings\EditorStylesController;
 use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Settings\SecurityController;
@@ -25,5 +26,7 @@ Route::middleware('auth')->group(function () {
     Route::put('settings/editor-styles', [EditorStylesController::class, 'update'])->name('editor-styles.update');
 
     Route::inertia('settings/appearance', 'settings/appearance')->name('appearance.edit');
+    Route::inertia('settings/ai-skills', 'settings/ai-skills')->name('settings.ai-skills');
+    Route::get('settings/ai-skills/download', [AiSkillController::class, 'download'])->name('settings.ai-skills.download');
     Route::inertia('settings/workspaces', 'settings/workspaces')->name('settings.workspaces');
 });

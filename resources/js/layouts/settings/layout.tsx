@@ -8,6 +8,12 @@ import { edit as editSecurity } from '@/routes/security';
 
 const settingsSections = [
     {
+        title: 'AI skills',
+        href: '/settings/ai-skills',
+        searchText:
+            'ai skills assistant orbie documents packages zip copy download',
+    },
+    {
         title: 'Editor styles',
         href: '/settings/editor-styles',
         searchText: 'editor styles css theme blocks import export preview',
