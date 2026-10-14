@@ -31,9 +31,10 @@ export function createExplorerDragPreview(
             card.removeAttribute('data-drop');
             card.removeAttribute('role');
             card.removeAttribute('tabindex');
-            card.querySelectorAll('button').forEach((button) =>
-                button.remove(),
-            );
+            card.querySelectorAll('button').forEach((button) => {
+                button.tabIndex = -1;
+                button.disabled = true;
+            });
             card.querySelectorAll('[id]').forEach((element) =>
                 element.removeAttribute('id'),
             );
@@ -80,30 +81,52 @@ export function createExplorerDragPreview(
         gsap.killTweensOf(cards.map(({ card }) => card));
         layer.remove();
     }
+    function handOffToOriginalCards(onComplete: () => void) {
+        const transitions = cards.map(({ original }) => ({
+            original,
+            transition: original.style.transition,
+        }));
+        // Disable the source opacity transition while React reveals it beneath the settled preview.
+        for (const { original } of transitions)
+            original.style.transition = 'none';
+        onComplete();
+        remove();
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                for (const { original, transition } of transitions)
+                    original.style.transition = transition;
+            });
+        });
+    }
     function returnToPlaces(onComplete: () => void) {
         ending = true;
         if (reducedMotion || cards.length === 0) {
-            remove();
-            onComplete();
+            handOffToOriginalCards(onComplete);
             return;
         }
         let remaining = cards.length;
         for (const { card, original } of cards) {
             const bounds = original.getBoundingClientRect();
+            const appearance = getComputedStyle(original);
             gsap.to(card, {
                 x: bounds.left,
                 y: bounds.top,
                 width: bounds.width,
                 height: bounds.height,
                 rotation: 0,
+                backgroundColor: appearance.backgroundColor,
+                borderColor: appearance.borderColor,
+                boxShadow: appearance.boxShadow,
+                outlineColor: appearance.outlineColor,
+                outlineWidth: appearance.outlineWidth,
+                outlineOffset: appearance.outlineOffset,
                 duration: 0.3,
                 ease: 'power3.inOut',
                 overwrite: true,
                 onComplete: () => {
                     remaining -= 1;
                     if (remaining === 0) {
-                        remove();
-                        onComplete();
+                        handOffToOriginalCards(onComplete);
                     }
                 },
             });

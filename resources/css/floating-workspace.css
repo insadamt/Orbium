@@ -489,7 +489,9 @@
     color: var(--muted-foreground);
 }
 .floating-item:hover .floating-item-actions,
-.floating-item:focus-within .floating-item-actions {
+.floating-item:focus-visible .floating-item-actions,
+.floating-item:has(.floating-item-actions:focus-visible)
+    .floating-item-actions {
     opacity: 1;
 }
 .floating-item-actions:hover {
@@ -516,6 +518,9 @@
     animation: none;
     transition: none;
     transform-origin: center;
+}
+.floating-drag-stack-card .floating-item-actions {
+    visibility: hidden;
 }
 @keyframes floating-arrive {
     from {

@@ -1,3 +1,4 @@
+import { flushSync } from 'react-dom';
 import {
     useEffect,
     useRef,
@@ -107,7 +108,7 @@ export function useItemDrag(
             }
             suppressClickUntil.current = performance.now() + 500;
             preview.returnToPlaces(() => {
-                complete();
+                flushSync(complete);
                 if (destination)
                     onMove(
                         sourceNode.id,
