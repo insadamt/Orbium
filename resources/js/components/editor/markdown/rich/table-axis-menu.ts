@@ -2,8 +2,15 @@ import { EditorView } from '@codemirror/view';
 import type { RichTable } from './rich-model';
 import { bindRichBlockHistory, button, element } from './widget-controls';
 import { widgetIcon } from './widget-icons';
+import { mountTableReordering } from './table-reordering';
+import {
+    insertTableRow,
+    moveTableAxis,
+    restoreMarkdownTableHeaders,
+    type TableAxis,
+} from './table-structure';
 
-type ColumnMenuOptions = {
+type TableAxisMenuOptions = {
     grid: HTMLTableElement;
     view: EditorView;
     table: () => RichTable;
@@ -12,7 +19,7 @@ type ColumnMenuOptions = {
     editTable: (change: (table: RichTable) => void, rich?: boolean) => void;
 };
 
-export function mountTableColumnMenu(options: ColumnMenuOptions) {
+export function mountTableAxisMenu(options: TableAxisMenuOptions) {
     const { grid, view, hasSpans, editTable } = options;
     let activeSort: { column: number; direction: number } | null = null;
     let sortedSources = '';
@@ -62,11 +69,34 @@ export function mountTableColumnMenu(options: ColumnMenuOptions) {
     function close(restoreFocus = false) {
         menu.hidden = true;
         anchor?.setAttribute('aria-expanded', 'false');
+        grid.querySelectorAll('.orbium-table-axis-selected').forEach((cell) =>
+            cell.classList.remove('orbium-table-axis-selected'),
+        );
         window.removeEventListener('scroll', closeOnScroll, true);
         window.removeEventListener('resize', closeOnScroll);
-        if (restoreFocus && anchor?.isConnected && !anchor.closest('[hidden]'))
-            anchor.focus({ preventScroll: true });
+        if (restoreFocus) {
+            if (anchor?.isConnected && !anchor.closest('[hidden]'))
+                anchor.focus({ preventScroll: true });
+            else view.focus();
+        }
     }
+    function moveAxis(axis: TableAxis, from: number, to: number) {
+        if (hasSpans() || !view.state.facet(EditorView.editable)) return;
+        options.beforeAction();
+        activeSort = null;
+        editTable((next) => moveTableAxis(next, axis, from, to));
+        refreshSortIndicator();
+        view.focus();
+    }
+    const reordering = mountTableReordering({
+        grid,
+        canMove: () => !hasSpans() && view.state.facet(EditorView.editable),
+        beforeMove: () => {
+            close();
+            options.beforeAction();
+        },
+        onMove: moveAxis,
+    });
     const closeOnScroll = () => close();
     function addAction(
         label: string,
@@ -84,7 +114,50 @@ export function mountTableColumnMenu(options: ColumnMenuOptions) {
         control.disabled = disabled;
         menu.append(control);
     }
-    function open(trigger: HTMLButtonElement, column: number) {
+    function addRowActions(row: number, disabled: boolean) {
+        addAction(
+            'Insert above',
+            'rowAdd',
+            () => {
+                editTable((next) => insertTableRow(next, row));
+            },
+            disabled,
+        );
+        addAction(
+            'Insert below',
+            'rowAdd',
+            () => {
+                editTable((next) => insertTableRow(next, row + 1));
+            },
+            disabled,
+        );
+        addAction(
+            'Move up',
+            'sortAscending',
+            () => reordering.animateMove('row', row, row - 1),
+            disabled || row === 0,
+        );
+        addAction(
+            'Move down',
+            'sortDescending',
+            () => reordering.animateMove('row', row, row + 1),
+            disabled || row === options.table().rows.length - 1,
+        );
+        addAction(
+            'Delete row',
+            'rowDelete',
+            () => {
+                if (hasSpans() || options.table().rows.length <= 1) return;
+                activeSort = null;
+                editTable((next) => {
+                    next.rows.splice(row, 1);
+                    restoreMarkdownTableHeaders(next);
+                });
+            },
+            disabled || options.table().rows.length <= 1,
+        );
+    }
+    function open(trigger: HTMLButtonElement, column: number, axis: TableAxis) {
         const wasOpen = anchor === trigger && !menu.hidden;
         close();
         if (wasOpen) return;
@@ -92,6 +165,10 @@ export function mountTableColumnMenu(options: ColumnMenuOptions) {
         menu.replaceChildren();
         const readOnly = !view.state.facet(EditorView.editable);
         const structuralDisabled = readOnly || hasSpans();
+        menu.setAttribute(
+            'aria-label',
+            axis === 'column' ? 'Column options' : 'Row options',
+        );
         function sort(direction: number) {
             editTable((next) => {
                 const rows = next.rows.slice(1);
@@ -124,32 +201,63 @@ export function mountTableColumnMenu(options: ColumnMenuOptions) {
                 refreshSortIndicator();
             }
         }
-        addAction(
-            'Sort ascending',
-            'sortAscending',
-            () => sort(1),
-            structuralDisabled,
-        );
-        addAction(
-            'Sort descending',
-            'sortDescending',
-            () => sort(-1),
-            structuralDisabled,
-        );
-        addAction(
-            'Delete column',
-            'columnDelete',
-            () => {
-                if (hasSpans() || options.table().rows[0].length <= 1) return;
-                editTable((next) => {
-                    next.rows.forEach((row) => row.splice(column, 1));
-                    next.alignments.splice(column, 1);
-                });
-                activeSort = null;
-                refreshSortIndicator();
-                view.focus();
-            },
-            structuralDisabled || options.table().rows[0].length <= 1,
+        if (axis === 'row') addRowActions(column, structuralDisabled);
+        else {
+            addAction(
+                'Sort ascending',
+                'sortAscending',
+                () => sort(1),
+                structuralDisabled,
+            );
+            addAction(
+                'Sort descending',
+                'sortDescending',
+                () => sort(-1),
+                structuralDisabled,
+            );
+            const rtl =
+                grid.ownerDocument.defaultView?.getComputedStyle(grid)
+                    .direction === 'rtl';
+            const left = column + (rtl ? 1 : -1);
+            const right = column + (rtl ? -1 : 1);
+            const count = options.table().rows[0].length;
+            addAction(
+                'Move left',
+                'arrowLeft',
+                () => reordering.animateMove('column', column, left),
+                structuralDisabled || left < 0 || left >= count,
+            );
+            addAction(
+                'Move right',
+                'arrowRight',
+                () => reordering.animateMove('column', column, right),
+                structuralDisabled || right < 0 || right >= count,
+            );
+            addAction(
+                'Delete column',
+                'columnDelete',
+                () => {
+                    if (hasSpans() || options.table().rows[0].length <= 1)
+                        return;
+                    editTable((next) => {
+                        next.rows.forEach((row) => row.splice(column, 1));
+                        next.alignments.splice(column, 1);
+                    });
+                    activeSort = null;
+                    refreshSortIndicator();
+                    view.focus();
+                },
+                structuralDisabled || options.table().rows[0].length <= 1,
+            );
+        }
+        const selected =
+            axis === 'row'
+                ? Array.from(grid.rows[column].cells)
+                : Array.from(grid.rows).flatMap((row) =>
+                      row.cells[column] ? [row.cells[column]] : [],
+                  );
+        selected.forEach((cell) =>
+            cell.classList.add('orbium-table-axis-selected'),
         );
         menu.hidden = false;
         trigger.setAttribute('aria-expanded', 'true');
@@ -187,31 +295,47 @@ export function mountTableColumnMenu(options: ColumnMenuOptions) {
             close(true);
         }
     });
+    function createHandle(axis: TableAxis, index: number) {
+        const trigger = element(
+            'button',
+            `orbium-table-axis-handle orbium-table-${axis}-handle`,
+        );
+        trigger.type = 'button';
+        trigger.title = `${axis === 'column' ? 'Column' : 'Row'} ${index + 1}: click for options, drag to move`;
+        trigger.setAttribute(
+            'aria-label',
+            `Options for ${axis} ${index + 1}. Drag to move.`,
+        );
+        trigger.setAttribute('aria-haspopup', 'dialog');
+        trigger.setAttribute('aria-expanded', 'false');
+        trigger.append(element('span', 'orbium-table-handle-dash'));
+        reordering.bindHandle(trigger, axis, index);
+        trigger.addEventListener('click', () => open(trigger, index, axis));
+        return trigger;
+    }
     return {
         contains: (target: Node) => menu.contains(target),
         close,
         refreshSortIndicator,
         clearHeaderControls() {
+            reordering.cancel();
+            close();
             headerControls.clear();
         },
         attach(cell: HTMLTableCellElement, column: number) {
-            const trigger = button('', () => open(trigger, column));
-            trigger.className = 'orbium-table-column-trigger';
-            trigger.setAttribute(
-                'aria-label',
-                `Options for column ${column + 1}`,
-            );
-            trigger.setAttribute('aria-haspopup', 'dialog');
-            trigger.setAttribute('aria-expanded', 'false');
-            trigger.append(widgetIcon('more', 14));
+            const trigger = createHandle('column', column);
             const indicator = element('span', 'orbium-table-sort-indicator');
             indicator.hidden = true;
             const header = element('div', 'orbium-table-column-header');
-            header.append(...Array.from(cell.childNodes), indicator, trigger);
-            cell.append(header);
+            header.append(...Array.from(cell.childNodes), indicator);
+            cell.append(header, trigger);
             headerControls.set(column, { cell, indicator });
         },
+        attachRow(cell: HTMLTableCellElement, row: number) {
+            cell.append(createHandle('row', row));
+        },
         destroy() {
+            reordering.destroy();
             close();
             menu.remove();
             grid.ownerDocument.removeEventListener('pointerdown', dismiss);

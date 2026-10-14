@@ -196,6 +196,12 @@ Block menu:
 
 Dragging reorders blocks.
 
+## Table border handles
+
+Markdown Live Preview tables use subtle 8-by-1-pixel marks integrated into the top border of each column and the leading border of each row, with 4-pixel breaks on either side (`----- - -----`), with transparent hit areas and no visible button background. Handles appear on table hover, keyboard focus, and touch devices. Drag a column handle left/right or a row handle up/down to reorder complete columns or rows. A lifted preview follows the pointer along that axis while neighboring cells slide aside to open its destination gap. On release, the preview settles into the gap before the source edit commits. Menu move actions use the same movement. Escape cancels it. Reduced motion retains direct pointer feedback and applies positions immediately without pickup or settling tweens. Clicking a handle opens its options in place of the former column three-dot button.
+
+Column options include ascending/descending sorting, Move left/right, and Delete column. Row options include Insert above/below, Move up/down, and Delete row. Boundary move actions and deleting the final row or column are disabled. Tables with merged cells and read-only documents disable structural actions. Markdown tables keep their first row as the header after row changes; rich tables retain explicit header metadata. Changes use normal undo/redo and autosave. Newly inserted rows preserve column widths and alignment.
+
 ## Text selection toolbar
 
 Compact floating toolbar:

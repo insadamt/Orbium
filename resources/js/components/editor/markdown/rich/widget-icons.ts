@@ -1,4 +1,6 @@
 const paths = {
+    arrowLeft: ['M20 12H4', 'm10 6-6 6 6 6'],
+    arrowRight: ['M4 12h16', 'm14 6 6 6-6 6'],
     sortAscending: ['M12 20V4', 'm6 10 6-6 6 6'],
     sortDescending: ['M12 4v16', 'm6 14 6 6 6-6'],
     close: ['M18 6 6 18', 'm6 6 12 12'],

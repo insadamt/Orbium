@@ -1,5 +1,5 @@
 import { mountTableFullscreenView } from './table-fullscreen-view';
-import { mountTableColumnMenu } from './table-column-menu';
+import { mountTableAxisMenu } from './table-axis-menu';
 import { emptyTableCell } from './table-cell-actions';
 import { mountRichTextInput } from './rich-text-input';
 import { widgetIcon } from './widget-icons';
@@ -103,7 +103,7 @@ export function mountTable(mount: RichWidgetMount): RichController {
         change(next);
         return write(next, rich);
     }
-    const columnMenu = mountTableColumnMenu({
+    const axisMenu = mountTableAxisMenu({
         grid,
         view: mount.view,
         table: () => table,
@@ -131,11 +131,11 @@ export function mountTable(mount: RichWidgetMount): RichController {
         if (
             mount.root.contains(event.target as Node) ||
             activeInput?.containsFormattingTarget(event.target as Node) ||
-            columnMenu.contains(event.target as Node)
+            axisMenu.contains(event.target as Node)
         )
             return;
         closeCell();
-        columnMenu.close();
+        axisMenu.close();
     };
     document.addEventListener('pointerdown', dismiss);
     const edges = element('div', 'orbium-table-edges');
@@ -199,7 +199,7 @@ export function mountTable(mount: RichWidgetMount): RichController {
         grid,
         beforeOpen: () => {
             closeCell();
-            columnMenu.close();
+            axisMenu.close();
         },
     });
     frame.append(edges);
@@ -208,7 +208,7 @@ export function mountTable(mount: RichWidgetMount): RichController {
     );
     function rebuild() {
         disposeCells();
-        columnMenu.clearHeaderControls();
+        axisMenu.clearHeaderControls();
         editors.length = 0;
         renderers.length = 0;
         body.replaceChildren();
@@ -298,7 +298,8 @@ export function mountTable(mount: RichWidgetMount): RichController {
                 content.append(output, input);
                 td.append(content);
                 tr.append(td);
-                if (y === 0) columnMenu.attach(td, x);
+                if (y === 0) axisMenu.attach(td, x);
+                if (x === 0) axisMenu.attachRow(td, y);
             });
         });
     }
@@ -344,7 +345,7 @@ export function mountTable(mount: RichWidgetMount): RichController {
                 ? 'Split spanning cells before changing table structure.'
                 : (control.getAttribute('aria-label') ?? '');
         }
-        columnMenu.refreshSortIndicator();
+        axisMenu.refreshSortIndicator();
         table.rows.forEach((row, y) =>
             row.forEach((cell, x) => {
                 if (activePosition?.row === y && activePosition.column === x)
@@ -360,7 +361,7 @@ export function mountTable(mount: RichWidgetMount): RichController {
         destroy() {
             fullscreenView.destroy();
             controls.destroy();
-            columnMenu.destroy();
+            axisMenu.destroy();
             disposeCells();
             document.removeEventListener('pointerdown', dismiss);
         },
