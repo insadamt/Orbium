@@ -136,6 +136,21 @@ export function mountTableColumnMenu(options: ColumnMenuOptions) {
             () => sort(-1),
             structuralDisabled,
         );
+        addAction(
+            'Delete column',
+            'columnDelete',
+            () => {
+                if (hasSpans() || options.table().rows[0].length <= 1) return;
+                editTable((next) => {
+                    next.rows.forEach((row) => row.splice(column, 1));
+                    next.alignments.splice(column, 1);
+                });
+                activeSort = null;
+                refreshSortIndicator();
+                view.focus();
+            },
+            structuralDisabled || options.table().rows[0].length <= 1,
+        );
         menu.hidden = false;
         trigger.setAttribute('aria-expanded', 'true');
         view.requestMeasure({
@@ -176,6 +191,9 @@ export function mountTableColumnMenu(options: ColumnMenuOptions) {
         contains: (target: Node) => menu.contains(target),
         close,
         refreshSortIndicator,
+        clearHeaderControls() {
+            headerControls.clear();
+        },
         attach(cell: HTMLTableCellElement, column: number) {
             const trigger = button('', () => open(trigger, column));
             trigger.className = 'orbium-table-column-trigger';

@@ -184,6 +184,7 @@ export function mountTable(mount: RichWidgetMount): RichController {
     );
     function rebuild() {
         disposeCells();
+        columnMenu.clearHeaderControls();
         editors.length = 0;
         renderers.length = 0;
         body.replaceChildren();
