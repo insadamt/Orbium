@@ -65,6 +65,8 @@ export function paragraphSplitDelimiters(
 ) {
     const selection = state.selection.main;
     const boundaries: { opening: string; closing: string }[] = [];
+    let from = selection.from;
+    let to = selection.to;
     for (
         let node: SyntaxNode | null = syntaxTree(state).resolveInner(
             selection.from,
@@ -84,10 +86,21 @@ export function paragraphSplitDelimiters(
             boundary &&
             selection.from >= boundary.contentFrom &&
             selection.to <= boundary.contentTo
-        )
-            boundaries.push(boundary);
+        ) {
+            // Move edge markers with their text so splitting cannot create empty spans.
+            const hasTextBefore = from > boundary.contentFrom;
+            const hasTextAfter = to < boundary.contentTo;
+            if (!hasTextBefore) from = boundary.from;
+            if (!hasTextAfter) to = boundary.to;
+            boundaries.push({
+                closing: hasTextBefore ? boundary.closing : '',
+                opening: hasTextAfter ? boundary.opening : '',
+            });
+        }
     }
     return {
+        from,
+        to,
         closing: boundaries.map((boundary) => boundary.closing).join(''),
         opening: boundaries
             .reverse()

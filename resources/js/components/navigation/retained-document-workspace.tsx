@@ -136,6 +136,12 @@ export function RetainedDocumentWorkspace({
           (currentPage.url === activeUrl ? activeId : undefined));
     const trailingTabId = activeGroup?.rightId;
     const surfaceTabIndex = tabs.findIndex((tab) => tab.id === surfaceTabId);
+    const visiblePageUrl = visibleDocumentId
+        ? pages[visibleDocumentId].page.url
+        : currentPage.url;
+    const surfacePageKey = activeGroup
+        ? `split:${activeGroup.leftId}:${activeGroup.rightId}`
+        : visiblePageUrl.split(/[?#]/)[0];
     const motionSurface = useMemo(
         () =>
             surfaceTabId
@@ -143,13 +149,14 @@ export function RetainedDocumentWorkspace({
                       key: trailingTabId
                           ? `split:${surfaceTabId}:${trailingTabId}`
                           : surfaceTabId,
+                      pageKey: surfacePageKey,
                       tabIds: trailingTabId
                           ? [surfaceTabId, trailingTabId]
                           : [surfaceTabId],
                       tabIndex: surfaceTabIndex,
                   }
                 : null,
-        [surfaceTabId, trailingTabId, surfaceTabIndex],
+        [surfaceTabId, trailingTabId, surfaceTabIndex, surfacePageKey],
     );
     useTabContentMotion({ workspaceRef, surface: motionSurface });
 

@@ -8,7 +8,11 @@ import { paragraphSplitDelimiters } from '../preview/markdown-paragraph-split';
 import { readEditableMarkdownPresentation } from './markdown-editable-presentation';
 
 function splitPresentedParagraph(view: EditorView) {
-    if (!view.state.facet(EditorView.editable) || view.compositionStarted)
+    if (
+        !view.state.facet(EditorView.editable) ||
+        view.compositionStarted ||
+        view.state.selection.ranges.length !== 1
+    )
         return false;
     const range = view.state.selection.main;
     for (
@@ -30,9 +34,10 @@ function splitPresentedParagraph(view: EditorView) {
         if (range.to > child.to || range.from < child.from) return false;
         const delimiters = paragraphSplitDelimiters(view.state);
         const before =
-            view.state.sliceDoc(child.from, range.from) + delimiters.closing;
+            view.state.sliceDoc(child.from, delimiters.from) +
+            delimiters.closing;
         const after =
-            delimiters.opening + view.state.sliceDoc(range.to, child.to);
+            delimiters.opening + view.state.sliceDoc(delimiters.to, child.to);
         const heading = child.getChild('HeaderMark');
         const prefix =
             heading && view.state.sliceDoc(child.from, heading.to) + ' ';

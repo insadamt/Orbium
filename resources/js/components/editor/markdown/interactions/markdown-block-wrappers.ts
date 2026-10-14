@@ -42,16 +42,17 @@ function collectMarkdownWrappers(
             if (presentation) {
                 const { body, header, close, metadata } = presentation;
                 markers.push(
-                    Decoration.replace({ block: true }).range(
-                        header.from,
-                        body.from,
-                    ),
+                    // Keep the body's first-line decorations outside the hidden header.
+                    Decoration.replace({
+                        block: true,
+                        inclusiveEnd: false,
+                    }).range(header.from, body.from),
                 );
                 markers.push(
-                    Decoration.replace({ block: true }).range(
-                        body.to,
-                        close.to,
-                    ),
+                    Decoration.replace({
+                        block: true,
+                        inclusiveStart: false,
+                    }).range(body.to, close.to),
                 );
                 const attributes: Record<string, string> = {
                     class: 'orbium-block-presentation',

@@ -85,12 +85,12 @@ function insertParagraph(view: EditorView): boolean {
         return true;
     }
     const delimiters = paragraphSplitDelimiters(view.state);
-    const nextPrefix = prefix && selection.to < line.to ? prefix : '';
+    const nextPrefix = prefix && delimiters.to < line.to ? prefix : '';
     const separator = line.text.trim() ? '\n\n' : '\n';
     const insert = `${delimiters.closing}${separator}${nextPrefix}${delimiters.opening}`;
     view.dispatch({
-        changes: { from: selection.from, to: selection.to, insert },
-        selection: { anchor: selection.from + insert.length },
+        changes: { from: delimiters.from, to: delimiters.to, insert },
+        selection: { anchor: delimiters.from + insert.length },
         annotations: isolateHistory.of('full'),
         userEvent: 'input.paragraph',
         scrollIntoView: true,

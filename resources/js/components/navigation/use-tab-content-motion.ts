@@ -2,6 +2,7 @@ import { useLayoutEffect, useRef, type RefObject } from 'react';
 
 type TabContentSurface = {
     key: string;
+    pageKey: string;
     tabIds: string[];
     tabIndex: number;
 };
@@ -23,24 +24,36 @@ export function useTabContentMotion({
         previousSurface.current = surface;
 
         const workspace = workspaceRef.current;
-        if (
-            !workspace ||
-            !previous ||
-            previous.key === surface.key ||
-            previous.tabIds.some((tabId) => surface.tabIds.includes(tabId))
-        )
+        if (!workspace) return;
+
+        const sharesVisibleTab = previous?.tabIds.some((tabId) =>
+            surface.tabIds.includes(tabId),
+        );
+        // Split creation and removal already own their workspace choreography.
+        if (previous && previous.key !== surface.key && sharesVisibleTab)
             return;
+
+        const openingPage = !previous || previous.pageKey !== surface.pageKey;
+        const switchingTabs =
+            previous && previous.key !== surface.key && !sharesVisibleTab;
+        if (!openingPage && !switchingTabs) return;
 
         const reducedMotion = window.matchMedia(
             '(prefers-reduced-motion: reduce)',
         );
         if (reducedMotion.matches) return;
 
-        const direction = surface.tabIndex < previous.tabIndex ? -1 : 1;
+        const direction =
+            previous && surface.tabIndex < previous.tabIndex ? -1 : 1;
         // A positional offset preserves viewport anchoring for fixed editor controls.
         const animation = workspace.animate(
-            [{ left: `${direction * 14}px` }, { left: '0px' }],
-            { duration: 280, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' },
+            switchingTabs
+                ? [{ left: `${direction * 14}px` }, { left: '0px' }]
+                : [{ top: '18px' }, { top: '0px' }],
+            {
+                duration: switchingTabs ? 280 : 320,
+                easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
+            },
         );
         const cancelForReducedMotion = () => {
             if (reducedMotion.matches) animation.cancel();
