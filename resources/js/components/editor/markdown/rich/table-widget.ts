@@ -98,10 +98,10 @@ export function mountTable(mount: RichWidgetMount): RichController {
         );
     }
     function editTable(change: (next: RichTable) => void, rich = false) {
-        if (!mount.view.state.facet(EditorView.editable)) return;
+        if (!mount.view.state.facet(EditorView.editable)) return false;
         const next = cloneTable(table);
         change(next);
-        write(next, rich);
+        return write(next, rich);
     }
     const columnMenu = mountTableColumnMenu({
         grid,
@@ -139,13 +139,36 @@ export function mountTable(mount: RichWidgetMount): RichController {
     };
     document.addEventListener('pointerdown', dismiss);
     const edges = element('div', 'orbium-table-edges');
+    function revealLastColumn() {
+        mount.view.requestMeasure({
+            key: scroller,
+            read: () => {
+                const lastCell = body.rows[0]?.lastElementChild;
+                if (!scroller.isConnected || !lastCell) return null;
+                const cellBounds = lastCell.getBoundingClientRect();
+                const visibleLeft =
+                    scroller.getBoundingClientRect().left + scroller.clientLeft;
+                const visibleRight = visibleLeft + scroller.clientWidth;
+                const offset =
+                    cellBounds.right > visibleRight
+                        ? cellBounds.right - visibleRight
+                        : Math.min(0, cellBounds.left - visibleLeft);
+                return scroller.scrollLeft + offset;
+            },
+            write: (left) => {
+                if (left !== null && scroller.isConnected)
+                    scroller.scrollTo({ left, behavior: 'instant' });
+            },
+        });
+    }
     function edgeButton(
         label: string,
         action: (next: RichTable) => void,
         className: string,
+        afterEdit?: () => void,
     ) {
         const control = button('', () => {
-            if (!hasSpans()) editTable(action);
+            if (!hasSpans() && editTable(action)) afterEdit?.();
         });
         control.setAttribute('aria-label', label);
         control.title = label;
@@ -169,6 +192,7 @@ export function mountTable(mount: RichWidgetMount): RichController {
             next.alignments.push('');
         },
         'orbium-table-add-column',
+        revealLastColumn,
     );
     const fullscreenView = mountTableFullscreenView({
         edges,
