@@ -97,11 +97,9 @@ export function AppBackground() {
         };
     }, [preferences.kind, imageUrl, displayedBackground]);
 
-    if (displayedBackground.kind === 'default') return null;
-
     return (
         <div
-            className="orbium-background"
+            className={`orbium-background ${displayedBackground.kind === 'default' ? 'orbium-background-default' : ''}`}
             aria-hidden="true"
             style={
                 activeEffect

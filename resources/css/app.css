@@ -250,6 +250,11 @@
 
 .orbium-shell {
     position: relative;
+    isolation: isolate;
+}
+
+.orbium-background-default {
+    background-color: #f8fafa;
     background-image:
         radial-gradient(
             ellipse at 82% 12%,
@@ -261,7 +266,10 @@
             rgb(170 170 170 / 0.11),
             transparent 42%
         );
-    background-attachment: fixed;
+}
+
+.dark .orbium-background-default {
+    background-color: #0d1012;
 }
 
 .orbium-background {
@@ -288,6 +296,11 @@
 }
 
 .orbium-shell > main {
+    position: relative;
+    z-index: 1;
+}
+
+.orbium-auth-content {
     position: relative;
     z-index: 1;
 }

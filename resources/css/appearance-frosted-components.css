@@ -79,7 +79,7 @@
         .db-icon-button,
         .bg-card,
         .bg-popover,
-        .bg-background:where(:not(body)),
+        .bg-background:where(:not(body):not(.orbium-shell)),
         [class*='bg-background/'],
         [class*='bg-card/'],
         [role='dialog'],

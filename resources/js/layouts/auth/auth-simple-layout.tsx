@@ -1,4 +1,6 @@
 import { Link } from '@inertiajs/react';
+import { AppBackground } from '@/backgrounds/app-background';
+import { useSurfaceStyle } from '@/backgrounds/surface-preferences';
 import AppLogoIcon from '@/components/app-logo-icon';
 import { home } from '@/routes';
 import type { AuthLayoutProps } from '@/types';
@@ -8,9 +10,14 @@ export default function AuthSimpleLayout({
     title,
     description,
 }: AuthLayoutProps) {
+    const surfaceStyle = useSurfaceStyle();
+
     return (
-        <div className="flex min-h-svh flex-col items-center justify-center gap-6 bg-background p-6 md:p-10">
-            <div className="w-full max-w-sm">
+        <div
+            className={`orbium-shell surface-${surfaceStyle} flex min-h-svh flex-col items-center justify-center gap-6 bg-background p-6 md:p-10`}
+        >
+            <AppBackground />
+            <div className="orbium-auth-content w-full max-w-sm">
                 <div className="flex flex-col gap-8">
                     <div className="flex flex-col items-center gap-4">
                         <Link

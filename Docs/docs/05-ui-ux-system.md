@@ -1,5 +1,13 @@
 # UI/UX system
 
+Viewport background review (2026-10-14): Default, image, and animated backgrounds
+share one fixed viewport layer across authenticated and authentication pages.
+The default gradients are sized to the viewport rather than page content.
+Split documents remain transparent over their parent page's background.
+The Frosted utility rule excludes the page shell so backdrop filtering cannot
+turn the shell into a containing block for the fixed wallpaper.
+See [the review report](../reports/07-fixed-viewport-background.md).
+
 Unified frosted review (2026-10-13): At the user's request, app surfaces now
 share one frosted treatment: light `rgb(250 250 251 / 61%)`, dark
 `rgb(3 6 9 / 53%)`, with 26px blur and 140% saturation. Panel, raised, inset,
