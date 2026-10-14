@@ -1,3 +1,7 @@
+import {
+    markdownCompletionMenu,
+    completionMenuIcon,
+} from './interactions/markdown-completion-menu';
 import { markdownMentionSource } from './interactions/markdown-mentions';
 import { replacePresentedMarkdown } from './interactions/markdown-presentation-edits';
 import type { OrbiumMetadata } from './dialect/metadata';
@@ -211,13 +215,17 @@ export function markdownSlashCommands(
         return true;
     }
     return [
+        markdownCompletionMenu,
         autocompletion({
             override: [slashSource, markdownMentionSource(workspaceId)],
             defaultKeymap: false,
             activateOnTypingDelay: 0,
             interactionDelay: 0,
             icons: false,
-            tooltipClass: () => 'orbium-slash-menu glass-surface shadow-xl',
+            tooltipClass: () =>
+                'orbium-slash-menu app-menu-content glass-surface shadow-xl',
+            optionClass: () => 'app-menu-option',
+            addToOptions: [{ position: 10, render: completionMenuIcon }],
             maxRenderedOptions: 18,
         }),
         // Ctrl+Space belongs to Search Master, including while the slash picker is open.

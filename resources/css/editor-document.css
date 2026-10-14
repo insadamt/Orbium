@@ -278,9 +278,6 @@
 .orbium-slash-menu .cm-completionLabel {
     font-family: var(--font-sans, sans-serif);
 }
-.orbium-slash-menu > ul > li:hover {
-    background: var(--accent);
-}
 .cm-tooltip.cm-tooltip-autocomplete.orbium-slash-menu {
     background: var(--glass);
     color: var(--foreground);

@@ -34,8 +34,8 @@ export const markdownPreviewTheme = [
 
 export const markdownSlashMenuTheme = EditorView.theme({
     '.cm-tooltip-autocomplete.orbium-slash-menu': {
-        borderRadius: '12px',
-        padding: '4px',
+        borderRadius: '14px',
+        padding: '6px',
         width: '256px',
         maxWidth: 'calc(100vw - 16px)',
     },
@@ -44,9 +44,10 @@ export const markdownSlashMenuTheme = EditorView.theme({
         maxHeight: '280px',
     },
     '.cm-tooltip-autocomplete.orbium-slash-menu > ul > li': {
-        padding: '8px 12px',
-        borderRadius: '6px',
-        fontSize: '14px',
+        padding: '8px 10px',
+        borderRadius: '8px',
+        fontSize: '13px',
+        minHeight: '36px',
         lineHeight: '20px',
         whiteSpace: 'normal',
     },
@@ -55,7 +56,7 @@ export const markdownSlashMenuTheme = EditorView.theme({
         marginInlineStart: '4px',
     },
     '.cm-tooltip-autocomplete.orbium-slash-menu > ul > li[aria-selected]': {
-        backgroundColor: 'var(--accent)',
+        backgroundColor: 'transparent',
         color: 'var(--accent-foreground)',
     },
 });

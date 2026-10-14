@@ -1,4 +1,4 @@
-import * as Menu from '@radix-ui/react-dropdown-menu';
+import * as Menu from '@/components/ui/dropdown-menu';
 import { Info, Loader2, MoreHorizontal, RotateCcw, Trash2 } from 'lucide-react';
 import { useRef } from 'react';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -98,42 +98,40 @@ export function TrashEntryRow({
                     >
                         <MoreHorizontal size={19} />
                     </Menu.Trigger>
-                    <Menu.Portal>
-                        <Menu.Content
-                            className="floating-menu workspace-manager-menu"
-                            align="end"
-                            sideOffset={8}
-                            onCloseAutoFocus={(event) => {
-                                if (openingPanel.current) {
-                                    event.preventDefault();
-                                    openingPanel.current = false;
-                                }
+                    <Menu.Content
+                        className="floating-menu workspace-manager-menu"
+                        align="end"
+                        sideOffset={8}
+                        onCloseAutoFocus={(event) => {
+                            if (openingPanel.current) {
+                                event.preventDefault();
+                                openingPanel.current = false;
+                            }
+                        }}
+                    >
+                        <Menu.Item
+                            className="floating-menu-item"
+                            onSelect={() => {
+                                openingPanel.current = true;
+                                if (menuTrigger.current)
+                                    onDetails(menuTrigger.current);
                             }}
                         >
-                            <Menu.Item
-                                className="floating-menu-item"
-                                onSelect={() => {
-                                    openingPanel.current = true;
-                                    if (menuTrigger.current)
-                                        onDetails(menuTrigger.current);
-                                }}
-                            >
-                                <Info size={15} />
-                                Details
-                            </Menu.Item>
-                            <Menu.Separator className="my-1 border-t border-border/50" />
-                            <Menu.Item
-                                className="floating-menu-item text-destructive"
-                                onSelect={() => {
-                                    openingPanel.current = true;
-                                    onDelete();
-                                }}
-                            >
-                                <Trash2 size={15} />
-                                Delete permanently
-                            </Menu.Item>
-                        </Menu.Content>
-                    </Menu.Portal>
+                            <Info size={15} />
+                            Details
+                        </Menu.Item>
+                        <Menu.Separator className="my-1 border-t border-border/50" />
+                        <Menu.Item
+                            className="floating-menu-item text-destructive"
+                            onSelect={() => {
+                                openingPanel.current = true;
+                                onDelete();
+                            }}
+                        >
+                            <Trash2 size={15} />
+                            Delete permanently
+                        </Menu.Item>
+                    </Menu.Content>
                 </Menu.Root>
             </div>
         </li>

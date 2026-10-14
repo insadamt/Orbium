@@ -1,6 +1,10 @@
+import {
+    createTableMenuSurface,
+    type TableMenuAction,
+} from './table-menu-surface';
 import { EditorView } from '@codemirror/view';
 import type { RichTable } from './rich-model';
-import { bindRichBlockHistory, button, element } from './widget-controls';
+import { bindRichBlockHistory, element } from './widget-controls';
 import { widgetIcon } from './widget-icons';
 import { mountTableReordering } from './table-reordering';
 import {
@@ -57,10 +61,9 @@ export function mountTableAxisMenu(options: TableAxisMenuOptions) {
         }
     }
     let anchor: HTMLButtonElement | null = null;
-    const menu = element(
-        'div',
-        'orbium-table-column-menu orbium-editor-toolbar glass-surface',
-    );
+    const menu = element('div');
+    const menuSurface = createTableMenuSurface(menu);
+    let actions: TableMenuAction[] = [];
     menu.setAttribute('role', 'dialog');
     menu.setAttribute('aria-label', 'Column options');
     menu.hidden = true;
@@ -68,6 +71,7 @@ export function mountTableAxisMenu(options: TableAxisMenuOptions) {
     bindRichBlockHistory(menu, view);
     function close(restoreFocus = false) {
         menu.hidden = true;
+        menuSurface.close();
         anchor?.setAttribute('aria-expanded', 'false');
         grid.querySelectorAll('.orbium-table-axis-selected').forEach((cell) =>
             cell.classList.remove('orbium-table-axis-selected'),
@@ -104,16 +108,18 @@ export function mountTableAxisMenu(options: TableAxisMenuOptions) {
         action: () => void,
         disabled = false,
     ) {
-        const control = button('', () => {
-            options.beforeAction();
-            action();
-            close(true);
+        actions.push({
+            label,
+            icon,
+            disabled,
+            run: () => {
+                options.beforeAction();
+                action();
+                close(true);
+            },
         });
-        control.className = 'orbium-table-column-action';
-        control.append(widgetIcon(icon, 15), element('span', '', label));
-        control.disabled = disabled;
-        menu.append(control);
     }
+
     function addRowActions(row: number, disabled: boolean) {
         addAction(
             'Insert above',
@@ -162,7 +168,7 @@ export function mountTableAxisMenu(options: TableAxisMenuOptions) {
         close();
         if (wasOpen) return;
         anchor = trigger;
-        menu.replaceChildren();
+        actions = [];
         const readOnly = !view.state.facet(EditorView.editable);
         const structuralDisabled = readOnly || hasSpans();
         menu.setAttribute(
@@ -261,27 +267,19 @@ export function mountTableAxisMenu(options: TableAxisMenuOptions) {
         );
         menu.hidden = false;
         trigger.setAttribute('aria-expanded', 'true');
-        view.requestMeasure({
-            key: menu,
-            read: () => ({
-                anchor: trigger.getBoundingClientRect(),
-                menu: menu.getBoundingClientRect(),
-            }),
-            write: (bounds) => {
-                if (menu.hidden) return;
-                menu.style.left = `${Math.max(12, Math.min(bounds.anchor.left, window.innerWidth - bounds.menu.width - 12))}px`;
-                const top = bounds.anchor.bottom + 4;
-                menu.style.top = `${Math.max(12, Math.min(top, window.innerHeight - bounds.menu.height - 12))}px`;
-            },
-        });
-        window.addEventListener('scroll', closeOnScroll, true);
-        window.addEventListener('resize', closeOnScroll);
-        menu.querySelector<HTMLButtonElement>('button:not(:disabled)')?.focus({
-            preventScroll: true,
-        });
+        menuSurface.open(
+            trigger,
+            axis === 'column' ? 'Column options' : 'Row options',
+            actions,
+            () => close(true),
+        );
     }
     const dismiss = (event: PointerEvent) => {
         if (
+            !(
+                event.target instanceof Element &&
+                event.target.closest('.orbium-table-action-menu')
+            ) &&
             !menu.contains(event.target as Node) &&
             !anchor?.contains(event.target as Node)
         )
@@ -314,7 +312,10 @@ export function mountTableAxisMenu(options: TableAxisMenuOptions) {
         return trigger;
     }
     return {
-        contains: (target: Node) => menu.contains(target),
+        contains: (target: Node) =>
+            menu.contains(target) ||
+            (target instanceof Element &&
+                Boolean(target.closest('.orbium-table-action-menu'))),
         close,
         refreshSortIndicator,
         clearHeaderControls() {
@@ -337,6 +338,7 @@ export function mountTableAxisMenu(options: TableAxisMenuOptions) {
         destroy() {
             reordering.destroy();
             close();
+            menuSurface.destroy();
             menu.remove();
             grid.ownerDocument.removeEventListener('pointerdown', dismiss);
         },

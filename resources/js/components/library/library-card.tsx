@@ -1,4 +1,4 @@
-import * as Menu from '@radix-ui/react-dropdown-menu';
+import * as Menu from '@/components/ui/dropdown-menu';
 import {
     Check,
     Download,
@@ -124,46 +124,40 @@ export function LibraryCard({
                                 <MoreHorizontal size={19} />
                             </button>
                         </Menu.Trigger>
-                        <Menu.Portal>
-                            <Menu.Content
-                                align="end"
-                                sideOffset={6}
-                                className="library-menu"
+                        <Menu.Content
+                            align="end"
+                            sideOffset={6}
+                            className="library-menu"
+                        >
+                            <Menu.Item
+                                className="library-menu-item"
+                                onSelect={onOpen}
                             >
-                                <Menu.Item
-                                    className="library-menu-item"
-                                    onSelect={onOpen}
-                                >
-                                    <ScanEye size={15} /> View details
-                                </Menu.Item>
-                                <Menu.Item
-                                    className="library-menu-item"
-                                    disabled={!file.available}
-                                    asChild
-                                >
-                                    <a href={`${file.url}?download=1`}>
-                                        <Download size={15} /> Download
-                                    </a>
-                                </Menu.Item>
-                                <Menu.Item
-                                    className="library-menu-item"
-                                    onSelect={() =>
-                                        onRename(menuButton.current)
-                                    }
-                                >
-                                    <Pencil size={15} /> Rename
-                                </Menu.Item>
-                                <Menu.Separator className="my-1 border-t border-border/50" />
-                                <Menu.Item
-                                    className="library-menu-item text-destructive"
-                                    onSelect={() =>
-                                        onDelete(menuButton.current)
-                                    }
-                                >
-                                    <Trash2 size={15} /> Delete…
-                                </Menu.Item>
-                            </Menu.Content>
-                        </Menu.Portal>
+                                <ScanEye size={15} /> View details
+                            </Menu.Item>
+                            <Menu.Item
+                                className="library-menu-item"
+                                disabled={!file.available}
+                                asChild
+                            >
+                                <a href={`${file.url}?download=1`}>
+                                    <Download size={15} /> Download
+                                </a>
+                            </Menu.Item>
+                            <Menu.Item
+                                className="library-menu-item"
+                                onSelect={() => onRename(menuButton.current)}
+                            >
+                                <Pencil size={15} /> Rename
+                            </Menu.Item>
+                            <Menu.Separator className="my-1 border-t border-border/50" />
+                            <Menu.Item
+                                className="library-menu-item text-destructive"
+                                onSelect={() => onDelete(menuButton.current)}
+                            >
+                                <Trash2 size={15} /> Delete…
+                            </Menu.Item>
+                        </Menu.Content>
                     </Menu.Root>
                 )}
             </div>

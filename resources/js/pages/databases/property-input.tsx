@@ -1,5 +1,5 @@
 import { useDocumentTab } from '@/components/navigation/document-tab-context';
-import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
+import * as DropdownMenu from '@/components/ui/dropdown-menu';
 import {
     ArrowUpRight,
     Check,
@@ -186,255 +186,238 @@ export default function PropertyInput({
                             />
                         </button>
                     </DropdownMenu.Trigger>
-                    <DropdownMenu.Portal>
-                        <DropdownMenu.Content
-                            className="db-menu w-64"
-                            align="start"
-                            sideOffset={4}
-                        >
-                            <DropdownMenu.Label className="px-2.5 py-2 text-xs text-muted-foreground">
-                                {property.name}
-                            </DropdownMenu.Label>
-                            {property.type === 'date' ? (
-                                <div className="px-2 pb-2">
-                                    <input
-                                        aria-label={property.name}
-                                        type="date"
-                                        className="db-field"
-                                        value={displayValue(draft)}
-                                        onChange={(event) =>
-                                            void save(
-                                                event.target.value || null,
-                                            )
-                                        }
-                                    />
-                                </div>
-                            ) : property.type === 'files' ? (
-                                <>
-                                    {selected.map((id) => (
-                                        <div
-                                            key={id}
-                                            className="flex items-center gap-1"
-                                        >
-                                            <DropdownMenu.Item
-                                                asChild
-                                                className="db-menu-item min-w-0 flex-1"
-                                            >
-                                                <a
-                                                    href={`/workspaces/${workspaceId}/documents/${documentId}/attachments/${id}`}
-                                                    target="_blank"
-                                                    rel="noreferrer"
-                                                >
-                                                    <Paperclip
-                                                        size={14}
-                                                        className="shrink-0"
-                                                    />
-                                                    <span className="truncate">
-                                                        {knownFiles.find(
-                                                            (file) =>
-                                                                file.id === id,
-                                                        )?.original_name ??
-                                                            'Attachment'}
-                                                    </span>
-                                                    <ArrowUpRight
-                                                        size={13}
-                                                        className="ml-auto shrink-0"
-                                                    />
-                                                </a>
-                                            </DropdownMenu.Item>
-                                            <button
-                                                type="button"
-                                                aria-label={`Remove ${knownFiles.find((file) => file.id === id)?.original_name ?? 'attachment'}`}
-                                                className="db-icon-button"
-                                                disabled={busy}
-                                                onClick={() =>
-                                                    void save(
-                                                        selected.filter(
-                                                            (item) =>
-                                                                item !== id,
-                                                        ),
-                                                    )
-                                                }
-                                            >
-                                                <X size={14} />
-                                            </button>
-                                        </div>
-                                    ))}
-                                    <DropdownMenu.Item
-                                        disabled={busy || !onUpload}
-                                        className="db-menu-item"
-                                        onSelect={() =>
-                                            fileInput.current?.click()
-                                        }
+                    <DropdownMenu.Content
+                        className="db-menu w-64"
+                        align="start"
+                        sideOffset={4}
+                    >
+                        <DropdownMenu.Label className="px-2.5 py-2 text-xs text-muted-foreground">
+                            {property.name}
+                        </DropdownMenu.Label>
+                        {property.type === 'date' ? (
+                            <div className="px-2 pb-2">
+                                <input
+                                    aria-label={property.name}
+                                    type="date"
+                                    className="db-field"
+                                    value={displayValue(draft)}
+                                    onChange={(event) =>
+                                        void save(event.target.value || null)
+                                    }
+                                />
+                            </div>
+                        ) : property.type === 'files' ? (
+                            <>
+                                {selected.map((id) => (
+                                    <div
+                                        key={id}
+                                        className="flex items-center gap-1"
                                     >
-                                        <Upload size={15} />
-                                        Upload a file
-                                    </DropdownMenu.Item>
-                                </>
-                            ) : (
-                                <>
-                                    <div className="mx-1 mb-1 flex items-center gap-2 rounded-md border border-border px-2">
-                                        <Search
-                                            size={14}
-                                            className="text-muted-foreground"
-                                        />
-                                        <input
-                                            aria-label={`Search ${property.name}`}
-                                            value={query}
-                                            disabled={busy}
-                                            onChange={(event) =>
-                                                setQuery(event.target.value)
-                                            }
-                                            onKeyDown={(event) => {
-                                                if (
-                                                    event.key.length === 1 ||
-                                                    event.key === ' '
-                                                )
-                                                    event.stopPropagation();
-                                            }}
-                                            placeholder={
-                                                property.type === 'mention'
-                                                    ? 'Find a page…'
-                                                    : 'Find an option…'
-                                            }
-                                            className="h-8 min-w-0 flex-1 bg-transparent text-xs outline-none"
-                                        />
-                                    </div>
-                                    <div className="max-h-56 overflow-y-auto">
-                                        {filteredChoices.map((choice) => {
-                                            const checked =
-                                                property.type === 'select'
-                                                    ? draft === choice.id
-                                                    : selected.includes(
-                                                          choice.id,
-                                                      );
-                                            return (
-                                                <DropdownMenu.Item
-                                                    key={choice.id}
-                                                    className="db-menu-item"
-                                                    disabled={busy}
-                                                    onSelect={(event) => {
-                                                        if (
-                                                            property.type !==
-                                                            'select'
-                                                        )
-                                                            event.preventDefault();
-                                                        void save(
-                                                            property.type ===
-                                                                'select'
-                                                                ? choice.id
-                                                                : checked
-                                                                  ? selected.filter(
-                                                                        (id) =>
-                                                                            id !==
-                                                                            choice.id,
-                                                                    )
-                                                                  : [
-                                                                        ...selected,
-                                                                        choice.id,
-                                                                    ],
-                                                        );
-                                                    }}
-                                                >
-                                                    <span className="min-w-0 flex-1 truncate">
-                                                        {choice.label}
-                                                    </span>
-                                                    {choice.kind && (
-                                                        <span className="text-[10px] text-muted-foreground">
-                                                            {choice.kind}
-                                                        </span>
-                                                    )}
-                                                    {checked && (
-                                                        <Check size={14} />
-                                                    )}
-                                                </DropdownMenu.Item>
-                                            );
-                                        })}
-                                        {canCreateOption && (
-                                            <CreatePropertyOptionItem
-                                                option={query.trim()}
-                                                selectedOptions={selected}
-                                                busy={busy}
-                                                onCreate={onCreateOption}
-                                                onBusyChange={setBusy}
-                                                onError={setError}
-                                                onCreated={(result) => {
-                                                    setOptions(
-                                                        result.property.config
-                                                            .options ?? [],
-                                                    );
-                                                    setDraft(result.value);
-                                                    setQuery('');
-                                                    if (
-                                                        property.type ===
-                                                        'select'
-                                                    )
-                                                        setOpen(false);
-                                                }}
-                                            />
-                                        )}
-                                        {!filteredChoices.length &&
-                                            !canCreateOption && (
-                                                <p className="px-3 py-5 text-center text-xs text-muted-foreground">
-                                                    {choices.length
-                                                        ? 'No matches.'
-                                                        : 'No options yet. Add options in the property settings.'}
-                                                </p>
-                                            )}
-                                    </div>
-                                    {property.type === 'mention' &&
-                                        selected.length > 0 && (
-                                            <>
-                                                <DropdownMenu.Separator className="my-1 h-px bg-border/60" />
-                                                {selected.map((id) => (
-                                                    <DropdownMenu.Item
-                                                        key={id}
-                                                        asChild
-                                                        className="db-menu-item"
-                                                    >
-                                                        <a
-                                                            href={`/workspaces/${workspaceId}/nodes/${id}`}
-                                                        >
-                                                            <ArrowUpRight
-                                                                size={14}
-                                                            />
-                                                            <span className="truncate">
-                                                                Open{' '}
-                                                                {candidates.find(
-                                                                    (
-                                                                        candidate,
-                                                                    ) =>
-                                                                        candidate.id ===
-                                                                        id,
-                                                                )?.title ??
-                                                                    'reference'}
-                                                            </span>
-                                                        </a>
-                                                    </DropdownMenu.Item>
-                                                ))}
-                                            </>
-                                        )}
-                                </>
-                            )}
-                            {draft !== null &&
-                                draft !== undefined &&
-                                draft !== '' &&
-                                (!Array.isArray(draft) ||
-                                    selected.length > 0) && (
-                                    <>
-                                        <DropdownMenu.Separator className="my-1 h-px bg-border/60" />
                                         <DropdownMenu.Item
+                                            asChild
+                                            className="db-menu-item min-w-0 flex-1"
+                                        >
+                                            <a
+                                                href={`/workspaces/${workspaceId}/documents/${documentId}/attachments/${id}`}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                            >
+                                                <Paperclip
+                                                    size={14}
+                                                    className="shrink-0"
+                                                />
+                                                <span className="truncate">
+                                                    {knownFiles.find(
+                                                        (file) =>
+                                                            file.id === id,
+                                                    )?.original_name ??
+                                                        'Attachment'}
+                                                </span>
+                                                <ArrowUpRight
+                                                    size={13}
+                                                    className="ml-auto shrink-0"
+                                                />
+                                            </a>
+                                        </DropdownMenu.Item>
+                                        <button
+                                            type="button"
+                                            aria-label={`Remove ${knownFiles.find((file) => file.id === id)?.original_name ?? 'attachment'}`}
+                                            className="db-icon-button"
                                             disabled={busy}
-                                            className="db-menu-item text-muted-foreground"
-                                            onSelect={() => void save(null)}
+                                            onClick={() =>
+                                                void save(
+                                                    selected.filter(
+                                                        (item) => item !== id,
+                                                    ),
+                                                )
+                                            }
                                         >
                                             <X size={14} />
-                                            Clear value
-                                        </DropdownMenu.Item>
-                                    </>
-                                )}
-                        </DropdownMenu.Content>
-                    </DropdownMenu.Portal>
+                                        </button>
+                                    </div>
+                                ))}
+                                <DropdownMenu.Item
+                                    disabled={busy || !onUpload}
+                                    className="db-menu-item"
+                                    onSelect={() => fileInput.current?.click()}
+                                >
+                                    <Upload size={15} />
+                                    Upload a file
+                                </DropdownMenu.Item>
+                            </>
+                        ) : (
+                            <>
+                                <div className="mx-1 mb-1 flex items-center gap-2 rounded-md border border-border px-2">
+                                    <Search
+                                        size={14}
+                                        className="text-muted-foreground"
+                                    />
+                                    <input
+                                        aria-label={`Search ${property.name}`}
+                                        value={query}
+                                        disabled={busy}
+                                        onChange={(event) =>
+                                            setQuery(event.target.value)
+                                        }
+                                        onKeyDown={(event) => {
+                                            if (
+                                                event.key.length === 1 ||
+                                                event.key === ' '
+                                            )
+                                                event.stopPropagation();
+                                        }}
+                                        placeholder={
+                                            property.type === 'mention'
+                                                ? 'Find a page…'
+                                                : 'Find an option…'
+                                        }
+                                        className="h-8 min-w-0 flex-1 bg-transparent text-xs outline-none"
+                                    />
+                                </div>
+                                <div className="max-h-56 overflow-y-auto">
+                                    {filteredChoices.map((choice) => {
+                                        const checked =
+                                            property.type === 'select'
+                                                ? draft === choice.id
+                                                : selected.includes(choice.id);
+                                        return (
+                                            <DropdownMenu.Item
+                                                key={choice.id}
+                                                className="db-menu-item"
+                                                disabled={busy}
+                                                onSelect={(event) => {
+                                                    if (
+                                                        property.type !==
+                                                        'select'
+                                                    )
+                                                        event.preventDefault();
+                                                    void save(
+                                                        property.type ===
+                                                            'select'
+                                                            ? choice.id
+                                                            : checked
+                                                              ? selected.filter(
+                                                                    (id) =>
+                                                                        id !==
+                                                                        choice.id,
+                                                                )
+                                                              : [
+                                                                    ...selected,
+                                                                    choice.id,
+                                                                ],
+                                                    );
+                                                }}
+                                            >
+                                                <span className="min-w-0 flex-1 truncate">
+                                                    {choice.label}
+                                                </span>
+                                                {choice.kind && (
+                                                    <span className="text-[10px] text-muted-foreground">
+                                                        {choice.kind}
+                                                    </span>
+                                                )}
+                                                {checked && <Check size={14} />}
+                                            </DropdownMenu.Item>
+                                        );
+                                    })}
+                                    {canCreateOption && (
+                                        <CreatePropertyOptionItem
+                                            option={query.trim()}
+                                            selectedOptions={selected}
+                                            busy={busy}
+                                            onCreate={onCreateOption}
+                                            onBusyChange={setBusy}
+                                            onError={setError}
+                                            onCreated={(result) => {
+                                                setOptions(
+                                                    result.property.config
+                                                        .options ?? [],
+                                                );
+                                                setDraft(result.value);
+                                                setQuery('');
+                                                if (property.type === 'select')
+                                                    setOpen(false);
+                                            }}
+                                        />
+                                    )}
+                                    {!filteredChoices.length &&
+                                        !canCreateOption && (
+                                            <p className="px-3 py-5 text-center text-xs text-muted-foreground">
+                                                {choices.length
+                                                    ? 'No matches.'
+                                                    : 'No options yet. Add options in the property settings.'}
+                                            </p>
+                                        )}
+                                </div>
+                                {property.type === 'mention' &&
+                                    selected.length > 0 && (
+                                        <>
+                                            <DropdownMenu.Separator className="my-1 h-px bg-border/60" />
+                                            {selected.map((id) => (
+                                                <DropdownMenu.Item
+                                                    key={id}
+                                                    asChild
+                                                    className="db-menu-item"
+                                                >
+                                                    <a
+                                                        href={`/workspaces/${workspaceId}/nodes/${id}`}
+                                                    >
+                                                        <ArrowUpRight
+                                                            size={14}
+                                                        />
+                                                        <span className="truncate">
+                                                            Open{' '}
+                                                            {candidates.find(
+                                                                (candidate) =>
+                                                                    candidate.id ===
+                                                                    id,
+                                                            )?.title ??
+                                                                'reference'}
+                                                        </span>
+                                                    </a>
+                                                </DropdownMenu.Item>
+                                            ))}
+                                        </>
+                                    )}
+                            </>
+                        )}
+                        {draft !== null &&
+                            draft !== undefined &&
+                            draft !== '' &&
+                            (!Array.isArray(draft) || selected.length > 0) && (
+                                <>
+                                    <DropdownMenu.Separator className="my-1 h-px bg-border/60" />
+                                    <DropdownMenu.Item
+                                        disabled={busy}
+                                        className="db-menu-item text-muted-foreground"
+                                        onSelect={() => void save(null)}
+                                    >
+                                        <X size={14} />
+                                        Clear value
+                                    </DropdownMenu.Item>
+                                </>
+                            )}
+                    </DropdownMenu.Content>
                 </DropdownMenu.Root>
             ) : (
                 <input

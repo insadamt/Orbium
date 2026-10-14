@@ -1,4 +1,4 @@
-import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
+import * as DropdownMenu from '@/components/ui/dropdown-menu';
 import { Plus } from 'lucide-react';
 import type { CreatedPropertyOption } from './create-property-option';
 

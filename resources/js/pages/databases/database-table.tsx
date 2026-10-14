@@ -1,5 +1,5 @@
 import { Link, router } from '@inertiajs/react';
-import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
+import * as DropdownMenu from '@/components/ui/dropdown-menu';
 import {
     ArrowUpRight,
     Ellipsis,
@@ -174,61 +174,50 @@ export default function DatabaseTable({
                                                 <Ellipsis size={15} />
                                             </button>
                                         </DropdownMenu.Trigger>
-                                        <DropdownMenu.Portal>
-                                            <DropdownMenu.Content
-                                                onCloseAutoFocus={(event) => {
-                                                    if (
-                                                        renamingId ===
-                                                        document.id
-                                                    )
-                                                        event.preventDefault();
-                                                }}
-                                                className="db-menu"
-                                                align="end"
-                                                sideOffset={4}
+                                        <DropdownMenu.Content
+                                            onCloseAutoFocus={(event) => {
+                                                if (renamingId === document.id)
+                                                    event.preventDefault();
+                                            }}
+                                            className="db-menu"
+                                            align="end"
+                                            sideOffset={4}
+                                        >
+                                            <DropdownMenu.Item
+                                                asChild
+                                                className="db-menu-item"
                                             >
-                                                <DropdownMenu.Item
-                                                    asChild
-                                                    className="db-menu-item"
+                                                <Link
+                                                    href={`/workspaces/${workspaceId}/documents/${document.id}`}
                                                 >
-                                                    <Link
-                                                        href={`/workspaces/${workspaceId}/documents/${document.id}`}
-                                                    >
-                                                        <ArrowUpRight
-                                                            size={14}
-                                                        />
-                                                        Open document
-                                                    </Link>
-                                                </DropdownMenu.Item>
-                                                <DropdownMenu.Item
-                                                    className="db-menu-item"
-                                                    onSelect={() => {
-                                                        cancelRename.current = false;
-                                                        setDraftTitle(
-                                                            document.title,
-                                                        );
-                                                        setRenamingId(
-                                                            document.id,
-                                                        );
-                                                    }}
-                                                >
-                                                    <Pencil size={14} />
-                                                    Rename
-                                                </DropdownMenu.Item>
-                                                <DropdownMenu.Separator className="my-1 h-px bg-border" />
-                                                <DropdownMenu.Item
-                                                    className="db-menu-item text-destructive"
-                                                    onSelect={() =>
-                                                        onTrashDocument(
-                                                            document,
-                                                        )
-                                                    }
-                                                >
-                                                    <Trash2 size={14} />
-                                                    Move to Trash
-                                                </DropdownMenu.Item>
-                                            </DropdownMenu.Content>
-                                        </DropdownMenu.Portal>
+                                                    <ArrowUpRight size={14} />
+                                                    Open document
+                                                </Link>
+                                            </DropdownMenu.Item>
+                                            <DropdownMenu.Item
+                                                className="db-menu-item"
+                                                onSelect={() => {
+                                                    cancelRename.current = false;
+                                                    setDraftTitle(
+                                                        document.title,
+                                                    );
+                                                    setRenamingId(document.id);
+                                                }}
+                                            >
+                                                <Pencil size={14} />
+                                                Rename
+                                            </DropdownMenu.Item>
+                                            <DropdownMenu.Separator className="my-1 h-px bg-border" />
+                                            <DropdownMenu.Item
+                                                className="db-menu-item text-destructive"
+                                                onSelect={() =>
+                                                    onTrashDocument(document)
+                                                }
+                                            >
+                                                <Trash2 size={14} />
+                                                Move to Trash
+                                            </DropdownMenu.Item>
+                                        </DropdownMenu.Content>
                                     </DropdownMenu.Root>
                                 </div>
                             </td>

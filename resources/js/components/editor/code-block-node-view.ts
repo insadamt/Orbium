@@ -1,3 +1,4 @@
+import { mountAppSelect } from '@/components/ui/mount-app-select';
 import type { NodeViewRendererProps } from '@tiptap/core';
 import type { NodeView } from '@tiptap/pm/view';
 import { codeLanguages, normalizeCodeLanguage } from './code-languages';
@@ -90,21 +91,7 @@ export function createCodeBlockNodeView({
         { signal: eventController.signal },
     );
     selectContainer.append(select);
-    const chevron = document.createElementNS(svgNamespace, 'svg');
-    chevron.setAttribute('width', '14');
-    chevron.setAttribute('height', '14');
-    chevron.setAttribute('viewBox', '0 0 24 24');
-    chevron.setAttribute('fill', 'none');
-    chevron.setAttribute('stroke', 'currentColor');
-    chevron.setAttribute('stroke-width', '2');
-    chevron.setAttribute('stroke-linecap', 'round');
-    chevron.setAttribute('stroke-linejoin', 'round');
-    chevron.setAttribute('aria-hidden', 'true');
-    chevron.classList.add('pointer-events-none', 'absolute', 'right-1');
-    const chevronPath = document.createElementNS(svgNamespace, 'path');
-    chevronPath.setAttribute('d', 'm6 9 6 6 6-6');
-    chevron.append(chevronPath);
-    selectContainer.append(chevron);
+    const languageSelect = mountAppSelect(select);
     languageGroup.append(selectContainer);
     toolbar.append(languageGroup);
 
@@ -159,6 +146,7 @@ export function createCodeBlockNodeView({
                 languageIcon.replaceWith(nextIcon);
                 languageIcon = nextIcon;
             }
+            languageSelect.update();
             return true;
         },
         stopEvent(event) {
@@ -170,6 +158,7 @@ export function createCodeBlockNodeView({
         destroy() {
             destroyed = true;
             eventController.abort();
+            languageSelect.destroy();
             if (copyStatusTimeout !== null)
                 window.clearTimeout(copyStatusTimeout);
         },

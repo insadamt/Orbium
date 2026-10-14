@@ -1,3 +1,4 @@
+import { AppSelect } from '@/components/ui/app-select';
 import type { OfficeExportOptions } from './office-export';
 
 type PageOptions = Omit<OfficeExportOptions, 'format'>;
@@ -17,37 +18,42 @@ export function OfficeExportPageOptions({
             <div className="grid grid-cols-2 gap-3">
                 <label>
                     Paper size
-                    <select
-                        className="mt-1 block w-full rounded-lg border bg-background p-2"
+                    <AppSelect
+                        label="Paper size"
+                        disabled={disabled}
+                        className="mt-1"
                         value={value.paper}
-                        onChange={(event) =>
+                        onValueChange={(nextValue) =>
                             onChange({
                                 ...value,
-                                paper: event.target
-                                    .value as PageOptions['paper'],
+                                paper: nextValue as PageOptions['paper'],
                             })
                         }
-                    >
-                        <option value="a4">A4</option>
-                        <option value="letter">Letter</option>
-                    </select>
+                        options={[
+                            { value: 'a4', label: 'A4' },
+                            { value: 'letter', label: 'Letter' },
+                        ]}
+                    />
                 </label>
                 <label>
                     Orientation
-                    <select
-                        className="mt-1 block w-full rounded-lg border bg-background p-2"
+                    <AppSelect
+                        label="Orientation"
+                        disabled={disabled}
+                        className="mt-1"
                         value={value.orientation}
-                        onChange={(event) =>
+                        onValueChange={(nextValue) =>
                             onChange({
                                 ...value,
-                                orientation: event.target
-                                    .value as PageOptions['orientation'],
+                                orientation:
+                                    nextValue as PageOptions['orientation'],
                             })
                         }
-                    >
-                        <option value="portrait">Portrait</option>
-                        <option value="landscape">Landscape</option>
-                    </select>
+                        options={[
+                            { value: 'portrait', label: 'Portrait' },
+                            { value: 'landscape', label: 'Landscape' },
+                        ]}
+                    />
                 </label>
             </div>
             <label className="flex items-center gap-2">

@@ -1,3 +1,4 @@
+import { mountPlayfulTaskCheckbox } from '../../playful-task-checkbox';
 import type { OrbiumMetadata } from '../dialect/metadata';
 import { applyMarkdownDividerAppearance } from './markdown-divider-appearance';
 import { EditorView, WidgetType } from '@codemirror/view';
@@ -37,6 +38,11 @@ export class MarkdownListMarker extends WidgetType {
         return false;
     }
 }
+
+const taskCheckboxMounts = new WeakMap<
+    HTMLElement,
+    ReturnType<typeof mountPlayfulTaskCheckbox>
+>();
 
 export class MarkdownTaskCheckbox extends WidgetType {
     constructor(
@@ -78,10 +84,16 @@ export class MarkdownTaskCheckbox extends WidgetType {
                 userEvent: 'input.task',
             });
         });
-        return checkbox;
+        const mount = mountPlayfulTaskCheckbox(checkbox);
+        taskCheckboxMounts.set(mount.host, mount);
+        return mount.host;
     }
-    updateDOM(dom: HTMLElement) {
-        if (!(dom instanceof HTMLInputElement)) return false;
+    updateDOM(host: HTMLElement) {
+        const dom =
+            host instanceof HTMLInputElement
+                ? host
+                : host.querySelector('input');
+        if (!dom) return false;
         dom.checked = this.checked;
         dom.disabled = this.disabled;
         dom.dataset.markdownTaskFrom = String(this.from);
@@ -89,7 +101,12 @@ export class MarkdownTaskCheckbox extends WidgetType {
             'aria-label',
             this.checked ? 'Mark task incomplete' : 'Mark task complete',
         );
+        taskCheckboxMounts.get(host)?.update();
         return true;
+    }
+    destroy(dom: HTMLElement) {
+        taskCheckboxMounts.get(dom)?.destroy();
+        taskCheckboxMounts.delete(dom);
     }
     ignoreEvent() {
         return true;

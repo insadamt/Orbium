@@ -1,5 +1,6 @@
 import { Check, Palette } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import * as Menu from '@/components/ui/dropdown-menu';
 
 const PRESET_COLORS = [
     { name: 'Red', value: 'preset:red' },
@@ -35,25 +36,8 @@ export function TextColorMenu({
     const pickerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        if (!active) {
-            setOpen(false);
-            return;
-        }
-        if (!open) return;
-        const dismiss = (event: PointerEvent) => {
-            if (!pickerRef.current?.contains(event.target as Node))
-                setOpen(false);
-        };
-        const dismissOnEscape = (event: KeyboardEvent) => {
-            if (event.key === 'Escape') setOpen(false);
-        };
-        document.addEventListener('pointerdown', dismiss);
-        document.addEventListener('keydown', dismissOnEscape);
-        return () => {
-            document.removeEventListener('pointerdown', dismiss);
-            document.removeEventListener('keydown', dismissOnEscape);
-        };
-    }, [open, active]);
+        if (!active) setOpen(false);
+    }, [active]);
 
     function chooseColor(color: string | null, keepPickerOpen = false) {
         onChoose(color, keepPickerOpen);
@@ -62,58 +46,72 @@ export function TextColorMenu({
 
     return (
         <div ref={pickerRef} className="relative">
-            <button
-                type="button"
-                aria-label="Text color"
-                aria-expanded={open}
-                aria-haspopup="true"
-                onMouseDown={(event) => event.preventDefault()}
-                onClick={() => {
-                    onOpen();
-                    setOpen((wasOpen) => !wasOpen);
+            <Menu.Root
+                modal={false}
+                open={active && open}
+                onOpenChange={(nextOpen) => {
+                    if (nextOpen) onOpen();
+                    setOpen(nextOpen);
                 }}
-                className={`flex items-center gap-1 rounded p-2 ${open ? 'bg-accent' : 'hover:bg-accent'}`}
             >
-                <Palette size={16} />
-                <span
-                    aria-hidden="true"
-                    className="h-1 w-3 rounded-full"
-                    style={{
-                        backgroundColor: displayedTextColor(currentColor),
-                    }}
-                />
-            </button>
-            {active && open && (
-                <div
-                    role="group"
+                <Menu.Trigger asChild>
+                    <button
+                        type="button"
+                        aria-label="Text color"
+                        aria-expanded={open}
+                        aria-haspopup="true"
+                        onMouseDown={(event) => event.preventDefault()}
+                        className={`flex items-center gap-1 rounded p-2 ${open ? 'bg-accent' : 'hover:bg-accent'}`}
+                    >
+                        <Palette size={16} />
+                        <span
+                            aria-hidden="true"
+                            className="h-1 w-3 rounded-full"
+                            style={{
+                                backgroundColor:
+                                    displayedTextColor(currentColor),
+                            }}
+                        />
+                    </button>
+                </Menu.Trigger>
+                <Menu.Content
+                    container={pickerRef.current}
+                    align="end"
+                    sideOffset={8}
                     aria-label="Text colors"
-                    className="orbium-editor-toolbar glass-surface absolute top-full right-0 z-50 mt-2 w-52 rounded-xl border border-border p-3 shadow-xl"
+                    className="orbium-editor-toolbar w-52 p-3"
+                    onCloseAutoFocus={(event) => event.preventDefault()}
                 >
                     <p className="mb-2 text-xs font-medium text-muted-foreground">
                         Text color
                     </p>
                     <div className="grid grid-cols-4 gap-2">
                         {PRESET_COLORS.map(({ name, value }) => (
-                            <button
-                                key={value}
-                                type="button"
-                                aria-label={name}
-                                aria-pressed={currentColor === value}
-                                title={name}
-                                onMouseDown={(event) => event.preventDefault()}
-                                onClick={() => chooseColor(value)}
-                                className="flex size-7 items-center justify-center rounded-full border border-border/60"
-                                style={{
-                                    backgroundColor: displayedTextColor(value),
-                                }}
-                            >
-                                {currentColor === value && (
-                                    <Check
-                                        size={14}
-                                        className="text-background"
-                                    />
-                                )}
-                            </button>
+                            <Menu.Item key={value} asChild textValue={name}>
+                                <button
+                                    type="button"
+                                    data-menu-swatch
+                                    aria-label={name}
+                                    aria-pressed={currentColor === value}
+                                    title={name}
+                                    onMouseDown={(event) =>
+                                        event.preventDefault()
+                                    }
+                                    onClick={() => chooseColor(value)}
+                                    className="flex size-7 items-center justify-center rounded-full border border-border/60"
+                                    style={{
+                                        backgroundColor:
+                                            displayedTextColor(value),
+                                    }}
+                                >
+                                    {currentColor === value && (
+                                        <Check
+                                            size={14}
+                                            className="text-background"
+                                        />
+                                    )}
+                                </button>
+                            </Menu.Item>
                         ))}
                     </div>
                     <label className="mt-3 flex cursor-pointer items-center justify-between gap-2 rounded-md px-1 py-1 text-xs hover:bg-accent">
@@ -133,16 +131,18 @@ export function TextColorMenu({
                             className="h-7 w-9 cursor-pointer rounded border border-border bg-transparent p-0.5"
                         />
                     </label>
-                    <button
-                        type="button"
-                        onMouseDown={(event) => event.preventDefault()}
-                        onClick={() => chooseColor(null)}
-                        className="mt-1 w-full rounded-md px-1 py-1 text-left text-xs hover:bg-accent"
-                    >
-                        Default text color
-                    </button>
-                </div>
-            )}
+                    <Menu.Item asChild>
+                        <button
+                            type="button"
+                            onMouseDown={(event) => event.preventDefault()}
+                            onClick={() => chooseColor(null)}
+                            className="mt-1 w-full rounded-md px-1 py-1 text-left text-xs hover:bg-accent"
+                        >
+                            Default text color
+                        </button>
+                    </Menu.Item>
+                </Menu.Content>
+            </Menu.Root>
         </div>
     );
 }

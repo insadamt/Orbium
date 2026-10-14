@@ -44,6 +44,7 @@ export function useExplorerLayoutMotion(
             return;
         }
         const currentCards = new Map<number, CardSnapshot>();
+        const containerBounds = container.current.getBoundingClientRect();
         for (const element of container.current.querySelectorAll<HTMLElement>(
             '[data-node-id]',
         )) {
@@ -59,9 +60,11 @@ export function useExplorerLayoutMotion(
                 element,
                 left:
                     bounds.left -
+                    containerBounds.left -
                     (animated ? Number(gsap.getProperty(element, 'x')) : 0),
                 top:
                     bounds.top -
+                    containerBounds.top -
                     (animated ? Number(gsap.getProperty(element, 'y')) : 0),
                 width: bounds.width,
                 height: bounds.height,
@@ -143,8 +146,8 @@ export function useExplorerLayoutMotion(
             gsap.set(exit, {
                 x: 0,
                 y: 0,
-                left: old.left + oldX,
-                top: old.top + oldY,
+                left: containerBounds.left + old.left + oldX,
+                top: containerBounds.top + old.top + oldY,
                 width: old.width,
                 height: old.height,
                 minHeight: 0,

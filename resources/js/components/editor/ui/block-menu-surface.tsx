@@ -7,9 +7,11 @@ import {
     Copy,
     Files,
     Trash2,
+    Type,
+    Languages,
 } from 'lucide-react';
-import { useLayoutEffect, useRef, type ReactNode } from 'react';
-import { AppSelect } from '@/components/ui/app-select';
+import { PositionedMenu } from '@/components/ui/positioned-menu';
+import * as Menu from '@/components/ui/dropdown-menu';
 
 export const blockConversions = [
     'Text',
@@ -59,210 +61,113 @@ export function BlockMenuSurface({
     onDirection,
     onAction,
 }: Props) {
-    const menuRef = useRef<HTMLDivElement>(null);
-    useLayoutEffect(() => {
-        const menu = menuRef.current;
-        if (!menu) return;
-        const bounds = menu.getBoundingClientRect();
-        const preferredLeft =
-            anchor.x - (anchor.direction === 'rtl' ? bounds.width : 0);
-        menu.style.left = `${Math.max(8, Math.min(preferredLeft, window.innerWidth - bounds.width - 8))}px`;
-        menu.style.top = `${Math.max(8, Math.min(anchor.y, window.innerHeight - bounds.height - 8))}px`;
-        menu.style.visibility = 'visible';
-        menu.querySelector<HTMLButtonElement>('[role="combobox"]')?.focus({
-            preventScroll: true,
-        });
-    }, [anchor]);
     function perform(action: () => void) {
         action();
         onClose();
     }
     return (
-        <div
-            ref={menuRef}
-            role="dialog"
-            aria-label="Block options"
-            data-block-context-menu
-            className="glass-surface fixed z-50 max-h-[calc(100vh-16px)] w-64 overflow-y-auto rounded-xl border border-border p-2 text-sm text-foreground shadow-xl"
-            style={{ left: anchor.x, top: anchor.y, visibility: 'hidden' }}
-            onKeyDown={(event) => {
-                if (
-                    event.key === 'Escape' &&
-                    !(
-                        event.target instanceof Element &&
-                        event.target.closest('.block-context-select-content')
-                    )
-                ) {
-                    event.preventDefault();
-                    onClose();
-                    onFocusEditor();
-                }
-            }}
-            onClick={(event) => event.stopPropagation()}
+        <PositionedMenu
+            position={anchor}
+            label="Block options"
+            onClose={onClose}
+            blockContextMenu
+            onRestoreFocus={onFocusEditor}
         >
-            <div className="block px-1 text-xs font-medium text-muted-foreground">
-                <span>Block type</span>
-                <AppSelect
-                    label="Turn block into"
-                    value={
-                        currentBlockType &&
-                        blockConversions.includes(currentBlockType)
-                            ? currentBlockType
-                            : ''
-                    }
-                    placeholder={currentBlockType ?? 'Turn into…'}
-                    className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground"
-                    contentClassName="block-context-select-content"
-                    onValueChange={(value) => perform(() => onConvert(value))}
-                    options={blockConversions.map((label) => ({
-                        value: label,
-                        label,
-                    }))}
-                />
-            </div>
-
-            <fieldset className="mt-3">
-                <legend className="px-1 text-xs font-medium text-muted-foreground">
-                    Text alignment
-                </legend>
-                <div className="mt-1 grid grid-cols-3 gap-1">
-                    <ChoiceButton
-                        label="Left"
-                        title="Align left"
-                        icon={<AlignLeft size={15} />}
-                        active={formatting.alignment === 'left'}
-                        disabled={!formatting.canAlign}
-                        onClick={() => perform(() => onAlignment('left'))}
-                    />
-                    <ChoiceButton
-                        label="Center"
-                        title="Align center"
-                        icon={<AlignCenter size={15} />}
-                        active={formatting.alignment === 'center'}
-                        disabled={!formatting.canAlign}
-                        onClick={() => perform(() => onAlignment('center'))}
-                    />
-                    <ChoiceButton
-                        label="Right"
-                        title="Align right"
-                        icon={<AlignRight size={15} />}
-                        active={formatting.alignment === 'right'}
-                        disabled={!formatting.canAlign}
-                        onClick={() => perform(() => onAlignment('right'))}
-                    />
-                </div>
-            </fieldset>
-
-            <fieldset className="mt-3">
-                <legend className="px-1 text-xs font-medium text-muted-foreground">
-                    Text direction
-                </legend>
-                <div className="mt-1 grid grid-cols-3 gap-1">
-                    {(['auto', 'ltr', 'rtl'] as const).map((direction) => (
-                        <ChoiceButton
-                            key={direction}
-                            label={
-                                direction === 'auto'
-                                    ? 'Auto'
-                                    : direction.toUpperCase()
-                            }
-                            title={`Set ${direction === 'auto' ? 'automatic' : direction.toUpperCase()} block direction`}
-                            active={formatting.direction === direction}
-                            onClick={() =>
-                                perform(() => onDirection(direction))
-                            }
-                        />
+            <Menu.Sub>
+                <Menu.SubTrigger>
+                    <Type size={16} /> {currentBlockType ?? 'Turn into…'}
+                </Menu.SubTrigger>
+                <Menu.SubContent
+                    className="block-context-select-content"
+                    data-block-context-menu
+                >
+                    <Menu.Label>Turn into</Menu.Label>
+                    {blockConversions.map((label) => (
+                        <Menu.Item
+                            key={label}
+                            onSelect={() => perform(() => onConvert(label))}
+                        >
+                            {label}
+                        </Menu.Item>
                     ))}
-                </div>
-            </fieldset>
-
-            <div className="mt-3 grid grid-cols-2 gap-1 border-t border-border/70 pt-2">
-                <ActionButton
-                    icon={<ArrowUp size={15} />}
-                    label="Move up"
-                    disabled={!canMoveUp}
-                    onClick={() => perform(() => onAction('up'))}
-                />
-                <ActionButton
-                    icon={<ArrowDown size={15} />}
-                    label="Move down"
-                    disabled={!canMoveDown}
-                    onClick={() => perform(() => onAction('down'))}
-                />
-                <ActionButton
-                    icon={<Files size={15} />}
-                    label="Duplicate"
-                    onClick={() => perform(() => onAction('duplicate'))}
-                />
-                <ActionButton
-                    icon={<Copy size={15} />}
-                    label="Copy text"
-                    onClick={() => perform(() => onAction('copy'))}
-                />
-            </div>
-            <ActionButton
-                icon={<Trash2 size={15} />}
-                label="Delete block"
-                destructive
-                onClick={() => perform(() => onAction('delete'))}
-            />
-        </div>
-    );
-}
-
-function ChoiceButton({
-    label,
-    title,
-    icon,
-    active,
-    disabled = false,
-    onClick,
-}: {
-    label: string;
-    title: string;
-    icon?: ReactNode;
-    active: boolean;
-    disabled?: boolean;
-    onClick: () => void;
-}) {
-    return (
-        <button
-            type="button"
-            title={title}
-            aria-label={title}
-            aria-pressed={active}
-            disabled={disabled}
-            onClick={onClick}
-            className={`flex items-center justify-center gap-1 rounded-md border px-1.5 py-1.5 text-xs hover:bg-accent disabled:cursor-not-allowed disabled:opacity-40 ${active ? 'border-foreground/40 bg-accent' : 'border-border/70'}`}
-        >
-            {icon}
-            {label}
-        </button>
-    );
-}
-
-function ActionButton({
-    icon,
-    label,
-    onClick,
-    disabled = false,
-    destructive = false,
-}: {
-    icon: ReactNode;
-    label: string;
-    onClick: () => void;
-    disabled?: boolean;
-    destructive?: boolean;
-}) {
-    return (
-        <button
-            type="button"
-            disabled={disabled}
-            onClick={onClick}
-            className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs hover:bg-accent disabled:cursor-not-allowed disabled:opacity-40 ${destructive ? 'mt-1 text-destructive' : ''}`}
-        >
-            {icon}
-            {label}
-        </button>
+                </Menu.SubContent>
+            </Menu.Sub>
+            <Menu.Sub>
+                <Menu.SubTrigger disabled={!formatting.canAlign}>
+                    <AlignLeft size={16} /> Text alignment
+                </Menu.SubTrigger>
+                <Menu.SubContent data-block-context-menu>
+                    <Menu.RadioGroup
+                        value={formatting.alignment ?? 'left'}
+                        onValueChange={(value) =>
+                            perform(() =>
+                                onAlignment(
+                                    value as 'left' | 'center' | 'right',
+                                ),
+                            )
+                        }
+                    >
+                        <Menu.RadioItem value="left">
+                            <AlignLeft size={16} /> Left
+                        </Menu.RadioItem>
+                        <Menu.RadioItem value="center">
+                            <AlignCenter size={16} /> Center
+                        </Menu.RadioItem>
+                        <Menu.RadioItem value="right">
+                            <AlignRight size={16} /> Right
+                        </Menu.RadioItem>
+                    </Menu.RadioGroup>
+                </Menu.SubContent>
+            </Menu.Sub>
+            <Menu.Sub>
+                <Menu.SubTrigger>
+                    <Languages size={16} /> Text direction
+                </Menu.SubTrigger>
+                <Menu.SubContent data-block-context-menu>
+                    <Menu.RadioGroup
+                        value={formatting.direction}
+                        onValueChange={(value) =>
+                            perform(() =>
+                                onDirection(value as 'auto' | 'ltr' | 'rtl'),
+                            )
+                        }
+                    >
+                        <Menu.RadioItem value="auto">Auto</Menu.RadioItem>
+                        <Menu.RadioItem value="ltr">
+                            Left to right
+                        </Menu.RadioItem>
+                        <Menu.RadioItem value="rtl">
+                            Right to left
+                        </Menu.RadioItem>
+                    </Menu.RadioGroup>
+                </Menu.SubContent>
+            </Menu.Sub>
+            <Menu.Separator />
+            <Menu.Item
+                disabled={!canMoveUp}
+                onSelect={() => perform(() => onAction('up'))}
+            >
+                <ArrowUp size={16} /> Move up
+            </Menu.Item>
+            <Menu.Item
+                disabled={!canMoveDown}
+                onSelect={() => perform(() => onAction('down'))}
+            >
+                <ArrowDown size={16} /> Move down
+            </Menu.Item>
+            <Menu.Item onSelect={() => perform(() => onAction('duplicate'))}>
+                <Files size={16} /> Duplicate
+            </Menu.Item>
+            <Menu.Item onSelect={() => perform(() => onAction('copy'))}>
+                <Copy size={16} /> Copy text
+            </Menu.Item>
+            <Menu.Separator />
+            <Menu.Item
+                variant="destructive"
+                onSelect={() => perform(() => onAction('delete'))}
+            >
+                <Trash2 size={16} /> Delete block
+            </Menu.Item>
+        </PositionedMenu>
     );
 }

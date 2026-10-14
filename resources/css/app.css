@@ -19,6 +19,7 @@
 @import './editor-styles.css';
 @import './editor-styles-responsive.css';
 @import './editor-document.css';
+@import './editor-task-checkbox.css';
 @import './editor-table.css';
 @import './editor-scroll-layout.css';
 @import './document-outline.css';
@@ -28,6 +29,7 @@
 @import './navigation-tab-motion.css';
 @import './text-surfaces.css';
 @import './appearance-frosted-components.css';
+@import './app-menus.css';
 
 .table-edge-control {
     pointer-events: auto;

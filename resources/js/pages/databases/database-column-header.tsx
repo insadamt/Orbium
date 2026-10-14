@@ -1,4 +1,4 @@
-import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
+import * as DropdownMenu from '@/components/ui/dropdown-menu';
 import {
     ArrowDownAZ,
     ArrowLeft,
@@ -110,70 +110,68 @@ export default function DatabaseColumnHeader({
                         />
                     </button>
                 </DropdownMenu.Trigger>
-                <DropdownMenu.Portal>
-                    <DropdownMenu.Content
-                        className="db-menu"
-                        align="start"
-                        sideOffset={4}
+                <DropdownMenu.Content
+                    className="db-menu"
+                    align="start"
+                    sideOffset={4}
+                >
+                    <DropdownMenu.Label className="px-2.5 py-2 text-xs text-muted-foreground">
+                        {propertyTypes[property.type].label} property
+                    </DropdownMenu.Label>
+                    <DropdownMenu.Item
+                        onSelect={onEdit}
+                        className="db-menu-item"
                     >
-                        <DropdownMenu.Label className="px-2.5 py-2 text-xs text-muted-foreground">
-                            {propertyTypes[property.type].label} property
-                        </DropdownMenu.Label>
-                        <DropdownMenu.Item
-                            onSelect={onEdit}
-                            className="db-menu-item"
-                        >
-                            <Settings2 size={14} />
-                            Edit property
-                        </DropdownMenu.Item>
-                        <DropdownMenu.Separator className="my-1 h-px bg-border/60" />
-                        <DropdownMenu.Item
-                            onSelect={() => sort('asc')}
-                            className="db-menu-item"
-                        >
-                            <ArrowUpAZ size={14} />
-                            Sort ascending
-                        </DropdownMenu.Item>
-                        <DropdownMenu.Item
-                            onSelect={() => sort('desc')}
-                            className="db-menu-item"
-                        >
-                            <ArrowDownAZ size={14} />
-                            Sort descending
-                        </DropdownMenu.Item>
-                        <DropdownMenu.Separator className="my-1 h-px bg-border/60" />
-                        <DropdownMenu.Item
-                            disabled={index === 0}
-                            onSelect={() => move(-1)}
-                            className="db-menu-item"
-                        >
-                            <ArrowLeft size={14} />
-                            Move left
-                        </DropdownMenu.Item>
-                        <DropdownMenu.Item
-                            disabled={index === visibleIds.length - 1}
-                            onSelect={() => move(1)}
-                            className="db-menu-item"
-                        >
-                            <ArrowRight size={14} />
-                            Move right
-                        </DropdownMenu.Item>
-                        <DropdownMenu.Item
-                            onSelect={() =>
-                                onSaveView({
-                                    ...config,
-                                    visible_property_ids: visibleIds.filter(
-                                        (id) => id !== property.id,
-                                    ),
-                                })
-                            }
-                            className="db-menu-item"
-                        >
-                            <EyeOff size={14} />
-                            Hide in this view
-                        </DropdownMenu.Item>
-                    </DropdownMenu.Content>
-                </DropdownMenu.Portal>
+                        <Settings2 size={14} />
+                        Edit property
+                    </DropdownMenu.Item>
+                    <DropdownMenu.Separator className="my-1 h-px bg-border/60" />
+                    <DropdownMenu.Item
+                        onSelect={() => sort('asc')}
+                        className="db-menu-item"
+                    >
+                        <ArrowUpAZ size={14} />
+                        Sort ascending
+                    </DropdownMenu.Item>
+                    <DropdownMenu.Item
+                        onSelect={() => sort('desc')}
+                        className="db-menu-item"
+                    >
+                        <ArrowDownAZ size={14} />
+                        Sort descending
+                    </DropdownMenu.Item>
+                    <DropdownMenu.Separator className="my-1 h-px bg-border/60" />
+                    <DropdownMenu.Item
+                        disabled={index === 0}
+                        onSelect={() => move(-1)}
+                        className="db-menu-item"
+                    >
+                        <ArrowLeft size={14} />
+                        Move left
+                    </DropdownMenu.Item>
+                    <DropdownMenu.Item
+                        disabled={index === visibleIds.length - 1}
+                        onSelect={() => move(1)}
+                        className="db-menu-item"
+                    >
+                        <ArrowRight size={14} />
+                        Move right
+                    </DropdownMenu.Item>
+                    <DropdownMenu.Item
+                        onSelect={() =>
+                            onSaveView({
+                                ...config,
+                                visible_property_ids: visibleIds.filter(
+                                    (id) => id !== property.id,
+                                ),
+                            })
+                        }
+                        className="db-menu-item"
+                    >
+                        <EyeOff size={14} />
+                        Hide in this view
+                    </DropdownMenu.Item>
+                </DropdownMenu.Content>
             </DropdownMenu.Root>
             <div
                 role="separator"

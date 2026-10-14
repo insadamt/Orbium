@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { LibraryPicker } from '@/components/library/library-picker';
 import type { LibraryFile } from '@/components/library/library-api';
-import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
+import * as DropdownMenu from '@/components/ui/dropdown-menu';
 import { ImagePlus, Pencil, RotateCcw } from 'lucide-react';
 
 type PageMediaEditButtonProps = {
@@ -55,38 +55,36 @@ export function PageMediaEditButton({
                         {uploading ? 'Saving…' : 'Edit'}
                     </button>
                 </DropdownMenu.Trigger>
-                <DropdownMenu.Portal>
-                    <DropdownMenu.Content
-                        align="end"
-                        sideOffset={6}
-                        className="glass-surface z-50 min-w-44 rounded-xl border border-border p-1.5 text-foreground shadow-xl"
+                <DropdownMenu.Content
+                    align="end"
+                    sideOffset={6}
+                    className="glass-surface z-50 min-w-44 rounded-xl border border-border p-1.5 text-foreground shadow-xl"
+                >
+                    <DropdownMenu.Item
+                        onSelect={onChooseImage}
+                        className={itemClass}
                     >
+                        <ImagePlus size={15} aria-hidden="true" />
+                        Change {kind}
+                    </DropdownMenu.Item>
+                    {workspaceId && onChooseLibrary && (
                         <DropdownMenu.Item
-                            onSelect={onChooseImage}
+                            onSelect={() => setLibraryOpen(true)}
                             className={itemClass}
                         >
-                            <ImagePlus size={15} aria-hidden="true" />
-                            Change {kind}
+                            Choose from Library
                         </DropdownMenu.Item>
-                        {workspaceId && onChooseLibrary && (
-                            <DropdownMenu.Item
-                                onSelect={() => setLibraryOpen(true)}
-                                className={itemClass}
-                            >
-                                Choose from Library
-                            </DropdownMenu.Item>
-                        )}
-                        {hasCustomImage && (
-                            <DropdownMenu.Item
-                                onSelect={onResetImage}
-                                className={itemClass}
-                            >
-                                <RotateCcw size={15} aria-hidden="true" />
-                                Reset to default
-                            </DropdownMenu.Item>
-                        )}
-                    </DropdownMenu.Content>
-                </DropdownMenu.Portal>
+                    )}
+                    {hasCustomImage && (
+                        <DropdownMenu.Item
+                            onSelect={onResetImage}
+                            className={itemClass}
+                        >
+                            <RotateCcw size={15} aria-hidden="true" />
+                            Reset to default
+                        </DropdownMenu.Item>
+                    )}
+                </DropdownMenu.Content>
             </DropdownMenu.Root>
         </>
     );

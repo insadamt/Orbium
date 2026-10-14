@@ -7,7 +7,7 @@ import {
     Trash2,
     X,
 } from 'lucide-react';
-import * as Menu from '@radix-ui/react-dropdown-menu';
+import * as Menu from '@/components/ui/dropdown-menu';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { toast } from 'sonner';
 import { TrashEntryAvatar } from './trash-entry-avatar';
@@ -145,41 +145,37 @@ export function TrashDetailsPanel({
                                             <MoreHorizontal size={17} />
                                         )}
                                     </Menu.Trigger>
-                                    <Menu.Portal>
-                                        <Menu.Content
-                                            className="floating-menu workspace-manager-menu"
-                                            align="end"
-                                            sideOffset={6}
-                                            onCloseAutoFocus={(event) => {
-                                                if (
-                                                    openingConfirmation.current
-                                                ) {
-                                                    event.preventDefault();
-                                                    openingConfirmation.current = false;
-                                                }
+                                    <Menu.Content
+                                        className="floating-menu workspace-manager-menu"
+                                        align="end"
+                                        sideOffset={6}
+                                        onCloseAutoFocus={(event) => {
+                                            if (openingConfirmation.current) {
+                                                event.preventDefault();
+                                                openingConfirmation.current = false;
+                                            }
+                                        }}
+                                    >
+                                        <Menu.Item
+                                            className="floating-menu-item"
+                                            onSelect={() =>
+                                                void restoreChild(child)
+                                            }
+                                        >
+                                            <RotateCcw size={14} />
+                                            Restore
+                                        </Menu.Item>
+                                        <Menu.Item
+                                            className="floating-menu-item text-destructive"
+                                            onSelect={() => {
+                                                openingConfirmation.current = true;
+                                                onDelete([child.key]);
                                             }}
                                         >
-                                            <Menu.Item
-                                                className="floating-menu-item"
-                                                onSelect={() =>
-                                                    void restoreChild(child)
-                                                }
-                                            >
-                                                <RotateCcw size={14} />
-                                                Restore
-                                            </Menu.Item>
-                                            <Menu.Item
-                                                className="floating-menu-item text-destructive"
-                                                onSelect={() => {
-                                                    openingConfirmation.current = true;
-                                                    onDelete([child.key]);
-                                                }}
-                                            >
-                                                <Trash2 size={14} />
-                                                Delete permanently
-                                            </Menu.Item>
-                                        </Menu.Content>
-                                    </Menu.Portal>
+                                            <Trash2 size={14} />
+                                            Delete permanently
+                                        </Menu.Item>
+                                    </Menu.Content>
                                 </Menu.Root>
                             )}
                         </div>

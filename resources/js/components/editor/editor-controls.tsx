@@ -1,3 +1,4 @@
+import { mountMenuHighlight } from '@/lib/menu-highlight';
 import { FormatButton } from './ui/format-button';
 import { measureEditorWork } from '@/lib/editor-performance';
 import type { Editor } from '@tiptap/core';
@@ -324,6 +325,14 @@ export function SuggestionMenu({
         }
     }, [menu]);
 
+    useEffect(() => {
+        if (menuRef.current)
+            return mountMenuHighlight(menuRef.current, {
+                itemSelector: '[role="option"]',
+                selectedSelector: '[aria-selected="true"]',
+            });
+    }, []);
+
     return createPortal(
         <div
             ref={menuRef}
@@ -331,7 +340,7 @@ export function SuggestionMenu({
             aria-label={
                 menu.type === 'slash' ? 'Block commands' : 'Mention items'
             }
-            className="glass-surface fixed z-50 max-h-72 w-64 max-w-[calc(100vw-16px)] overflow-auto rounded-xl border border-border p-1 shadow-xl"
+            className="app-menu-enter app-menu-content glass-surface fixed z-50 max-h-72 w-64 max-w-[calc(100vw-16px)] overflow-auto rounded-xl border border-border p-1 shadow-xl"
             style={{
                 left,
                 maxHeight: Math.max(48, Math.min(288, availableHeight)),
@@ -351,7 +360,7 @@ export function SuggestionMenu({
                     aria-selected={index === menu.selectedIndex}
                     onMouseDown={(event) => event.preventDefault()}
                     onClick={item.action}
-                    className={`block w-full rounded-md px-3 py-2 text-left text-sm hover:bg-accent ${index === menu.selectedIndex ? 'bg-accent' : ''}`}
+                    className="app-menu-option block w-full rounded-md px-3 py-2 text-left text-sm"
                 >
                     {item.label}
                 </button>

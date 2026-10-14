@@ -1,3 +1,4 @@
+import { mountAppSelect } from '@/components/ui/mount-app-select';
 import type { OrbiumMetadata } from '../dialect/metadata';
 import type { RichCell, RichTable } from './rich-model';
 import { button, element } from './widget-controls';
@@ -171,6 +172,7 @@ export function mountTableCellActions({
         }, true),
     );
     actions.append(alignment);
+    const alignmentSelect = mountAppSelect(alignment);
     const width = element(
         'input',
         'h-8 w-24 rounded border border-border bg-transparent px-2 text-xs hover:bg-accent',
@@ -201,6 +203,7 @@ export function mountTableCellActions({
     actions.append(width);
 
     return {
+        destroy: () => alignmentSelect.destroy(),
         registerStructuralControl(control: HTMLButtonElement) {
             structural.push(control);
         },
@@ -208,6 +211,7 @@ export function mountTableCellActions({
             const cell = table().rows[row]?.[column];
             alignment.value = String(cell?.metadata.align ?? '');
             width.value = String(cell?.metadata.colwidth?.[0] ?? '');
+            alignmentSelect.update();
         },
         update(disabled: boolean) {
             spanHint.hidden = !hasSpans();
@@ -222,6 +226,7 @@ export function mountTableCellActions({
                 split.disabled =
                 alignment.disabled =
                     disabled;
+            alignmentSelect.update();
             width.disabled = disabled || hasSpans();
             width.title = hasSpans()
                 ? 'Split spanning cells before changing column width.'

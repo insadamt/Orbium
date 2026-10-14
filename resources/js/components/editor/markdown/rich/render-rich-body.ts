@@ -1,3 +1,4 @@
+import { mountPlayfulTaskCheckbox } from '../../playful-task-checkbox';
 import { mountNestedMedia } from './nested-media-preview';
 import { applyMarkdownDividerAppearance } from '../preview/markdown-divider-appearance';
 import { EditorState } from '@codemirror/state';
@@ -335,6 +336,12 @@ export function renderRichBody(
             checkbox.checked = /x/i.test(source.slice(node.from, node.to));
             checkbox.disabled = true;
             parent.append(checkbox);
+            checkbox.setAttribute(
+                'aria-label',
+                checkbox.checked ? 'Completed task' : 'Incomplete task',
+            );
+            const mount = mountPlayfulTaskCheckbox(checkbox);
+            disposals.push(() => mount.destroy());
             return;
         }
         const tag = tags[node.name];

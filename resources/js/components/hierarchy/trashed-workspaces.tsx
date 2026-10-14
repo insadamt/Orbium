@@ -1,5 +1,5 @@
 import * as Collapsible from '@radix-ui/react-collapsible';
-import * as Menu from '@radix-ui/react-dropdown-menu';
+import * as Menu from '@/components/ui/dropdown-menu';
 import { ChevronDown, MoreHorizontal, RotateCcw, Trash2 } from 'lucide-react';
 import { useRef, useState } from 'react';
 import type { TrashedWorkspace } from './workspace-panel';
@@ -82,38 +82,36 @@ export function TrashedWorkspaces({
                                             aria-hidden="true"
                                         />
                                     </Menu.Trigger>
-                                    <Menu.Portal>
-                                        <Menu.Content
-                                            className="floating-menu workspace-manager-menu"
-                                            align="end"
-                                            sideOffset={8}
-                                            onCloseAutoFocus={(event) => {
-                                                if (
-                                                    openingDeleteDialog.current ===
-                                                    workspace.id
-                                                ) {
-                                                    event.preventDefault();
-                                                    openingDeleteDialog.current =
-                                                        null;
-                                                }
+                                    <Menu.Content
+                                        className="floating-menu workspace-manager-menu"
+                                        align="end"
+                                        sideOffset={8}
+                                        onCloseAutoFocus={(event) => {
+                                            if (
+                                                openingDeleteDialog.current ===
+                                                workspace.id
+                                            ) {
+                                                event.preventDefault();
+                                                openingDeleteDialog.current =
+                                                    null;
+                                            }
+                                        }}
+                                    >
+                                        <Menu.Item
+                                            className="floating-menu-item text-destructive"
+                                            onSelect={() => {
+                                                openingDeleteDialog.current =
+                                                    workspace.id;
+                                                onDelete(workspace);
                                             }}
                                         >
-                                            <Menu.Item
-                                                className="floating-menu-item text-destructive"
-                                                onSelect={() => {
-                                                    openingDeleteDialog.current =
-                                                        workspace.id;
-                                                    onDelete(workspace);
-                                                }}
-                                            >
-                                                <Trash2
-                                                    size={15}
-                                                    aria-hidden="true"
-                                                />{' '}
-                                                Delete permanently
-                                            </Menu.Item>
-                                        </Menu.Content>
-                                    </Menu.Portal>
+                                            <Trash2
+                                                size={15}
+                                                aria-hidden="true"
+                                            />{' '}
+                                            Delete permanently
+                                        </Menu.Item>
+                                    </Menu.Content>
                                 </Menu.Root>
                             </div>
                         </div>

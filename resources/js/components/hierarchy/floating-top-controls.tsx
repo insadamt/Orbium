@@ -1,6 +1,15 @@
 import { Link, router, usePage } from '@inertiajs/react';
-import * as Menu from '@radix-ui/react-dropdown-menu';
-import { Library, Check, ChevronDown, Plus, Settings2 } from 'lucide-react';
+import * as Menu from '@/components/ui/dropdown-menu';
+import {
+    Library,
+    Check,
+    ChevronDown,
+    Plus,
+    Settings2,
+    Trash2,
+    LogOut,
+    FolderOpen,
+} from 'lucide-react';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import AppLogoIcon from '@/components/app-logo-icon';
@@ -172,50 +181,47 @@ export function FloatingTopControls({
                             <span>{workspace?.name ?? 'Workspaces'}</span>
                             <ChevronDown size={14} />
                         </Menu.Trigger>
-                        <Menu.Portal>
-                            <Menu.Content
-                                className="floating-menu"
-                                align="start"
-                                sideOffset={12}
-                            >
-                                {workspaces.map((item) => (
-                                    <Menu.Item
-                                        key={item.id}
-                                        className="floating-menu-item"
-                                        onSelect={() =>
-                                            openLocation(
-                                                `/workspaces/${item.id}`,
-                                            )
-                                        }
-                                    >
-                                        <span className="truncate">
-                                            {item.name}
-                                        </span>
-                                        {item.id === workspace?.id && (
-                                            <Check
-                                                size={15}
-                                                aria-label="Current workspace"
-                                            />
-                                        )}
-                                    </Menu.Item>
-                                ))}
-                                <Menu.Separator className="my-2 border-t border-border/60" />
+                        <Menu.Content
+                            className="floating-menu"
+                            align="start"
+                            sideOffset={12}
+                        >
+                            {workspaces.map((item) => (
                                 <Menu.Item
-                                    className="floating-menu-item"
-                                    onSelect={() => setNewWorkspaceOpen(true)}
-                                >
-                                    <Plus size={15} /> New workspace
-                                </Menu.Item>
-                                <Menu.Item
+                                    key={item.id}
                                     className="floating-menu-item"
                                     onSelect={() =>
-                                        openLocation('/settings/workspaces')
+                                        openLocation(`/workspaces/${item.id}`)
                                     }
                                 >
-                                    <Settings2 size={15} /> Manage workspaces
+                                    <FolderOpen size={16} />
+                                    <span className="truncate">
+                                        {item.name}
+                                    </span>
+                                    {item.id === workspace?.id && (
+                                        <Check
+                                            size={15}
+                                            aria-label="Current workspace"
+                                        />
+                                    )}
                                 </Menu.Item>
-                            </Menu.Content>
-                        </Menu.Portal>
+                            ))}
+                            <Menu.Separator className="my-2 border-t border-border/60" />
+                            <Menu.Item
+                                className="floating-menu-item"
+                                onSelect={() => setNewWorkspaceOpen(true)}
+                            >
+                                <Plus size={15} /> New workspace
+                            </Menu.Item>
+                            <Menu.Item
+                                className="floating-menu-item"
+                                onSelect={() =>
+                                    openLocation('/settings/workspaces')
+                                }
+                            >
+                                <Settings2 size={15} /> Manage workspaces
+                            </Menu.Item>
+                        </Menu.Content>
                     </Menu.Root>
                     <FloatingBreadcrumbs items={breadcrumbs} />
                 </div>
@@ -274,71 +280,67 @@ export function FloatingTopControls({
                             <span>{auth.user.name}</span>
                             <ChevronDown size={14} />
                         </Menu.Trigger>
-                        <Menu.Portal>
-                            <Menu.Content
-                                className="floating-menu"
-                                align="end"
-                                sideOffset={12}
+                        <Menu.Content
+                            className="floating-menu"
+                            align="end"
+                            sideOffset={12}
+                        >
+                            <Menu.Item
+                                className="floating-menu-item"
+                                onSelect={() =>
+                                    openLocation('/settings/workspaces')
+                                }
                             >
+                                <Settings2 size={16} /> Manage workspaces
+                            </Menu.Item>
+                            <Menu.Item
+                                className="floating-menu-item"
+                                onSelect={() => openLocation('/trash')}
+                            >
+                                <Trash2 size={16} /> All Trash
+                            </Menu.Item>
+                            {workspace && showContentActions && (
+                                <>
+                                    <Menu.Separator className="my-2 border-t border-border/60" />
+                                    {(
+                                        [
+                                            'document',
+                                            'folder',
+                                            'database',
+                                        ] as const
+                                    ).map((type) => (
+                                        <Menu.Item
+                                            key={type}
+                                            className="floating-menu-item"
+                                            onSelect={() => setCreateType(type)}
+                                        >
+                                            <Plus size={16} /> New {type}
+                                        </Menu.Item>
+                                    ))}
+                                </>
+                            )}
+                            {workspace && showContentActions && (
                                 <Menu.Item
                                     className="floating-menu-item"
                                     onSelect={() =>
-                                        openLocation('/settings/workspaces')
+                                        openLocation(
+                                            `/trash?workspace=${workspace.id}`,
+                                        )
                                     }
                                 >
-                                    Manage workspaces
+                                    <Trash2 size={16} /> Trash
                                 </Menu.Item>
-                                <Menu.Item
-                                    className="floating-menu-item"
-                                    onSelect={() => openLocation('/trash')}
-                                >
-                                    All Trash
-                                </Menu.Item>
-                                {workspace && showContentActions && (
-                                    <>
-                                        <Menu.Separator className="my-2 border-t border-border/60" />
-                                        {(
-                                            [
-                                                'document',
-                                                'folder',
-                                                'database',
-                                            ] as const
-                                        ).map((type) => (
-                                            <Menu.Item
-                                                key={type}
-                                                className="floating-menu-item"
-                                                onSelect={() =>
-                                                    setCreateType(type)
-                                                }
-                                            >
-                                                New {type}
-                                            </Menu.Item>
-                                        ))}
-                                    </>
-                                )}
-                                {workspace && showContentActions && (
-                                    <Menu.Item
-                                        className="floating-menu-item"
-                                        onSelect={() =>
-                                            openLocation(
-                                                `/trash?workspace=${workspace.id}`,
-                                            )
-                                        }
-                                    >
-                                        Trash
-                                    </Menu.Item>
-                                )}
-                                <div className="px-2 py-3">
-                                    <AppearanceTabs className="w-full justify-center" />
-                                </div>
-                                <Menu.Item
-                                    className="floating-menu-item"
-                                    onSelect={() => router.post('/logout')}
-                                >
-                                    Sign out
-                                </Menu.Item>
-                            </Menu.Content>
-                        </Menu.Portal>
+                            )}
+                            <div className="px-2 py-3">
+                                <AppearanceTabs className="w-full justify-center" />
+                            </div>
+                            <Menu.Item
+                                className="floating-menu-item"
+                                onSelect={() => router.post('/logout')}
+                            >
+                                <LogOut size={16} /> Sign out
+                            </Menu.Item>
+                        </Menu.Content>
                     </Menu.Root>
                 </div>
             </header>

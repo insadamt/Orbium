@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import * as Menu from '@radix-ui/react-dropdown-menu';
+import * as Menu from '@/components/ui/dropdown-menu';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
@@ -121,37 +121,35 @@ export function WorkspaceRow({
                     >
                         <MoreHorizontal size={19} aria-hidden="true" />
                     </Menu.Trigger>
-                    <Menu.Portal>
-                        <Menu.Content
-                            className="floating-menu workspace-manager-menu"
-                            align="end"
-                            sideOffset={8}
-                            onCloseAutoFocus={(event) => {
-                                if (renamingFromMenu.current) {
-                                    event.preventDefault();
-                                    renamingFromMenu.current = false;
-                                }
+                    <Menu.Content
+                        className="floating-menu workspace-manager-menu"
+                        align="end"
+                        sideOffset={8}
+                        onCloseAutoFocus={(event) => {
+                            if (renamingFromMenu.current) {
+                                event.preventDefault();
+                                renamingFromMenu.current = false;
+                            }
+                        }}
+                    >
+                        <Menu.Item
+                            className="floating-menu-item"
+                            onSelect={() => {
+                                renamingFromMenu.current = true;
+                                onRename();
                             }}
                         >
-                            <Menu.Item
-                                className="floating-menu-item"
-                                onSelect={() => {
-                                    renamingFromMenu.current = true;
-                                    onRename();
-                                }}
-                            >
-                                <Pencil size={15} aria-hidden="true" /> Rename
-                            </Menu.Item>
-                            <Menu.Separator className="my-1 border-t border-border/50" />
-                            <Menu.Item
-                                className="floating-menu-item text-destructive"
-                                onSelect={onRequestTrash}
-                            >
-                                <Trash2 size={15} aria-hidden="true" /> Move to
-                                Trash
-                            </Menu.Item>
-                        </Menu.Content>
-                    </Menu.Portal>
+                            <Pencil size={15} aria-hidden="true" /> Rename
+                        </Menu.Item>
+                        <Menu.Separator className="my-1 border-t border-border/50" />
+                        <Menu.Item
+                            className="floating-menu-item text-destructive"
+                            onSelect={onRequestTrash}
+                        >
+                            <Trash2 size={15} aria-hidden="true" /> Move to
+                            Trash
+                        </Menu.Item>
+                    </Menu.Content>
                 </Menu.Root>
             </div>
             {trashConfirmationOpen && (

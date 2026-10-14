@@ -1,3 +1,4 @@
+import { AppSelect } from '@/components/ui/app-select';
 import { useEffect, useState } from 'react';
 import {
     Dialog,
@@ -179,23 +180,28 @@ export function ExportDialog({
                 </div>
                 <label className="text-sm">
                     Document format
-                    <select
-                        className="mt-1 block w-full rounded-lg border bg-background p-2"
+                    <AppSelect
+                        label="Document format"
+                        className="mt-1"
                         value={format}
                         disabled={busy}
-                        onChange={(event) =>
-                            setFormat(event.target.value as typeof format)
+                        onValueChange={(nextValue) =>
+                            setFormat(nextValue as typeof format)
                         }
-                    >
-                        <option value="orbie">Orbium (.orbie)</option>
-                        <option value="md">Markdown (.md)</option>
-                        {!packageMode && (
-                            <option value="docx">Word document (.docx)</option>
-                        )}
-                        {!packageMode && (
-                            <option value="pdf">PDF (.pdf)</option>
-                        )}
-                    </select>
+                        options={[
+                            { value: 'orbie', label: 'Orbium (.orbie)' },
+                            { value: 'md', label: 'Markdown (.md)' },
+                            ...(!packageMode
+                                ? [
+                                      {
+                                          value: 'docx',
+                                          label: 'Word document (.docx)',
+                                      },
+                                      { value: 'pdf', label: 'PDF (.pdf)' },
+                                  ]
+                                : []),
+                        ]}
+                    />
                 </label>
                 <p className="text-xs text-muted-foreground">
                     {officeFormat

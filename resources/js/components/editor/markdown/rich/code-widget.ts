@@ -1,3 +1,4 @@
+import { mountAppSelect } from '@/components/ui/mount-app-select';
 import { EditorView } from '@codemirror/view';
 import { codeLanguages, normalizeCodeLanguage } from '../../code-languages';
 import { codeLanguageIconPath } from '../../code-language-icons';
@@ -52,6 +53,7 @@ export function mountCode(mount: RichWidgetMount): RichController {
     const identity = element('span', 'inline-flex items-center gap-2');
     identity.append(icon, language);
     toolbar.prepend(identity);
+    const languageSelect = mountAppSelect(language);
     const copy = button('Copy', () => {
         function showCopyStatus(label: string) {
             if (destroyed) return;
@@ -120,6 +122,7 @@ export function mountCode(mount: RichWidgetMount): RichController {
         }
         language.value = name;
         language.disabled = !mount.view.state.facet(EditorView.editable);
+        languageSelect.update();
         icon.replaceChildren();
         const path = codeLanguageIconPath(name);
         if (path) {
@@ -142,6 +145,7 @@ export function mountCode(mount: RichWidgetMount): RichController {
         destroy() {
             destroyed = true;
             clearTimeout(copyStatusTimer);
+            languageSelect.destroy();
             input.destroy();
         },
     };

@@ -18,7 +18,7 @@ import { BlockMath, InlineMath } from '@tiptap/extension-mathematics';
 import Placeholder from '@tiptap/extension-placeholder';
 import { TableKit } from '@tiptap/extension-table';
 import TaskList from '@tiptap/extension-task-list';
-import TaskItem from '@tiptap/extension-task-item';
+import { PlayfulTaskItem } from './playful-task-item';
 import { ReactNodeViewRenderer, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { common, createLowlight } from 'lowlight';
@@ -152,7 +152,7 @@ export default function DocumentEditor({
                 table: { HTMLAttributes: { class: 'orbium-table' } },
             }),
             TaskList,
-            TaskItem.configure({ nested: true }),
+            PlayfulTaskItem.configure({ nested: true }),
             BlockMath.configure({
                 katexOptions: { throwOnError: false, trust: false },
             }).extend({

@@ -1,5 +1,11 @@
 # UI/UX system
 
+Editor checkbox review (2026-10-14): Markdown and legacy document checklists
+use the Animate UI Playful Todolist wavy completion stroke, a drawn checkmark,
+and subtle checkbox hover/press motion. Native task edits and persisted formats
+remain unchanged. Nested read-only previews share the visual states; OS reduced
+motion applies them immediately. See [the report and manual checklist](../reports/07-playful-editor-checkboxes.md).
+
 Viewport background review (2026-10-14): Default, image, and animated backgrounds
 share one fixed viewport layer across authenticated and authentication pages.
 The default gradients are sized to the viewport rather than page content.
@@ -405,3 +411,18 @@ Trash glow motion review (2026-10-14): remove the short rectangular clipping reg
 
 
 Folder drag actions review (2026-10-14): while dragging inside a folder, show Delete and Move out side by side at the bottom viewport edge. Move out replaces the above-content parent destination and moves the dragged item or selection up one level (to the containing folder or workspace root). Each target has independent hover feedback; workspace root shows Delete only. Existing restorable Trash, group movement, cancellation, failure recovery, and reduced-motion behavior remain.
+
+
+Animated menu review (2026-10-14): action dropdowns, context menus and shared
+selection controls use the installed Animate UI Radix dropdown components with
+one frosted surface, 200 ms fade/scale motion, animated item highlights and
+Lucide action icons. Editor block formatting uses submenus. Completion lists
+retain their listbox semantics with matching entrance motion. OS reduced motion
+removes menu/highlight travel. See [the implementation report and manual checklist](../reports/07-animated-app-menus.md).
+
+Animated menu stability correction (2026-10-14): each menu now owns one persistent
+hover bar; row transitions do not crossfade between separate highlight elements.
+Slash/mention suggestions share this bar, surface dimensions and action icons.
+Selection marks are static checks with reserved space, with no shared radio-dot
+animation. Controlled open state applies immediately. See [the repair report and
+manual checklist](../reports/07-animated-menu-stability.md).
