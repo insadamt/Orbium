@@ -16,7 +16,8 @@ import {
 import { openLocation } from '@/components/navigation/tab-navigation';
 import { usePageSearch } from '@/components/navigation/page-search';
 import { useContainerView } from '@/components/navigation/use-container-view';
-import { ExplorerBulkActions } from './explorer-bulk-actions';
+import { ExplorerTrashDropTarget } from './explorer-trash-drop-target';
+import { trashExplorerNodes } from './explorer-node-mutations';
 import { useExplorerSelection } from './use-explorer-selection';
 import { FloatingItem } from './floating-item';
 import {
@@ -82,7 +83,7 @@ export function WorkspaceContents({
     const [deleteId, setDeleteId] = useState<number | null>(null);
     const [newTitle, setNewTitle] = useState('');
     const [saving, setSaving] = useState(false);
-    const [moving, setMoving] = useState(false);
+    const [changingHierarchy, setChangingHierarchy] = useState(false);
     const [announcement, setAnnouncement] = useState('');
     const search = usePageSearch();
     const normalizedQuery = search.query.trim().toLocaleLowerCase();
@@ -105,11 +106,11 @@ export function WorkspaceContents({
         destination: number | null,
         position: number,
     ): Promise<boolean> {
-        if (moving || selection.busy) return Promise.resolve(false);
+        if (changingHierarchy || selection.busy) return Promise.resolve(false);
         if (selection.selectedIds.includes(nodeId)) {
             return selection.submitBulkAction('move', destination, position);
         }
-        setMoving(true);
+        setChangingHierarchy(true);
         return new Promise((resolve) => {
             let succeeded = false;
             router.patch(
@@ -123,19 +124,30 @@ export function WorkspaceContents({
                     },
                     onError: (errors) => toast.error(Object.values(errors)[0]),
                     onFinish: () => {
-                        setMoving(false);
+                        setChangingHierarchy(false);
                         resolve(succeeded);
                     },
                 },
             );
         });
     }
-    const { draggedId, liftedIds, dropHint, dragHandlers } = useItemDrag(
-        nodes,
-        move,
-        moving || selection.busy,
-        selection.selectedIds,
-    );
+    function trashDraggedItems(nodeIds: number[]): Promise<boolean> {
+        if (changingHierarchy || selection.busy) return Promise.resolve(false);
+        setChangingHierarchy(true);
+        return trashExplorerNodes({
+            workspaceId,
+            nodeIds,
+            onFinish: () => setChangingHierarchy(false),
+        });
+    }
+    const { draggedId, liftedIds, trashActive, dropHint, dragHandlers } =
+        useItemDrag(
+            nodes,
+            move,
+            trashDraggedItems,
+            changingHierarchy || selection.busy,
+            selection.selectedIds,
+        );
     const currentFolder = nodes.find((node) => node.id === parentId);
     const parentDestination = currentFolder?.parent_id ?? null;
     const parentName =
@@ -174,19 +186,12 @@ export function WorkspaceContents({
     function deleteNodeFromExplorer() {
         if (!deleteId || saving) return;
         setSaving(true);
-        router.post(
-            `/workspaces/${workspaceId}/nodes/bulk`,
-            {
-                action: 'trash',
-                node_ids: [deleteId],
-            },
-            {
-                preserveScroll: true,
-                onSuccess: () => setDeleteId(null),
-                onError: (errors) => toast.error(Object.values(errors)[0]),
-                onFinish: () => setSaving(false),
-            },
-        );
+        void trashExplorerNodes({
+            workspaceId,
+            nodeIds: [deleteId],
+            onSuccess: () => setDeleteId(null),
+            onFinish: () => setSaving(false),
+        });
     }
     async function saveAppearance() {
         if (!appearanceDraft || savingAppearance) return;
@@ -227,7 +232,9 @@ export function WorkspaceContents({
                 node={node}
                 selected={selection.selectedIds.includes(node.id)}
                 revealed={focusId === node.id}
-                disabled={moving || selection.busy || draggedId !== null}
+                disabled={
+                    changingHierarchy || selection.busy || draggedId !== null
+                }
                 dragging={liftedIds.includes(node.id)}
                 placement={
                     dropHint?.targetId === node.id
@@ -248,13 +255,12 @@ export function WorkspaceContents({
     }
     return (
         <>
-            <ExplorerBulkActions
-                nodes={nodes}
-                selectedNodes={selection.selectedNodes}
-                parentId={parentId}
-                busy={moving || selection.busy || draggedId !== null}
-                onClear={selection.clearSelection}
-                onSubmit={selection.submitBulkAction}
+            <ExplorerTrashDropTarget
+                workspaceId={workspaceId}
+                visible={draggedId !== null}
+                active={trashActive}
+                count={liftedIds.length}
+                busy={changingHierarchy && trashActive}
             />
             <ExplorerViewControls
                 view={view}
@@ -263,11 +269,14 @@ export function WorkspaceContents({
             />
             <section
                 ref={contentsRef}
+                data-workspace-id={workspaceId}
                 className="floating-contents"
                 data-view={view}
                 data-layout={view === 'gallery' ? appearance.layout : undefined}
                 aria-label="Current container contents"
-                aria-busy={moving || selection.busy || draggedId !== null}
+                aria-busy={
+                    changingHierarchy || selection.busy || draggedId !== null
+                }
                 onClick={(event) => {
                     if (
                         !(event.target as HTMLElement).closest('[data-node-id]')

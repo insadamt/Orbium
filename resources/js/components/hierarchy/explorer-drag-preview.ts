@@ -142,7 +142,7 @@ export function createExplorerDragPreview(
                 outlineColor: appearance.outlineColor,
                 outlineWidth: appearance.outlineWidth,
                 outlineOffset: appearance.outlineOffset,
-                duration: 0.6,
+                duration: 0.42,
                 ease: 'power2.inOut',
                 overwrite: true,
                 onComplete: () => {

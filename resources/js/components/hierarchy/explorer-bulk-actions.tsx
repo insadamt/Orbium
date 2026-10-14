@@ -13,6 +13,7 @@ type Props = {
     parentId: number | null;
     busy: boolean;
     onClear: () => void;
+    dragging?: boolean;
     onSubmit: (
         action: 'move' | 'trash',
         parentId?: number | null,
@@ -27,6 +28,7 @@ export function ExplorerBulkActions({
     parentId,
     busy,
     onClear,
+    dragging,
     onSubmit,
 }: Props) {
     const [action, setAction] = useState<'move' | 'trash' | null>(null);
@@ -74,6 +76,7 @@ export function ExplorerBulkActions({
         <>
             <div
                 className="fixed bottom-6 left-1/2 z-40 flex max-w-[calc(100vw-2rem)] -translate-x-1/2 flex-wrap items-center justify-center gap-3 rounded-xl border border-border bg-popover px-4 py-3 text-sm shadow-xl"
+                style={dragging ? { display: 'none' } : undefined}
                 role="toolbar"
                 aria-label="Selected item actions"
             >

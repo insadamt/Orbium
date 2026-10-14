@@ -22,9 +22,11 @@ export type MoveItem = (
 export function useItemDrag(
     nodes: TreeNode[],
     onMove: MoveItem,
+    onTrash: (nodeIds: number[]) => Promise<boolean>,
     disabled: boolean,
     selectedIds: number[] = [],
 ) {
+    const [trashActive, setTrashActive] = useState(false);
     const [liftedIds, setLiftedIds] = useState<number[]>([]);
     const [draggedId, setDraggedId] = useState<number | null>(null);
     const [dropHint, setDropHint] = useState<DropHint | null>(null);
@@ -66,6 +68,7 @@ export function useItemDrag(
             if (parentZone) parentZone.dataset.active = 'false';
             parentZone = destination?.parentZone ?? null;
             if (parentZone) parentZone.dataset.active = 'true';
+            setTrashActive(destination?.action === 'trash');
             const nextHint = destination?.hint ?? null;
             setDropHint((previous) =>
                 previous?.targetId === nextHint?.targetId &&
@@ -95,6 +98,7 @@ export function useItemDrag(
             cancelSession.current = null;
             setLiftedIds([]);
             setDraggedId(null);
+            setTrashActive(false);
             setDropHint(null);
         }
         async function finish(x: number, y: number, canceled: boolean) {
@@ -111,20 +115,26 @@ export function useItemDrag(
             }
             suppressClickUntil.current = performance.now() + 500;
             if (destination) {
+                const isTrashDrop = destination.action === 'trash';
                 const movedOutside =
+                    isTrashDrop ||
                     destination.parentId !== sourceNode.parent_id;
                 const motion = movedOutside
                     ? preview.finishAtDestination({
                           receiver: destination.element,
-                          absorb: destination.hint?.placement === 'inside',
+                          absorb:
+                              !isTrashDrop &&
+                              destination.hint?.placement === 'inside',
                       })
                     : Promise.resolve();
                 const [succeeded] = await Promise.all([
-                    onMove(
-                        sourceNode.id,
-                        destination.parentId,
-                        destination.position,
-                    ),
+                    destination.action === 'trash'
+                        ? onTrash(sources.map((node) => node.id))
+                        : onMove(
+                              sourceNode.id,
+                              destination.parentId,
+                              destination.position,
+                          ),
                     motion,
                 ]);
                 if (disposed) return;
@@ -134,7 +144,10 @@ export function useItemDrag(
                     return;
                 }
             }
-            flushSync(() => setLiftedIds([]));
+            flushSync(() => {
+                setLiftedIds([]);
+                setTrashActive(false);
+            });
             preview.returnToPlaces(() => flushSync(complete));
         }
         function movePointer(pointer: PointerEvent) {
@@ -207,5 +220,5 @@ export function useItemDrag(
             },
         };
     }
-    return { draggedId, liftedIds, dropHint, dragHandlers };
+    return { draggedId, liftedIds, trashActive, dropHint, dragHandlers };
 }

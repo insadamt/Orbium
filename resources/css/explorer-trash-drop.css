@@ -1,0 +1,80 @@
+.explorer-trash-drop-anchor {
+    position: fixed;
+    z-index: 950;
+    inset: 0;
+    display: grid;
+    align-items: end;
+    justify-items: center;
+    overflow: hidden;
+    pointer-events: none;
+}
+.explorer-trash-drop-target {
+    position: relative;
+    width: min(460px, 100vw);
+    min-height: 128px;
+    color: var(--foreground);
+    pointer-events: auto;
+    opacity: 0;
+}
+.explorer-trash-drop-target[data-visible='false'] {
+    pointer-events: none;
+}
+.explorer-trash-drop-ambient {
+    position: absolute;
+    bottom: -140px;
+    left: calc(50% - 520px);
+    width: 1040px;
+    height: 420px;
+    opacity: 0.38;
+    transform-origin: 50% 100%;
+    pointer-events: none;
+}
+.explorer-trash-glow-layer {
+    position: absolute;
+    inset: 0;
+    filter: blur(38px);
+    opacity: 0.7;
+    pointer-events: none;
+    transform-origin: 50% 85%;
+}
+.explorer-trash-glow-core {
+    background: radial-gradient(
+        ellipse at 50% 82%,
+        rgb(239 68 68 / 90%),
+        rgb(239 68 68 / 26%) 32%,
+        transparent 62%
+    );
+}
+.explorer-trash-glow-left {
+    background: radial-gradient(
+        ellipse at 36% 68%,
+        rgb(248 70 70 / 52%),
+        rgb(239 68 68 / 12%) 28%,
+        transparent 56%
+    );
+}
+.explorer-trash-glow-right {
+    background: radial-gradient(
+        ellipse at 63% 75%,
+        rgb(220 38 38 / 56%),
+        rgb(239 68 68 / 13%) 26%,
+        transparent 54%
+    );
+}
+.explorer-trash-drop-label {
+    position: relative;
+    display: grid;
+    justify-items: center;
+    gap: 5px;
+    padding: 24px 18px max(20px, env(safe-area-inset-bottom));
+    text-align: center;
+    font-size: 13px;
+    font-weight: 500;
+}
+.explorer-trash-drop-label svg {
+    color: var(--destructive);
+}
+.explorer-trash-drop-count {
+    font-size: 11px;
+    color: var(--muted-foreground);
+}

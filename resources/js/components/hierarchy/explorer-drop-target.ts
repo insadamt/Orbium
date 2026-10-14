@@ -4,13 +4,22 @@ export type DropHint = {
     targetId: number;
     placement: 'before' | 'inside' | 'after';
 };
-export type DropDestination = {
+type MoveDropDestination = {
+    action: 'move';
     parentId: number | null;
     position: number;
     hint: DropHint | null;
     parentZone: HTMLElement | null;
     element: HTMLElement;
 };
+export type DropDestination =
+    | MoveDropDestination
+    | {
+          action: 'trash';
+          element: HTMLElement;
+          hint: null;
+          parentZone: null;
+      };
 
 function canDropInside(
     nodes: TreeNode[],
@@ -43,7 +52,23 @@ export function findExplorerDropDestination(
     y: number,
 ): DropDestination | null {
     const hovered = document.elementFromPoint(x, y);
-    if (!hovered || !container.contains(hovered)) return null;
+    if (!hovered) return null;
+    const trashTarget = hovered.closest<HTMLElement>(
+        '[data-explorer-trash-target][data-visible="true"]',
+    );
+    if (
+        trashTarget &&
+        trashTarget.dataset.workspaceId ===
+            container.getAttribute('data-workspace-id')
+    ) {
+        return {
+            action: 'trash',
+            element: trashTarget,
+            hint: null,
+            parentZone: null,
+        };
+    }
+    if (!container.contains(hovered)) return null;
     const sourceIds = new Set(sources.map((source) => source.id));
     const siblingsAt = (parentId: number | null) =>
         nodes
@@ -61,6 +86,7 @@ export function findExplorerDropDestination(
         );
         if (!currentFolder || currentFolder.type !== 'folder') return null;
         return {
+            action: 'move',
             parentId: currentFolder.parent_id,
             position: siblingsAt(currentFolder.parent_id).length,
             hint: null,
@@ -97,6 +123,7 @@ export function findExplorerDropDestination(
     const parentId = placement === 'inside' ? target.id : target.parent_id;
     const siblings = siblingsAt(parentId);
     return {
+        action: 'move',
         parentId,
         position:
             placement === 'inside'

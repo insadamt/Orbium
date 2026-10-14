@@ -11,6 +11,7 @@
 @import './library-responsive.css';
 @import './node-media.css';
 @import './explorer-views.css';
+@import './explorer-trash-drop.css';
 @import './appearance-surfaces.css';
 @import './editor-text-colors.css';
 @import './appearance-settings.css';
