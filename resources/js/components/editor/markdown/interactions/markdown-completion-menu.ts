@@ -1,8 +1,10 @@
+import { mountCompletionMenuReveal } from './markdown-completion-reveal';
 import {
     getTooltip,
     showTooltip,
     ViewPlugin,
     type EditorView,
+    type TooltipView,
 } from '@codemirror/view';
 import { mountMenuHighlight } from '@/lib/menu-highlight';
 import { widgetIcon } from '../rich/widget-icons';
@@ -59,11 +61,12 @@ export const markdownCompletionMenu = ViewPlugin.fromClass(
             });
         }
         private synchronizeMenus() {
-            const menus = new Set<HTMLElement>();
+            const menus = new Map<HTMLElement, TooltipView>();
             for (const tooltip of this.view.state.facet(showTooltip)) {
                 if (!tooltip) continue;
-                const menu = getTooltip(this.view, tooltip)?.dom;
-                if (menu?.matches('.orbium-slash-menu')) menus.add(menu);
+                const tooltipView = getTooltip(this.view, tooltip);
+                if (tooltipView?.dom.matches('.orbium-slash-menu'))
+                    menus.set(tooltipView.dom, tooltipView);
             }
             for (const [menu, dispose] of this.mountedMenus) {
                 if (!menus.has(menu)) {
@@ -71,8 +74,9 @@ export const markdownCompletionMenu = ViewPlugin.fromClass(
                     this.mountedMenus.delete(menu);
                 }
             }
-            for (const menu of menus) {
+            for (const [menu, tooltipView] of menus) {
                 if (this.mountedMenus.has(menu)) continue;
+                const disposeReveal = mountCompletionMenuReveal(tooltipView);
                 const disposeHighlight = mountMenuHighlight(menu, {
                     itemSelector: '[role="option"]',
                     selectedSelector: '[aria-selected="true"]',
@@ -96,6 +100,7 @@ export const markdownCompletionMenu = ViewPlugin.fromClass(
                         'pointermove',
                         selectHoveredOption,
                     );
+                    disposeReveal();
                     disposeHighlight();
                 });
             }

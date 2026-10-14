@@ -1,3 +1,4 @@
+import { NativeCheckbox } from '@/components/ui/native-checkbox';
 import { useBackgroundPreferences } from './background-preferences';
 import { WallpaperDialog } from './wallpaper-dialog';
 
@@ -17,16 +18,14 @@ export function BackgroundSettings() {
                         them.
                     </p>
                 </div>
-                <label className="appearance-switch">
-                    <input
-                        type="checkbox"
+                <label className="inline-flex">
+                    <NativeCheckbox
                         checked={pauseAnimations}
                         onChange={(event) =>
                             setPauseAnimations(event.target.checked)
                         }
                         aria-label="Pause animated wallpapers"
                     />
-                    <span aria-hidden="true" />
                 </label>
             </div>
         </div>

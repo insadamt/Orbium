@@ -120,11 +120,18 @@ function DropdownMenuCheckboxItem({
             checked={checked}
             {...props}
         >
-            <span className="pointer-events-none absolute left-2 flex size-3.5 items-center justify-center">
-                <CheckIcon
-                    className="menu-selection-check size-4"
+            <span className="orbium-animated-checkbox orbium-menu-checkbox pointer-events-none absolute left-2">
+                <svg
+                    className="orbium-checkbox-indicator size-3"
+                    viewBox="0 0 24 24"
                     aria-hidden="true"
-                />
+                >
+                    <path
+                        className="orbium-checkbox-check"
+                        d="M4.5 12.75l6 6 9-13.5"
+                    />
+                    <path className="orbium-checkbox-mixed" d="M5 12h14" />
+                </svg>
             </span>
             {children}
         </DropdownMenuCheckboxItemPrimitive>

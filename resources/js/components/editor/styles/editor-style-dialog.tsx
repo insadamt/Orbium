@@ -1,3 +1,4 @@
+import { NativeCheckbox } from '@/components/ui/native-checkbox';
 import * as Dialog from '@radix-ui/react-dialog';
 import { Check, Copy, Download, RotateCcw, Upload, X } from 'lucide-react';
 import { useRef, useState } from 'react';
@@ -155,9 +156,8 @@ export default function EditorStyleDialog({
                         </div>
                         <div className="editor-style-enable">
                             Custom styles
-                            <label className="appearance-switch">
-                                <input
-                                    type="checkbox"
+                            <label className="inline-flex">
+                                <NativeCheckbox
                                     checked={draft.form.data.enabled}
                                     disabled={draft.busy}
                                     onChange={(event) =>
@@ -167,7 +167,6 @@ export default function EditorStyleDialog({
                                     }
                                     aria-label="Enable custom styles"
                                 />
-                                <span aria-hidden="true" />
                             </label>
                         </div>
                         <input

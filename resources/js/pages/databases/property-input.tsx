@@ -1,3 +1,4 @@
+import { NativeCheckbox } from '@/components/ui/native-checkbox';
 import { useDocumentTab } from '@/components/navigation/document-tab-context';
 import * as DropdownMenu from '@/components/ui/dropdown-menu';
 import {
@@ -153,8 +154,7 @@ export default function PropertyInput({
         <div className="relative min-w-0 text-[13px]" aria-busy={busy}>
             {property.type === 'checkbox' ? (
                 <div className="flex h-[43px] items-center px-3">
-                    <input
-                        type="checkbox"
+                    <NativeCheckbox
                         aria-label={property.name}
                         checked={draft === true}
                         disabled={busy}

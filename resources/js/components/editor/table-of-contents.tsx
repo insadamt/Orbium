@@ -1,5 +1,13 @@
 import { Pin, PinOff, X } from 'lucide-react';
-import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
+import {
+    useEffect,
+    useLayoutEffect,
+    useId,
+    useRef,
+    useState,
+    type KeyboardEvent,
+} from 'react';
+import { mountMenuHighlight } from '@/lib/menu-highlight';
 import { createPortal } from 'react-dom';
 import { useOutlinePanelHost } from './document-outline-layout';
 import { useDocumentTab } from '@/components/navigation/document-tab-context';
@@ -55,6 +63,7 @@ export function TableOfContents({
     const { panelHost, title } = useOutlinePanelHost();
     const panelId = useId();
     const widget = useRef<HTMLDivElement>(null);
+    const headingList = useRef<HTMLDivElement>(null);
     const trigger = useRef<HTMLButtonElement>(null);
     const navigation = useRef<(() => void) | null>(null);
     const leaveTimer = useRef<ReturnType<typeof setTimeout> | undefined>(
@@ -145,6 +154,14 @@ export function TableOfContents({
         if (!visible || !panelHost || !trigger.current) return;
         return attachOutlineRailFollowing(trigger.current);
     }, [visible, panelHost, headings, currentHeading?.position]);
+
+    useLayoutEffect(() => {
+        if (!expanded || !headingList.current) return;
+        return mountMenuHighlight(headingList.current, {
+            itemSelector: '.document-outline-heading',
+            selectedSelector: '[aria-current="location"]',
+        });
+    }, [expanded, panelHost, headings.length]);
 
     function closePanel(returnFocus = true) {
         clearTimeout(leaveTimer.current);
@@ -277,7 +294,7 @@ export function TableOfContents({
                         <X size={14} />
                     </button>
                 </div>
-                <div className="document-outline-list-scroll">
+                <div ref={headingList} className="document-outline-list-scroll">
                     <ol>
                         {headings.map((heading) => (
                             <li key={heading.position}>

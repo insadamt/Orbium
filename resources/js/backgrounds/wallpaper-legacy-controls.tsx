@@ -1,3 +1,4 @@
+import { NativeCheckbox } from '@/components/ui/native-checkbox';
 import {
     ColorControl,
     ghostControls,
@@ -108,8 +109,7 @@ export function WallpaperLegacyControls({
                 />
             </div>
             <label className="flex items-center gap-2.5 text-sm">
-                <input
-                    type="checkbox"
+                <NativeCheckbox
                     checked={draft.molten.grain}
                     onChange={(event) =>
                         updateMolten({ grain: event.target.checked })
@@ -119,8 +119,7 @@ export function WallpaperLegacyControls({
                 Grain
             </label>
             <label className="flex items-center gap-2.5 text-sm">
-                <input
-                    type="checkbox"
+                <NativeCheckbox
                     checked={draft.molten.mouseInteraction}
                     onChange={(event) =>
                         updateMolten({ mouseInteraction: event.target.checked })

@@ -1,10 +1,11 @@
 # UI/UX system
 
-Editor checkbox review (2026-10-14): Markdown and legacy document checklists
-use the Animate UI Playful Todolist wavy completion stroke, a drawn checkmark,
-and subtle checkbox hover/press motion. Native task edits and persisted formats
-remain unchanged. Nested read-only previews share the visual states; OS reduced
-motion applies them immediately. See [the report and manual checklist](../reports/07-playful-editor-checkboxes.md).
+App checkbox review (2026-10-14): native inputs, shared Radix checkboxes,
+menu checkbox items and editor tasks share a 200 ms checkmark reveal and subtle
+hover/press scaling. Completed task text has no animated strike. Indeterminate
+states, native form events and existing editor transactions remain supported.
+OS reduced motion makes checkbox transitions immediate. See [the report and
+manual checklist](../reports/07-app-animated-checkboxes.md).
 
 Viewport background review (2026-10-14): Default, image, and animated backgrounds
 share one fixed viewport layer across authenticated and authentication pages.
@@ -426,3 +427,16 @@ Slash/mention suggestions share this bar, surface dimensions and action icons.
 Selection marks are static checks with reserved space, with no shared radio-dot
 animation. Controlled open state applies immediately. See [the repair report and
 manual checklist](../reports/07-animated-menu-stability.md).
+
+Slash reveal correction (2026-10-14): slash/mention popup geometry stays stable
+during CodeMirror placement. Reveal uses a 140 ms opacity fade after the first
+successful positioning callback, with no container scale; reduced motion reveals
+immediately after placement. Filtering does not restart entrance motion. See
+[the reveal report](../reports/07-slash-menu-reveal.md).
+
+Contents menu animation (2026-10-14): the outline popup shares the slash popup's
+140 ms fade with stable geometry and uses the shared moving bar for heading
+hover, keyboard focus and the current reading location. Floating rail placement
+runs before paint. Pinning, navigation and pane ownership retain their existing
+behavior. This replaces the popup's earlier slide/scale transition. See
+[the Contents report and manual checklist](../reports/07-toc-menu-reveal.md).

@@ -26,8 +26,7 @@
     background: transparent;
 }
 
-.app-menu-enter,
-.cm-tooltip.cm-tooltip-autocomplete.orbium-slash-menu {
+.app-menu-enter {
     transform-origin: top left;
     animation: app-menu-enter 200ms ease-out both;
 }
@@ -100,5 +99,27 @@
 @media (prefers-reduced-motion: reduce) {
     .app-menu-highlight {
         will-change: auto;
+    }
+}
+
+.cm-tooltip.cm-tooltip-autocomplete.orbium-slash-menu {
+    opacity: 0;
+    animation: none;
+}
+.cm-tooltip.cm-tooltip-autocomplete.orbium-slash-menu[data-completion-reveal='ready'] {
+    animation: completion-menu-reveal 140ms ease-out both;
+}
+@keyframes completion-menu-reveal {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .cm-tooltip.cm-tooltip-autocomplete.orbium-slash-menu[data-completion-reveal='ready'] {
+        opacity: 1;
+        animation: none;
     }
 }

@@ -1,0 +1,104 @@
+.orbium-animated-checkbox {
+    position: relative;
+    display: inline-block;
+    flex: none;
+    width: 16px;
+    height: 16px;
+    vertical-align: -2px;
+    border: 1px solid var(--muted-foreground);
+    border-radius: 4px;
+    color: var(--primary-foreground);
+    cursor: pointer;
+    transition:
+        background-color 200ms,
+        border-color 200ms,
+        transform 200ms;
+}
+.orbium-task-checkbox:has(.cm-md-task-checkbox) {
+    margin-inline-end: 0.6em;
+}
+.orbium-animated-checkbox:has(input:checked),
+.orbium-animated-checkbox[data-state='checked'],
+.orbium-animated-checkbox[data-state='indeterminate'] {
+    background: var(--primary);
+    border-color: var(--primary);
+}
+.orbium-animated-checkbox:not(:has(input:disabled)):not(:disabled):hover {
+    transform: scale(1.05);
+}
+.orbium-animated-checkbox:not(:has(input:disabled)):not(:disabled):active {
+    transform: scale(0.95);
+}
+.orbium-animated-checkbox:has(input:disabled),
+.orbium-animated-checkbox:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+.orbium-animated-checkbox input[type='checkbox'] {
+    position: absolute;
+    inset: -3px;
+    z-index: 1;
+    width: calc(100% + 6px);
+    height: calc(100% + 6px);
+    margin: 0;
+    opacity: 0;
+    cursor: inherit;
+}
+.orbium-checkbox-indicator {
+    position: absolute;
+    inset: 2px;
+    width: calc(100% - 4px);
+    height: calc(100% - 4px);
+    pointer-events: none;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 3.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    opacity: 0;
+    clip-path: inset(0 100% 0 0);
+    transition:
+        clip-path 200ms ease-in-out,
+        opacity 200ms;
+}
+.orbium-animated-checkbox input:checked ~ .orbium-checkbox-indicator,
+.orbium-animated-checkbox[data-state='checked'] .orbium-checkbox-indicator,
+.orbium-animated-checkbox[data-state='indeterminate']
+    .orbium-checkbox-indicator {
+    opacity: 1;
+    clip-path: inset(0 0% 0 0);
+}
+.orbium-checkbox-mixed,
+.orbium-animated-checkbox[data-state='indeterminate'] .orbium-checkbox-check {
+    display: none;
+}
+.orbium-animated-checkbox[data-state='indeterminate'] .orbium-checkbox-mixed {
+    display: block;
+}
+[role='menuitemcheckbox'][data-state='checked'] .orbium-menu-checkbox,
+[role='menuitemcheckbox'][data-state='indeterminate'] .orbium-menu-checkbox {
+    background: var(--primary);
+    border-color: var(--primary);
+}
+[role='menuitemcheckbox'][data-state='checked'] .orbium-checkbox-indicator,
+[role='menuitemcheckbox'][data-state='indeterminate']
+    .orbium-checkbox-indicator {
+    opacity: 1;
+    clip-path: inset(0 0% 0 0);
+}
+[role='menuitemcheckbox'][data-state='indeterminate'] .orbium-checkbox-check {
+    display: none;
+}
+[role='menuitemcheckbox'][data-state='indeterminate'] .orbium-checkbox-mixed {
+    display: block;
+}
+@media (prefers-reduced-motion: reduce) {
+    .orbium-animated-checkbox,
+    .orbium-checkbox-indicator {
+        transition: none;
+    }
+    .orbium-animated-checkbox:hover,
+    .orbium-animated-checkbox:active {
+        transform: none;
+    }
+}

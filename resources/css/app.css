@@ -19,7 +19,7 @@
 @import './editor-styles.css';
 @import './editor-styles-responsive.css';
 @import './editor-document.css';
-@import './editor-task-checkbox.css';
+@import './animated-checkbox.css';
 @import './editor-table.css';
 @import './editor-scroll-layout.css';
 @import './document-outline.css';

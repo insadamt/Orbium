@@ -1,3 +1,4 @@
+import { NativeCheckbox } from '@/components/ui/native-checkbox';
 import {
     ArrowDown,
     ArrowUp,
@@ -131,8 +132,7 @@ export default function DatabaseViewSettings({
                     <div className="space-y-4">
                         {view === 'table' && (
                             <label className="flex items-start gap-3 border-b border-border/60 pb-4">
-                                <input
-                                    type="checkbox"
+                                <NativeCheckbox
                                     checked={draft.inline_adding ?? false}
                                     onChange={(event) =>
                                         setDraft({

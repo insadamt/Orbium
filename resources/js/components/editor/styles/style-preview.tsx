@@ -1,3 +1,4 @@
+import { NativeCheckbox } from '@/components/ui/native-checkbox';
 import { Fragment } from 'react';
 import { blockStyleTypes, type BlockStyleType } from './block-style-types';
 
@@ -52,8 +53,7 @@ function blockSample(type: BlockStyleType) {
                 <ul className="orbium-checklist" data-type="taskList">
                     <li data-type="taskItem">
                         <label>
-                            <input
-                                type="checkbox"
+                            <NativeCheckbox
                                 checked
                                 readOnly
                                 aria-label="Completed example task"

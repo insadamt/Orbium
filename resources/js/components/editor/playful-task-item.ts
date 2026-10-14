@@ -8,22 +8,8 @@ export const PlayfulTaskItem = TaskItem.extend({
         return (props) => {
             const view = createTaskItemView(props);
             const input = (view.dom as HTMLElement).querySelector('input');
-            if (!input) return view;
-            const checkbox = mountPlayfulTaskCheckbox(input);
-            return {
-                ...view,
-                update(node, decorations, innerDecorations) {
-                    const updated =
-                        view.update?.(node, decorations, innerDecorations) ??
-                        false;
-                    if (updated) checkbox.update();
-                    return updated;
-                },
-                destroy() {
-                    checkbox.destroy();
-                    view.destroy?.();
-                },
-            };
+            if (input) mountPlayfulTaskCheckbox(input);
+            return view;
         };
     },
 });

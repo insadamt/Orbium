@@ -39,11 +39,6 @@ export class MarkdownListMarker extends WidgetType {
     }
 }
 
-const taskCheckboxMounts = new WeakMap<
-    HTMLElement,
-    ReturnType<typeof mountPlayfulTaskCheckbox>
->();
-
 export class MarkdownTaskCheckbox extends WidgetType {
     constructor(
         readonly from: number,
@@ -84,9 +79,7 @@ export class MarkdownTaskCheckbox extends WidgetType {
                 userEvent: 'input.task',
             });
         });
-        const mount = mountPlayfulTaskCheckbox(checkbox);
-        taskCheckboxMounts.set(mount.host, mount);
-        return mount.host;
+        return mountPlayfulTaskCheckbox(checkbox);
     }
     updateDOM(host: HTMLElement) {
         const dom =
@@ -101,12 +94,7 @@ export class MarkdownTaskCheckbox extends WidgetType {
             'aria-label',
             this.checked ? 'Mark task incomplete' : 'Mark task complete',
         );
-        taskCheckboxMounts.get(host)?.update();
         return true;
-    }
-    destroy(dom: HTMLElement) {
-        taskCheckboxMounts.get(dom)?.destroy();
-        taskCheckboxMounts.delete(dom);
     }
     ignoreEvent() {
         return true;

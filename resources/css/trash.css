@@ -101,20 +101,6 @@
     gap: 12px;
     cursor: pointer;
 }
-.trash-list-heading
-    [data-state='indeterminate']
-    [data-slot='checkbox-indicator']
-    svg {
-    display: none;
-}
-.trash-list-heading
-    [data-state='indeterminate']
-    [data-slot='checkbox-indicator']::after {
-    content: '';
-    width: 8px;
-    height: 2px;
-    background: currentColor;
-}
 .trash-entry-surface {
     gap: 12px;
     padding: 10px 12px;

@@ -1,3 +1,4 @@
+import { NativeCheckbox } from '@/components/ui/native-checkbox';
 import { AppSelect } from '@/components/ui/app-select';
 import { useEffect, useState } from 'react';
 import {
@@ -251,8 +252,7 @@ export function ExportDialog({
                                 key={option.label}
                                 className="flex items-center gap-2"
                             >
-                                <input
-                                    type="checkbox"
+                                <NativeCheckbox
                                     checked={option.value}
                                     disabled={!option.count}
                                     onChange={(event) =>

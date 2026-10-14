@@ -173,6 +173,7 @@ export function mountMenuHighlight(
         attributeFilter: [
             'data-highlighted',
             'aria-selected',
+            'aria-current',
             'data-state',
             'data-disabled',
         ],

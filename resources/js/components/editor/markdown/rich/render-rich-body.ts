@@ -340,8 +340,7 @@ export function renderRichBody(
                 'aria-label',
                 checkbox.checked ? 'Completed task' : 'Incomplete task',
             );
-            const mount = mountPlayfulTaskCheckbox(checkbox);
-            disposals.push(() => mount.destroy());
+            mountPlayfulTaskCheckbox(checkbox);
             return;
         }
         const tag = tags[node.name];

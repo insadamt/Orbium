@@ -1,7 +1,7 @@
 import {
     createContext,
     useContext,
-    useEffect,
+    useLayoutEffect,
     useRef,
     useState,
     type ReactNode,
@@ -29,7 +29,7 @@ export function DocumentOutlineLayout({
     const { visible } = useDocumentTab();
     const [panelHost, setPanelHost] = useState<HTMLElement | null>(null);
     const container = useRef<HTMLDivElement>(null);
-    useEffect(() => {
+    useLayoutEffect(() => {
         if (!visible || !panelHost || !container.current) return;
         return attachFloatingOutlinePositioning(panelHost, container.current);
     }, [visible, panelHost]);

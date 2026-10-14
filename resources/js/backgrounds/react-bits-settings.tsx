@@ -1,3 +1,4 @@
+import { NativeCheckbox } from '@/components/ui/native-checkbox';
 import type {
     EffectDefinition,
     EffectSettings,
@@ -135,8 +136,7 @@ function SettingControl({
     if (typeof value === 'boolean') {
         return (
             <label className="flex items-center gap-2.5 text-sm">
-                <input
-                    type="checkbox"
+                <NativeCheckbox
                     checked={value}
                     onChange={(event) => onChange(event.target.checked)}
                     className="appearance-checkbox"

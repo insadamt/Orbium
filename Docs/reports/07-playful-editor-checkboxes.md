@@ -42,3 +42,19 @@ Suggested commit messages:
 ## Review boundary
 
 This is the requested Phase 7 editor motion polish. No later phase was started. Manual review is pending.
+
+## Animation repair — 2026-10-14
+
+The user reported that the animation did not play. The adapter applied a zero-duration checkmark tween on repeated updates, and recreated wave SVGs when their measured positions changed, killing active tweens. The original normalized dash animation also depended on SVG stroke scaling. The repair keeps existing wave SVGs during layout updates, leaves checkmark tweens running when the checked state is unchanged, and reveals each solid SVG with an animated clip over 200 ms / one second. Reduced motion still settles immediately.
+
+Validation after this repair: targeted formatting, TypeScript, lint, build and whitespace checks passed. Build retains large-chunk and ineffective dynamic-import warnings. No automated tests were written or run; browser acceptance remains pending.
+
+Manual regression checklist:
+
+1. Reload the app with OS reduced motion disabled. In Live Preview, place the caret outside a checklist and click an unchecked box. Expected: a visible checkmark reveal and a wave progressively revealed across the task over one second.
+2. Uncheck and immediately recheck; hover the box and move the pointer away while the wave reveals. Expected: the wave plays again and pointer/layout changes do not snap it to completion.
+3. Check a long, wrapped task with bold text and resize the pane during its reveal. Expected: the waves follow the text without resetting an existing reveal. Edit the checked task afterward; expected its wave follows the updated text.
+4. Repeat in a legacy Tiptap document and use undo/redo; wait for Saved and reload. Expected: animation when toggled, correct persisted task state, and no entrance animation on reload.
+5. Enable OS reduced motion during a reveal. Expected: it settles immediately; subsequent toggles remain instant.
+
+Suggested repair commit: `fix(editor): preserve checklist animations during state and layout updates`.
