@@ -1,4 +1,4 @@
-import { syntaxTree } from '@codemirror/language';
+import { ensureSyntaxTree, syntaxTree } from '@codemirror/language';
 import { StateField, type EditorState, type Range } from '@codemirror/state';
 import { getSearchQuery } from '@codemirror/search';
 import {
@@ -9,6 +9,7 @@ import {
 } from '@codemirror/view';
 import type { Tree } from '@lezer/common';
 import { measureEditorWork } from '@/lib/editor-performance';
+import { changedMarkdownDecorationRanges } from '../interactions/markdown-decoration-range';
 import { readRichBlock } from './read-rich-block';
 import { markdownDiagramPreparation } from './markdown-diagram-preparation';
 import {
@@ -76,7 +77,8 @@ export function markdownRichBlocks(context: RichContext) {
         create(state) {
             const blocks = collectBlocks(
                 state,
-                syntaxTree(state),
+                ensureSyntaxTree(state, Math.min(4000, state.doc.length), 50) ??
+                    syntaxTree(state),
                 0,
                 Math.min(4000, state.doc.length),
             );
@@ -171,6 +173,20 @@ export function markdownRichBlocks(context: RichContext) {
                     })
                     .filter((block) => block.from < block.to);
             }
+            for (const { from, to, tree } of changedMarkdownDecorationRanges(
+                transaction,
+            )) {
+                const next = collectBlocks(transaction.state, tree, from, to);
+                blocks = [
+                    ...blocks.filter(
+                        (block) =>
+                            editors.has(block.from) ||
+                            block.to < from ||
+                            block.from > to,
+                    ),
+                    ...next.filter((block) => !editors.has(block.from)),
+                ].sort((left, right) => left.from - right.from);
+            }
             for (const effect of transaction.effects) {
                 if (effect.is(refreshMermaidLayout)) layoutChanged = true;
                 if (effect.is(discoverMermaidBlocks)) {
@@ -262,16 +278,14 @@ export function markdownRichBlocks(context: RichContext) {
         for (const block of blocks) {
             if (block.kind === 'metadata') continue;
             if (revealed === block.from) continue;
-            if (
+            const searchSelected =
                 search &&
                 state.selection.ranges.some(
                     (range) =>
                         !range.empty &&
                         range.from < block.to &&
                         range.to > block.from,
-                )
-            )
-                continue;
+                );
             ranges.push(
                 Decoration.replace({
                     block: block.kind !== 'inline-math',
@@ -279,6 +293,7 @@ export function markdownRichBlocks(context: RichContext) {
                         block,
                         context,
                         !state.facet(EditorView.editable),
+                        searchSelected,
                     ),
                 }).range(block.from, block.to),
             );
@@ -340,7 +355,9 @@ export function markdownRichBlocks(context: RichContext) {
                             effects: refreshRichBlocks.of({
                                 from,
                                 to,
-                                tree: syntaxTree(this.view.state),
+                                tree:
+                                    ensureSyntaxTree(this.view.state, to, 50) ??
+                                    syntaxTree(this.view.state),
                             }),
                         }),
                     );

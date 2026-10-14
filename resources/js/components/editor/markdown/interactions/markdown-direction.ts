@@ -1,12 +1,15 @@
 import type { EditorState, Text } from '@codemirror/state';
 import { syntaxTree } from '@codemirror/language';
-import type { SyntaxNode } from '@lezer/common';
+import type { SyntaxNode, Tree } from '@lezer/common';
 import { readEditableMarkdownPresentation } from './markdown-editable-presentation';
 
 const rtlLetter =
     /[\p{Script=Arabic}\p{Script=Hebrew}\p{Script=Syriac}\p{Script=Thaana}\p{Script=Nko}\p{Script=Samaritan}\p{Script=Mandaic}\p{Script=Adlam}\p{Script=Hanifi_Rohingya}]/u;
 const letter = /\p{Letter}/u;
-const cached = new WeakMap<Text, Map<number, 'ltr' | 'rtl'>>();
+const cached = new WeakMap<
+    Text,
+    { tree: Tree; directions: Map<number, 'ltr' | 'rtl'> }
+>();
 const hidden = new Set([
     'HeaderMark',
     'QuoteMark',
@@ -60,19 +63,36 @@ function nodeDirection(
     return firstMarkdownDirection(state.sliceDoc(position, node.to));
 }
 
+export function markdownLinePresentation(
+    state: EditorState,
+    position: number,
+    tree: Tree = syntaxTree(state),
+) {
+    for (
+        let node: SyntaxNode | null = tree.resolveInner(position, 1);
+        node;
+        node = node.parent
+    ) {
+        const presentation = readEditableMarkdownPresentation(state, node);
+        if (presentation) return presentation.metadata;
+    }
+    return null;
+}
+
 export function markdownLineDirection(
     state: EditorState,
     position: number,
+    tree: Tree = syntaxTree(state),
 ): 'ltr' | 'rtl' {
+    const existingCache = cached.get(state.doc);
     const directions =
-        cached.get(state.doc) ?? new Map<number, 'ltr' | 'rtl'>();
-    cached.set(state.doc, directions);
+        existingCache?.tree === tree
+            ? existingCache.directions
+            : new Map<number, 'ltr' | 'rtl'>();
+    cached.set(state.doc, { tree, directions });
     const line = state.doc.lineAt(position);
     for (
-        let parent: SyntaxNode | null = syntaxTree(state).resolveInner(
-            position,
-            1,
-        );
+        let parent: SyntaxNode | null = tree.resolveInner(position, 1);
         parent;
         parent = parent.parent
     ) {
@@ -85,7 +105,7 @@ export function markdownLineDirection(
     }
     const existing = directions.get(line.from);
     if (existing) return existing;
-    let node = syntaxTree(state).resolveInner(position, 1);
+    let node = tree.resolveInner(position, 1);
     while (
         node.parent &&
         !/^(?:Paragraph|Task|(?:ATX|Setext)Heading[1-6])$/.test(node.name) &&
@@ -100,6 +120,18 @@ export function markdownLineDirection(
         // Neutral blocks inherit without caching a resolved direction in canonical source.
         for (let number = line.number - 1; number > 0; number--) {
             const previous = state.doc.line(number);
+            const previousPresentation = markdownLinePresentation(
+                state,
+                previous.from,
+                tree,
+            );
+            if (
+                previousPresentation?.dir === 'ltr' ||
+                previousPresentation?.dir === 'rtl'
+            ) {
+                direction = previousPresentation.dir;
+                break;
+            }
             const known = directions.get(previous.from);
             if (known) {
                 direction = known;

@@ -399,6 +399,14 @@ Existing explicit direction choices remain stored in editor content. Direction
 and alignment survive autosave and reload. Alignment applies to
 paragraphs and headings, including those inside lists, quotes, and callouts.
 
+In CodeMirror live preview, explicit direction and alignment apply to the rendered
+text lines as well as their presentation wrapper. Empty paragraph inputs update
+their presentation when a block menu choice changes. Block and table context
+menus keep the interface's left-to-right layout independently of block direction.
+Find keeps rich block previews visible and highlights the selected matching block.
+Decoration updates cover edited enclosing blocks, including edits away from the
+main cursor; direction inference is cached against both source and parse tree.
+
 ## Focus/read state
 
 When idle, editor chrome should disappear as much as possible.

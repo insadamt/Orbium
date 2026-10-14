@@ -1,7 +1,10 @@
-import { markdownLineDirection } from '../interactions/markdown-direction';
+import {
+    markdownLineDirection,
+    markdownLinePresentation,
+} from '../interactions/markdown-direction';
 import { readEditableMarkdownPresentation } from '../interactions/markdown-editable-presentation';
 import { readOrbiumMetadata } from '../dialect/metadata';
-import { syntaxTree } from '@codemirror/language';
+import { ensureSyntaxTree, syntaxTree } from '@codemirror/language';
 import type { Range } from '@codemirror/state';
 import { Decoration, EditorView, type WidgetType } from '@codemirror/view';
 import type { SyntaxNode } from '@lezer/common';
@@ -49,6 +52,9 @@ export function buildMarkdownPreview(
     view: EditorView,
     linkContext: MarkdownLinkContext,
 ) {
+    const visibleEnd = view.visibleRanges.at(-1)?.to ?? view.viewport.to;
+    const tree =
+        ensureSyntaxTree(view.state, visibleEnd, 50) ?? syntaxTree(view.state);
     const decorations: Range<Decoration>[] = [];
     const atomicRanges: Range<Decoration>[] = [];
     const lineClasses = new Map<number, Set<string>>();
@@ -102,7 +108,7 @@ export function buildMarkdownPreview(
             if (line.to >= visible.to) break;
             position = line.to + 1;
         }
-        syntaxTree(view.state).iterate({
+        tree.iterate({
             from: visible.from,
             to: visible.to,
             enter(reference) {
@@ -361,17 +367,24 @@ export function buildMarkdownPreview(
             },
         });
     }
-    for (const [from, classes] of lineClasses)
+    for (const [from, classes] of lineClasses) {
+        const source = classes.has('cm-md-source');
+        const direction = source
+            ? 'ltr'
+            : markdownLineDirection(view.state, from, tree);
+        const alignment = source
+            ? 'start'
+            : markdownLinePresentation(view.state, from, tree)?.align;
         decorations.push(
             Decoration.line({
                 class: [...classes].join(' '),
                 attributes: {
-                    dir: classes.has('cm-md-source')
-                        ? 'ltr'
-                        : markdownLineDirection(view.state, from),
+                    dir: direction,
+                    style: `direction:${direction}${alignment ? `;text-align:${alignment}` : ''}`,
                 },
             }).range(from),
         );
+    }
     return {
         decorations: Decoration.set(decorations, true),
         atomicRanges: Decoration.set(atomicRanges, true),

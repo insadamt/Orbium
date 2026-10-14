@@ -1,9 +1,12 @@
-import { syntaxTree } from '@codemirror/language';
 import { StateField, type EditorState, type Range } from '@codemirror/state';
 import { BlockWrapper, Decoration, EditorView } from '@codemirror/view';
 import type { SyntaxNode, Tree } from '@lezer/common';
 import { refreshRichBlocks } from '../rich/rich-effects';
 import { readRichBlock } from '../rich/read-rich-block';
+import {
+    changedMarkdownDecorationRanges,
+    markdownDecorationRange,
+} from './markdown-decoration-range';
 import { readEditableMarkdownPresentation } from './markdown-editable-presentation';
 
 function collectMarkdownWrappers(
@@ -166,11 +169,16 @@ function collectMarkdownWrappers(
 
 export const markdownBlockWrappers = StateField.define({
     create(state) {
-        const collected = collectMarkdownWrappers(
+        const range = markdownDecorationRange(
             state,
-            syntaxTree(state),
             0,
             Math.min(state.doc.length, 4000),
+        );
+        const collected = collectMarkdownWrappers(
+            state,
+            range.tree,
+            range.from,
+            range.to,
         );
         return {
             wrappers: BlockWrapper.set(collected.ranges, true),
@@ -180,18 +188,12 @@ export const markdownBlockWrappers = StateField.define({
     update(previous, transaction) {
         let wrappers = previous.wrappers.map(transaction.changes);
         let markers = previous.markers.map(transaction.changes);
-        if (transaction.docChanged) {
-            const from = Math.max(
-                0,
-                transaction.state.selection.main.from - 2000,
-            );
-            const to = Math.min(
-                transaction.state.doc.length,
-                transaction.state.selection.main.to + 4000,
-            );
+        for (const { from, to, tree } of changedMarkdownDecorationRanges(
+            transaction,
+        )) {
             const collected = collectMarkdownWrappers(
                 transaction.state,
-                syntaxTree(transaction.state),
+                tree,
                 from,
                 to,
             );
@@ -208,7 +210,12 @@ export const markdownBlockWrappers = StateField.define({
         }
         for (const effect of transaction.effects) {
             if (!effect.is(refreshRichBlocks)) continue;
-            const { from, to, tree } = effect.value;
+            const { from, to, tree } = markdownDecorationRange(
+                transaction.state,
+                effect.value.from,
+                effect.value.to,
+                effect.value.tree,
+            );
             const ranges: Range<BlockWrapper>[] = [];
             for (const cursor = wrappers.iter(); cursor.value; cursor.next())
                 if (cursor.to < from || cursor.from > to)

@@ -49,7 +49,7 @@ export function PositionedMenu({
         <Menu.Root
             open
             modal={false}
-            dir={position.direction}
+            dir="ltr"
             onOpenChange={(open) => {
                 if (!open) onClose();
             }}

@@ -40,6 +40,8 @@ export function mountEmptyParagraph(mount: RichWidgetMount) {
             if (next.kind !== 'empty') return false;
             block = next;
             input.readOnly = !mount.view.state.facet(EditorView.editable);
+            input.dir = String(next.presentation.dir ?? 'auto');
+            input.style.textAlign = String(next.presentation.align ?? '');
             return true;
         },
         destroy() {},

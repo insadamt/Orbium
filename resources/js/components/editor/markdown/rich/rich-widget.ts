@@ -52,6 +52,7 @@ export class MarkdownRichWidget extends WidgetType {
         readonly block: RichBlock,
         readonly context: RichContext,
         readonly disabled: boolean,
+        readonly searchSelected = false,
     ) {
         super();
         this.diagramHeightEstimate = estimateDiagramWidgetHeight(
@@ -67,6 +68,7 @@ export class MarkdownRichWidget extends WidgetType {
             this.diagramHeightEstimate === other.estimatedHeight &&
             this.context === other.context &&
             this.disabled === other.disabled &&
+            this.searchSelected === other.searchSelected &&
             this.block.kind === other.block.kind &&
             this.block.from === other.block.from &&
             this.block.to === other.block.to &&
@@ -142,6 +144,7 @@ export class MarkdownRichWidget extends WidgetType {
     }
     private applyPresentation(root: HTMLElement) {
         currentBlocks.set(root, this.block);
+        root.classList.toggle('cm-md-find-match', this.searchSelected);
         root.dataset.richKind = this.block.kind;
         root.dataset.richFrom = String(this.block.from);
         root.dir = String(this.block.presentation.dir ?? 'auto');
