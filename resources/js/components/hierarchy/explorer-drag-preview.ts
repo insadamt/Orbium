@@ -28,6 +28,7 @@ export function createExplorerDragPreview(
             card.className = 'floating-item floating-drag-stack-card';
             card.removeAttribute('data-node-id');
             card.removeAttribute('data-dragging');
+            card.removeAttribute('data-layout-animating');
             card.removeAttribute('data-drop');
             card.removeAttribute('role');
             card.removeAttribute('tabindex');
@@ -47,9 +48,18 @@ export function createExplorerDragPreview(
                 width: bounds.width,
                 height: bounds.height,
             });
-            return [{ card, original, offset: Math.min(index, 5) * 7 }];
+            const visibility = original.style.visibility;
+            original.style.visibility = 'hidden';
+            original.dataset.stackSource = 'true';
+            return [
+                { card, original, visibility, offset: Math.min(index, 5) * 7 },
+            ];
         });
     let ending = false;
+    let restoreReceiver: (() => void) | null = null;
+    let resolveDropMotion: (() => void) | null = null;
+    let resolveReceiverMotion: (() => void) | null = null;
+    let receiverTimeline: gsap.core.Timeline | null = null;
     const sourceBounds = source.getBoundingClientRect();
     const stackWidth = Math.min(
         sourceBounds.width,
@@ -78,7 +88,17 @@ export function createExplorerDragPreview(
     follow(pointer, 0.32);
     function remove() {
         ending = true;
+        receiverTimeline?.kill();
+        restoreReceiver?.();
+        resolveReceiverMotion?.();
+        resolveReceiverMotion = null;
+        resolveDropMotion?.();
+        resolveDropMotion = null;
         gsap.killTweensOf(cards.map(({ card }) => card));
+        for (const { original, visibility } of cards) {
+            original.style.visibility = visibility;
+            delete original.dataset.stackSource;
+        }
         layer.remove();
     }
     function handOffToOriginalCards(onComplete: () => void) {
@@ -114,14 +134,16 @@ export function createExplorerDragPreview(
                 width: bounds.width,
                 height: bounds.height,
                 rotation: 0,
+                scale: 1,
+                opacity: 1,
                 backgroundColor: appearance.backgroundColor,
                 borderColor: appearance.borderColor,
                 boxShadow: appearance.boxShadow,
                 outlineColor: appearance.outlineColor,
                 outlineWidth: appearance.outlineWidth,
                 outlineOffset: appearance.outlineOffset,
-                duration: 0.3,
-                ease: 'power3.inOut',
+                duration: 0.6,
+                ease: 'power2.inOut',
                 overwrite: true,
                 onComplete: () => {
                     remaining -= 1;
@@ -132,5 +154,130 @@ export function createExplorerDragPreview(
             });
         }
     }
-    return { follow, returnToPlaces, remove };
+    function finishAtDestination({
+        receiver,
+        absorb,
+    }: {
+        receiver: HTMLElement;
+        absorb: boolean;
+    }): Promise<void> {
+        ending = true;
+        if (reducedMotion || cards.length === 0) {
+            gsap.set(
+                cards.map(({ card }) => card),
+                { opacity: 0 },
+            );
+            return Promise.resolve();
+        }
+        const bounds = receiver.getBoundingClientRect();
+        let receiverMotion = Promise.resolve();
+        if (absorb) {
+            const receiverPreview = receiver.cloneNode(true) as HTMLElement;
+            receiverPreview.className =
+                'floating-item floating-drag-stack-card';
+            receiverPreview.removeAttribute('data-node-id');
+            receiverPreview.removeAttribute('data-drop');
+            receiverPreview.removeAttribute('data-layout-animating');
+            receiverPreview.removeAttribute('tabindex');
+            receiverPreview.removeAttribute('role');
+            receiverPreview.querySelectorAll('button').forEach((button) => {
+                button.disabled = true;
+                button.tabIndex = -1;
+            });
+            layer.appendChild(receiverPreview);
+            const visibility = receiver.style.visibility;
+            receiver.style.visibility = 'hidden';
+            const appearance = getComputedStyle(receiver);
+            gsap.set(receiverPreview, {
+                x: 0,
+                y: 0,
+                left: bounds.left,
+                top: bounds.top,
+                width: bounds.width,
+                height: bounds.height,
+                minHeight: 0,
+                outline: appearance.outline,
+                backgroundColor: appearance.backgroundColor,
+                borderColor: appearance.borderColor,
+                boxShadow: appearance.boxShadow,
+            });
+            restoreReceiver = () => {
+                gsap.killTweensOf(receiverPreview);
+                receiver.style.visibility = visibility;
+                receiverPreview.remove();
+                restoreReceiver = null;
+            };
+            receiverMotion = new Promise((resolve) => {
+                resolveReceiverMotion = resolve;
+                receiverTimeline = gsap
+                    .timeline({
+                        onUpdate: () => {
+                            const currentBounds =
+                                receiver.getBoundingClientRect();
+                            receiverPreview.style.left = `${currentBounds.left}px`;
+                            receiverPreview.style.top = `${currentBounds.top}px`;
+                            receiverPreview.style.width = `${currentBounds.width}px`;
+                            receiverPreview.style.height = `${currentBounds.height}px`;
+                            const currentAppearance =
+                                getComputedStyle(receiver);
+                            receiverPreview.style.outline =
+                                currentAppearance.outline;
+                            receiverPreview.style.backgroundColor =
+                                currentAppearance.backgroundColor;
+                            receiverPreview.style.borderColor =
+                                currentAppearance.borderColor;
+                            receiverPreview.style.boxShadow =
+                                currentAppearance.boxShadow;
+                        },
+                        onComplete: () => {
+                            restoreReceiver?.();
+                            resolveReceiverMotion = null;
+                            resolve();
+                        },
+                    })
+                    .to(receiverPreview, {
+                        scale: 1.14,
+                        duration: 0.16,
+                        ease: 'power2.out',
+                    })
+                    .to(receiverPreview, {
+                        scale: 1,
+                        duration: 0.3,
+                        ease: 'back.out(1.6)',
+                    });
+            });
+        }
+        const cardMotion = new Promise<void>((resolve) => {
+            resolveDropMotion = resolve;
+            let remaining = cards.length;
+            cards.forEach(({ card }, index) => {
+                gsap.to(card, {
+                    x:
+                        bounds.left +
+                        bounds.width / 2 -
+                        Number(gsap.getProperty(card, 'width')) / 2,
+                    y:
+                        bounds.top +
+                        bounds.height / 2 -
+                        Number(gsap.getProperty(card, 'height')) / 2,
+                    scale: absorb ? 0.08 : 0.7,
+                    opacity: 0,
+                    rotation: 0,
+                    duration: 0.32,
+                    delay: Math.min(index, 5) * 0.025,
+                    ease: 'power3.in',
+                    overwrite: true,
+                    onComplete: () => {
+                        remaining -= 1;
+                        if (remaining === 0) {
+                            resolveDropMotion = null;
+                            resolve();
+                        }
+                    },
+                });
+            });
+        });
+        return Promise.all([cardMotion, receiverMotion]).then(() => undefined);
+    }
+    return { follow, returnToPlaces, finishAtDestination, remove };
 }

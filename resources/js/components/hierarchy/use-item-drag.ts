@@ -17,7 +17,7 @@ export type MoveItem = (
     nodeId: number,
     parentId: number | null,
     position: number,
-) => void;
+) => Promise<boolean>;
 
 export function useItemDrag(
     nodes: TreeNode[],
@@ -25,6 +25,7 @@ export function useItemDrag(
     disabled: boolean,
     selectedIds: number[] = [],
 ) {
+    const [liftedIds, setLiftedIds] = useState<number[]>([]);
     const [draggedId, setDraggedId] = useState<number | null>(null);
     const [dropHint, setDropHint] = useState<DropHint | null>(null);
     const cancelSession = useRef<(() => void) | null>(null);
@@ -53,6 +54,7 @@ export function useItemDrag(
         let preview: ReturnType<typeof createExplorerDragPreview> | null = null;
         let parentZone: HTMLElement | null = null;
         let ending = false;
+        let disposed = false;
         function updateDestination(x: number, y: number) {
             const destination = findExplorerDropDestination(
                 container!,
@@ -91,10 +93,11 @@ export function useItemDrag(
                 0,
             );
             cancelSession.current = null;
+            setLiftedIds([]);
             setDraggedId(null);
             setDropHint(null);
         }
-        function finish(x: number, y: number, canceled: boolean) {
+        async function finish(x: number, y: number, canceled: boolean) {
             if (ending) return;
             ending = true;
             removeListeners();
@@ -107,15 +110,32 @@ export function useItemDrag(
                 return;
             }
             suppressClickUntil.current = performance.now() + 500;
-            preview.returnToPlaces(() => {
-                flushSync(complete);
-                if (destination)
+            if (destination) {
+                const movedOutside =
+                    destination.parentId !== sourceNode.parent_id;
+                const motion = movedOutside
+                    ? preview.finishAtDestination({
+                          receiver: destination.element,
+                          absorb: destination.hint?.placement === 'inside',
+                      })
+                    : Promise.resolve();
+                const [succeeded] = await Promise.all([
                     onMove(
                         sourceNode.id,
                         destination.parentId,
                         destination.position,
-                    );
-            });
+                    ),
+                    motion,
+                ]);
+                if (disposed) return;
+                if (succeeded && movedOutside) {
+                    preview.remove();
+                    flushSync(complete);
+                    return;
+                }
+            }
+            flushSync(() => setLiftedIds([]));
+            preview.returnToPlaces(() => flushSync(complete));
         }
         function movePointer(pointer: PointerEvent) {
             if (pointer.pointerId !== pointerId || ending) return;
@@ -131,14 +151,17 @@ export function useItemDrag(
                     x: pointer.clientX,
                     y: pointer.clientY,
                 });
-                setDraggedId(sourceNode.id);
+                flushSync(() => {
+                    setLiftedIds(sources.map((node) => node.id));
+                    setDraggedId(sourceNode.id);
+                });
             } else preview.follow({ x: pointer.clientX, y: pointer.clientY });
             pointer.preventDefault();
             updateDestination(pointer.clientX, pointer.clientY);
         }
         function releasePointer(pointer: PointerEvent) {
             if (pointer.pointerId === pointerId)
-                finish(pointer.clientX, pointer.clientY, false);
+                void finish(pointer.clientX, pointer.clientY, false);
         }
         function suppressReleaseClick(click: globalThis.MouseEvent) {
             if (!preview) return;
@@ -146,7 +169,7 @@ export function useItemDrag(
             click.stopPropagation();
         }
         function cancelPointer() {
-            finish(start.x, start.y, true);
+            void finish(start.x, start.y, true);
         }
         function cancelWithEscape(key: KeyboardEvent) {
             if (key.key !== 'Escape' || !preview) return;
@@ -155,6 +178,7 @@ export function useItemDrag(
             cancelPointer();
         }
         cancelSession.current = () => {
+            disposed = true;
             ending = true;
             removeListeners();
             document.removeEventListener('click', suppressReleaseClick, true);
@@ -183,5 +207,5 @@ export function useItemDrag(
             },
         };
     }
-    return { draggedId, dropHint, dragHandlers };
+    return { draggedId, liftedIds, dropHint, dragHandlers };
 }

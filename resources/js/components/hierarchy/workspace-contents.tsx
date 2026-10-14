@@ -1,7 +1,7 @@
 import { ExportDialog } from '@/components/document-transfer/export-dialog';
 import { ImportDialog } from '@/components/document-transfer/import-dialog';
 import { router } from '@inertiajs/react';
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { toast } from 'sonner';
 import {
     Dialog,
@@ -23,6 +23,7 @@ import {
     ExplorerContextMenu,
     type ExplorerMenuPosition,
 } from './explorer-context-menu';
+import { useExplorerLayoutMotion } from './use-explorer-layout-motion';
 import { useItemDrag } from './use-item-drag';
 import {
     galleryAppearance,
@@ -44,6 +45,7 @@ export function WorkspaceContents({
     parentId,
     initialGalleryConfig,
 }: WorkspaceContentsProps) {
+    const contentsRef = useRef<HTMLElement>(null);
     const [appearance, setAppearance] = useState(() =>
         galleryAppearance(initialGalleryConfig),
     );
@@ -64,6 +66,10 @@ export function WorkspaceContents({
     const view = ['grid', 'list', 'gallery'].includes(savedView)
         ? savedView
         : 'grid';
+    useExplorerLayoutMotion(
+        contentsRef,
+        view !== 'gallery' || appearance.layout !== 'natural',
+    );
     const focusId = Number(
         new URLSearchParams(window.location.search).get('focus'),
     );
@@ -98,27 +104,33 @@ export function WorkspaceContents({
         nodeId: number,
         destination: number | null,
         position: number,
-    ) {
-        if (moving || selection.busy) return;
+    ): Promise<boolean> {
+        if (moving || selection.busy) return Promise.resolve(false);
         if (selection.selectedIds.includes(nodeId)) {
-            selection.submitBulkAction('move', destination, position);
-            return;
+            return selection.submitBulkAction('move', destination, position);
         }
         setMoving(true);
-        router.patch(
-            `/workspaces/${workspaceId}/nodes/${nodeId}/move`,
-            { parent_id: destination, position },
-            {
-                preserveScroll: true,
-                onSuccess: () => {
-                    setAnnouncement('Item moved.');
+        return new Promise((resolve) => {
+            let succeeded = false;
+            router.patch(
+                `/workspaces/${workspaceId}/nodes/${nodeId}/move`,
+                { parent_id: destination, position },
+                {
+                    preserveScroll: true,
+                    onSuccess: () => {
+                        succeeded = true;
+                        setAnnouncement('Item moved.');
+                    },
+                    onError: (errors) => toast.error(Object.values(errors)[0]),
+                    onFinish: () => {
+                        setMoving(false);
+                        resolve(succeeded);
+                    },
                 },
-                onError: (errors) => toast.error(Object.values(errors)[0]),
-                onFinish: () => setMoving(false),
-            },
-        );
+            );
+        });
     }
-    const { draggedId, dropHint, dragHandlers } = useItemDrag(
+    const { draggedId, liftedIds, dropHint, dragHandlers } = useItemDrag(
         nodes,
         move,
         moving || selection.busy,
@@ -162,11 +174,19 @@ export function WorkspaceContents({
     function deleteNodeFromExplorer() {
         if (!deleteId || saving) return;
         setSaving(true);
-        router.delete(`/workspaces/${workspaceId}/nodes/${deleteId}`, {
-            onSuccess: () => setDeleteId(null),
-            onError: (errors) => toast.error(Object.values(errors)[0]),
-            onFinish: () => setSaving(false),
-        });
+        router.post(
+            `/workspaces/${workspaceId}/nodes/bulk`,
+            {
+                action: 'trash',
+                node_ids: [deleteId],
+            },
+            {
+                preserveScroll: true,
+                onSuccess: () => setDeleteId(null),
+                onError: (errors) => toast.error(Object.values(errors)[0]),
+                onFinish: () => setSaving(false),
+            },
+        );
     }
     async function saveAppearance() {
         if (!appearanceDraft || savingAppearance) return;
@@ -208,12 +228,7 @@ export function WorkspaceContents({
                 selected={selection.selectedIds.includes(node.id)}
                 revealed={focusId === node.id}
                 disabled={moving || selection.busy || draggedId !== null}
-                dragging={
-                    draggedId === node.id ||
-                    (draggedId !== null &&
-                        selection.selectedIds.includes(draggedId) &&
-                        selection.selectedIds.includes(node.id))
-                }
+                dragging={liftedIds.includes(node.id)}
                 placement={
                     dropHint?.targetId === node.id
                         ? dropHint.placement
@@ -226,7 +241,7 @@ export function WorkspaceContents({
                 onReorder={(direction) => {
                     const position = index + direction;
                     if (position >= 0 && position < children.length)
-                        move(node.id, parentId, position);
+                        void move(node.id, parentId, position);
                 }}
             />
         );
@@ -247,6 +262,7 @@ export function WorkspaceContents({
                 onGalleryAppearance={() => setAppearanceDraft(appearance)}
             />
             <section
+                ref={contentsRef}
                 className="floating-contents"
                 data-view={view}
                 data-layout={view === 'gallery' ? appearance.layout : undefined}
@@ -292,6 +308,8 @@ export function WorkspaceContents({
                 )}
                 {view === 'gallery' && appearance.layout === 'natural' ? (
                     <MasonryLayout
+                        hiddenItemIds={liftedIds}
+                        animateExplorerLayout
                         items={children.map((node) => ({
                             ...node,
                             estimatedHeight: (width: number) =>

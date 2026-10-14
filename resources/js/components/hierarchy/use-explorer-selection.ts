@@ -35,32 +35,40 @@ export function useExplorerSelection(
         parentId: number | null = null,
         position?: number,
         onSuccess?: () => void,
-    ) {
-        if (busy || visibleSelectedIds.length === 0) return;
+    ): Promise<boolean> {
+        if (busy || visibleSelectedIds.length === 0)
+            return Promise.resolve(false);
         setBusy(true);
-        router.post(
-            `/workspaces/${workspaceId}/nodes/bulk`,
-            {
-                node_ids: visibleSelectedIds,
-                action,
-                parent_id: parentId,
-                ...(position === undefined ? {} : { position }),
-            },
-            {
-                preserveScroll: true,
-                onSuccess: () => {
-                    setSelectedIds([]);
-                    toast.success(
-                        action === 'move'
-                            ? 'Selected items moved.'
-                            : 'Selected items moved to Trash.',
-                    );
-                    onSuccess?.();
+        return new Promise((resolve) => {
+            let succeeded = false;
+            router.post(
+                `/workspaces/${workspaceId}/nodes/bulk`,
+                {
+                    node_ids: visibleSelectedIds,
+                    action,
+                    parent_id: parentId,
+                    ...(position === undefined ? {} : { position }),
                 },
-                onError: (errors) => toast.error(Object.values(errors)[0]),
-                onFinish: () => setBusy(false),
-            },
-        );
+                {
+                    preserveScroll: true,
+                    onSuccess: () => {
+                        succeeded = true;
+                        setSelectedIds([]);
+                        toast.success(
+                            action === 'move'
+                                ? 'Selected items moved.'
+                                : 'Selected items moved to Trash.',
+                        );
+                        onSuccess?.();
+                    },
+                    onError: (errors) => toast.error(Object.values(errors)[0]),
+                    onFinish: () => {
+                        setBusy(false);
+                        resolve(succeeded);
+                    },
+                },
+            );
+        });
     }
 
     return {

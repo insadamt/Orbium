@@ -1,3 +1,4 @@
+import { useExplorerLayoutMotion } from './use-explorer-layout-motion';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 
 type MasonryItem = { id: number; estimatedHeight: (width: number) => number };
@@ -29,14 +30,19 @@ export function MasonryLayout<T extends MasonryItem>({
     minimumWidth = 240,
     gap = 20,
     compactMinimumWidth,
+    hiddenItemIds = [],
+    animateExplorerLayout = false,
 }: {
     items: T[];
     render: (item: T) => ReactNode;
     minimumWidth?: number;
     gap?: number;
     compactMinimumWidth?: number;
+    hiddenItemIds?: number[];
+    animateExplorerLayout?: boolean;
 }) {
     const container = useRef<HTMLDivElement>(null);
+    useExplorerLayoutMotion(container, animateExplorerLayout);
     const [width, setWidth] = useState(0);
     const [heights, setHeights] = useState<Record<number, number>>({});
     useEffect(() => {
@@ -58,18 +64,23 @@ export function MasonryLayout<T extends MasonryItem>({
         ? (width - gap * (columns - 1)) / columns
         : minimumWidth;
     const columnHeights = Array(columns).fill(0) as number[];
-    const positions = items.map((item) => {
-        const column = columnHeights.indexOf(Math.min(...columnHeights));
-        const position = {
-            left: column * (cardWidth + gap),
-            top: columnHeights[column],
-        };
-        columnHeights[column] +=
-            (heights[item.id] ?? item.estimatedHeight(cardWidth)) + gap;
-        return position;
-    });
+    const visibleItems = items.filter(
+        (item) => !hiddenItemIds.includes(item.id),
+    );
+    const positions = new Map(
+        visibleItems.map((item) => {
+            const column = columnHeights.indexOf(Math.min(...columnHeights));
+            const position = {
+                left: column * (cardWidth + gap),
+                top: columnHeights[column],
+            };
+            columnHeights[column] +=
+                (heights[item.id] ?? item.estimatedHeight(cardWidth)) + gap;
+            return [item.id, position] as const;
+        }),
+    );
     const totalHeight =
-        Math.max(0, ...columnHeights) - (items.length ? gap : 0);
+        Math.max(0, ...columnHeights) - (visibleItems.length ? gap : 0);
 
     return (
         <div
@@ -77,24 +88,28 @@ export function MasonryLayout<T extends MasonryItem>({
             className="relative w-full"
             style={{ height: Math.max(0, totalHeight) }}
         >
-            {items.map((item, index) => (
+            {items.map((item) => (
                 <div
                     key={item.id}
                     style={{
                         position: 'absolute',
                         width: cardWidth,
-                        left: positions[index].left,
-                        top: positions[index].top,
+                        left: positions.get(item.id)?.left ?? 0,
+                        top: positions.get(item.id)?.top ?? 0,
+                        display: hiddenItemIds.includes(item.id)
+                            ? 'none'
+                            : undefined,
                     }}
                 >
                     <MeasuredCard
-                        onHeight={(height) =>
+                        onHeight={(height) => {
+                            if (height <= 0) return;
                             setHeights((current) =>
                                 Math.abs((current[item.id] ?? 0) - height) < 1
                                     ? current
                                     : { ...current, [item.id]: height },
-                            )
-                        }
+                            );
+                        }}
                     >
                         {render(item)}
                     </MeasuredCard>

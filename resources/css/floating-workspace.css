@@ -458,6 +458,8 @@
     outline-offset: 3px;
 }
 .floating-item[data-dragging='true'] {
+    position: absolute;
+    pointer-events: none;
     opacity: 0;
     transition: none;
 }
@@ -686,4 +688,19 @@
     .floating-item[data-drop='inside'] {
         transform: none;
     }
+}
+
+.floating-item[data-layout-animating='true'] {
+    transition: none;
+}
+.floating-item.floating-layout-exit {
+    position: fixed;
+    z-index: 900;
+    margin: 0;
+    pointer-events: none;
+    animation: none;
+    transition: none;
+}
+.floating-layout-exit .floating-item-actions {
+    visibility: hidden;
 }

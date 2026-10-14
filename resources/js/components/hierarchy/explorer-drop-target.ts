@@ -9,6 +9,7 @@ export type DropDestination = {
     position: number;
     hint: DropHint | null;
     parentZone: HTMLElement | null;
+    element: HTMLElement;
 };
 
 function canDropInside(
@@ -64,6 +65,7 @@ export function findExplorerDropDestination(
             position: siblingsAt(currentFolder.parent_id).length,
             hint: null,
             parentZone,
+            element: parentZone,
         };
     }
     const element = hovered.closest<HTMLElement>('[data-node-id]');
@@ -103,5 +105,6 @@ export function findExplorerDropDestination(
                   (placement === 'after' ? 1 : 0),
         hint: { targetId: target.id, placement },
         parentZone: null,
+        element,
     };
 }
