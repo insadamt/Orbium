@@ -11,6 +11,11 @@ import {
     type TransferFormat,
 } from './document-format';
 import { transferRequest } from './transfer-api';
+import {
+    generateOfficeExport,
+    type OfficeExportOptions,
+} from './office-export';
+import { OfficeExportPageOptions } from './office-export-options';
 
 type Asset = {
     id: number;
@@ -24,6 +29,7 @@ type TransferDocument = {
     source: string;
     plain: string;
     single: string;
+    diagrams: Record<string, string>;
     attachments: Asset[];
 };
 export function ExportDialog({
@@ -38,7 +44,13 @@ export function ExportDialog({
     onClose: () => void;
 }) {
     const [documents, setDocuments] = useState<TransferDocument[]>([]);
-    const [format, setFormat] = useState<TransferFormat>('orbie');
+    const [format, setFormat] = useState<
+        TransferFormat | OfficeExportOptions['format']
+    >('orbie');
+    const [pageOptions, setPageOptions] = useState<
+        Omit<OfficeExportOptions, 'format'>
+    >({ paper: 'a4', orientation: 'portrait', page_numbers: false });
+    const officeFormat = format === 'docx' || format === 'pdf';
     const [packageMode, setPackageMode] = useState(false);
     const [images, setImages] = useState(true);
     const [files, setFiles] = useState(true);
@@ -75,7 +87,17 @@ export function ExportDialog({
         setBusy(true);
         setError('');
         try {
-            if (!packageMode) {
+            if (officeFormat) {
+                const main = documents[0];
+                const file = await generateOfficeExport({
+                    workspaceId,
+                    nodeId,
+                    source: main.source,
+                    diagrams: main.diagrams,
+                    options: { ...pageOptions, format },
+                });
+                downloadDocument(documentFilename(main.title, format), file);
+            } else if (!packageMode) {
                 const main = documents[0];
                 const body =
                     format === 'orbie'
@@ -147,7 +169,10 @@ export function ExportDialog({
                         className={buttonClass}
                         aria-pressed={packageMode}
                         disabled={busy}
-                        onClick={() => setPackageMode(true)}
+                        onClick={() => {
+                            setPackageMode(true);
+                            if (officeFormat) setFormat('orbie');
+                        }}
                     >
                         Package
                     </button>
@@ -159,18 +184,33 @@ export function ExportDialog({
                         value={format}
                         disabled={busy}
                         onChange={(event) =>
-                            setFormat(event.target.value as TransferFormat)
+                            setFormat(event.target.value as typeof format)
                         }
                     >
                         <option value="orbie">Orbium (.orbie)</option>
                         <option value="md">Markdown (.md)</option>
+                        {!packageMode && (
+                            <option value="docx">Word document (.docx)</option>
+                        )}
+                        {!packageMode && (
+                            <option value="pdf">PDF (.pdf)</option>
+                        )}
                     </select>
                 </label>
                 <p className="text-xs text-muted-foreground">
-                    {format === 'orbie'
-                        ? 'Preserves Orbium document formatting.'
-                        : 'Standard Markdown. Orbium presentation formatting is omitted.'}
+                    {officeFormat
+                        ? 'Clean document layout with standard typography, white pages, and 1-inch margins.'
+                        : format === 'orbie'
+                          ? 'Preserves Orbium document formatting.'
+                          : 'Standard Markdown. Orbium presentation formatting is omitted.'}
                 </p>
+                {officeFormat && (
+                    <OfficeExportPageOptions
+                        value={pageOptions}
+                        onChange={setPageOptions}
+                        disabled={busy}
+                    />
+                )}
                 {packageMode && (
                     <fieldset
                         disabled={busy}
@@ -230,9 +270,11 @@ export function ExportDialog({
                         : ''}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                    {packageMode
-                        ? 'Excluded references remain links to this installation. Related documents include direct mentions only.'
-                        : 'Images, files, and related pages are not included. Use Package to include them.'}
+                    {officeFormat
+                        ? 'Images and diagrams are embedded. Files and page mentions remain links to Orbium and may require sign-in. Covers, properties, and editor themes are omitted.'
+                        : packageMode
+                          ? 'Excluded references remain links to this installation. Related documents include direct mentions only.'
+                          : 'Images, files, and related pages are not included. Use Package to include them.'}
                 </p>
                 {error && (
                     <p role="alert" className="text-sm text-destructive">

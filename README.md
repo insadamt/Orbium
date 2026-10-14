@@ -43,6 +43,7 @@ One-time setup:
     docker compose up -d postgres
     composer install
     npm ci
+    npm ci --prefix scripts/document-export --omit=dev
     ```
 
 4. If `APP_KEY` is empty, run `php artisan key:generate` once. Then run `php artisan migrate` and `npm run build`.
@@ -56,6 +57,8 @@ The Compose app keeps production mode and uses its own database host and port. I
 New installations run the workspace, node, and document migrations at startup. Existing installations keep their accounts; the document migration adds empty document bodies to existing document nodes. The user performs manual acceptance; no automated tests are authored or run by request.
 
 ## Checks
+
+Word and PDF exports use a shared document layout. Docker includes the export runtime, LibreOffice Writer and document fonts; rebuild the image to enable them on an existing deployment. Local Word export needs the separate runtime installation above. Local PDF export also needs LibreOffice Writer and Liberation/Noto fonts, with `soffice` available to PHP (or `ORBIUM_LIBREOFFICE_BINARY` set to its full path). See [Word/PDF export setup and behavior](Docs/docs/20-office-document-export.md).
 
 ```bash
 ./vendor/bin/pint --test

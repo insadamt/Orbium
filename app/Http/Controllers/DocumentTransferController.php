@@ -33,7 +33,7 @@ final class DocumentTransferController extends Controller
         $inspection = $inspector->inspect($markdown);
         $previous = is_string($main->document?->markdown) ? $inspector->inspect($main->document->markdown) : null;
         $references->validate($main, $inspection, $previous);
-        $documents[] = ['id' => $main->id, 'title' => $main->title, 'source' => $markdown, 'plain' => $this->singleSource($workspace, $main, $markdown, false), 'single' => $this->singleSource($workspace, $main, $markdown, true),
+        $documents[] = ['id' => $main->id, 'title' => $main->title, 'source' => $markdown, 'diagrams' => $inspection->derived->mermaidSourcesByHash, 'plain' => $this->singleSource($workspace, $main, $markdown, false), 'single' => $this->singleSource($workspace, $main, $markdown, true),
             'attachments' => Attachment::query()->where('workspace_id', $workspace->id)->whereIn('id', $inspection->derived->attachmentIds)->get(['id', 'original_name', 'mime_type', 'size_bytes', 'sha256', 'purpose'])->filter(fn ($file) => app(OwnedReferenceAvailability::class)->findAttachment($workspace, $main->id, $file->id) !== null)->values()->toArray()];
         $relatedIds = array_keys($inspector->inspect($documents[0]['source'])->derived->mentions);
         foreach ($workspace->nodes()->where('type', 'document')->whereIn('id', $relatedIds)->whereKeyNot($node)->limit(100)->get() as $related) {

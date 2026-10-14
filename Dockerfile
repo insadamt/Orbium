@@ -1,7 +1,7 @@
 FROM php:8.4-fpm-bookworm
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends libpq-dev libzip-dev libonig-dev unzip git \
+    && apt-get install -y --no-install-recommends libpq-dev libzip-dev libonig-dev unzip git libreoffice-writer fonts-liberation fonts-noto-core \
     && docker-php-ext-install mbstring pdo_pgsql zip \
     && rm -rf /var/lib/apt/lists/*
 
@@ -17,6 +17,7 @@ COPY . .
 RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader \
     && npm ci \
     && npm run build \
+    && npm ci --prefix scripts/document-export --omit=dev \
     && rm -rf node_modules \
     && cp -a public /opt/orbium-public \
     && mkdir -p storage/app storage/framework/cache storage/framework/sessions storage/framework/views storage/logs bootstrap/cache \

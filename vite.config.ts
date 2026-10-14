@@ -38,6 +38,7 @@ export default defineConfig({
             'Docs/**',
             'vendor/**',
             'node_modules/**',
+            '**/node_modules/**',
             'public/**',
             'bootstrap/ssr/**',
             'tailwind.config.js',
@@ -61,6 +62,7 @@ export default defineConfig({
         singleAttributePerLine: false,
         htmlWhitespaceSensitivity: 'css',
         ignorePatterns: [
+            '**/node_modules/**',
             'Docs/**',
             '.github/**',
             'composer.json',

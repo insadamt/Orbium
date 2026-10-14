@@ -8,6 +8,7 @@ use App\Http\Controllers\LibraryController;
 use App\Http\Controllers\MentionCandidateController;
 use App\Http\Controllers\NavigationController;
 use App\Http\Controllers\NodeController;
+use App\Http\Controllers\OfficeDocumentExportController;
 use App\Http\Controllers\ReferenceAvailabilityController;
 use App\Http\Controllers\TrashController;
 use App\Http\Controllers\WorkspaceController;
@@ -28,6 +29,7 @@ Route::middleware(['auth', SerializeWorkspaceWrites::class])->group(function () 
     Route::post('workspaces/{workspace}/library/delete', [LibraryController::class, 'destroy']);
     Route::get('workspaces/{workspace}/references/availability', [ReferenceAvailabilityController::class, 'show']);
     Route::post('workspaces/{workspace}/documents/{node}/transfer-data', [DocumentTransferController::class, 'exportData']);
+    Route::post('workspaces/{workspace}/documents/{node}/office-export', OfficeDocumentExportController::class)->withoutMiddleware(SerializeWorkspaceWrites::class)->middleware('throttle:6,1');
     Route::post('workspaces/{workspace}/document-packages/export', [DocumentTransferController::class, 'exportPackage']);
     Route::post('workspaces/{workspace}/document-packages/import', [DocumentTransferController::class, 'import']);
     Route::post('workspaces/{workspace}/documents/import', [DocumentTransferController::class, 'importDocument']);

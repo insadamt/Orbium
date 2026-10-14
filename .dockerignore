@@ -4,6 +4,7 @@ AGENTS.md
 .codex
 Docs
 node_modules
+**/node_modules
 vendor
 .env
 storage/logs/*

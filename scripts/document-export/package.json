@@ -1,0 +1,13 @@
+{
+    "name": "orbium-document-export",
+    "private": true,
+    "type": "module",
+    "dependencies": {
+        "docx": "^9.11.0",
+        "mathjax-full": "^3.2.1",
+        "sharp": "^0.35.5"
+    },
+    "overrides": {
+        "@xmldom/xmldom": "^0.9.12"
+    }
+}

@@ -32,6 +32,8 @@ services:
             DB_PORT: 5432
             SESSION_DRIVER: database
             FILESYSTEM_DISK: local
+            ORBIUM_EXPORT_NODE_BINARY: node
+            ORBIUM_LIBREOFFICE_BINARY: soffice
         volumes:
             - app_storage:/var/www/html/storage/app
             - public_assets:/var/www/html/public
