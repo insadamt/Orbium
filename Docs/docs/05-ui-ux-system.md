@@ -370,3 +370,16 @@ Mobile-first optimization is deferred. Do not break mobile unnecessarily, but do
 ## Library Gallery review (2026-10-13)
 
 Library uses natural borderless masonry, image proportions, quiet filenames, and three-dot image actions. Keep metadata and saved usage on the dedicated file detail page. Use a compact search/type/sort/action toolbar, explicit selection mode with a floating action bar, and centered rename/deletion dialogs. Reuse pickers share the visual cards with an explicit Use image/file confirmation. Touch keeps overflow controls visible; keyboard focus uses the existing background/text cue policy. Detail previews preserve the full image and support fit/zoom; metadata stacks below the preview in narrow panes. See `19-library.md` and `../reports/06-library-gallery.md`.
+
+
+## Explorer bulk selection (approved 2026-10-14)
+
+In workspace and folder Grid, List, and Gallery views, Ctrl+click (Cmd+click on macOS) toggles direct-child selection instead of opening a new tab. Space toggles the focused item. Normal click/Enter opens an item; Ctrl+Enter and the New tab menu action still open a new app tab. Escape, empty-space click, and Clear selection clear the selection. Search limits actions to visible selected items; route changes reset selection.
+
+A selection action strip offers Move and Delete for up to 100 items. Move chooses a valid container within the current workspace, excluding selected items and their descendants. Dragging any selected item moves the visible selection together, preserving sibling order. Delete confirms moving the selection and its contents to Trash. Each batch is atomic and uses the existing hierarchy validation and workspace write lock.
+
+Drag visual review (2026-10-14): dragging a selection lifts all selected items into a single horizontal row centered on the pointer. Original cards are invisible while dragging, with their layout slots retained to keep drop targets stable. The browser drag ghost is suppressed. The row scales to fit the viewport for large selections, and disappears on drop, cancellation, or leaving the explorer.
+
+Drag/selection correction (2026-10-14): selected explorer cards show a solid foreground outline and a checkmark badge in Grid, List, and Gallery, including frosted surfaces. Search reveal highlighting uses a separate dashed outline and does not imply selection. The centered row is the native drag image; source cards remain hit-testable and are hidden only after drag initialization. Cover/icon images do not initiate independent image drags.
+
+Stack motion review (2026-10-14, supersedes the drag-row and checkmark guidance above): selected explorer cards use only a solid outline with no checkmark or selection tint. Pointer dragging uses GSAP to lift cards from their individual positions and gather them into one overlapping stack, with a small offset exposing the cards underneath. Releasing or canceling animates each card from the stack back into its layout position; a valid drop then applies the existing atomic move/reorder. Empty-space release keeps the hierarchy unchanged. Reduced motion skips the animated travel. There is no native browser drag ghost.

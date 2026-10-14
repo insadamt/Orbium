@@ -167,3 +167,18 @@
         width: 100%;
     }
 }
+
+.floating-contents
+    .floating-item[data-revealed='true']:not([data-selected='true']) {
+    outline: 1px dashed var(--muted-foreground);
+    outline-offset: 2px;
+}
+.floating-contents .floating-item[data-selected='true'] {
+    outline: 2px solid var(--foreground);
+    outline-offset: 2px;
+}
+
+.floating-contents .floating-item {
+    user-select: none;
+    touch-action: none;
+}

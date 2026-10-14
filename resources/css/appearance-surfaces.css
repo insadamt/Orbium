@@ -3,10 +3,7 @@
 .surface-normal .floating-surface,
 .surface-normal .floating-body-island,
 .surface-normal .floating-menu,
-.surface-normal
-    .floating-item:where(
-        :not([data-selected='true']):not([data-drop='inside'])
-    ),
+.surface-normal .floating-item:where(:not([data-drop='inside'])),
 .surface-normal .explorer-view-switcher,
 .surface-normal .explorer-gallery-settings,
 :root[data-surface-style='normal'] .floating-context-menu {

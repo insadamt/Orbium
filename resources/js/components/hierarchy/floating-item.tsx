@@ -14,10 +14,12 @@ type Props = {
     legacyPreview?: boolean;
     node: TreeNode;
     selected: boolean;
+    revealed?: boolean;
     dragging: boolean;
     placement?: string;
     dragHandlers: HTMLAttributes<HTMLDivElement>;
     onSelect: () => void;
+    disabled?: boolean;
     onOpen: (newTab: boolean) => void;
     onActions: (target: HTMLElement) => void;
     onReorder: (direction: number) => void;
@@ -30,10 +32,12 @@ export function FloatingItem({
     legacyPreview,
     node,
     selected,
+    revealed,
     dragging,
     placement,
     dragHandlers,
     onSelect,
+    disabled,
     onOpen,
     onActions,
     onReorder,
@@ -53,25 +57,28 @@ export function FloatingItem({
             className="floating-item"
             role="button"
             tabIndex={0}
-            aria-label={`${node.title}, ${node.type}`}
+            aria-label={`${node.title}, ${node.type}${selected ? ', selected' : ''}`}
             aria-pressed={selected}
+            aria-disabled={disabled}
             aria-keyshortcuts={
                 view === 'list'
                     ? 'Enter Alt+ArrowUp Alt+ArrowDown Shift+F10'
                     : 'Enter Alt+ArrowLeft Alt+ArrowRight Shift+F10'
             }
             data-selected={selected}
+            data-revealed={revealed}
             data-dragging={dragging}
             data-drop={placement}
             data-node-id={node.id}
             data-view={view}
             onClick={(event) => {
                 if (event.button !== 0) return;
-                onSelect();
-                onOpen(event.ctrlKey || event.metaKey);
+                if (disabled) return;
+                if (event.ctrlKey || event.metaKey) onSelect();
+                else onOpen(false);
             }}
             onKeyDown={(event) => {
-                if (event.target !== event.currentTarget) return;
+                if (disabled || event.target !== event.currentTarget) return;
                 if (event.key === 'Enter') {
                     event.preventDefault();
                     onOpen(event.ctrlKey || event.metaKey);
@@ -122,6 +129,7 @@ export function FloatingItem({
                         <img
                             src={imageUrl(node.cover_attachment_id)}
                             alt=""
+                            draggable={false}
                             loading="lazy"
                             decoding="async"
                             onError={() =>
@@ -145,6 +153,7 @@ export function FloatingItem({
                 {node.icon_attachment_id ? (
                     <img
                         className="floating-item-icon-image"
+                        draggable={false}
                         src={imageUrl(node.icon_attachment_id)}
                         alt=""
                     />

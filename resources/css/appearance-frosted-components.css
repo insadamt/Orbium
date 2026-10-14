@@ -107,7 +107,6 @@
 
 :root[data-surface-style='frosted']
     :is(
-        .floating-item[data-selected='true'],
         .floating-item[data-drop='inside'],
         .floating-parent-drop-zone[data-active='true'],
         .appearance-choice[aria-pressed='true'],

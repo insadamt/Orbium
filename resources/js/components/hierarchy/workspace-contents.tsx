@@ -16,6 +16,8 @@ import {
 import { openLocation } from '@/components/navigation/tab-navigation';
 import { usePageSearch } from '@/components/navigation/page-search';
 import { useContainerView } from '@/components/navigation/use-container-view';
+import { ExplorerBulkActions } from './explorer-bulk-actions';
+import { useExplorerSelection } from './use-explorer-selection';
 import { FloatingItem } from './floating-item';
 import {
     ExplorerContextMenu,
@@ -27,7 +29,7 @@ import {
     ratioNumber,
     type GalleryAppearance,
 } from './cover-presentation';
-import { GalleryAppearanceEditor } from './gallery-appearance-editor';
+import { GalleryAppearanceDialog } from './gallery-appearance-dialog';
 import { MasonryLayout } from './masonry-layout';
 import { csrfToken } from '@/components/editor/editor-api';
 import {
@@ -65,9 +67,6 @@ export function WorkspaceContents({
     const focusId = Number(
         new URLSearchParams(window.location.search).get('focus'),
     );
-    const [selectedId, setSelectedId] = useState<number | null>(
-        focusId || null,
-    );
     const [menuPosition, setMenuPosition] =
         useState<ExplorerMenuPosition | null>(null);
     const [importOpen, setImportOpen] = useState(false);
@@ -78,7 +77,6 @@ export function WorkspaceContents({
     const [newTitle, setNewTitle] = useState('');
     const [saving, setSaving] = useState(false);
     const [moving, setMoving] = useState(false);
-    const [parentDropActive, setParentDropActive] = useState(false);
     const [announcement, setAnnouncement] = useState('');
     const search = usePageSearch();
     const normalizedQuery = search.query.trim().toLocaleLowerCase();
@@ -93,6 +91,7 @@ export function WorkspaceContents({
     useEffect(() => {
         search.setResultCount(normalizedQuery ? children.length : null);
     }, [children.length, normalizedQuery, search.setResultCount]);
+    const selection = useExplorerSelection(workspaceId, children);
     const menuNode = children.find((node) => node.id === menuPosition?.nodeId);
     const deleteNode = nodes.find((node) => node.id === deleteId);
     function move(
@@ -100,7 +99,11 @@ export function WorkspaceContents({
         destination: number | null,
         position: number,
     ) {
-        if (moving) return;
+        if (moving || selection.busy) return;
+        if (selection.selectedIds.includes(nodeId)) {
+            selection.submitBulkAction('move', destination, position);
+            return;
+        }
         setMoving(true);
         router.patch(
             `/workspaces/${workspaceId}/nodes/${nodeId}/move`,
@@ -115,11 +118,11 @@ export function WorkspaceContents({
             },
         );
     }
-    const { draggedId, dropHint, dragHandlers, dropIntoParent } = useItemDrag(
+    const { draggedId, dropHint, dragHandlers } = useItemDrag(
         nodes,
-        workspaceId,
         move,
-        moving,
+        moving || selection.busy,
+        selection.selectedIds,
     );
     const currentFolder = nodes.find((node) => node.id === parentId);
     const parentDestination = currentFolder?.parent_id ?? null;
@@ -202,15 +205,22 @@ export function WorkspaceContents({
                 appearance={appearance}
                 legacyPreview={legacyPreview}
                 node={node}
-                selected={selectedId === node.id}
-                dragging={draggedId === node.id}
+                selected={selection.selectedIds.includes(node.id)}
+                revealed={focusId === node.id}
+                disabled={moving || selection.busy || draggedId !== null}
+                dragging={
+                    draggedId === node.id ||
+                    (draggedId !== null &&
+                        selection.selectedIds.includes(draggedId) &&
+                        selection.selectedIds.includes(node.id))
+                }
                 placement={
                     dropHint?.targetId === node.id
                         ? dropHint.placement
                         : undefined
                 }
                 dragHandlers={dragHandlers(node)}
-                onSelect={() => setSelectedId(node.id)}
+                onSelect={() => selection.toggleSelection(node.id)}
                 onOpen={(newTab) => openNode(node, newTab)}
                 onActions={(target) => openActionsAt(node.id, target)}
                 onReorder={(direction) => {
@@ -223,6 +233,14 @@ export function WorkspaceContents({
     }
     return (
         <>
+            <ExplorerBulkActions
+                nodes={nodes}
+                selectedNodes={selection.selectedNodes}
+                parentId={parentId}
+                busy={moving || selection.busy || draggedId !== null}
+                onClear={selection.clearSelection}
+                onSubmit={selection.submitBulkAction}
+            />
             <ExplorerViewControls
                 view={view}
                 onChange={setView}
@@ -233,9 +251,14 @@ export function WorkspaceContents({
                 data-view={view}
                 data-layout={view === 'gallery' ? appearance.layout : undefined}
                 aria-label="Current container contents"
-                aria-busy={moving}
+                aria-busy={moving || selection.busy || draggedId !== null}
+                onClick={(event) => {
+                    if (
+                        !(event.target as HTMLElement).closest('[data-node-id]')
+                    )
+                        selection.clearSelection();
+                }}
                 tabIndex={0}
-                onDragEndCapture={() => setParentDropActive(false)}
                 onContextMenu={(event) => {
                     event.preventDefault();
                     const item = (
@@ -251,6 +274,7 @@ export function WorkspaceContents({
                     });
                 }}
                 onKeyDown={(event) => {
+                    if (event.key === 'Escape') selection.clearSelection();
                     if (
                         event.target !== event.currentTarget ||
                         !event.shiftKey ||
@@ -262,32 +286,7 @@ export function WorkspaceContents({
                 }}
             >
                 {draggedId !== null && currentFolder?.type === 'folder' && (
-                    <div
-                        className="floating-parent-drop-zone"
-                        data-active={parentDropActive}
-                        onDragOver={(event) => {
-                            event.preventDefault();
-                            event.dataTransfer.dropEffect = 'move';
-                            setParentDropActive(true);
-                        }}
-                        onDragLeave={(event) => {
-                            if (
-                                !(event.relatedTarget instanceof Node) ||
-                                !event.currentTarget.contains(
-                                    event.relatedTarget,
-                                )
-                            )
-                                setParentDropActive(false);
-                        }}
-                        onDrop={(event) => {
-                            setParentDropActive(false);
-                            dropIntoParent(
-                                event,
-                                currentFolder.id,
-                                parentDestination,
-                            );
-                        }}
-                    >
+                    <div className="floating-parent-drop-zone">
                         Move to {parentName}
                     </div>
                 )}
@@ -362,40 +361,13 @@ export function WorkspaceContents({
                     onClose={() => setExportNodeId(null)}
                 />
             )}
-            <Dialog
-                open={appearanceDraft !== null}
-                onOpenChange={(open) => {
-                    if (!open && !savingAppearance) setAppearanceDraft(null);
-                }}
-            >
-                <DialogContent>
-                    <DialogTitle>Gallery appearance</DialogTitle>
-                    {appearanceDraft && (
-                        <GalleryAppearanceEditor
-                            value={appearanceDraft}
-                            onChange={setAppearanceDraft}
-                        />
-                    )}
-                    <div className="flex justify-end gap-2">
-                        <button
-                            type="button"
-                            onClick={() => setAppearanceDraft(null)}
-                            disabled={savingAppearance}
-                            className="rounded-lg px-4 py-2 text-sm hover:bg-muted"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => void saveAppearance()}
-                            disabled={savingAppearance}
-                            className="rounded-lg bg-primary px-4 py-2 text-sm text-primary-foreground disabled:opacity-50"
-                        >
-                            {savingAppearance ? 'Saving…' : 'Apply'}
-                        </button>
-                    </div>
-                </DialogContent>
-            </Dialog>
+            <GalleryAppearanceDialog
+                draft={appearanceDraft}
+                saving={savingAppearance}
+                onChange={setAppearanceDraft}
+                onClose={() => setAppearanceDraft(null)}
+                onSave={() => void saveAppearance()}
+            />
             <Dialog
                 open={createType !== null}
                 onOpenChange={(open) => {

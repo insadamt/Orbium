@@ -1,151 +1,186 @@
-import { useRef, useState, type DragEvent } from 'react';
+import {
+    useEffect,
+    useRef,
+    useState,
+    type PointerEvent as ReactPointerEvent,
+    type MouseEvent,
+} from 'react';
+import { createExplorerDragPreview } from './explorer-drag-preview';
+import {
+    findExplorerDropDestination,
+    type DropHint,
+} from './explorer-drop-target';
 import type { TreeNode } from '@/components/navigation/navigation-types';
 
-type Placement = 'before' | 'inside' | 'after';
-type DropHint = { targetId: number; placement: Placement };
 export type MoveItem = (
     nodeId: number,
     parentId: number | null,
     position: number,
 ) => void;
 
-function resolvePlacement(event: DragEvent<HTMLElement>): Placement {
-    const bounds = event.currentTarget.getBoundingClientRect();
-    const horizontal = (event.clientX - bounds.left) / bounds.width;
-    const vertical = (event.clientY - bounds.top) / bounds.height;
-    if (event.currentTarget.dataset.view === 'list') {
-        if (vertical < 0.25) return 'before';
-        if (vertical > 0.75) return 'after';
-        return 'inside';
-    }
-    if (horizontal < 0.24 || vertical < 0.18) return 'before';
-    if (horizontal > 0.76 || vertical > 0.82) return 'after';
-    return 'inside';
-}
-
-function canDrop(
-    nodes: TreeNode[],
-    source: TreeNode,
-    target: TreeNode,
-    placement: Placement,
-) {
-    if (source.id === target.id) return false;
-    if (placement !== 'inside') return source.parent_id === target.parent_id;
-    if (
-        target.type === 'document' ||
-        (target.type === 'database' && source.type !== 'document')
-    )
-        return false;
-    const visited = new Set<number>();
-    let ancestor: TreeNode | undefined = target;
-    while (ancestor) {
-        if (ancestor.id === source.id || visited.has(ancestor.id)) return false;
-        visited.add(ancestor.id);
-        const parentId: number | null = ancestor.parent_id;
-        ancestor = nodes.find((node) => node.id === parentId);
-    }
-    return true;
-}
-
 export function useItemDrag(
     nodes: TreeNode[],
-    workspaceId: number,
     onMove: MoveItem,
     disabled: boolean,
+    selectedIds: number[] = [],
 ) {
     const [draggedId, setDraggedId] = useState<number | null>(null);
     const [dropHint, setDropHint] = useState<DropHint | null>(null);
-    const preview = useRef<HTMLElement | null>(null);
+    const cancelSession = useRef<(() => void) | null>(null);
+    const suppressClickUntil = useRef(0);
+    useEffect(() => () => cancelSession.current?.(), []);
 
-    function clearDrag() {
-        setDraggedId(null);
-        setDropHint(null);
-        preview.current?.remove();
-        preview.current = null;
-    }
-
-    function inspect(event: DragEvent<HTMLElement>, target: TreeNode) {
-        const source = nodes.find((node) => node.id === draggedId);
-        const placement = resolvePlacement(event);
-        if (disabled || !source || !canDrop(nodes, source, target, placement)) {
-            event.dataTransfer.dropEffect = 'none';
-            setDropHint(null);
-            return;
-        }
-        event.preventDefault();
-        event.dataTransfer.dropEffect = 'move';
-        setDropHint({ targetId: target.id, placement });
-    }
-
-    function drop(event: DragEvent<HTMLElement>, target: TreeNode) {
-        event.preventDefault();
-        const source = nodes.find((node) => node.id === draggedId);
-        const placement = resolvePlacement(event);
-        clearDrag();
-        if (disabled || !source || !canDrop(nodes, source, target, placement))
-            return;
-        const parentId = placement === 'inside' ? target.id : target.parent_id;
-        const siblings = nodes
-            .filter(
-                (node) => node.parent_id === parentId && node.id !== source.id,
-            )
-            .sort((a, b) => a.position - b.position || a.id - b.id);
-        const position =
-            placement === 'inside'
-                ? siblings.length
-                : siblings.findIndex((node) => node.id === target.id) +
-                  (placement === 'after' ? 1 : 0);
-        onMove(source.id, parentId, position);
-    }
-
-    function dropIntoParent(
-        event: DragEvent<HTMLElement>,
-        currentFolderId: number,
-        destinationParentId: number | null,
+    function beginPointerSession(
+        event: ReactPointerEvent<HTMLElement>,
+        sourceNode: TreeNode,
     ) {
-        event.preventDefault();
-        const source = nodes.find((node) => node.id === draggedId);
-        clearDrag();
-        if (disabled || !source || source.parent_id !== currentFolderId) return;
-        const siblings = nodes.filter(
-            (node) => node.parent_id === destinationParentId,
-        );
-        onMove(source.id, destinationParentId, siblings.length);
+        if (
+            disabled ||
+            cancelSession.current ||
+            event.button !== 0 ||
+            (event.target as HTMLElement).closest('button, input, a')
+        )
+            return;
+        const source = event.currentTarget;
+        const container = source.closest('.floating-contents');
+        if (!container) return;
+        const sources = selectedIds.includes(sourceNode.id)
+            ? nodes.filter((node) => selectedIds.includes(node.id))
+            : [sourceNode];
+        const pointerId = event.pointerId;
+        const start = { x: event.clientX, y: event.clientY };
+        let preview: ReturnType<typeof createExplorerDragPreview> | null = null;
+        let parentZone: HTMLElement | null = null;
+        let ending = false;
+        function updateDestination(x: number, y: number) {
+            const destination = findExplorerDropDestination(
+                container!,
+                nodes,
+                sources,
+                x,
+                y,
+            );
+            if (parentZone) parentZone.dataset.active = 'false';
+            parentZone = destination?.parentZone ?? null;
+            if (parentZone) parentZone.dataset.active = 'true';
+            const nextHint = destination?.hint ?? null;
+            setDropHint((previous) =>
+                previous?.targetId === nextHint?.targetId &&
+                previous?.placement === nextHint?.placement
+                    ? previous
+                    : nextHint,
+            );
+            return destination;
+        }
+        function removeListeners() {
+            document.removeEventListener('pointermove', movePointer);
+            document.removeEventListener('pointerup', releasePointer);
+            document.removeEventListener('pointercancel', cancelPointer);
+            document.removeEventListener('keydown', cancelWithEscape, true);
+            window.removeEventListener('blur', cancelPointer);
+        }
+        function complete() {
+            setTimeout(
+                () =>
+                    document.removeEventListener(
+                        'click',
+                        suppressReleaseClick,
+                        true,
+                    ),
+                0,
+            );
+            cancelSession.current = null;
+            setDraggedId(null);
+            setDropHint(null);
+        }
+        function finish(x: number, y: number, canceled: boolean) {
+            if (ending) return;
+            ending = true;
+            removeListeners();
+            const destination =
+                !canceled && preview ? updateDestination(x, y) : null;
+            if (parentZone) parentZone.dataset.active = 'false';
+            setDropHint(null);
+            if (!preview) {
+                complete();
+                return;
+            }
+            suppressClickUntil.current = performance.now() + 500;
+            preview.returnToPlaces(() => {
+                complete();
+                if (destination)
+                    onMove(
+                        sourceNode.id,
+                        destination.parentId,
+                        destination.position,
+                    );
+            });
+        }
+        function movePointer(pointer: PointerEvent) {
+            if (pointer.pointerId !== pointerId || ending) return;
+            if (!preview) {
+                if (
+                    Math.hypot(
+                        pointer.clientX - start.x,
+                        pointer.clientY - start.y,
+                    ) < 6
+                )
+                    return;
+                preview = createExplorerDragPreview(source, sources, {
+                    x: pointer.clientX,
+                    y: pointer.clientY,
+                });
+                setDraggedId(sourceNode.id);
+            } else preview.follow({ x: pointer.clientX, y: pointer.clientY });
+            pointer.preventDefault();
+            updateDestination(pointer.clientX, pointer.clientY);
+        }
+        function releasePointer(pointer: PointerEvent) {
+            if (pointer.pointerId === pointerId)
+                finish(pointer.clientX, pointer.clientY, false);
+        }
+        function suppressReleaseClick(click: globalThis.MouseEvent) {
+            if (!preview) return;
+            click.preventDefault();
+            click.stopPropagation();
+        }
+        function cancelPointer() {
+            finish(start.x, start.y, true);
+        }
+        function cancelWithEscape(key: KeyboardEvent) {
+            if (key.key !== 'Escape' || !preview) return;
+            key.preventDefault();
+            key.stopPropagation();
+            cancelPointer();
+        }
+        cancelSession.current = () => {
+            ending = true;
+            removeListeners();
+            document.removeEventListener('click', suppressReleaseClick, true);
+            preview?.remove();
+            if (parentZone) parentZone.dataset.active = 'false';
+        };
+        document.addEventListener('pointermove', movePointer, {
+            passive: false,
+        });
+        document.addEventListener('click', suppressReleaseClick, true);
+        document.addEventListener('pointerup', releasePointer);
+        document.addEventListener('pointercancel', cancelPointer);
+        document.addEventListener('keydown', cancelWithEscape, true);
+        window.addEventListener('blur', cancelPointer);
     }
-
     function dragHandlers(node: TreeNode) {
         return {
-            draggable: !disabled,
-            onDragStart(event: DragEvent<HTMLElement>) {
-                event.dataTransfer.effectAllowed = 'move';
-                event.dataTransfer.setData(
-                    'application/orbium-node',
-                    String(node.id),
-                );
-                event.dataTransfer.setData(
-                    `application/orbium-workspace-${workspaceId}`,
-                    'true',
-                );
-                const copy = event.currentTarget.cloneNode(true) as HTMLElement;
-                copy.querySelector('button')?.remove();
-                copy.className = 'floating-item floating-drag-preview';
-                copy.style.width = `${event.currentTarget.offsetWidth}px`;
-                document.body.appendChild(copy);
-                preview.current = copy;
-                event.dataTransfer.setDragImage(copy, 30, 28);
-                setDraggedId(node.id);
-            },
-            onDragOver: (event: DragEvent<HTMLElement>) => inspect(event, node),
-            onDrop: (event: DragEvent<HTMLElement>) => drop(event, node),
-            onDragEnd: clearDrag,
-            onDragLeave(event: DragEvent<HTMLElement>) {
-                if (
-                    !(event.relatedTarget instanceof Node) ||
-                    !event.currentTarget.contains(event.relatedTarget)
-                )
-                    setDropHint(null);
+            draggable: false,
+            onPointerDown: (event: ReactPointerEvent<HTMLElement>) =>
+                beginPointerSession(event, node),
+            onClickCapture(event: MouseEvent<HTMLElement>) {
+                if (performance.now() < suppressClickUntil.current) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
             },
         };
     }
-    return { draggedId, dropHint, dragHandlers, dropIntoParent };
+    return { draggedId, dropHint, dragHandlers };
 }
