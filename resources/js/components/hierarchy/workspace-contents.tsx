@@ -16,7 +16,7 @@ import {
 import { openLocation } from '@/components/navigation/tab-navigation';
 import { usePageSearch } from '@/components/navigation/page-search';
 import { useContainerView } from '@/components/navigation/use-container-view';
-import { ExplorerTrashDropTarget } from './explorer-trash-drop-target';
+import { ExplorerDragDropTargets } from './explorer-drag-drop-targets';
 import { trashExplorerNodes } from './explorer-node-mutations';
 import { useExplorerSelection } from './use-explorer-selection';
 import { FloatingItem } from './floating-item';
@@ -140,21 +140,21 @@ export function WorkspaceContents({
             onFinish: () => setChangingHierarchy(false),
         });
     }
-    const { draggedId, liftedIds, trashActive, dropHint, dragHandlers } =
-        useItemDrag(
-            nodes,
-            move,
-            trashDraggedItems,
-            changingHierarchy || selection.busy,
-            selection.selectedIds,
-        );
+    const {
+        draggedId,
+        liftedIds,
+        trashActive,
+        moveOutActive,
+        dropHint,
+        dragHandlers,
+    } = useItemDrag(
+        nodes,
+        move,
+        trashDraggedItems,
+        changingHierarchy || selection.busy,
+        selection.selectedIds,
+    );
     const currentFolder = nodes.find((node) => node.id === parentId);
-    const parentDestination = currentFolder?.parent_id ?? null;
-    const parentName =
-        parentDestination === null
-            ? 'workspace root'
-            : (nodes.find((node) => node.id === parentDestination)?.title ??
-              'parent folder');
     function openNode(node: TreeNode, newTab: boolean) {
         openLocation(nodeUrl(workspaceId, node), newTab);
     }
@@ -255,12 +255,14 @@ export function WorkspaceContents({
     }
     return (
         <>
-            <ExplorerTrashDropTarget
+            <ExplorerDragDropTargets
                 workspaceId={workspaceId}
                 visible={draggedId !== null}
                 active={trashActive}
                 count={liftedIds.length}
-                busy={changingHierarchy && trashActive}
+                busy={changingHierarchy}
+                canMoveOut={currentFolder?.type === 'folder'}
+                moveOutActive={moveOutActive}
             />
             <ExplorerViewControls
                 view={view}
@@ -310,11 +312,6 @@ export function WorkspaceContents({
                     openActionsAt(null, event.currentTarget);
                 }}
             >
-                {draggedId !== null && currentFolder?.type === 'folder' && (
-                    <div className="floating-parent-drop-zone">
-                        Move to {parentName}
-                    </div>
-                )}
                 {view === 'gallery' && appearance.layout === 'natural' ? (
                     <MasonryLayout
                         hiddenItemIds={liftedIds}

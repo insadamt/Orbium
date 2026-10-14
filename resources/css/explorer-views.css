@@ -111,12 +111,13 @@
     bottom: -5px;
 }
 .floating-contents[data-view='gallery'] {
+    align-items: flex-start;
     gap: 20px;
 }
 .floating-item[data-view='gallery'] {
     display: block;
     width: 252px;
-    min-height: 210px;
+    min-height: 0;
     padding: 0;
     overflow: hidden;
     border: 0;
@@ -127,7 +128,6 @@
 }
 .floating-contents[data-view='gallery'][data-layout='natural'] .floating-item {
     width: 100%;
-    min-height: 0;
 }
 .floating-item-preview {
     display: grid;

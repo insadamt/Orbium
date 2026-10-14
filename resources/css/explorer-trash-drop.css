@@ -8,9 +8,19 @@
     overflow: hidden;
     pointer-events: none;
 }
+.explorer-drag-drop-actions {
+    display: flex;
+    justify-content: center;
+    width: min(640px, 100vw);
+}
 .explorer-trash-drop-target {
     position: relative;
-    width: min(460px, 100vw);
+    width: min(320px, 100vw);
+    max-width: 320px;
+    min-width: 0;
+    flex: 1;
+    isolation: isolate;
+    --drop-glow-color: 239 68 68;
     min-height: 128px;
     color: var(--foreground);
     pointer-events: auto;
@@ -22,9 +32,10 @@
 .explorer-trash-drop-ambient {
     position: absolute;
     bottom: -140px;
-    left: calc(50% - 520px);
-    width: 1040px;
+    left: calc(50% - 320px);
+    width: 640px;
     height: 420px;
+    z-index: -1;
     opacity: 0.38;
     transform-origin: 50% 100%;
     pointer-events: none;
@@ -40,24 +51,24 @@
 .explorer-trash-glow-core {
     background: radial-gradient(
         ellipse at 50% 82%,
-        rgb(239 68 68 / 90%),
-        rgb(239 68 68 / 26%) 32%,
+        rgb(var(--drop-glow-color) / 90%),
+        rgb(var(--drop-glow-color) / 26%) 32%,
         transparent 62%
     );
 }
 .explorer-trash-glow-left {
     background: radial-gradient(
         ellipse at 36% 68%,
-        rgb(248 70 70 / 52%),
-        rgb(239 68 68 / 12%) 28%,
+        rgb(var(--drop-glow-color) / 52%),
+        rgb(var(--drop-glow-color) / 12%) 28%,
         transparent 56%
     );
 }
 .explorer-trash-glow-right {
     background: radial-gradient(
         ellipse at 63% 75%,
-        rgb(220 38 38 / 56%),
-        rgb(239 68 68 / 13%) 26%,
+        rgb(var(--drop-glow-color) / 56%),
+        rgb(var(--drop-glow-color) / 13%) 26%,
         transparent 54%
     );
 }
@@ -77,4 +88,11 @@
 .explorer-trash-drop-count {
     font-size: 11px;
     color: var(--muted-foreground);
+}
+
+.explorer-trash-drop-target[data-action='move-out'] {
+    --drop-glow-color: 148 163 184;
+}
+.explorer-trash-drop-target[data-action='move-out'] svg {
+    color: var(--foreground);
 }

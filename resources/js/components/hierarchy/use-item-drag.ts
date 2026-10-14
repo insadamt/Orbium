@@ -26,6 +26,7 @@ export function useItemDrag(
     disabled: boolean,
     selectedIds: number[] = [],
 ) {
+    const [moveOutActive, setMoveOutActive] = useState(false);
     const [trashActive, setTrashActive] = useState(false);
     const [liftedIds, setLiftedIds] = useState<number[]>([]);
     const [draggedId, setDraggedId] = useState<number | null>(null);
@@ -65,9 +66,8 @@ export function useItemDrag(
                 x,
                 y,
             );
-            if (parentZone) parentZone.dataset.active = 'false';
             parentZone = destination?.parentZone ?? null;
-            if (parentZone) parentZone.dataset.active = 'true';
+            setMoveOutActive(parentZone !== null);
             setTrashActive(destination?.action === 'trash');
             const nextHint = destination?.hint ?? null;
             setDropHint((previous) =>
@@ -99,6 +99,7 @@ export function useItemDrag(
             setLiftedIds([]);
             setDraggedId(null);
             setTrashActive(false);
+            setMoveOutActive(false);
             setDropHint(null);
         }
         async function finish(x: number, y: number, canceled: boolean) {
@@ -107,7 +108,6 @@ export function useItemDrag(
             removeListeners();
             const destination =
                 !canceled && preview ? updateDestination(x, y) : null;
-            if (parentZone) parentZone.dataset.active = 'false';
             setDropHint(null);
             if (!preview) {
                 complete();
@@ -147,6 +147,7 @@ export function useItemDrag(
             flushSync(() => {
                 setLiftedIds([]);
                 setTrashActive(false);
+                setMoveOutActive(false);
             });
             preview.returnToPlaces(() => flushSync(complete));
         }
@@ -196,7 +197,6 @@ export function useItemDrag(
             removeListeners();
             document.removeEventListener('click', suppressReleaseClick, true);
             preview?.remove();
-            if (parentZone) parentZone.dataset.active = 'false';
         };
         document.addEventListener('pointermove', movePointer, {
             passive: false,
@@ -220,5 +220,12 @@ export function useItemDrag(
             },
         };
     }
-    return { draggedId, liftedIds, trashActive, dropHint, dragHandlers };
+    return {
+        draggedId,
+        liftedIds,
+        trashActive,
+        moveOutActive,
+        dropHint,
+        dragHandlers,
+    };
 }

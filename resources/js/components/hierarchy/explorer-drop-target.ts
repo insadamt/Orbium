@@ -68,7 +68,6 @@ export function findExplorerDropDestination(
             parentZone: null,
         };
     }
-    if (!container.contains(hovered)) return null;
     const sourceIds = new Set(sources.map((source) => source.id));
     const siblingsAt = (parentId: number | null) =>
         nodes
@@ -78,13 +77,19 @@ export function findExplorerDropDestination(
             )
             .sort((a, b) => a.position - b.position || a.id - b.id);
     const parentZone = hovered.closest<HTMLElement>(
-        '.floating-parent-drop-zone',
+        '[data-explorer-move-out-target][data-visible="true"]',
     );
-    if (parentZone) {
+    if (
+        parentZone &&
+        parentZone.dataset.workspaceId ===
+            container.getAttribute('data-workspace-id')
+    ) {
         const currentFolder = nodes.find(
             (node) => node.id === sources[0]?.parent_id,
         );
         if (!currentFolder || currentFolder.type !== 'folder') return null;
+        if (sources.some((source) => source.parent_id !== currentFolder.id))
+            return null;
         return {
             action: 'move',
             parentId: currentFolder.parent_id,
@@ -94,6 +99,7 @@ export function findExplorerDropDestination(
             element: parentZone,
         };
     }
+    if (!container.contains(hovered)) return null;
     const element = hovered.closest<HTMLElement>('[data-node-id]');
     const target = nodes.find(
         (node) => node.id === Number(element?.dataset.nodeId),
