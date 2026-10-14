@@ -1,3 +1,7 @@
+.retained-document-workspace {
+    position: relative;
+}
+
 .navigation-tab-motion[data-tab-exiting='true'] {
     pointer-events: none;
     opacity: 0;

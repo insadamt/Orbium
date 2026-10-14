@@ -178,6 +178,8 @@ Saved tabs close without waiting for the destination response; editor destructio
 
 Navigation UI persistence coalesces the latest snapshot after a frame and timer yield, with synchronous flush on pagehide/backgrounding. Unchanged scroll and metadata do not trigger state updates. Retained editor contexts and empty page-search state stay stable across unrelated shell changes; selection-toolbar plugins remain registered while hidden. These changes preserve the existing navigation storage format and document autosave.
 
+Tab content motion review (2026-10-14): switching between app tabs gives the destination content a 14px directional glide over 280ms, with ease-out settling. Motion begins when the destination surface is visible, without waiting for an exit animation or fading frosted surfaces. The initial page, navigation within the same tab, cached-page refreshes, and selecting the other pane of a split do not replay it. Split creation/removal retains its own motion. Rapid switches cancel earlier glides; operating-system reduced motion skips the glide and cancels it if enabled during playback. See [the report and manual checklist](../reports/07-tab-content-motion.md).
+
 See `../reports/05-tab-switching-performance.md`, `../reports/05-document-tab-handoff.md`, and `../reports/05-warm-tab-interaction.md` for evidence limits and manual acceptance.
 
 ## History

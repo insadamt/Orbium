@@ -20,6 +20,7 @@ import { groupForTab } from './split-group-state';
 import { SplitWorkspace } from './split-workspace';
 import { useSplitPaneScroll } from './use-split-pane-scroll';
 import { attachWorkspaceWheelScrolling } from './split-pane-scroll';
+import { useTabContentMotion } from './use-tab-content-motion';
 import {
     disposeSplitMotion,
     playPendingSplitMotion,
@@ -127,6 +128,30 @@ export function RetainedDocumentWorkspace({
         : destinationDocumentIsReady
           ? activeId
           : outgoingDocumentId;
+
+    const activeUrl = activeTab?.entries[activeTab.index].url;
+    const surfaceTabId = activeGroup
+        ? activeGroup.leftId
+        : (visibleDocumentId ??
+          (currentPage.url === activeUrl ? activeId : undefined));
+    const trailingTabId = activeGroup?.rightId;
+    const surfaceTabIndex = tabs.findIndex((tab) => tab.id === surfaceTabId);
+    const motionSurface = useMemo(
+        () =>
+            surfaceTabId
+                ? {
+                      key: trailingTabId
+                          ? `split:${surfaceTabId}:${trailingTabId}`
+                          : surfaceTabId,
+                      tabIds: trailingTabId
+                          ? [surfaceTabId, trailingTabId]
+                          : [surfaceTabId],
+                      tabIndex: surfaceTabIndex,
+                  }
+                : null,
+        [surfaceTabId, trailingTabId, surfaceTabIndex],
+    );
+    useTabContentMotion({ workspaceRef, surface: motionSurface });
 
     useLayoutEffect(() => {
         const workspace = workspaceRef.current;
