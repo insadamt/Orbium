@@ -6,6 +6,7 @@ import {
     useState,
     type ReactNode,
 } from 'react';
+import { createPortal } from 'react-dom';
 import { attachFloatingOutlinePositioning } from './floating-outline-position';
 import { useDocumentTab } from '@/components/navigation/document-tab-context';
 
@@ -36,11 +37,15 @@ export function DocumentOutlineLayout({
         <OutlinePanelContext.Provider value={{ panelHost, title }}>
             <div ref={container} className="document-outline-container">
                 {children}
-                <div
-                    ref={setPanelHost}
-                    className="document-outline-slot"
-                    hidden={!visible}
-                />
+                {typeof document !== 'undefined' &&
+                    createPortal(
+                        <div
+                            ref={setPanelHost}
+                            className="document-outline-slot"
+                            hidden={!visible}
+                        />,
+                        (window.frameElement?.ownerDocument ?? document).body,
+                    )}
             </div>
         </OutlinePanelContext.Provider>
     );

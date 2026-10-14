@@ -33,9 +33,9 @@ The eight cover ratio buttons occupy one row on wider screens and two rows of fo
 
 No permanent formatting toolbar. The document actions menu offers Import, Export and Source/Live Preview; it omits Document outline, Find in document and Add file. Outline navigation remains on the rail, and existing find shortcuts and attachment insertion flows remain available.
 
-Each visible document has a small outline rail inside its document layout, at
+Each visible document has a small outline rail aligned with its document layout, at
 the right edge of the document surface below the navbar. A reserved gutter keeps
-it beside the content in both single-document and split views. It stays accessible while scrolling; non-document pages have
+it beside the content in both single-document and split views. The rail is fixed at the browser viewport's vertical midpoint using CSS, so document scrolling never recalculates its vertical position. Its host is portaled to the outer document body, including for same-origin iframe panes, to avoid ancestor clipping and scrolling with the iframe. Its horizontal position follows its document's right edge. It stays accessible while scrolling; non-document pages have
 no rail. Documents without H1/H2 headings also have no rail or panel; adding a heading restores the rail and removing the last one hides it. The rail and panel include every H1 and H2, with no sampling or heading
 count limit. Two mark lengths distinguish the levels; the current reading section
 is highlighted. Long rails show a portion of the outline in a container capped at 180px

@@ -5,9 +5,9 @@
 }
 
 .document-outline-slot {
-    position: absolute;
-    top: 24px;
-    right: 0;
+    position: fixed;
+    top: 50%;
+    transform: translateY(-50%);
     z-index: 25;
     display: flex;
     align-items: center;

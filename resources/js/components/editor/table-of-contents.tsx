@@ -113,18 +113,30 @@ export function TableOfContents({
         if (!expanded || pinned) return;
         const dismissOutside = (event: PointerEvent) => {
             if (
-                event.target instanceof Node &&
-                !widget.current?.contains(event.target)
+                event.target &&
+                !widget.current?.contains(event.target as Node)
             ) {
                 setPinned(false);
                 setHovered(false);
                 setDismissed(true);
             }
         };
-        document.addEventListener('pointerdown', dismissOutside);
-        return () =>
-            document.removeEventListener('pointerdown', dismissOutside);
-    }, [expanded, pinned]);
+        const documents = new Set([
+            document,
+            panelHost?.ownerDocument ?? document,
+        ]);
+        documents.forEach((ownerDocument) =>
+            ownerDocument.addEventListener('pointerdown', dismissOutside),
+        );
+        return () => {
+            documents.forEach((ownerDocument) =>
+                ownerDocument.removeEventListener(
+                    'pointerdown',
+                    dismissOutside,
+                ),
+            );
+        };
+    }, [expanded, pinned, panelHost]);
 
     const currentHeading = headings.findLast(
         (heading) => heading.position <= currentPosition,
@@ -173,14 +185,14 @@ export function TableOfContents({
             onFocusCapture={(event) => {
                 setFocused(true);
                 if (
-                    !(event.relatedTarget instanceof Node) ||
+                    !event.relatedTarget ||
                     !event.currentTarget.contains(event.relatedTarget)
                 )
                     setDismissed(false);
             }}
             onBlurCapture={(event) => {
                 if (
-                    !(event.relatedTarget instanceof Node) ||
+                    !event.relatedTarget ||
                     !event.currentTarget.contains(event.relatedTarget)
                 )
                     setFocused(false);
