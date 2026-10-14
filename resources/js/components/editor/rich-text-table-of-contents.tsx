@@ -4,7 +4,7 @@ import {
 } from './outline-reading-position';
 import {
     animateHeadingNavigation,
-    scrollOutlineTargetIntoView,
+    headingScrollDestination,
 } from './outline-navigation-motion';
 import { useMemo } from 'react';
 import type { Editor } from '@tiptap/core';
@@ -75,14 +75,19 @@ export function RichTextTableOfContents({ editor }: { editor: Editor | null }) {
             navigateToHeading(heading) {
                 return animateHeadingNavigation({
                     editorElement: editor.view.dom,
-                    revealHeading() {
+                    measureDestination(navigate) {
                         editor.commands.setTextSelection(heading.position + 1);
                         editor.commands.focus(undefined, {
                             scrollIntoView: false,
                         });
                         const target = editor.view.nodeDOM(heading.position);
                         if (!(target instanceof HTMLElement)) return;
-                        scrollOutlineTargetIntoView(target);
+                        navigate(
+                            headingScrollDestination(
+                                editor.view.dom,
+                                target.getBoundingClientRect().top,
+                            ),
+                        );
                     },
                 });
             },

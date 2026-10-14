@@ -14,37 +14,36 @@ export function outlineScrollOwner(element: HTMLElement): HTMLElement {
     );
 }
 
-export function scrollOutlineTargetIntoView(target: HTMLElement) {
-    const owner = outlineScrollOwner(target);
+export function headingScrollDestination(
+    editorElement: HTMLElement,
+    headingTop: number,
+) {
+    const owner = outlineScrollOwner(editorElement);
     const frame = window.frameElement as HTMLElement | null;
     const frameTop =
-        frame && owner.ownerDocument !== target.ownerDocument
+        frame && owner.ownerDocument !== editorElement.ownerDocument
             ? frame.getBoundingClientRect().top
             : 0;
     const ownerTop =
-        owner === target.ownerDocument.scrollingElement
+        owner === owner.ownerDocument.scrollingElement
             ? 0
             : owner.getBoundingClientRect().top;
-    owner.scrollTop +=
-        frameTop + target.getBoundingClientRect().top - ownerTop - 96;
+    return owner.scrollTop + frameTop + headingTop - ownerTop - 96;
 }
 
 type HeadingNavigation = {
     editorElement: HTMLElement;
-    revealHeading: () => void;
+    measureDestination: (navigate: (destination: number) => void) => void;
 };
 
 export function animateHeadingNavigation(
     request: HeadingNavigation,
 ): () => void {
     const owner = outlineScrollOwner(request.editorElement);
-    const start = owner.scrollTop;
-    let frame = 0;
     let tween: gsap.core.Tween | undefined;
     let cancelled = false;
     const cancel = () => {
         cancelled = true;
-        cancelAnimationFrame(frame);
         tween?.kill();
         removeInterruptions();
     };
@@ -65,34 +64,38 @@ export function animateHeadingNavigation(
         cancel();
     };
     const eventHost: EventTarget =
-        owner === document.scrollingElement ? window : owner;
+        owner === owner.ownerDocument.scrollingElement
+            ? owner.ownerDocument.defaultView!
+            : owner;
     const removeInterruptions = () => {
         eventHost.removeEventListener('wheel', interrupt);
         eventHost.removeEventListener('touchstart', interrupt);
         eventHost.removeEventListener('pointerdown', interrupt);
         window.removeEventListener('keydown', interrupt);
     };
-    request.revealHeading();
-    if (prefersReducedOutlineMotion()) return cancel;
     eventHost.addEventListener('wheel', interrupt, { passive: true });
     eventHost.addEventListener('touchstart', interrupt, { passive: true });
     eventHost.addEventListener('pointerdown', interrupt, { passive: true });
     window.addEventListener('keydown', interrupt);
-    // Let CodeMirror render and measure an offscreen destination before animating.
-    frame = requestAnimationFrame(() => {
-        frame = requestAnimationFrame(() => {
-            if (cancelled) return;
-            const destination = owner.scrollTop;
-            owner.scrollTop = start;
-            tween = gsap.to(owner, {
-                scrollTop: destination,
-                duration: Math.min(
-                    0.85,
-                    0.35 + Math.abs(destination - start) / 5000,
-                ),
-                ease: 'power3.inOut',
-                onComplete: removeInterruptions,
-            });
+    request.measureDestination((destination) => {
+        if (cancelled) return;
+        const boundedDestination = Math.max(
+            0,
+            Math.min(destination, owner.scrollHeight - owner.clientHeight),
+        );
+        if (prefersReducedOutlineMotion()) {
+            owner.scrollTop = boundedDestination;
+            removeInterruptions();
+            return;
+        }
+        tween = gsap.to(owner, {
+            scrollTop: boundedDestination,
+            duration: Math.min(
+                0.85,
+                0.35 + Math.abs(boundedDestination - owner.scrollTop) / 5000,
+            ),
+            ease: 'power3.inOut',
+            onComplete: removeInterruptions,
         });
     });
     return cancel;

@@ -4,7 +4,7 @@ import {
 } from '../outline-reading-position';
 import {
     animateHeadingNavigation,
-    outlineScrollOwner,
+    headingScrollDestination,
 } from '../outline-navigation-motion';
 import { useMemo } from 'react';
 import { Compartment, type Text } from '@codemirror/state';
@@ -106,42 +106,25 @@ export function MarkdownTableOfContents({
             navigateToHeading(heading) {
                 return animateHeadingNavigation({
                     editorElement: view.dom,
-                    revealHeading() {
+                    measureDestination(navigate) {
                         view.dispatch({
                             selection: { anchor: heading.position },
-                            effects: EditorView.scrollIntoView(
-                                heading.position,
-                                {
-                                    y: 'start',
-                                    yMargin: 96,
-                                },
-                            ),
                         });
                         view.focus();
-                        const owner = outlineScrollOwner(view.dom);
-                        const frame = window.frameElement as HTMLElement | null;
-                        if (
-                            frame &&
-                            owner.ownerDocument !== view.dom.ownerDocument
-                        )
-                            view.requestMeasure({
-                                read() {
-                                    return (
-                                        view.coordsAtPos(heading.position)
-                                            ?.top ??
-                                        view.documentTop +
-                                            view.lineBlockAt(heading.position)
-                                                .top
-                                    );
-                                },
-                                write(top) {
-                                    owner.scrollTop +=
-                                        frame.getBoundingClientRect().top +
-                                        top -
-                                        owner.getBoundingClientRect().top -
-                                        96;
-                                },
-                            });
+                        // Measure without revealing: a preliminary scroll paints a flash before the tween.
+                        view.requestMeasure({
+                            read() {
+                                const headingTop =
+                                    view.coordsAtPos(heading.position)?.top ??
+                                    view.documentTop +
+                                        view.lineBlockAt(heading.position).top;
+                                return headingScrollDestination(
+                                    view.dom,
+                                    headingTop,
+                                );
+                            },
+                            write: navigate,
+                        });
                     },
                 });
             },
