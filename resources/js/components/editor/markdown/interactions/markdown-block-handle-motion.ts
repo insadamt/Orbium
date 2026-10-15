@@ -57,6 +57,14 @@ export class MarkdownBlockHandleMotion {
         this.animation = null;
     }
 
+    pause = () => {
+        if (this.animation?.playState === 'running') this.animation.pause();
+    };
+
+    resume = () => {
+        if (this.animation?.playState === 'paused') this.animation.play();
+    };
+
     hide() {
         this.finish();
         this.element.hidden = true;

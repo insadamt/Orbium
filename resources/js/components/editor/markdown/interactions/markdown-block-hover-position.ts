@@ -1,30 +1,42 @@
 import type { EditorView } from '@codemirror/view';
 
-export function markdownBlockHoverPosition(
+type MarkdownBlockPointer = { clientX: number; clientY: number };
+
+export function markdownBlockPointerTarget(
     view: EditorView,
-    event: PointerEvent,
-): number | null {
+    pointer: MarkdownBlockPointer,
+) {
     const bounds = view.dom.getBoundingClientRect();
+    const surface = view.dom.closest('.floating-document-island');
+    const left = surface?.getBoundingClientRect().left ?? bounds.left - 52;
     if (
-        event.clientY < bounds.top ||
-        event.clientY > bounds.bottom ||
-        event.clientX > bounds.right
+        pointer.clientY < bounds.top ||
+        pointer.clientY > bounds.bottom ||
+        pointer.clientX < left ||
+        pointer.clientX > bounds.right
     )
         return null;
 
     const content = view.contentDOM.getBoundingClientRect();
     const x = Math.max(
         content.left + 1,
-        Math.min(content.right - 1, event.clientX),
+        Math.min(content.right - 1, pointer.clientX),
     );
-    const target = view.dom.contains(event.target as Node)
-        ? event.target
-        : view.dom.ownerDocument.elementFromPoint(x, event.clientY);
-    const widget =
-        target instanceof Element
-            ? target.closest<HTMLElement>('[data-rich-from]')
-            : null;
-    return widget && view.dom.contains(widget)
+    const target = view.dom.ownerDocument.elementFromPoint(x, pointer.clientY);
+    return target && view.contentDOM.contains(target) ? target : null;
+}
+
+export function markdownBlockHoverPosition(
+    view: EditorView,
+    pointer: MarkdownBlockPointer,
+): number | null {
+    const target = markdownBlockPointerTarget(view, pointer);
+    if (!target) return null;
+    const layout = target.closest('.orbium-markdown-block-layout');
+    // Wrapper starts remain unambiguous even in widget padding and lower halves.
+    if (layout) return view.posAtDOM(layout, 0);
+    const widget = target.closest<HTMLElement>('[data-rich-from]');
+    return widget
         ? Number(widget.dataset.richFrom)
-        : view.posAtCoords({ x, y: event.clientY });
+        : view.posAtCoords({ x: pointer.clientX, y: pointer.clientY });
 }

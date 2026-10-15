@@ -1,3 +1,4 @@
+import { mountCodeCopyButton } from '../../mount-code-copy-button';
 import { mountAppSelect } from '@/components/ui/mount-app-select';
 import { EditorView } from '@codemirror/view';
 import { codeLanguages, normalizeCodeLanguage } from '../../code-languages';
@@ -7,7 +8,6 @@ import { serializeOrbiumBlock } from '../dialect/metadata';
 import type { RichBlock, RichController, RichWidgetMount } from './rich-model';
 import {
     applyRichSource,
-    button,
     element,
     preservePresentation,
 } from './widget-controls';
@@ -22,8 +22,6 @@ export function fencedCodeSource(content: string, language: string): string {
 
 export function mountCode(mount: RichWidgetMount): RichController {
     let block = mount.block;
-    let destroyed = false;
-    let copyStatusTimer: ReturnType<typeof setTimeout> | undefined;
     const toolbar = element(
         'div',
         'orbium-code-toolbar flex items-center justify-between border-b border-border bg-background/30 px-4 py-2 text-xs text-muted-foreground',
@@ -54,23 +52,7 @@ export function mountCode(mount: RichWidgetMount): RichController {
     identity.append(icon, language);
     toolbar.prepend(identity);
     const languageSelect = mountAppSelect(language);
-    const copy = button('Copy', () => {
-        function showCopyStatus(label: string) {
-            if (destroyed) return;
-            copy.textContent = label;
-            clearTimeout(copyStatusTimer);
-            copyStatusTimer = setTimeout(() => {
-                copy.textContent = 'Copy';
-            }, 1500);
-        }
-        void navigator.clipboard.writeText(block.content).then(
-            () => showCopyStatus('Copied'),
-            () => showCopyStatus('Failed'),
-        );
-    });
-    toolbar.append(copy);
-    copy.className = 'rounded-md px-2.5 py-1.5 text-xs hover:bg-accent';
-    copy.setAttribute('aria-live', 'polite');
+    const copyButton = mountCodeCopyButton(toolbar, () => block.content);
     const input = mountCodeInput({
         host: codeHost,
         source: block.content,
@@ -143,8 +125,7 @@ export function mountCode(mount: RichWidgetMount): RichController {
     return {
         update,
         destroy() {
-            destroyed = true;
-            clearTimeout(copyStatusTimer);
+            copyButton.destroy();
             languageSelect.destroy();
             input.destroy();
         },

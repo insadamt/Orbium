@@ -137,15 +137,7 @@ export class MarkdownBlockDragController {
     };
 
     private pointerTarget(session: BlockDragSession) {
-        const target = document.elementFromPoint(
-            session.clientX,
-            session.clientY,
-        );
-        if (!target || !this.options.view.dom.contains(target)) return null;
-        return markdownBlockDropTarget(this.options.view, {
-            ...session,
-            target,
-        });
+        return markdownBlockDropTarget(this.options.view, session);
     }
 
     private refreshTarget() {

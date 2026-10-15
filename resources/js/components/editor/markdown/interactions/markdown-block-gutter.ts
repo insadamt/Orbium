@@ -1,11 +1,4 @@
-import {
-    EditorView,
-    ViewPlugin,
-    keymap,
-    type ViewUpdate,
-} from '@codemirror/view';
-import { revealRichSource } from '../rich/rich-effects';
-import { Prec } from '@codemirror/state';
+import { EditorView, ViewPlugin, type ViewUpdate } from '@codemirror/view';
 import { interactionButton } from './interaction-dom';
 import { mountMarkdownBlockMenu } from './markdown-block-menu';
 import { createElement } from 'react';
@@ -15,13 +8,12 @@ import { markdownBlockControlTop } from './markdown-block-drag';
 import { MarkdownBlockHandleMotion } from './markdown-block-handle-motion';
 import { MarkdownBlockDragController } from './markdown-block-drag-controller';
 import { markdownBlockMotion } from './markdown-block-motion';
+import { markdownBlockKeymap } from './markdown-block-keymap';
 import { markdownBlockHoverPosition } from './markdown-block-hover-position';
 import {
-    adjacentMarkdownBlock,
     markdownBlockAt,
     isStructuralMarkdownSeparator,
     markdownBlockPresentation,
-    moveMarkdownBlock,
     replaceMarkdownBlock,
     type MarkdownBlockRange,
 } from './markdown-block-actions';
@@ -37,6 +29,7 @@ export function markdownBlockGutter(onNotice: (message: string) => void) {
             iconRoots: Root[] = [];
             motion = new MarkdownBlockHandleMotion(this.dom);
             hoveredPosition: number | null = null;
+            hoverPointer: { clientX: number; clientY: number } | null = null;
             destroyed = false;
             animateNextMove = false;
             hoverSurface: HTMLElement;
@@ -50,6 +43,7 @@ export function markdownBlockGutter(onNotice: (message: string) => void) {
                 this.dom.className =
                     'orbium-markdown-gutter absolute left-0 z-10 flex items-center rounded-lg text-muted-foreground sm:-left-12';
                 this.dom.hidden = true;
+                this.dom.setAttribute('data-block-controls', '');
                 const add = interactionButton('Add block below', '', () => {
                     const block = this.block;
                     if (!block) return;
@@ -95,9 +89,11 @@ export function markdownBlockGutter(onNotice: (message: string) => void) {
                 });
                 this.dom.addEventListener(
                     'pointerdown',
-                    () => this.motion.finish(),
+                    this.motion.pause,
                     true,
                 );
+                this.dom.addEventListener('pointerenter', this.motion.pause);
+                this.dom.addEventListener('pointerleave', this.releaseControls);
                 this.dom.append(add, handle);
                 document.body.append(this.panel);
                 this.panel.hidden = true;
@@ -264,13 +260,19 @@ export function markdownBlockGutter(onNotice: (message: string) => void) {
                         if (
                             this.destroyed ||
                             this.dragController.active ||
-                            !this.panel.hidden
+                            !this.panel.hidden ||
+                            this.dom.matches(':hover, :focus-within')
                         )
                             return undefined;
                         if (!this.view.state.facet(EditorView.editable))
                             return null;
                         const position =
-                            this.hoveredPosition ?? this.activeBlockPosition();
+                            (this.hoverPointer &&
+                                markdownBlockHoverPosition(
+                                    this.view,
+                                    this.hoverPointer,
+                                )) ??
+                            this.activeBlockPosition();
                         if (
                             isStructuralMarkdownSeparator(
                                 this.view.state,
@@ -292,7 +294,8 @@ export function markdownBlockGutter(onNotice: (message: string) => void) {
                             block,
                             top,
                             visibleTop: this.motion.measureVisibleTop(
-                                this.view.dom.getBoundingClientRect().top,
+                                this.view.dom.getBoundingClientRect().top +
+                                    this.view.dom.clientTop * this.view.scaleY,
                                 this.view.scaleY,
                             ),
                         };
@@ -302,6 +305,7 @@ export function markdownBlockGutter(onNotice: (message: string) => void) {
                             this.destroyed ||
                             this.dragController.active ||
                             !this.panel.hidden ||
+                            this.dom.matches(':hover, :focus-within') ||
                             placement === undefined
                         )
                             return;
@@ -312,6 +316,8 @@ export function markdownBlockGutter(onNotice: (message: string) => void) {
                             return;
                         }
                         this.block = placement.block;
+                        if (this.hoverPointer)
+                            this.hoveredPosition = placement.block.from;
                         this.motion.place({
                             ...placement,
                             blockFrom: placement.block.from,
@@ -321,8 +327,19 @@ export function markdownBlockGutter(onNotice: (message: string) => void) {
                 });
             };
             refreshActiveBlock = () => {
+                if (
+                    this.dragController.active ||
+                    !this.panel.hidden ||
+                    this.dom.matches(':hover, :focus-within')
+                )
+                    return;
                 this.hoveredPosition = null;
+                this.hoverPointer = null;
                 this.refreshCurrentBlock(true);
+            };
+            releaseControls = () => {
+                this.motion.resume();
+                this.refreshCurrentBlock();
             };
             focusChanged = (event: FocusEvent) => {
                 if (!this.dom.contains(event.target as Node))
@@ -342,12 +359,18 @@ export function markdownBlockGutter(onNotice: (message: string) => void) {
 
             hover = (event: PointerEvent) => {
                 if (
+                    event.pointerType === 'touch' ||
+                    event.buttons !== 0 ||
                     this.dragController.active ||
                     !this.panel.hidden ||
                     this.dom.contains(event.target as Node) ||
                     !this.view.state.facet(EditorView.editable)
                 )
                     return;
+                this.hoverPointer = {
+                    clientX: event.clientX,
+                    clientY: event.clientY,
+                };
                 const position = markdownBlockHoverPosition(this.view, event);
                 if (position === null) {
                     if (this.hoveredPosition !== null)
@@ -378,20 +401,22 @@ export function markdownBlockGutter(onNotice: (message: string) => void) {
             };
             update(update: ViewUpdate) {
                 this.dragController.update(update);
-                if (update.docChanged && this.hoveredPosition !== null)
-                    this.hoveredPosition = update.changes.mapPos(
-                        this.hoveredPosition,
-                    );
                 if (
                     update.docChanged ||
                     update.viewportChanged ||
                     update.geometryChanged ||
                     !update.state.facet(EditorView.editable)
                 ) {
-                    if (update.docChanged) this.dismissMenu();
+                    if (update.docChanged) {
+                        this.dismissMenu();
+                        this.motion.hide();
+                    }
                     this.refreshCurrentBlock();
                 }
-                if (update.selectionSet || update.focusChanged)
+                if (
+                    update.selectionSet ||
+                    (update.focusChanged && this.view.hasFocus)
+                )
                     this.refreshActiveBlock();
             }
             destroy() {
@@ -429,46 +454,6 @@ export function markdownBlockGutter(onNotice: (message: string) => void) {
     return [
         markdownBlockMotion,
         gutter,
-        Prec.high(
-            keymap.of([
-                {
-                    key: 'Mod-Shift-m',
-                    run(view) {
-                        view.plugin(gutter)?.focusCurrentBlock();
-                        return true;
-                    },
-                },
-                ...(['ArrowUp', 'ArrowDown'] as const).map((key) => ({
-                    key: `Alt-Shift-${key}`,
-                    run(view: EditorView) {
-                        const block = markdownBlockAt(
-                            view.state,
-                            view.state.selection.main.head,
-                        );
-                        const neighbor = adjacentMarkdownBlock(
-                            view,
-                            block,
-                            key === 'ArrowUp',
-                        );
-                        if (neighbor) moveMarkdownBlock(view, block, neighbor);
-                        return true;
-                    },
-                })),
-                {
-                    key: 'Mod-Shift-a',
-                    run(view) {
-                        const block = markdownBlockAt(
-                            view.state,
-                            view.state.selection.main.head,
-                        );
-                        view.dispatch({
-                            selection: { anchor: block.from, head: block.to },
-                            effects: revealRichSource.of(block.from),
-                        });
-                        return true;
-                    },
-                },
-            ]),
-        ),
+        markdownBlockKeymap((view) => view.plugin(gutter)?.focusCurrentBlock()),
     ];
 }

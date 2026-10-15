@@ -7,6 +7,7 @@ import {
 } from './markdown-block-actions';
 import { logicalMarkdownText } from './markdown-logical-text';
 import { Text } from '@codemirror/state';
+import { markdownBlockHoverPosition } from './markdown-block-hover-position';
 
 export function markdownBlockElement(
     view: EditorView,
@@ -16,9 +17,10 @@ export function markdownBlockElement(
         `[data-rich-from="${block.from}"]`,
     );
     if (widget) return widget;
-    let element = view.domAtPos(
+    const { node } = view.domAtPos(
         markdownBlockPresentation(view, block).contentFrom,
-    ).node.parentElement;
+    );
+    let element = node instanceof HTMLElement ? node : node.parentElement;
     if (!element || !view.contentDOM.contains(element)) return null;
     while (
         element?.parentElement &&
@@ -27,9 +29,16 @@ export function markdownBlockElement(
     )
         element = element.parentElement;
     if (!element || element === view.contentDOM) return null;
-    return element.classList.contains('orbium-markdown-block-layout')
-        ? (element.firstElementChild as HTMLElement | null)
-        : element;
+    return element;
+}
+
+function firstVisibleBlockAnchor(element: HTMLElement, selector: string) {
+    const candidates = element.matches(selector)
+        ? [element]
+        : element.querySelectorAll<HTMLElement>(selector);
+    return Array.from(candidates).find(
+        (candidate) => candidate.getBoundingClientRect().height > 0,
+    );
 }
 
 export function markdownBlockControlTop(
@@ -38,7 +47,8 @@ export function markdownBlockControlTop(
     controlHeight: number,
 ): number | null {
     const element = markdownBlockElement(view, block);
-    const origin = view.dom.getBoundingClientRect().top;
+    const origin =
+        view.dom.getBoundingClientRect().top + view.dom.clientTop * view.scaleY;
     if (!element) {
         const coordinates = view.coordsAtPos(
             markdownBlockPresentation(view, block).contentFrom,
@@ -50,26 +60,28 @@ export function markdownBlockControlTop(
             : null;
     }
     const row =
-        element.querySelector<HTMLElement>(
+        firstVisibleBlockAnchor(
+            element,
             '[data-block-gutter-anchor]:not([hidden])',
-        ) ?? element.querySelector<HTMLElement>('table tr');
-    if (row && row.getBoundingClientRect().height > 0) {
+        ) ?? firstVisibleBlockAnchor(element, 'table tr');
+    if (row) {
         const bounds = row.getBoundingClientRect();
         return (
             (bounds.top - origin) / view.scaleY +
             (bounds.height / view.scaleY - controlHeight) / 2
         );
     }
-    let firstLine = element.matches('.cm-line')
-        ? element
-        : (element.querySelector<HTMLElement>(
-              '.cm-line, p:not([hidden]), summary, li',
-          ) ?? element);
-    if (!firstLine.getBoundingClientRect().height) firstLine = element;
+    // Presentation wrappers can begin with a zero-height hidden metadata widget.
+    const firstLine =
+        firstVisibleBlockAnchor(
+            element,
+            '.cm-line, p:not([hidden]), summary, li',
+        ) ?? element;
     const style = getComputedStyle(firstLine);
     const lineHeight = Number.parseFloat(style.lineHeight);
     return (
         (firstLine.getBoundingClientRect().top - origin) / view.scaleY +
+        (Number.parseFloat(style.borderTopWidth) || 0) +
         (Number.parseFloat(style.paddingTop) || 0) +
         (Number.isFinite(lineHeight) ? (lineHeight - controlHeight) / 2 : 0)
     );
@@ -78,30 +90,13 @@ export function markdownBlockControlTop(
 type MarkdownDragPointer = {
     clientX: number;
     clientY: number;
-    target: EventTarget | null;
 };
 
 export function markdownBlockDropTarget(
     view: EditorView,
     pointer: MarkdownDragPointer,
 ) {
-    const widget =
-        pointer.target instanceof Element
-            ? pointer.target.closest<HTMLElement>('[data-rich-from]')
-            : null;
-    const content = view.contentDOM.getBoundingClientRect();
-    const position = widget
-        ? Number(widget.dataset.richFrom)
-        : view.posAtCoords(
-              {
-                  x: Math.max(
-                      content.left + 1,
-                      Math.min(content.right - 1, pointer.clientX),
-                  ),
-                  y: pointer.clientY,
-              },
-              false,
-          );
+    const position = markdownBlockHoverPosition(view, pointer);
     if (position === null || !Number.isFinite(position)) return null;
     let block = markdownBlockAt(view.state, position);
     if (!block.source.trim()) {

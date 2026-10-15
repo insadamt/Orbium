@@ -1,3 +1,4 @@
+import { mountCodeCopyButton } from './mount-code-copy-button';
 import { mountAppSelect } from '@/components/ui/mount-app-select';
 import type { NodeViewRendererProps } from '@tiptap/core';
 import type { NodeView } from '@tiptap/pm/view';
@@ -49,9 +50,7 @@ export function createCodeBlockNodeView({
     getPos,
 }: NodeViewRendererProps): NodeView {
     let currentNode = node;
-    let destroyed = false;
     const eventController = new AbortController();
-    let copyStatusTimeout: number | null = null;
     const dom = document.createElement('div');
     dom.className =
         'my-5 overflow-hidden rounded-xl border border-border bg-muted';
@@ -95,32 +94,10 @@ export function createCodeBlockNodeView({
     languageGroup.append(selectContainer);
     toolbar.append(languageGroup);
 
-    const copyButton = document.createElement('button');
-    copyButton.type = 'button';
-    copyButton.className = 'rounded px-2 py-1 hover:bg-accent';
-    copyButton.setAttribute('aria-live', 'polite');
-    copyButton.textContent = 'Copy';
-    copyButton.addEventListener(
-        'click',
-        async () => {
-            try {
-                await navigator.clipboard.writeText(currentNode.textContent);
-                if (destroyed) return;
-                copyButton.textContent = 'Copied';
-            } catch {
-                if (destroyed) return;
-                copyButton.textContent = 'Failed';
-            }
-            if (copyStatusTimeout !== null)
-                window.clearTimeout(copyStatusTimeout);
-            copyStatusTimeout = window.setTimeout(() => {
-                copyButton.textContent = 'Copy';
-                copyStatusTimeout = null;
-            }, 1500);
-        },
-        { signal: eventController.signal },
+    const copyButton = mountCodeCopyButton(
+        toolbar,
+        () => currentNode.textContent,
     );
-    toolbar.append(copyButton);
     dom.append(toolbar);
 
     const pre = document.createElement('pre');
@@ -156,11 +133,9 @@ export function createCodeBlockNodeView({
             return toolbar.contains(mutation.target);
         },
         destroy() {
-            destroyed = true;
+            copyButton.destroy();
             eventController.abort();
             languageSelect.destroy();
-            if (copyStatusTimeout !== null)
-                window.clearTimeout(copyStatusTimeout);
         },
     };
 }
