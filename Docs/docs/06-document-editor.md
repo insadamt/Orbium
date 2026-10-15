@@ -352,7 +352,7 @@ Deadline    ...
 Body...
 ```
 
-Properties are inline-editable and collapsible.
+Properties are inline-editable and collapsed by default when the document opens. The Properties toggle animates the section height and opacity while rotating its chevron; saving a property keeps the current expanded state. Collapsing immediately removes fields from keyboard and assistive-technology navigation, then unmounts them after the animation. OS reduced motion switches states immediately.
 
 The body is identical to a normal document body.
 
@@ -588,3 +588,13 @@ with unchanged offsets do not cancel playback; actual scrolling still cancels it
 ## Workspace Library reuse (2026-10-13)
 
 Image/file insertion now offers existing workspace uploads or a new upload. Cover/icon Edit menus add Choose from Library alongside the existing Change upload/crop action. References reuse the attachment ID; removing one use leaves the Library file intact. See `docs/19-library.md` for lifecycle and limits.
+
+## Alignment motion review (2026-10-15)
+
+Changing supported text-block or image alignment moves the visible content from
+its previous horizontal position to the final left, center or right position over
+260 ms. The command updates the document immediately; motion adds no persisted
+state. Text content, image size, captions and autosave retain their existing
+behavior. Editing, pointer input or wheel scrolling interrupts the visual
+transition. OS reduced motion skips it. This applies to Markdown and legacy JSON
+editors. Existing restrictions on which block types expose alignment remain.

@@ -1,3 +1,4 @@
+import { animateAlignmentChange } from '../../alignment-motion';
 import { ensureSyntaxTree, syntaxTree } from '@codemirror/language';
 import type { EditorState, StateEffect } from '@codemirror/state';
 import { isolateHistory } from '@codemirror/commands';
@@ -301,6 +302,37 @@ export function setMarkdownBlockPresentation(
             view.state.selection.main.head - current.contentFrom,
         ),
     );
+    if ('align' in patch) {
+        let contentPosition = current.contentFrom;
+        return animateAlignmentChange({
+            container: view.contentDOM,
+            readElements: () => {
+                const node = view.domAtPos(contentPosition).node;
+                const element =
+                    node instanceof Element ? node : node.parentElement;
+                const layout = element?.closest(
+                    '.orbium-markdown-block-layout',
+                );
+                return layout
+                    ? Array.from(
+                          layout.querySelectorAll<HTMLElement>('.cm-line'),
+                      )
+                    : [];
+            },
+            applyChange: () => {
+                const changed = replaceMarkdownBlock(
+                    view,
+                    block,
+                    source,
+                    contentStart + offset,
+                    options,
+                );
+                contentPosition = view.state.selection.main.head;
+                return changed;
+            },
+            onComplete: () => view.requestMeasure(),
+        });
+    }
     return replaceMarkdownBlock(
         view,
         block,

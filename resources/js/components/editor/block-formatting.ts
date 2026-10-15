@@ -1,3 +1,4 @@
+import { animateAlignmentChange } from './alignment-motion';
 import { Extension, type Editor } from '@tiptap/core';
 
 export type BlockAlignment = 'left' | 'center' | 'right';
@@ -113,6 +114,23 @@ export function setBlockAlignment(
             });
         }
     });
-    if (transaction.docChanged) editor.view.dispatch(transaction);
+    if (transaction.docChanged)
+        animateAlignmentChange({
+            container: editor.view.dom,
+            readElements: () => {
+                const block = editor.view.nodeDOM(from);
+                if (!(block instanceof HTMLElement)) return [];
+                return block.matches('p, h1, h2, h3, h4, h5, h6')
+                    ? [block]
+                    : Array.from(
+                          block.querySelectorAll<HTMLElement>(
+                              'p, h1, h2, h3, h4, h5, h6',
+                          ),
+                      );
+            },
+            applyChange: () => {
+                editor.view.dispatch(transaction);
+            },
+        });
     editor.commands.focus();
 }

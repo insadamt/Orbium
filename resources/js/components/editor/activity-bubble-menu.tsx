@@ -1,3 +1,4 @@
+import { mountToolbarHighlight } from './ui/toolbar-motion';
 import type { Editor } from '@tiptap/core';
 import { BubbleMenuView } from '@tiptap/extension-bubble-menu';
 import { Plugin, PluginKey } from '@tiptap/pm/state';
@@ -21,7 +22,10 @@ export function ActivityBubbleMenu({
 
     useEffect(() => {
         element.className =
-            'glass-surface flex items-center gap-1 rounded-xl border border-border p-1 shadow-lg';
+            'editor-animated-toolbar glass-surface flex items-center gap-1 rounded-xl border border-border p-1 shadow-lg';
+        element.setAttribute('role', 'toolbar');
+        element.setAttribute('aria-label', 'Text formatting');
+        const destroyHighlight = mountToolbarHighlight(element);
         element.style.visibility = 'hidden';
         element.style.position = 'absolute';
         const plugin = new Plugin({
@@ -51,6 +55,10 @@ export function ActivityBubbleMenu({
                             activityController.getSnapshot().active &&
                             shouldShow(),
                         options: {
+                            onShow: () => {
+                                element.dataset.toolbarOpen = 'true';
+                            },
+                            onHide: () => {},
                             onDestroy: () => {
                                 current = false;
                             },
@@ -76,6 +84,7 @@ export function ActivityBubbleMenu({
         editor.registerPlugin(plugin);
         return () => {
             if (!editor.isDestroyed) editor.unregisterPlugin(pluginKey);
+            destroyHighlight();
             element.remove();
         };
     }, [editor, element, pluginKey, activityController, shouldShow]);

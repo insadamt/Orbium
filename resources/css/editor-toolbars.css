@@ -1,0 +1,35 @@
+.editor-animated-toolbar {
+    isolation: isolate;
+}
+.editor-animated-toolbar[data-toolbar-positioned='false'] {
+    opacity: 0;
+}
+.editor-animated-toolbar .editor-toolbar-button {
+    position: relative;
+    z-index: 1;
+}
+.editor-animated-toolbar.app-menu-highlight-surface
+    .editor-toolbar-button:hover:not([aria-pressed='true']):not(
+        [data-state='open']
+    ) {
+    background: transparent;
+}
+.editor-animated-toolbar .app-menu-highlight {
+    border-radius: 0.25rem;
+}
+
+.editor-image-toolbar[hidden] {
+    display: none;
+}
+
+.editor-image-toolbar .editor-toolbar-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    flex-shrink: 0;
+    padding: 0.375rem;
+    border-radius: 0.375rem;
+    text-decoration: none;
+}

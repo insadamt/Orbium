@@ -440,3 +440,18 @@ hover, keyboard focus and the current reading location. Floating rail placement
 runs before paint. Pinning, navigation and pane ownership retain their existing
 behavior. This replaces the popup's earlier slide/scale transition. See
 [the Contents report and manual checklist](../reports/07-toc-menu-reveal.md).
+
+Editor toolbar review correction (2026-10-15): restored the original text and
+image button padding, corners, colors and active backgrounds at the user's
+request. Toolbar reveal now starts after visibility/placement instead of at DOM
+creation; hover movement still uses Select's shared highlight. The text color
+picker uses compact labeled choices with small color dots, a selection check and
+a separate custom-color footer. OS reduced motion disables reveal and highlight
+travel. See [the correction report](../reports/07-editor-toolbar-review-correction.md).
+
+Color picker and alignment review (2026-10-15): replaced the labeled color list
+with a saturation/brightness plane, hue slider, editable hex value, compact preset
+swatches and Default action. Image toolbar buttons and download links share the
+same 28px hit area. Explicit text/block and image alignment commands animate
+horizontal travel over 260 ms in both editor formats; reduced motion applies the
+final position immediately. See [the report and manual checklist](../reports/07-color-spectrum-alignment-motion.md).

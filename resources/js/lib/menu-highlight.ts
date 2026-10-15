@@ -3,11 +3,13 @@ import { gsap } from 'gsap';
 type MenuHighlightOptions = {
     itemSelector?: string;
     selectedSelector?: string;
+    keepHighlightBetweenItems?: boolean;
 };
 
 export function mountMenuHighlight(
     surface: HTMLElement,
     {
+        keepHighlightBetweenItems = false,
         itemSelector = '[role^="menuitem"]',
         selectedSelector = '[data-highlighted], [role="menuitem"][data-state="open"]',
     }: MenuHighlightOptions = {},
@@ -134,6 +136,7 @@ export function mountMenuHighlight(
     }
     function pointerMoved(event: PointerEvent) {
         const item = findItem(event.target);
+        if (!item && keepHighlightBetweenItems) return;
         if (hoveredItem === item) return;
         hoveredItem = item;
         schedulePosition();

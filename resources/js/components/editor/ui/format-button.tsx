@@ -15,10 +15,11 @@ export function FormatButton({
         <button
             type="button"
             aria-label={label}
+            title={label}
             aria-pressed={active}
             onMouseDown={(event) => event.preventDefault()}
             onClick={onClick}
-            className={`rounded p-2 ${active ? 'bg-accent' : 'hover:bg-accent'}`}
+            className={`editor-toolbar-button rounded p-2 ${active ? 'bg-accent' : 'hover:bg-accent'}`}
         >
             {children}
         </button>

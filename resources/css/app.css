@@ -31,6 +31,8 @@
 @import './text-surfaces.css';
 @import './appearance-frosted-components.css';
 @import './app-menus.css';
+@import './editor-toolbars.css';
+@import './editor-color-picker.css';
 
 .table-edge-control {
     pointer-events: auto;

@@ -1,3 +1,5 @@
+import { animateAlignmentChange } from '../../alignment-motion';
+import { mountToolbarHighlight } from '../../ui/toolbar-motion';
 import { installMediaAvailability } from './media-availability';
 import { widgetIcon } from './widget-icons';
 import { EditorView } from '@codemirror/view';
@@ -111,19 +113,30 @@ export function mountMedia(mount: RichWidgetMount): RichController {
     let selected = false;
     const overlay = element(
         'div',
-        'glass-surface editor-image-toolbar absolute top-1/2 z-10 flex w-10 -translate-y-1/2 flex-col items-center gap-1 rounded-lg border border-border p-1 text-xs shadow-sm',
+        'editor-animated-toolbar glass-surface editor-image-toolbar absolute top-1/2 z-10 flex w-10 -translate-y-1/2 flex-col items-center gap-1 rounded-lg border border-border p-1 text-xs shadow-sm',
     );
     overlay.setAttribute('role', 'toolbar');
+    overlay.setAttribute('aria-orientation', 'vertical');
     overlay.setAttribute('aria-label', 'Image controls');
     overlay.hidden = true;
     const alignmentButtons: HTMLButtonElement[] = [];
     for (const value of ['left', 'center', 'right'] as const) {
         const control = button('', () => {
-            alignment.value = value;
-            writeImageMetadata();
+            animateAlignmentChange({
+                container: mount.root,
+                readElements: () => [figure],
+                measureText: false,
+                applyChange: () => {
+                    alignment.value = value;
+                    writeImageMetadata();
+                },
+                onComplete: () => mount.view.requestMeasure(),
+            });
         });
         control.setAttribute('aria-label', `Align image ${value}`);
-        control.className = 'rounded-md p-1.5 hover:bg-accent';
+        control.className =
+            'editor-toolbar-button rounded-md p-1.5 hover:bg-accent';
+        control.title = `Align image ${value}`;
         control.append(widgetIcon(value, 16));
         alignmentButtons.push(control);
         overlay.append(control);
@@ -155,6 +168,14 @@ export function mountMedia(mount: RichWidgetMount): RichController {
     replace.setAttribute('aria-label', 'Replace image');
     replace.replaceChildren(widgetIcon('edit', 16));
     overlay.append(widthLabel, fill, download, replace, remove);
+    for (const control of [fill, download, replace, remove]) {
+        control.classList.add('editor-toolbar-button');
+        control.title = control.getAttribute('aria-label') ?? '';
+    }
+    remove.dataset.variant = 'destructive';
+    const destroyHighlight = imageMode
+        ? mountToolbarHighlight(overlay)
+        : () => {};
     const resizeHandles: HTMLButtonElement[] = [];
     function setSelected(next: boolean) {
         selected = next && mount.view.state.facet(EditorView.editable);
@@ -315,6 +336,10 @@ export function mountMedia(mount: RichWidgetMount): RichController {
         block = next;
         controls.update(next);
         const disabled = !mount.view.state.facet(EditorView.editable);
+        fill.disabled = disabled;
+        alignmentButtons.forEach((control) => {
+            control.disabled = disabled;
+        });
         replace.disabled =
             remove.disabled =
             alignment.disabled =
@@ -324,26 +349,21 @@ export function mountMedia(mount: RichWidgetMount): RichController {
         image.alt = next.label ?? '';
         applyImageWidth();
         image.style.width = '100%';
-        figure.style.marginInlineStart = ['center', 'right'].includes(
-            String(next.metadata.alignment),
-        )
-            ? 'auto'
-            : '0';
-        figure.style.marginInlineEnd = [
-            'center',
-            'left',
-            'start',
-            undefined,
-        ].includes(next.metadata.alignment as string | undefined)
-            ? 'auto'
-            : '0';
-        if (next.metadata.alignment === 'left') {
-            figure.style.marginLeft = '0';
-            figure.style.marginRight = 'auto';
-        } else if (next.metadata.alignment === 'right') {
-            figure.style.marginLeft = 'auto';
-            figure.style.marginRight = '0';
-        }
+        const imageAlignment = next.metadata.alignment ?? 'start';
+        figure.style.marginLeft =
+            imageAlignment === 'start'
+                ? ''
+                : imageAlignment === 'left'
+                  ? '0'
+                  : 'auto';
+        figure.style.marginRight =
+            imageAlignment === 'start'
+                ? ''
+                : imageAlignment === 'right'
+                  ? '0'
+                  : 'auto';
+        figure.style.marginInlineStart = imageAlignment === 'start' ? '0' : '';
+        figure.style.marginInlineEnd = imageAlignment === 'start' ? 'auto' : '';
         if (disabled) resize = null;
         caption.hidden = !selected && !next.metadata.caption;
         if (!frame.isConnected) widthLabel.textContent = 'Auto';
@@ -422,6 +442,7 @@ export function mountMedia(mount: RichWidgetMount): RichController {
     return {
         update,
         destroy() {
+            destroyHighlight();
             availability.destroy();
             widthObserver.disconnect();
             controls.destroy();

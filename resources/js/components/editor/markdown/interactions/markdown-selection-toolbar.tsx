@@ -23,6 +23,7 @@ import {
     Link2,
 } from 'lucide-react';
 import { TextColorMenu } from '../../ui/text-color-menu';
+import { ToolbarHighlight } from '../../ui/toolbar-motion';
 import { FormatButton } from '../../ui/format-button';
 import { markdownSelectionFormatting } from './markdown-selection-formatting';
 
@@ -44,7 +45,8 @@ function createSelectionToolbar(
 ) {
     const dom = document.createElement('div');
     dom.className =
-        'orbium-selection-toolbar orbium-editor-toolbar glass-surface flex items-center gap-1 rounded-xl border border-border p-1 shadow-lg';
+        'editor-animated-toolbar orbium-selection-toolbar orbium-editor-toolbar glass-surface flex items-center gap-1 rounded-xl border border-border p-1 shadow-lg';
+    dom.dataset.toolbarPositioned = 'false';
     selectionToolbarOwners.set(dom, view);
     dom.setAttribute('role', 'toolbar');
     dom.setAttribute('aria-label', 'Text formatting');
@@ -92,6 +94,7 @@ function createSelectionToolbar(
         );
         root.render(
             <>
+                <ToolbarHighlight />
                 <FormatButton
                     label="Bold"
                     active={formatting.bold}
@@ -212,6 +215,12 @@ function createSelectionToolbar(
     }
     render();
     dom.addEventListener('keydown', (event) => {
+        if (
+            event.defaultPrevented ||
+            (event.target instanceof Element &&
+                event.target.closest('[data-app-menu-content]'))
+        )
+            return;
         if (event.key === 'Escape') {
             event.preventDefault();
             view.focus();
@@ -239,6 +248,10 @@ function createSelectionToolbar(
     });
     return {
         dom,
+        positioned: () => {
+            if (dom.dataset.toolbarPositioned !== 'true')
+                dom.dataset.toolbarPositioned = 'true';
+        },
         update: render,
         destroy: () => {
             selectionToolbarOwners.delete(dom);

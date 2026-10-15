@@ -1,5 +1,6 @@
-import { Check, Palette } from 'lucide-react';
+import { Check, Palette, RotateCcw } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import { ColorSpectrum } from './color-spectrum';
 import * as Menu from '@/components/ui/dropdown-menu';
 
 const PRESET_COLORS = [
@@ -9,7 +10,7 @@ const PRESET_COLORS = [
     { name: 'Cyan', value: 'preset:teal' },
     { name: 'Magenta', value: 'preset:pink' },
     {
-        name: 'Yellow in dark mode, violet in light mode',
+        name: 'Violet',
         value: 'preset:purple',
     },
     { name: 'Orange', value: 'preset:orange' },
@@ -58,10 +59,11 @@ export function TextColorMenu({
                     <button
                         type="button"
                         aria-label="Text color"
+                        title="Text color"
                         aria-expanded={open}
                         aria-haspopup="true"
                         onMouseDown={(event) => event.preventDefault()}
-                        className={`flex items-center gap-1 rounded p-2 ${open ? 'bg-accent' : 'hover:bg-accent'}`}
+                        className={`editor-toolbar-button flex items-center gap-1 rounded p-2 ${open ? 'bg-accent' : 'hover:bg-accent'}`}
                     >
                         <Palette size={16} />
                         <span
@@ -79,66 +81,80 @@ export function TextColorMenu({
                     align="end"
                     sideOffset={8}
                     aria-label="Text colors"
-                    className="orbium-editor-toolbar w-52 p-3"
+                    className="editor-color-picker"
                     onCloseAutoFocus={(event) => event.preventDefault()}
                 >
-                    <p className="mb-2 text-xs font-medium text-muted-foreground">
+                    <div className="editor-color-picker-heading">
                         Text color
-                    </p>
-                    <div className="grid grid-cols-4 gap-2">
+                    </div>
+                    <ColorSpectrum
+                        currentColor={currentColor}
+                        onChoose={(hex) => chooseColor(hex, true)}
+                    />
+                    <div
+                        className="editor-color-picker-presets"
+                        aria-label="Preset colors"
+                    >
                         {PRESET_COLORS.map(({ name, value }) => (
-                            <Menu.Item key={value} asChild textValue={name}>
+                            <Menu.Item
+                                key={value}
+                                asChild
+                                textValue={name}
+                                onSelect={() => chooseColor(value)}
+                            >
                                 <button
                                     type="button"
                                     data-menu-swatch
+                                    className="editor-color-swatch"
                                     aria-label={name}
                                     aria-pressed={currentColor === value}
-                                    title={name}
+                                    title={
+                                        value === 'preset:purple'
+                                            ? 'Violet in light mode, yellow in dark mode'
+                                            : name
+                                    }
                                     onMouseDown={(event) =>
                                         event.preventDefault()
                                     }
-                                    onClick={() => chooseColor(value)}
-                                    className="flex size-7 items-center justify-center rounded-full border border-border/60"
-                                    style={{
-                                        backgroundColor:
-                                            displayedTextColor(value),
-                                    }}
                                 >
+                                    <span
+                                        className="editor-color-swatch-fill"
+                                        aria-hidden="true"
+                                        style={{
+                                            backgroundColor:
+                                                displayedTextColor(value),
+                                        }}
+                                    />
                                     {currentColor === value && (
                                         <Check
-                                            size={14}
-                                            className="text-background"
+                                            size={12}
+                                            className="editor-color-swatch-check"
+                                            aria-hidden="true"
                                         />
                                     )}
                                 </button>
                             </Menu.Item>
                         ))}
                     </div>
-                    <label className="mt-3 flex cursor-pointer items-center justify-between gap-2 rounded-md px-1 py-1 text-xs hover:bg-accent">
-                        Custom color
-                        <input
-                            type="color"
-                            aria-label="Choose any text color"
-                            value={
-                                currentColor &&
-                                /^#[0-9a-fA-F]{6}$/.test(currentColor)
-                                    ? currentColor
-                                    : '#75a1ff'
-                            }
-                            onChange={(event) =>
-                                chooseColor(event.currentTarget.value, true)
-                            }
-                            className="h-7 w-9 cursor-pointer rounded border border-border bg-transparent p-0.5"
-                        />
-                    </label>
-                    <Menu.Item asChild>
+                    <Menu.Item
+                        asChild
+                        textValue="Default text color"
+                        onSelect={() => chooseColor(null)}
+                    >
                         <button
                             type="button"
+                            className="editor-color-reset"
                             onMouseDown={(event) => event.preventDefault()}
-                            onClick={() => chooseColor(null)}
-                            className="mt-1 w-full rounded-md px-1 py-1 text-left text-xs hover:bg-accent"
                         >
-                            Default text color
+                            <RotateCcw size={14} aria-hidden="true" />
+                            <span>Default text color</span>
+                            {!currentColor && (
+                                <Check
+                                    size={12}
+                                    className="ms-auto"
+                                    aria-hidden="true"
+                                />
+                            )}
                         </button>
                     </Menu.Item>
                 </Menu.Content>

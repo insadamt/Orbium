@@ -1,6 +1,7 @@
 import { router } from '@inertiajs/react';
-import { ChevronDown, ChevronRight } from 'lucide-react';
-import { useState } from 'react';
+import { ChevronRight } from 'lucide-react';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
+import { useId, useState } from 'react';
 import { csrfToken, uploadAttachment } from '@/components/editor/editor-api';
 import PropertyInput from '../databases/property-input';
 import { createPropertyOption } from '../databases/create-property-option';
@@ -26,7 +27,13 @@ export default function DatabasePropertyHeader({
     candidates,
     files,
 }: Props) {
-    const [open, setOpen] = useState(true);
+    const [open, setOpen] = useState(false);
+    const propertiesId = useId();
+    const reducedMotion = useReducedMotion();
+    const transition = {
+        duration: reducedMotion ? 0 : 0.22,
+        ease: [0.22, 1, 0.36, 1] as const,
+    };
     async function save(propertyId: number, value: unknown) {
         const response = await fetch(
             `/workspaces/${workspaceId}/databases/${databaseId}/documents/${documentId}/properties/${propertyId}`,
@@ -51,83 +58,105 @@ export default function DatabasePropertyHeader({
             <button
                 type="button"
                 aria-expanded={open}
-                onClick={() => setOpen(!open)}
+                aria-controls={propertiesId}
+                onClick={() => setOpen((previousOpen) => !previousOpen)}
                 className="mb-2 flex items-center gap-1.5 rounded py-1 text-xs text-muted-foreground hover:text-foreground"
             >
-                {open ? <ChevronDown size={13} /> : <ChevronRight size={13} />}{' '}
+                <motion.span
+                    aria-hidden="true"
+                    className="inline-flex"
+                    initial={false}
+                    animate={{ rotate: open ? 90 : 0 }}
+                    transition={transition}
+                >
+                    <ChevronRight size={13} />
+                </motion.span>
                 Properties
             </button>
-            {open && (
-                <div className="max-w-xl">
-                    {properties.map((property) => {
-                        const Icon = propertyTypes[property.type].icon;
-                        return (
-                            <div
-                                key={property.id}
-                                className="grid grid-cols-[140px_minmax(0,1fr)] items-center rounded-md hover:bg-muted/20"
-                            >
-                                <p className="flex items-center gap-2 pr-4 text-[13px] text-muted-foreground">
-                                    <Icon
-                                        size={14}
-                                        className="shrink-0 opacity-70"
-                                    />
-                                    <span className="truncate">
-                                        {property.name}
-                                    </span>
-                                </p>
-                                <PropertyInput
-                                    property={property}
-                                    workspaceId={workspaceId}
-                                    documentId={documentId}
-                                    value={
-                                        values.find(
-                                            (item) =>
-                                                item.property_id ===
-                                                property.id,
-                                        )?.value
-                                    }
-                                    candidates={candidates}
-                                    files={files}
-                                    onSave={(value) => save(property.id, value)}
-                                    onCreateOption={async (
-                                        option,
-                                        selectedOptions,
-                                    ) => {
-                                        const result =
-                                            await createPropertyOption({
-                                                workspaceId,
-                                                databaseId,
-                                                documentId,
-                                                propertyId: property.id,
+            <div id={propertiesId} aria-hidden={!open} inert={!open}>
+                <AnimatePresence initial={false}>
+                    {open && (
+                        <motion.div
+                            key="properties"
+                            className="max-w-xl overflow-hidden"
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={transition}
+                        >
+                            {properties.map((property) => {
+                                const Icon = propertyTypes[property.type].icon;
+                                return (
+                                    <div
+                                        key={property.id}
+                                        className="grid grid-cols-[140px_minmax(0,1fr)] items-center rounded-md hover:bg-muted/20"
+                                    >
+                                        <p className="flex items-center gap-2 pr-4 text-[13px] text-muted-foreground">
+                                            <Icon
+                                                size={14}
+                                                className="shrink-0 opacity-70"
+                                            />
+                                            <span className="truncate">
+                                                {property.name}
+                                            </span>
+                                        </p>
+                                        <PropertyInput
+                                            property={property}
+                                            workspaceId={workspaceId}
+                                            documentId={documentId}
+                                            value={
+                                                values.find(
+                                                    (item) =>
+                                                        item.property_id ===
+                                                        property.id,
+                                                )?.value
+                                            }
+                                            candidates={candidates}
+                                            files={files}
+                                            onSave={(value) =>
+                                                save(property.id, value)
+                                            }
+                                            onCreateOption={async (
                                                 option,
                                                 selectedOptions,
-                                            });
-                                        router.reload({
-                                            only: [
-                                                'databaseProperties',
-                                                'databaseValues',
-                                            ],
-                                        });
-                                        return result;
-                                    }}
-                                    onUpload={
-                                        property.type === 'files'
-                                            ? async (file) =>
-                                                  (
-                                                      await uploadAttachment(
-                                                          workspaceId,
-                                                          documentId,
-                                                          file,
-                                                      )
-                                                  ).id
-                                            : undefined
-                                    }
-                                />
-                            </div>
-                        );
-                    })}
-                </div>
-            )}
+                                            ) => {
+                                                const result =
+                                                    await createPropertyOption({
+                                                        workspaceId,
+                                                        databaseId,
+                                                        documentId,
+                                                        propertyId: property.id,
+                                                        option,
+                                                        selectedOptions,
+                                                    });
+                                                router.reload({
+                                                    only: [
+                                                        'databaseProperties',
+                                                        'databaseValues',
+                                                    ],
+                                                });
+                                                return result;
+                                            }}
+                                            onUpload={
+                                                property.type === 'files'
+                                                    ? async (file) =>
+                                                          (
+                                                              await uploadAttachment(
+                                                                  workspaceId,
+                                                                  documentId,
+                                                                  file,
+                                                              )
+                                                          ).id
+                                                    : undefined
+                                            }
+                                        />
+                                    </div>
+                                );
+                            })}
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </div>
         </section>
     );
 }

@@ -1,3 +1,4 @@
+import { animateAlignmentChange } from './alignment-motion';
 import { NodeViewWrapper, type NodeViewProps } from '@tiptap/react';
 import {
     AlignCenter,
@@ -16,6 +17,7 @@ import {
 } from 'react';
 import type { EditorActivityController } from './editor-activity-controller';
 import { useEditorActivity } from './use-editor-activity';
+import { ToolbarHighlight } from './ui/toolbar-motion';
 import { attachmentUrl } from './editor-api';
 
 type ImageViewProps = NodeViewProps & {
@@ -189,8 +191,10 @@ export default function ImageView({
                             <div
                                 role="toolbar"
                                 aria-label="Image controls"
-                                className="glass-surface editor-image-toolbar absolute top-1/2 z-10 flex w-10 -translate-y-1/2 flex-col items-center gap-1 rounded-lg border border-border p-1 text-xs shadow-sm"
+                                aria-orientation="vertical"
+                                className="editor-animated-toolbar glass-surface editor-image-toolbar absolute top-1/2 z-10 flex w-10 -translate-y-1/2 flex-col items-center gap-1 rounded-lg border border-border p-1 text-xs shadow-sm"
                             >
+                                <ToolbarHighlight />
                                 {(
                                     [
                                         ['left', AlignLeft],
@@ -202,13 +206,27 @@ export default function ImageView({
                                         key={value}
                                         type="button"
                                         aria-label={`Align image ${value}`}
+                                        title={`Align image ${value}`}
                                         aria-pressed={alignment === value}
                                         onClick={() =>
-                                            updateAttributes({
-                                                alignment: value,
+                                            animateAlignmentChange({
+                                                container:
+                                                    imageContainer.current!,
+                                                readElements: () =>
+                                                    Array.from(
+                                                        imageContainer.current?.querySelectorAll<HTMLElement>(
+                                                            'figure',
+                                                        ) ?? [],
+                                                    ),
+                                                measureText: false,
+                                                applyChange: () => {
+                                                    updateAttributes({
+                                                        alignment: value,
+                                                    });
+                                                },
                                             })
                                         }
-                                        className={`rounded-md p-1.5 hover:bg-accent ${alignment === value ? 'bg-accent text-foreground' : 'text-muted-foreground'}`}
+                                        className={`editor-toolbar-button rounded-md p-1.5 hover:bg-accent ${alignment === value ? 'bg-accent text-foreground' : 'text-muted-foreground'}`}
                                     >
                                         <Icon size={16} aria-hidden="true" />
                                     </button>
@@ -232,7 +250,7 @@ export default function ImageView({
                                             width: availableWidth(),
                                         })
                                     }
-                                    className="rounded-md p-1.5 text-muted-foreground hover:bg-accent"
+                                    className="editor-toolbar-button rounded-md p-1.5 text-muted-foreground hover:bg-accent"
                                 >
                                     <Maximize2 size={16} aria-hidden="true" />
                                 </button>
@@ -245,7 +263,7 @@ export default function ImageView({
                                     download
                                     title="Download image"
                                     aria-label="Download image"
-                                    className="rounded-md p-1.5 text-muted-foreground hover:bg-accent"
+                                    className="editor-toolbar-button rounded-md p-1.5 text-muted-foreground hover:bg-accent"
                                 >
                                     <Download size={16} aria-hidden="true" />
                                 </a>
@@ -254,7 +272,8 @@ export default function ImageView({
                                     aria-label="Delete image"
                                     title="Delete image"
                                     onClick={deleteNode}
-                                    className="rounded-md p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                                    data-variant="destructive"
+                                    className="editor-toolbar-button rounded-md p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
                                 >
                                     <Trash2 size={16} aria-hidden="true" />
                                 </button>
