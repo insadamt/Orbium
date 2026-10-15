@@ -82,6 +82,21 @@ export function blockFormatting(
     };
 }
 
+function renderedBlockMotionElements(
+    editor: Editor,
+    position: number,
+): HTMLElement[] {
+    const block = editor.view.nodeDOM(position);
+    if (!(block instanceof HTMLElement)) return [];
+    if (block.matches('p, h1, h2, h3, h4, h5, h6')) return [block];
+    const figures = Array.from(block.querySelectorAll<HTMLElement>('figure'));
+    return figures.length
+        ? figures
+        : Array.from(
+              block.querySelectorAll<HTMLElement>('p, h1, h2, h3, h4, h5, h6'),
+          );
+}
+
 export function setBlockDirection(
     editor: Editor,
     index: number,
@@ -89,13 +104,19 @@ export function setBlockDirection(
 ): void {
     const { from } = blockRange(editor, index);
     const block = editor.state.doc.child(index);
-    editor.view.dispatch(
-        editor.state.tr.setNodeMarkup(from, undefined, {
-            ...block.attrs,
-            dir: direction === 'auto' ? 'auto' : direction,
-            directionMode: direction === 'auto' ? 'auto' : 'manual',
-        }),
-    );
+    animateAlignmentChange({
+        container: editor.view.dom,
+        readElements: () => renderedBlockMotionElements(editor, from),
+        applyChange: () => {
+            editor.view.dispatch(
+                editor.state.tr.setNodeMarkup(from, undefined, {
+                    ...block.attrs,
+                    dir: direction === 'auto' ? 'auto' : direction,
+                    directionMode: direction === 'auto' ? 'auto' : 'manual',
+                }),
+            );
+        },
+    });
     editor.commands.focus();
 }
 
@@ -117,17 +138,7 @@ export function setBlockAlignment(
     if (transaction.docChanged)
         animateAlignmentChange({
             container: editor.view.dom,
-            readElements: () => {
-                const block = editor.view.nodeDOM(from);
-                if (!(block instanceof HTMLElement)) return [];
-                return block.matches('p, h1, h2, h3, h4, h5, h6')
-                    ? [block]
-                    : Array.from(
-                          block.querySelectorAll<HTMLElement>(
-                              'p, h1, h2, h3, h4, h5, h6',
-                          ),
-                      );
-            },
+            readElements: () => renderedBlockMotionElements(editor, from),
             applyChange: () => {
                 editor.view.dispatch(transaction);
             },

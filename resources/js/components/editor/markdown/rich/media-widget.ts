@@ -1,3 +1,4 @@
+import { mountMediaWidthToggle } from './media-width-toggle';
 import { animateAlignmentChange } from '../../alignment-motion';
 import { mountToolbarHighlight } from '../../ui/toolbar-motion';
 import { installMediaAvailability } from './media-availability';
@@ -155,13 +156,18 @@ export function mountMedia(mount: RichWidgetMount): RichController {
         if (!destroyed) mount.view.requestMeasure();
     });
     if (imageMode) widthObserver.observe(frame);
-    const fill = button('', () => {
-        width.value = String(Math.round(mount.root.clientWidth));
-        writeImageMetadata();
+    const fill = element('button');
+    fill.type = 'button';
+    const widthToggle = mountMediaWidthToggle({
+        control: fill,
+        container: mount.root,
+        readWidth: () =>
+            Number(block.metadata.width) || image.naturalWidth || 720,
+        onResize: (nextWidth) => {
+            width.value = String(nextWidth);
+            writeImageMetadata();
+        },
     });
-    fill.setAttribute('aria-label', 'Fill available width');
-    fill.title = 'Fill available width';
-    fill.append(widgetIcon('maximize', 16));
     download.setAttribute('aria-label', 'Download image');
     if (imageMode) download.replaceChildren(widgetIcon('download', 16));
     remove.setAttribute('aria-label', 'Delete image');
@@ -353,6 +359,7 @@ export function mountMedia(mount: RichWidgetMount): RichController {
                 disabled;
         image.alt = next.label ?? '';
         applyImageWidth();
+        widthToggle.update();
         image.style.width = '100%';
         const imageAlignment = next.metadata.alignment ?? 'start';
         figure.style.marginLeft =
@@ -447,6 +454,7 @@ export function mountMedia(mount: RichWidgetMount): RichController {
     return {
         update,
         destroy() {
+            widthToggle.destroy();
             destroyHighlight();
             availability.destroy();
             widthObserver.disconnect();

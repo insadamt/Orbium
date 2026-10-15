@@ -44,6 +44,7 @@ const paths = {
     left: ['M21 6H3', 'M15 12H3', 'M17 18H3'],
     center: ['M21 6H3', 'M18 12H6', 'M17 18H7'],
     right: ['M21 6H3', 'M21 12H9', 'M21 18H7'],
+    minimize: ['M8 3v5H3', 'M16 3v5h5', 'M21 16h-5v5', 'M3 16h5v5'],
     maximize: ['M8 3H3v5', 'M16 3h5v5', 'M21 16v5h-5', 'M3 16v5h5'],
     download: [
         'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4',

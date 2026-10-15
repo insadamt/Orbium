@@ -1,3 +1,4 @@
+import { markdownAlignmentElements } from './markdown-alignment-elements';
 import { animateAlignmentChange } from '../../alignment-motion';
 import { ensureSyntaxTree, syntaxTree } from '@codemirror/language';
 import type { EditorState, StateEffect } from '@codemirror/state';
@@ -302,23 +303,12 @@ export function setMarkdownBlockPresentation(
             view.state.selection.main.head - current.contentFrom,
         ),
     );
-    if ('align' in patch) {
+    if ('align' in patch || 'dir' in patch) {
         let contentPosition = current.contentFrom;
         return animateAlignmentChange({
             container: view.contentDOM,
-            readElements: () => {
-                const node = view.domAtPos(contentPosition).node;
-                const element =
-                    node instanceof Element ? node : node.parentElement;
-                const layout = element?.closest(
-                    '.orbium-markdown-block-layout',
-                );
-                return layout
-                    ? Array.from(
-                          layout.querySelectorAll<HTMLElement>('.cm-line'),
-                      )
-                    : [];
-            },
+            readElements: () =>
+                markdownAlignmentElements(view, contentPosition, block.from),
             applyChange: () => {
                 const changed = replaceMarkdownBlock(
                     view,

@@ -1,3 +1,4 @@
+import { useImageWidthToggle } from './use-image-width-toggle';
 import { animateAlignmentChange } from './alignment-motion';
 import { NodeViewWrapper, type NodeViewProps } from '@tiptap/react';
 import {
@@ -6,6 +7,7 @@ import {
     AlignRight,
     Download,
     Maximize2,
+    Minimize2,
     Trash2,
 } from 'lucide-react';
 import {
@@ -64,6 +66,11 @@ export default function ImageView({
     const caption = String(node.attrs.caption ?? '');
     const [captionDraft, setCaptionDraft] = useState(caption);
     const captionInput = useRef<HTMLInputElement>(null);
+    const widthToggle = useImageWidthToggle({
+        containerRef: imageContainer,
+        width: savedWidth,
+        onResize: (width) => updateAttributes({ width }),
+    });
 
     useEffect(() => {
         if (active) return;
@@ -253,16 +260,23 @@ export default function ImageView({
                                 </span>
                                 <button
                                     type="button"
-                                    title="Fill available width"
-                                    aria-label="Fill available width"
-                                    onClick={() =>
-                                        updateAttributes({
-                                            width: availableWidth(),
-                                        })
-                                    }
+                                    title={widthToggle.label}
+                                    aria-label={widthToggle.label}
+                                    aria-pressed={widthToggle.expanded}
+                                    onClick={widthToggle.toggle}
                                     className="editor-toolbar-button rounded-md p-1.5 text-muted-foreground hover:bg-accent"
                                 >
-                                    <Maximize2 size={16} aria-hidden="true" />
+                                    {widthToggle.expanded ? (
+                                        <Minimize2
+                                            size={16}
+                                            aria-hidden="true"
+                                        />
+                                    ) : (
+                                        <Maximize2
+                                            size={16}
+                                            aria-hidden="true"
+                                        />
+                                    )}
                                 </button>
                                 <span
                                     className="my-1 h-px w-6 bg-border"

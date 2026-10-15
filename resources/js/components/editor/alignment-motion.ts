@@ -9,7 +9,8 @@ type AlignmentMotionRequest = {
 const activeTransitions = new WeakMap<HTMLElement, () => void>();
 
 function visibleContentBounds(element: HTMLElement, measureText: boolean) {
-    if (!measureText) return element.getBoundingClientRect();
+    if (!measureText || element.matches('figure'))
+        return element.getBoundingClientRect();
     const range = element.ownerDocument.createRange();
     range.selectNodeContents(element);
     const bounds = Array.from(range.getClientRects()).filter(

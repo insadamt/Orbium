@@ -474,3 +474,12 @@ formats. Height follows the image's natural aspect ratio; caption, controls and
 following content move with layout. Corner dragging bypasses the transition and
 starts from the current displayed width. OS reduced motion makes sizing immediate.
 See [the report and manual checklist](../reports/07-image-width-motion.md).
+
+Image size toggle and direction motion (2026-10-15): Fill available width becomes
+Restore image size at maximum width, with a shrink icon. It restores the smaller
+width remembered by the mounted image; without one, Reduce image size uses about
+60% of the available width, subject to existing size limits. Both transitions
+reuse width motion. Button state tracks editor width changes. Explicit LTR/RTL/
+Auto direction commands now share alignment movement in both directions when
+they change visible position. Reduced motion remains immediate. See
+[the report and manual checklist](../reports/07-image-size-toggle-direction-motion.md).
