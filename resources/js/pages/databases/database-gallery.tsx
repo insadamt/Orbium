@@ -167,7 +167,7 @@ export default function DatabaseGallery({
                     aria-label={`Move ${document.title} to Trash`}
                     title="Move to Trash"
                     onClick={() => onTrashDocument(document)}
-                    className="db-icon-button absolute top-2 right-2 bg-popover/90 hover:!text-destructive"
+                    className="db-icon-button absolute top-2 right-2 hover:!text-destructive"
                 >
                     <Trash2 size={15} />
                 </button>
@@ -179,7 +179,7 @@ export default function DatabaseGallery({
             type="button"
             disabled={creating}
             onClick={onCreate}
-            className="flex min-h-40 items-center justify-center gap-2 rounded-xl border border-dashed border-border/60 text-sm text-muted-foreground hover:border-ring hover:bg-muted/20 hover:text-foreground disabled:opacity-40"
+            className="flex min-h-40 items-center justify-center gap-2 rounded-xl border border-dashed border-border/60 text-sm text-muted-foreground hover:border-ring hover:text-foreground disabled:opacity-40"
         >
             <Plus size={17} />
             New document

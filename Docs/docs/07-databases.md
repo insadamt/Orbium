@@ -5,7 +5,13 @@ The database page uses the shared floating top controls. Its title, view control
 
 ## Page cover
 
-The database page's top cover uses the same proportional header layout as documents and folders: fit within the available width and min(320px, 35% of the viewport height), centered when narrower. Loaded image dimensions preserve the true ratio for uploaded crops, Library images, and older covers. Saved crop metadata is a loading hint, with a provisional 11:3 fallback. Full-width covers retain the overlapping icon and cutout; narrower covers place the icon below with the title. Reset restores the default cover, and unavailable images fall back to it. This presentation does not alter Gallery view settings or stored crop data.
+The database page's top cover uses the same proportional header layout as documents and folders: fit within the available width and min(320px, 35% of the viewport height), aligned with the left edge of Table/Gallery even when the displayed image is narrower. Loaded image dimensions preserve the true ratio for uploaded crops, Library images, and older covers. Saved crop metadata is a loading hint, with a provisional 11:3 fallback. Full-width covers retain the overlapping icon and cutout; narrower covers place the icon below with the title. Reset restores the default cover, and unavailable images fall back to it. This presentation does not alter Gallery view settings or stored crop data.
+
+### Adaptive header layout
+
+The `codex/database-portrait-header` branch now applies the cover-led layout to documents, folders, and databases. At a header width of at least 600px, a custom cover with a ratio below 2 sits to the left of the icon, title, and available page details. Database view/action controls remain in a separate full-width row directly above Table/Gallery for every cover group. Portrait covers (ratio below 1) are capped at 220px wide; square/moderate landscape covers are capped at 320px. Both retain the shared height limit. The side layout vertically centers a 64px icon above a wrapping editable title, without overlap or a cutout.
+
+Narrow containers, wide covers (ratio at least 2), default covers, and unavailable-cover fallbacks use a stacked header. Table and Gallery always occupy the full content width beneath the header. Existing header editing and database actions retain their behavior.
 
 ## Concept
 
@@ -85,7 +91,7 @@ Mention is contextual reference, not hierarchy relation.
 
 ## Property schema UX
 
-At the end of Table headers, `+` creates a property.
+At the end of Table headers, `+` creates a property. New properties are visible by default in Table and Gallery, appended after the existing visible properties. Previously hidden properties remain hidden; views without an explicit visibility list continue to show all properties.
 
 Property controls:
 
@@ -251,3 +257,11 @@ On every property write:
 - attachment/mention values must reference authorized nodes/files.
 
 Deleting a property deletes or safely cascades its associated values.
+
+## Focused view controls
+
+Filter and Sort open separate anchored panels without dimming the database. Each panel has its own draft, Apply, Cancel, and Clear all controls. Closing with Escape or outside interaction discards unapplied changes. On screens narrower than 640px, the panels sit at the bottom of the viewport with scrollable content. Saving disables edits and dismissal until the request finishes; failures retain the draft and show an error.
+
+Saved filters appear as removable chips below the toolbar. Removing a chip or using the chip row's Clear all saves immediately. Sort rules can be moved up or down to change their priority. View settings contains only property display/order, Table inline adding, and Gallery preview/appearance. Existing per-view configuration persistence remains unchanged.
+
+Database action buttons use transparent backgrounds, including hover and active states; text, borders, counts, and focus feedback communicate interaction. The toolbar New button retains its filled primary appearance.

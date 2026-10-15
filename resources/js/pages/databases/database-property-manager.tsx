@@ -159,7 +159,7 @@ export default function DatabasePropertyManager({
                                                     ),
                                                 )
                                             }
-                                            className="rounded p-0.5 hover:bg-background"
+                                            className="rounded p-0.5"
                                         >
                                             <X size={12} />
                                         </button>
@@ -216,7 +216,7 @@ export default function DatabasePropertyManager({
                             type="button"
                             disabled={busy}
                             onClick={deleteProperty}
-                            className="mr-auto flex items-center gap-2 rounded-md px-2 py-2 text-xs text-destructive hover:bg-destructive/10"
+                            className="mr-auto flex items-center gap-2 rounded-md px-2 py-2 text-xs text-destructive"
                         >
                             <Trash2 size={14} />
                             {confirmDelete
@@ -235,7 +235,7 @@ export default function DatabasePropertyManager({
                     <button
                         type="submit"
                         disabled={busy || !name.trim()}
-                        className="inline-flex items-center gap-2 rounded-lg bg-foreground px-4 py-2 text-sm font-medium text-background disabled:opacity-40"
+                        className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground disabled:opacity-40"
                     >
                         {busy && <Loader2 size={14} className="animate-spin" />}
                         {property ? 'Save changes' : 'Create property'}

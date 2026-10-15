@@ -8,9 +8,6 @@ import { useNavigation } from '@/components/navigation/navigation-store';
 import { notifyPaneLocation } from '@/components/navigation/tab-navigation';
 import type { EditorDocument } from '@/components/editor/editor-api';
 import type { MarkdownLimits } from '@/components/editor/markdown/markdown-api';
-import MarkdownEditorLoader, {
-    MarkdownOpeningPreview,
-} from '@/components/editor/markdown/markdown-editor-loader';
 import {
     attachmentUrl,
     csrfToken,
@@ -26,12 +23,12 @@ import {
 } from '@/pages/documents/document-image-crop';
 import { FileText } from 'lucide-react';
 import { PageMediaCover } from '@/components/hierarchy/page-media-cover';
+import { PageTitleField } from '@/components/hierarchy/page-title-field';
 import { PageMediaEditButton } from '@/components/hierarchy/page-media-edit-button';
 import { type CoverRatio } from '@/components/hierarchy/cover-presentation';
 import DatabasePropertyHeader from '@/pages/documents/database-property-header';
-import DocumentOpeningPreview from '@/pages/documents/document-opening-preview';
 import { useCoverIconCutout } from '@/components/hierarchy/use-cover-icon-cutout';
-import DocumentEditorLoader from '@/pages/documents/document-editor-loader';
+import DocumentContent from './document-content';
 import type {
     Candidate,
     FileReference,
@@ -318,105 +315,109 @@ export function DocumentPage({
             {active && <Head title={title} />}
             <div className="floating-body-island floating-document-island mx-auto max-w-[1120px]">
                 <DocumentOutlineLayout title={title}>
-                    <div className="relative">
-                        <PageMediaCover
-                            workspaceId={workspace.id}
-                            onChooseLibrary={(file) =>
-                                void reuseImage(file, 'cover')
-                            }
-                            imageUrl={
-                                coverId
-                                    ? attachmentUrl(
-                                          workspace.id,
-                                          node.id,
-                                          coverId,
-                                      )
-                                    : null
-                            }
-                            aspectRatio={
-                                savedDocument.cover_aspect_ratio ?? undefined
-                            }
-                            entityLabel="Document"
-                            coverRef={coverRef}
-                            uploading={coverUploading}
-                            onChooseImage={() => coverInput.current?.click()}
-                            onResetImage={() => void removeCover()}
-                        />
-                        <div className="mx-auto flow-root max-w-[780px]">
-                            <div
-                                ref={iconRef}
-                                className="page-media-editable relative z-10 -mt-12 mb-5 ml-4 flex size-24 items-center justify-center overflow-hidden rounded-2xl border-4 border-transparent bg-muted bg-clip-padding"
-                            >
-                                {iconAttachmentId ? (
-                                    <img
-                                        src={attachmentUrl(
-                                            workspace.id,
-                                            node.id,
-                                            iconAttachmentId,
-                                        )}
-                                        alt="Document icon"
-                                        className="h-full w-full object-cover"
-                                    />
-                                ) : legacyIcon ? (
-                                    <span
-                                        className="text-5xl"
-                                        aria-label="Document icon"
-                                    >
-                                        {legacyIcon}
-                                    </span>
-                                ) : (
-                                    <FileText
-                                        size={42}
-                                        strokeWidth={1.4}
-                                        aria-label="Document icon"
-                                    />
-                                )}
-                                <div className="page-media-icon-edit">
-                                    <PageMediaEditButton
-                                        workspaceId={workspace.id}
-                                        onChooseLibrary={(file) =>
-                                            void reuseImage(file, 'icon')
-                                        }
-                                        entityLabel="Document"
-                                        kind="icon"
-                                        hasCustomImage={Boolean(
-                                            iconAttachmentId || legacyIcon,
-                                        )}
-                                        uploading={iconUploading}
-                                        onChooseImage={() =>
-                                            iconInput.current?.click()
-                                        }
-                                        onResetImage={() => void removeIcon()}
-                                    />
-                                </div>
-                            </div>
-                            <input
-                                aria-label="Document title"
-                                value={title}
-                                maxLength={255}
-                                onChange={(event) =>
-                                    setTitle(event.target.value)
+                    <div className="page-media-header document-page-header relative">
+                        <div className="node-media-layout">
+                            <PageMediaCover
+                                workspaceId={workspace.id}
+                                onChooseLibrary={(file) =>
+                                    void reuseImage(file, 'cover')
                                 }
-                                onBlur={() => {
-                                    const clean = title.trim();
-                                    if (clean) {
-                                        setTitle(clean);
-                                        void saveHeader({ title: clean });
-                                    } else {
-                                        setTitle(node.title);
-                                    }
-                                }}
-                                className="mb-8 w-full border-0 bg-transparent text-4xl font-semibold tracking-tight shadow-none outline-none placeholder:text-muted-foreground md:text-5xl"
-                                placeholder="Untitled"
+                                imageUrl={
+                                    coverId
+                                        ? attachmentUrl(
+                                              workspace.id,
+                                              node.id,
+                                              coverId,
+                                          )
+                                        : null
+                                }
+                                aspectRatio={
+                                    savedDocument.cover_aspect_ratio ??
+                                    undefined
+                                }
+                                entityLabel="Document"
+                                coverRef={coverRef}
+                                uploading={coverUploading}
+                                onChooseImage={() =>
+                                    coverInput.current?.click()
+                                }
+                                onResetImage={() => void removeCover()}
                             />
-                            {headerError && (
-                                <p
-                                    role="alert"
-                                    className="mb-5 text-sm text-destructive"
+                            <div className="node-media-body mx-auto flow-root max-w-[780px]">
+                                <div
+                                    ref={iconRef}
+                                    className="document-page-icon page-media-editable relative z-10 -mt-12 mb-5 ml-4 flex size-24 items-center justify-center overflow-hidden rounded-2xl border-4 border-transparent bg-muted bg-clip-padding"
                                 >
-                                    {headerError}
-                                </p>
-                            )}
+                                    {iconAttachmentId ? (
+                                        <img
+                                            src={attachmentUrl(
+                                                workspace.id,
+                                                node.id,
+                                                iconAttachmentId,
+                                            )}
+                                            alt="Document icon"
+                                            className="h-full w-full object-cover"
+                                        />
+                                    ) : legacyIcon ? (
+                                        <span
+                                            className="text-5xl"
+                                            aria-label="Document icon"
+                                        >
+                                            {legacyIcon}
+                                        </span>
+                                    ) : (
+                                        <FileText
+                                            size={42}
+                                            strokeWidth={1.4}
+                                            aria-label="Document icon"
+                                        />
+                                    )}
+                                    <div className="page-media-icon-edit">
+                                        <PageMediaEditButton
+                                            workspaceId={workspace.id}
+                                            onChooseLibrary={(file) =>
+                                                void reuseImage(file, 'icon')
+                                            }
+                                            entityLabel="Document"
+                                            kind="icon"
+                                            hasCustomImage={Boolean(
+                                                iconAttachmentId || legacyIcon,
+                                            )}
+                                            uploading={iconUploading}
+                                            onChooseImage={() =>
+                                                iconInput.current?.click()
+                                            }
+                                            onResetImage={() =>
+                                                void removeIcon()
+                                            }
+                                        />
+                                    </div>
+                                </div>
+                                <PageTitleField
+                                    label="Document title"
+                                    value={title}
+                                    onChange={setTitle}
+                                    onSave={() => {
+                                        const clean = title.trim();
+                                        if (clean) {
+                                            setTitle(clean);
+                                            void saveHeader({ title: clean });
+                                        } else setTitle(node.title);
+                                    }}
+                                    className="mb-8 w-full border-0 bg-transparent text-4xl font-semibold tracking-tight shadow-none outline-none placeholder:text-muted-foreground md:text-5xl"
+                                    placeholder="Untitled"
+                                />
+                                {headerError && (
+                                    <p
+                                        role="alert"
+                                        className="mb-5 text-sm text-destructive"
+                                    >
+                                        {headerError}
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                        <div className="mx-auto max-w-[780px]">
                             {databaseProperties.length > 0 &&
                                 node.parent_id !== null && (
                                     <DatabasePropertyHeader
@@ -429,32 +430,13 @@ export function DocumentPage({
                                         files={databaseFiles}
                                     />
                                 )}
-                            {savedDocument.content_format_version === 2 ? (
-                                previewOnly ? (
-                                    <MarkdownOpeningPreview />
-                                ) : (
-                                    <MarkdownEditorLoader
-                                        title={title}
-                                        workspaceId={workspace.id}
-                                        nodeId={node.id}
-                                        markdown={savedDocument.markdown}
-                                        revision={savedDocument.revision}
-                                        limits={savedDocument.markdown_limits}
-                                    />
-                                )
-                            ) : previewOnly ? (
-                                <DocumentOpeningPreview
-                                    content={savedDocument.content}
-                                />
-                            ) : (
-                                <DocumentEditorLoader
-                                    workspaceId={workspace.id}
-                                    nodeId={node.id}
-                                    title={title}
-                                    content={savedDocument.content}
-                                    revision={savedDocument.revision}
-                                />
-                            )}
+                            <DocumentContent
+                                workspaceId={workspace.id}
+                                documentId={node.id}
+                                title={title}
+                                document={savedDocument}
+                                previewOnly={previewOnly}
+                            />
                         </div>
                     </div>
                     <input

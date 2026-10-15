@@ -100,7 +100,7 @@ export default function DatabaseColumnHeader({
                     <button
                         type="button"
                         aria-label={`${property.name} column options`}
-                        className="group flex h-full w-full items-center gap-2 px-3 text-left hover:bg-muted/50"
+                        className="group flex h-full w-full items-center gap-2 px-3 text-left"
                     >
                         <Icon size={14} className="shrink-0 opacity-70" />
                         <span className="truncate">{property.name}</span>

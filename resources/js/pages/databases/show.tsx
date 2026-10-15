@@ -1,14 +1,5 @@
 import { Head, router, usePage } from '@inertiajs/react';
-import {
-    ArrowDownUp,
-    Database as DatabaseIcon,
-    Filter,
-    GalleryHorizontalEnd,
-    Loader2,
-    Plus,
-    SlidersHorizontal,
-    Table2,
-} from 'lucide-react';
+import { Database as DatabaseIcon, Plus } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { usePageSearch } from '@/components/navigation/page-search';
 import { useContainerView } from '@/components/navigation/use-container-view';
@@ -20,12 +11,12 @@ import {
     valueFor,
 } from './database-data';
 import DatabaseGallery from './database-gallery';
+import DatabaseToolbar, { type DatabaseControl } from './database-toolbar';
+import DatabaseFilterChips from './database-filter-chips';
 import DatabasePropertyManager from './database-property-manager';
 import DatabaseTable from './database-table';
 import TrashDatabaseDocumentDialog from './trash-database-document-dialog';
-import DatabaseViewSettings, {
-    type SettingsSection,
-} from './database-view-settings';
+import DatabaseViewSettings from './database-view-settings';
 import PropertyInput from './property-input';
 import { createPropertyOption } from './create-property-option';
 import type {
@@ -34,11 +25,6 @@ import type {
     Property,
     ViewConfig,
 } from './types';
-
-const viewTypes = [
-    { id: 'table', label: 'Table', icon: Table2 },
-    { id: 'gallery', label: 'Gallery', icon: GalleryHorizontalEnd },
-] as const;
 
 export default function ShowDatabase() {
     const page = usePage<DatabasePageProps>().props;
@@ -66,7 +52,7 @@ function DatabasePage({ page }: { page: DatabasePageProps }) {
     const query = pageSearch.query;
     const setQuery = pageSearch.setQuery;
     const [settingsSection, setSettingsSection] =
-        useState<SettingsSection | null>(null);
+        useState<DatabaseControl | null>(null);
     const [propertyEditor, setPropertyEditor] = useState<
         Property | 'new' | null
     >(null);
@@ -269,87 +255,31 @@ function DatabasePage({ page }: { page: DatabasePageProps }) {
                             {Object.values(errors).join(' ')}
                         </p>
                     )}
-                <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-2 border-b border-border/70">
-                    <nav
-                        aria-label="Database views"
-                        className="flex shrink-0 gap-1"
-                    >
-                        {viewTypes.map(({ id, label, icon: Icon }) => (
-                            <button
-                                type="button"
-                                key={id}
-                                aria-pressed={view === id}
-                                onClick={() => {
-                                    setView(id);
-                                    setSettingsSection(null);
-                                }}
-                                className={`relative flex items-center gap-2 border-b-2 px-3 pt-3 pb-3 text-[13px] transition-colors ${view === id ? 'border-foreground font-medium text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
-                            >
-                                <Icon size={15} strokeWidth={1.6} />
-                                {label}
-                            </button>
-                        ))}
-                    </nav>
-                    <div className="flex flex-wrap items-center gap-0.5 pb-2">
-                        <button
-                            type="button"
-                            onClick={() => setSettingsSection('filters')}
-                            data-active={!!config.filters?.length}
-                            className="db-toolbar-button"
-                        >
-                            <Filter size={14} />
-                            Filter
-                            {!!config.filters?.length && (
-                                <span className="text-[10px]">
-                                    {config.filters.length}
-                                </span>
-                            )}
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setSettingsSection('sorts')}
-                            data-active={!!config.sorts?.length}
-                            className="db-toolbar-button"
-                        >
-                            <ArrowDownUp size={14} />
-                            Sort
-                            {!!config.sorts?.length && (
-                                <span className="text-[10px]">
-                                    {config.sorts.length}
-                                </span>
-                            )}
-                        </button>
-                        <button
-                            type="button"
-                            aria-label="View settings"
-                            title="View settings"
-                            onClick={() =>
-                                setSettingsSection(
-                                    view === 'gallery'
-                                        ? 'appearance'
-                                        : 'properties',
-                                )
-                            }
-                            className="db-icon-button"
-                        >
-                            <SlidersHorizontal size={16} />
-                        </button>
-                        <span className="mx-2 h-4 w-px bg-border/60" />
-                        <button
-                            type="button"
-                            disabled={creating}
-                            onClick={createDocument}
-                            className="inline-flex h-8 items-center gap-1.5 rounded-md bg-foreground px-3 text-xs font-medium text-background hover:opacity-85 disabled:opacity-40"
-                        >
-                            {creating ? (
-                                <Loader2 size={13} className="animate-spin" />
-                            ) : (
-                                <Plus size={14} />
-                            )}
-                            New
-                        </button>
-                    </div>
-                </div>
+                <DatabaseToolbar
+                    view={view}
+                    config={config}
+                    creating={creating}
+                    onChangeView={(nextView) => {
+                        setView(nextView);
+                        setSettingsSection(null);
+                    }}
+                    openControl={settingsSection}
+                    properties={properties}
+                    saving={savingView}
+                    error={viewError}
+                    onSave={saveView}
+                    onOpenSettings={(control) => {
+                        setViewError('');
+                        setSettingsSection(control);
+                    }}
+                    onCreate={createDocument}
+                />
+                <DatabaseFilterChips
+                    properties={properties}
+                    config={config}
+                    saving={savingView}
+                    onSave={saveView}
+                />
                 {view === 'table' && (
                     <DatabaseTable
                         workspaceId={workspace.id}
@@ -421,7 +351,7 @@ function DatabasePage({ page }: { page: DatabasePageProps }) {
                                     saveView({ ...config, filters: [] });
                                 } else void createDocument();
                             }}
-                            className="mt-5 inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm hover:bg-muted"
+                            className="mt-5 inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm"
                         >
                             <Plus size={14} />
                             {documents.length
@@ -440,7 +370,8 @@ function DatabasePage({ page }: { page: DatabasePageProps }) {
                     </p>
                 )}
             </div>
-            {settingsSection && (
+            {(settingsSection === 'properties' ||
+                settingsSection === 'appearance') && (
                 <DatabaseViewSettings
                     key={`${view}:${settingsSection}`}
                     properties={properties}

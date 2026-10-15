@@ -235,7 +235,7 @@ export default function DatabaseTable({
                 type="button"
                 disabled={creating}
                 onClick={onCreate}
-                className="flex h-11 w-full items-center gap-2 px-4 text-left text-[13px] text-muted-foreground hover:bg-muted/30 hover:text-foreground disabled:opacity-40"
+                className="flex h-11 w-full items-center gap-2 px-4 text-left text-[13px] text-muted-foreground hover:text-foreground disabled:opacity-40"
             >
                 <Plus size={15} />
                 New document

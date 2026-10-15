@@ -12,6 +12,7 @@ import {
     type DocumentImageKind,
 } from '@/pages/documents/document-image-crop';
 import { PageMediaCover } from './page-media-cover';
+import { PageTitleField } from './page-title-field';
 import { PageMediaEditButton } from './page-media-edit-button';
 import { nodeImageUrl, uploadNodeImage } from './node-media-api';
 import { type CoverRatio } from './cover-presentation';
@@ -206,74 +207,82 @@ export function NodeMediaHeader({
     }
 
     return (
-        <div className="node-media-header" data-layout={layout}>
-            <PageMediaCover
-                workspaceId={workspaceId}
-                onChooseLibrary={(file) => void reuseImage(file, 'cover')}
-                imageUrl={
-                    coverId ? nodeImageUrl(workspaceId, node.id, coverId) : null
-                }
-                aspectRatio={coverId ? (coverRatio ?? undefined) : undefined}
-                entityLabel={label}
-                coverRef={coverRef}
-                uploading={coverUploading}
-                onChooseImage={() => coverInput.current?.click()}
-                onResetImage={() => void removeCover()}
-            />
-            <div className="node-media-body">
-                <div
-                    ref={iconRef}
-                    className="node-media-icon node-media-icon-overlap page-media-editable"
-                >
-                    {iconId ? (
-                        <img
-                            src={nodeImageUrl(workspaceId, node.id, iconId)}
-                            alt={`${label} icon`}
-                        />
-                    ) : legacyIcon ? (
-                        <span aria-label={`${label} icon`}>{legacyIcon}</span>
-                    ) : (
-                        <ContainerIcon
-                            size={29}
-                            strokeWidth={1.4}
-                            aria-hidden="true"
-                        />
-                    )}
-                    <div className="page-media-icon-edit">
-                        <PageMediaEditButton
-                            workspaceId={workspaceId}
-                            onChooseLibrary={(file) =>
-                                void reuseImage(file, 'icon')
-                            }
-                            entityLabel={label}
-                            kind="icon"
-                            hasCustomImage={Boolean(iconId || legacyIcon)}
-                            uploading={iconUploading}
-                            onChooseImage={() => iconInput.current?.click()}
-                            onResetImage={() => void removeIcon()}
-                        />
+        <div
+            className="node-media-header page-media-header"
+            data-layout={layout}
+        >
+            <div className="node-media-layout">
+                <PageMediaCover
+                    workspaceId={workspaceId}
+                    onChooseLibrary={(file) => void reuseImage(file, 'cover')}
+                    imageUrl={
+                        coverId
+                            ? nodeImageUrl(workspaceId, node.id, coverId)
+                            : null
+                    }
+                    aspectRatio={
+                        coverId ? (coverRatio ?? undefined) : undefined
+                    }
+                    entityLabel={label}
+                    coverRef={coverRef}
+                    uploading={coverUploading}
+                    onChooseImage={() => coverInput.current?.click()}
+                    onResetImage={() => void removeCover()}
+                />
+                <div className="node-media-body">
+                    <div
+                        ref={iconRef}
+                        className="node-media-icon node-media-icon-overlap page-media-editable"
+                    >
+                        {iconId ? (
+                            <img
+                                src={nodeImageUrl(workspaceId, node.id, iconId)}
+                                alt={`${label} icon`}
+                            />
+                        ) : legacyIcon ? (
+                            <span aria-label={`${label} icon`}>
+                                {legacyIcon}
+                            </span>
+                        ) : (
+                            <ContainerIcon
+                                size={29}
+                                strokeWidth={1.4}
+                                aria-hidden="true"
+                            />
+                        )}
+                        <div className="page-media-icon-edit">
+                            <PageMediaEditButton
+                                workspaceId={workspaceId}
+                                onChooseLibrary={(file) =>
+                                    void reuseImage(file, 'icon')
+                                }
+                                entityLabel={label}
+                                kind="icon"
+                                hasCustomImage={Boolean(iconId || legacyIcon)}
+                                uploading={iconUploading}
+                                onChooseImage={() => iconInput.current?.click()}
+                                onResetImage={() => void removeIcon()}
+                            />
+                        </div>
                     </div>
+                    <div className="node-media-title-row">
+                        <PageTitleField
+                            label={`${label} title`}
+                            value={title}
+                            onChange={setTitle}
+                            onSave={saveTitle}
+                            placeholder={`Untitled ${node.type}`}
+                        />
+                        {detail && (
+                            <p className="node-media-detail">{detail}</p>
+                        )}
+                    </div>
+                    {error && (
+                        <p role="alert" className="node-media-error">
+                            {error}
+                        </p>
+                    )}
                 </div>
-                <div className="node-media-title-row">
-                    <input
-                        aria-label={`${label} title`}
-                        value={title}
-                        maxLength={255}
-                        onChange={(event) => setTitle(event.target.value)}
-                        onBlur={saveTitle}
-                        onKeyDown={(event) => {
-                            if (event.key === 'Enter')
-                                event.currentTarget.blur();
-                        }}
-                        placeholder={`Untitled ${node.type}`}
-                    />
-                    {detail && <p className="node-media-detail">{detail}</p>}
-                </div>
-                {error && (
-                    <p role="alert" className="node-media-error">
-                        {error}
-                    </p>
-                )}
             </div>
             <input
                 ref={iconInput}

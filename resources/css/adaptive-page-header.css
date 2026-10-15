@@ -1,0 +1,105 @@
+.page-media-header {
+    container-name: page-media-header;
+    container-type: inline-size;
+}
+.page-title-field {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    resize: none;
+    overflow: hidden;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    line-height: 1.15;
+    overflow-wrap: anywhere;
+}
+.document-page-header > .node-media-layout {
+    max-width: 780px;
+    margin-inline: auto;
+}
+.document-page-header .node-media-body {
+    max-width: 780px;
+    padding: 0;
+}
+
+@container page-media-header (min-width: 600px) {
+    .node-media-layout:has(
+        > [data-cover-shape]:not([data-cover-shape='landscape'])
+    ) {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        column-gap: 32px;
+    }
+    .node-media-layout
+        > [data-cover-shape]:not([data-cover-shape='landscape']) {
+        --page-cover-width-limit: 320px;
+        grid-column: 1;
+        grid-row: 1;
+        align-self: center;
+        width: min(
+            var(--page-cover-width-limit),
+            calc(
+                min(
+                        320px,
+                        calc(var(--orbium-host-viewport-height, 100dvh) * 0.35)
+                    ) *
+                    var(--page-cover-ratio)
+            )
+        );
+    }
+    .node-media-layout > [data-cover-shape='portrait'] {
+        --page-cover-width-limit: 220px;
+    }
+    .node-media-layout:has(
+            > [data-cover-shape]:not([data-cover-shape='landscape'])
+        )
+        > .node-media-body {
+        grid-column: 2;
+        grid-row: 1;
+        align-self: center;
+        width: 100%;
+        min-width: 0;
+        margin: 0;
+    }
+    .page-media-header
+        .node-media-layout:has(
+            > [data-cover-shape]:not([data-cover-shape='landscape'])
+        )
+        :is(.node-media-icon, .document-page-icon) {
+        width: 64px;
+        height: 64px;
+        margin: 0 0 16px;
+    }
+    .page-media-header
+        .node-media-layout:has(
+            > [data-cover-shape]:not([data-cover-shape='landscape'])
+        )
+        .node-media-title-row {
+        display: block;
+    }
+    .page-media-header
+        .node-media-layout:has(
+            > [data-cover-shape]:not([data-cover-shape='landscape'])
+        )
+        .page-title-field {
+        min-width: 0;
+        margin-bottom: 0;
+        font-size: clamp(1.75rem, 4cqi, 3rem);
+    }
+    .page-media-header
+        .node-media-layout:has(
+            > [data-cover-shape]:not([data-cover-shape='landscape'])
+        )
+        .node-media-detail {
+        margin-top: 8px;
+        white-space: normal;
+    }
+
+    .document-page-header
+        .node-media-layout:has(
+            > [data-cover-shape]:not([data-cover-shape='landscape'])
+        ) {
+        padding-bottom: 24px;
+    }
+}

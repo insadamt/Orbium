@@ -176,7 +176,7 @@ export default function PropertyInput({
                             type="button"
                             aria-label={`Edit ${property.name}`}
                             disabled={busy}
-                            className="flex min-h-[43px] w-full items-center overflow-hidden px-3 text-left outline-none hover:bg-muted/40 disabled:opacity-60"
+                            className="flex min-h-[43px] w-full items-center overflow-hidden px-3 text-left outline-none disabled:opacity-60"
                         >
                             <PropertyValue
                                 property={property}

@@ -29,6 +29,7 @@ export function PageMediaEditButton({
     onResetImage,
 }: PageMediaEditButtonProps) {
     const [libraryOpen, setLibraryOpen] = useState(false);
+    const [menuOpen, setMenuOpen] = useState(false);
     return (
         <>
             {libraryOpen && workspaceId && onChooseLibrary && (
@@ -42,7 +43,11 @@ export function PageMediaEditButton({
                     }}
                 />
             )}
-            <DropdownMenu.Root>
+            <DropdownMenu.Root
+                modal={false}
+                open={menuOpen}
+                onOpenChange={setMenuOpen}
+            >
                 <DropdownMenu.Trigger asChild>
                     <button
                         type="button"
@@ -56,6 +61,9 @@ export function PageMediaEditButton({
                     </button>
                 </DropdownMenu.Trigger>
                 <DropdownMenu.Content
+                    onCloseAutoFocus={(event) => {
+                        if (libraryOpen) event.preventDefault();
+                    }}
                     align="end"
                     sideOffset={6}
                     className="glass-surface z-50 min-w-44 rounded-xl border border-border p-1.5 text-foreground shadow-xl"
@@ -69,7 +77,10 @@ export function PageMediaEditButton({
                     </DropdownMenu.Item>
                     {workspaceId && onChooseLibrary && (
                         <DropdownMenu.Item
-                            onSelect={() => setLibraryOpen(true)}
+                            onSelect={() => {
+                                setMenuOpen(false);
+                                setLibraryOpen(true);
+                            }}
                             className={itemClass}
                         >
                             Choose from Library

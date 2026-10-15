@@ -75,8 +75,6 @@
         .db-menu,
         .db-field,
         .db-gallery-card,
-        .db-toolbar-button,
-        .db-icon-button,
         .bg-card,
         .bg-popover,
         .bg-background:where(:not(body):not(.orbium-shell)),
@@ -139,9 +137,6 @@
         .trash-control-button:hover,
         .trash-control-button:focus-visible,
         .trash-control-button[data-active='true'],
-        .db-toolbar-button:hover,
-        .db-toolbar-button[data-active='true'],
-        .db-icon-button:hover,
         button.bg-card:hover,
         button.bg-background:hover
     ) {

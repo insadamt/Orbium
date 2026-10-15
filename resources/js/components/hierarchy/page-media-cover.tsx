@@ -43,11 +43,18 @@ export function PageMediaCover({
               );
 
     return (
-        <div className="page-media-cover-slot">
-            <div
-                className="page-media-cover page-media-editable"
-                style={{ '--page-cover-ratio': ratio } as CSSProperties}
-            >
+        <div
+            className="page-media-cover-slot"
+            data-cover-shape={
+                sourceUrl !== defaultCoverUrl && ratio < 1
+                    ? 'portrait'
+                    : sourceUrl !== defaultCoverUrl && ratio < 2
+                      ? 'compact'
+                      : 'landscape'
+            }
+            style={{ '--page-cover-ratio': ratio } as CSSProperties}
+        >
+            <div className="page-media-cover page-media-editable">
                 <img
                     ref={coverRef}
                     className="page-media-cover-image"

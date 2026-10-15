@@ -7,18 +7,15 @@ import {
     EyeOff,
     Loader2,
     Plus,
-    X,
 } from 'lucide-react';
 import { useState } from 'react';
 import DatabaseDialog from './database-dialog';
-import DatabaseFilterEditor from './database-filter-editor';
-import { AppSelect } from '@/components/ui/app-select';
 import { propertyTypes } from './property-presentation';
 import type { Property, ViewConfig } from './types';
 import { GalleryAppearanceEditor } from '@/components/hierarchy/gallery-appearance-editor';
 import { galleryAppearance } from '@/components/hierarchy/cover-presentation';
 
-export type SettingsSection = 'properties' | 'filters' | 'sorts' | 'appearance';
+export type SettingsSection = 'properties' | 'appearance';
 type Props = {
     properties: Property[];
     config: ViewConfig;
@@ -49,16 +46,6 @@ export default function DatabaseViewSettings({
             config.visible_property_ids ??
             properties.map((property) => property.id)
         ).filter((id) => properties.some((property) => property.id === id)),
-        filters: (config.filters ?? []).filter((filter) =>
-            properties.some((property) => property.id === filter.property_id),
-        ),
-        sorts: (config.sorts ?? []).filter(
-            (sort) =>
-                sort.field === 'title' ||
-                properties.some(
-                    (property) => String(property.id) === String(sort.field),
-                ),
-        ),
     }));
     const visibleIds = draft.visible_property_ids ?? [];
     const orderedProperties = [...properties].sort((left, right) => {
@@ -84,15 +71,13 @@ export default function DatabaseViewSettings({
             onClose={() => {
                 if (!saving) onClose();
             }}
-            title="View settings"
+            title={view === 'gallery' ? 'Gallery settings' : 'Table settings'}
             description={`Customize how your ${view} view displays documents.`}
         >
             <div className="flex gap-1 border-b border-border/60 px-6">
                 {(
                     [
                         'properties',
-                        'filters',
-                        'sorts',
                         ...(view === 'gallery'
                             ? (['appearance'] as const)
                             : []),
@@ -174,7 +159,7 @@ export default function DatabaseViewSettings({
                                                     (draft.preview ??
                                                         'cover') === mode
                                                 }
-                                                className={`flex items-center justify-between rounded-lg border px-3 py-2 text-xs ${(draft.preview ?? 'cover') === mode ? 'border-ring bg-muted' : 'border-border/60'}`}
+                                                className={`flex items-center justify-between rounded-lg border px-3 py-2 text-xs ${(draft.preview ?? 'cover') === mode ? 'border-ring' : 'border-border/60'}`}
                                             >
                                                 {mode === 'body'
                                                     ? 'Content'
@@ -207,7 +192,7 @@ export default function DatabaseViewSettings({
                                 return (
                                     <div
                                         key={property.id}
-                                        className="group flex items-center gap-2 rounded-lg py-1 hover:bg-muted/30"
+                                        className="group flex items-center gap-2 rounded-lg py-1"
                                     >
                                         <Icon
                                             size={15}
@@ -305,120 +290,6 @@ export default function DatabaseViewSettings({
                         </button>
                     </div>
                 )}
-                {section === 'filters' && (
-                    <DatabaseFilterEditor
-                        properties={properties}
-                        filters={draft.filters ?? []}
-                        onChange={(filters) => setDraft({ ...draft, filters })}
-                    />
-                )}
-                {section === 'sorts' && (
-                    <div className="space-y-3">
-                        <p className="text-xs text-muted-foreground">
-                            Sort documents in this priority order.
-                        </p>
-                        {!(draft.sorts ?? []).length && (
-                            <p className="rounded-xl border border-dashed border-border py-8 text-center text-sm text-muted-foreground">
-                                Documents appear in their original order.
-                            </p>
-                        )}
-                        {(draft.sorts ?? []).map((sort, index) => (
-                            <div
-                                key={index}
-                                className="flex items-center gap-2"
-                            >
-                                <span className="w-4 text-xs text-muted-foreground">
-                                    {index + 1}
-                                </span>
-                                <AppSelect
-                                    label={`Sort ${index + 1} property`}
-                                    className="db-field flex-1"
-                                    value={sort.field}
-                                    onValueChange={(value) =>
-                                        setDraft({
-                                            ...draft,
-                                            sorts: draft.sorts?.map(
-                                                (item, position) =>
-                                                    position === index
-                                                        ? {
-                                                              ...item,
-                                                              field: value,
-                                                          }
-                                                        : item,
-                                            ),
-                                        })
-                                    }
-                                    options={[
-                                        { value: 'title', label: 'Title' },
-                                        ...properties.map((property) => ({
-                                            value: String(property.id),
-                                            label: property.name,
-                                        })),
-                                    ]}
-                                />
-                                <AppSelect
-                                    label={`Sort ${index + 1} direction`}
-                                    className="db-field !w-28"
-                                    value={sort.direction}
-                                    onValueChange={(value) =>
-                                        setDraft({
-                                            ...draft,
-                                            sorts: draft.sorts?.map(
-                                                (item, position) =>
-                                                    position === index
-                                                        ? {
-                                                              ...item,
-                                                              direction:
-                                                                  value as
-                                                                      | 'asc'
-                                                                      | 'desc',
-                                                          }
-                                                        : item,
-                                            ),
-                                        })
-                                    }
-                                    options={[
-                                        { value: 'asc', label: 'Ascending' },
-                                        { value: 'desc', label: 'Descending' },
-                                    ]}
-                                />
-                                <button
-                                    type="button"
-                                    aria-label={`Remove sort ${index + 1}`}
-                                    className="db-icon-button"
-                                    onClick={() =>
-                                        setDraft({
-                                            ...draft,
-                                            sorts: draft.sorts?.filter(
-                                                (_, position) =>
-                                                    position !== index,
-                                            ),
-                                        })
-                                    }
-                                >
-                                    <X size={15} />
-                                </button>
-                            </div>
-                        ))}
-                        <button
-                            type="button"
-                            className="db-toolbar-button"
-                            disabled={(draft.sorts?.length ?? 0) >= 10}
-                            onClick={() =>
-                                setDraft({
-                                    ...draft,
-                                    sorts: [
-                                        ...(draft.sorts ?? []),
-                                        { field: 'title', direction: 'asc' },
-                                    ],
-                                })
-                            }
-                        >
-                            <Plus size={14} />
-                            Add sort
-                        </button>
-                    </div>
-                )}
                 {error && (
                     <p role="alert" className="mt-4 text-sm text-destructive">
                         {error}
@@ -438,7 +309,7 @@ export default function DatabaseViewSettings({
                     type="button"
                     disabled={saving}
                     onClick={() => onSave(draft)}
-                    className="inline-flex items-center gap-2 rounded-lg bg-foreground px-4 py-2 text-sm font-medium text-background disabled:opacity-40"
+                    className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground disabled:opacity-40"
                 >
                     {saving && <Loader2 size={14} className="animate-spin" />}
                     Apply changes

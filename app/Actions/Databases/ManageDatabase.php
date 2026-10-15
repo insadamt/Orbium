@@ -27,6 +27,8 @@ class ManageDatabase
                 'position' => DatabaseProperty::query()->where('database_node_id', $database->id)->count(),
                 'config' => $data['config'] ?? [],
             ]);
+            $this->showNewPropertyInViews($property);
+
             if (array_key_exists('default', $property->config)) {
                 $value = $this->validateValue($database, $property, $property->config['default']);
                 foreach ($database->children()->where('type', 'document')->pluck('id') as $documentId) {
@@ -36,6 +38,24 @@ class ManageDatabase
 
             return $property;
         });
+    }
+
+    private function showNewPropertyInViews(DatabaseProperty $property): void
+    {
+        $views = DatabaseViewSetting::query()
+            ->where('database_node_id', $property->database_node_id)
+            ->whereIn('view_type', ['table', 'gallery'])
+            ->get();
+
+        foreach ($views as $view) {
+            $config = $view->getAttribute('config');
+            if (! isset($config['visible_property_ids'])) {
+                continue;
+            }
+
+            $config['visible_property_ids'][] = $property->id;
+            $view->update(['config' => $config]);
+        }
     }
 
     public function updateProperty(Node $database, DatabaseProperty $property, array $data): void

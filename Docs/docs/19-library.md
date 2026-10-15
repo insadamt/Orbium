@@ -15,7 +15,7 @@ Library provides a workspace-owned collection of existing uploads and new files.
 
 Reuse references the original attachment ID and binary. It does not copy the file or move its original upload provenance. Ownership and authorization are workspace scoped. `owner_node_id` records optional upload provenance, not an exclusive access boundary. Renaming changes the Library name/download filename; persisted captions and Markdown labels remain as written.
 
-Page media menus retain Change cover/icon for uploading and cropping, and add Choose from Library. Reused page-header covers preserve the image’s intrinsic proportions within the shared width/height limits; existing cropped binaries are reused as stored. Older 11:3 metadata does not override the dimensions of the loaded image. Choosing an existing image does not open a crop editor or create another binary. Changing/resetting one page's media reference does not change other pages' references.
+Page media menus retain Change cover/icon for uploading and cropping, and add Choose from Library. Reused page-header covers preserve the image’s intrinsic proportions within the shared width/height limits; existing cropped binaries are reused as stored. Older 11:3 metadata does not override the dimensions of the loaded image. Choosing an existing image does not open a crop editor or create another binary. Changing/resetting one page's media reference does not change other pages' references. Page media Edit menus use a controlled non-modal dropdown and suppress menu focus restoration while opening the Library picker, so selecting or cancelling a Library image does not leave the page blocked and cover/icon editing remains available without refreshing.
 
 ## Deletion and persistence
 

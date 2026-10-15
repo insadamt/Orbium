@@ -7,7 +7,10 @@ function applyCoverIconCutout(cover: HTMLImageElement, icon: HTMLDivElement) {
     const slot = cover.closest('.page-media-cover-slot');
     const availableWidth =
         slot?.getBoundingClientRect().width ?? coverBounds.width;
-    const compact = coverBounds.width < availableWidth - 1;
+    const layout = cover.closest('.node-media-layout');
+    const besideCover =
+        layout !== null && getComputedStyle(layout).display === 'grid';
+    const compact = besideCover || coverBounds.width < availableWidth - 1;
     icon.dataset.coverLayout = compact ? 'compact' : 'banner';
     if (compact) {
         cover.style.removeProperty('mask-image');

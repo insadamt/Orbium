@@ -26,6 +26,11 @@ export default function DatabaseFilterEditor({
             <p className="text-xs leading-relaxed text-muted-foreground">
                 Show documents that match every condition.
             </p>
+            {!properties.length && (
+                <p className="text-xs text-muted-foreground">
+                    Add a property in View settings before creating a filter.
+                </p>
+            )}
             {!filters.length && (
                 <p className="rounded-xl border border-dashed border-border py-8 text-center text-sm text-muted-foreground">
                     All documents are visible.
@@ -46,7 +51,7 @@ export default function DatabaseFilterEditor({
                             </span>
                             <AppSelect
                                 label={`Filter ${index + 1} property`}
-                                className="db-field flex-1"
+                                className="db-field min-w-0 flex-1"
                                 value={String(filter.property_id)}
                                 onValueChange={(value) =>
                                     update(index, {
@@ -74,7 +79,7 @@ export default function DatabaseFilterEditor({
                                 <X size={15} />
                             </button>
                         </div>
-                        <div className="flex gap-2 pl-12">
+                        <div className="flex flex-wrap gap-2 sm:pl-12">
                             <AppSelect
                                 label={`Filter ${index + 1} condition`}
                                 className="db-field !w-28 shrink-0"
