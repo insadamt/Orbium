@@ -333,6 +333,9 @@ export function DocumentPage({
                                       )
                                     : null
                             }
+                            aspectRatio={
+                                savedDocument.cover_aspect_ratio ?? undefined
+                            }
                             entityLabel="Document"
                             coverRef={coverRef}
                             uploading={coverUploading}

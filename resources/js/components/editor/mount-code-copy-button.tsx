@@ -22,7 +22,12 @@ function CodeCopyButton({ readCode }: { readCode: () => string }) {
                     )
                 }
             />
-            <span role="status" className="text-xs">
+            <span
+                role="status"
+                className={
+                    !status || status === 'Copied' ? 'sr-only' : 'text-xs'
+                }
+            >
                 {status}
             </span>
         </>

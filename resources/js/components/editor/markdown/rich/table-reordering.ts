@@ -27,9 +27,10 @@ export function mountTableReordering(options: ReorderingOptions) {
                 suppressClick = false;
             }
         });
+        // Keep focus in the cell until a click or drag explicitly closes its editor.
+        handle.addEventListener('mousedown', (event) => event.preventDefault());
         handle.addEventListener('dragstart', (event) => event.preventDefault());
         handle.addEventListener('pointerdown', (start) => {
-            start.stopPropagation();
             suppressClick = false;
             if (start.button !== 0 || !options.canMove()) return;
             cancelDrag?.();

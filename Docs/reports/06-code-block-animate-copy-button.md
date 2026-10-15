@@ -2,7 +2,10 @@
 
 Replaced the code toolbar's text button with the requested Animate UI CopyButton
 in the Markdown editor and retained Tiptap editor. The ghost icon button animates
-from copy to check, shows Copied for 1.5 seconds, and reads current code when clicked.
+from copy to check for 1.5 seconds and reads current code when clicked.
+Success is announced to screen readers without visible Copied text.
+Empty and success status labels both stay outside the layout, preventing the
+toolbar's flex gap from shifting the button when copying or resetting.
 Clipboard failures display an accessible message. Empty code can be copied,
 reset timers are cleared on unmount, and reduced motion disables icon transitions
 and hover/tap scaling.
@@ -28,8 +31,9 @@ Existing unrelated block-handle work was preserved. No commit was created.
 
 1. Open a Markdown document with a multiline code block. Click its copy icon,
    then paste into a plain text editor. Expected: exact code, including whitespace,
-   without fences or the language label; the icon changes to a check and shows
-   Copied, then resets after 1.5 seconds.
+   without fences or the language label; the icon changes to a check without
+   visible Copied text, then resets after 1.5 seconds. Expected: the button stays
+   in the same horizontal position before copying, during success, and after reset.
 2. Edit the code, copy again immediately, and paste. Expected: latest content.
    Copy a second code block. Expected: each button copies its own block.
 3. Focus Copy code with Tab and activate it with Enter and Space. Expected:

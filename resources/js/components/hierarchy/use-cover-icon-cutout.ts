@@ -2,9 +2,21 @@ import { useLayoutEffect, useState } from 'react';
 
 function applyCoverIconCutout(cover: HTMLImageElement, icon: HTMLDivElement) {
     const coverBounds = cover.getBoundingClientRect();
-    const iconBounds = icon.getBoundingClientRect();
     if (!coverBounds.width || !coverBounds.height) return;
 
+    const slot = cover.closest('.page-media-cover-slot');
+    const availableWidth =
+        slot?.getBoundingClientRect().width ?? coverBounds.width;
+    const compact = coverBounds.width < availableWidth - 1;
+    icon.dataset.coverLayout = compact ? 'compact' : 'banner';
+    if (compact) {
+        cover.style.removeProperty('mask-image');
+        cover.style.removeProperty('-webkit-mask-image');
+        icon.style.removeProperty('translate');
+        return;
+    }
+
+    const iconBounds = icon.getBoundingClientRect();
     const iconStyle = getComputedStyle(icon);
     const radius = Number.parseFloat(iconStyle.borderTopLeftRadius);
     const previousOffset = Number.parseFloat(icon.style.translate) || 0;
@@ -35,6 +47,8 @@ export function useCoverIconCutout() {
         observer.observe(cover);
         observer.observe(icon);
         if (cover.parentElement) observer.observe(cover.parentElement);
+        const slot = cover.closest('.page-media-cover-slot');
+        if (slot) observer.observe(slot);
         if (icon.parentElement) observer.observe(icon.parentElement);
         cover.addEventListener('load', updateCutout);
         updateCutout();
@@ -45,6 +59,7 @@ export function useCoverIconCutout() {
             cover.style.removeProperty('mask-image');
             cover.style.removeProperty('-webkit-mask-image');
             icon.style.removeProperty('translate');
+            delete icon.dataset.coverLayout;
         };
     }, [cover, icon]);
 

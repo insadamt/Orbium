@@ -9,81 +9,6 @@ type DragMotionOptions = {
     onInterrupt: () => void;
 };
 
-let snapshotSequence = 0;
-
-function cloneDragTable(grid: HTMLTableElement) {
-    const clone = grid.cloneNode(true) as HTMLTableElement;
-    clone.querySelectorAll('button').forEach((control) => control.remove());
-    const prefix = `table-drag-${++snapshotSequence}-`;
-    const identifiers = new Map<string, string>();
-    for (const child of clone.querySelectorAll<HTMLElement>('[id]')) {
-        identifiers.set(child.id, `${prefix}${child.id}`);
-        child.id = `${prefix}${child.id}`;
-    }
-    for (const child of clone.querySelectorAll('*')) {
-        child.removeAttribute('data-rich-from');
-        for (const attribute of Array.from(child.attributes)) {
-            const value = attribute.value.replace(
-                /url\(#([^)]*)\)/g,
-                (reference, id: string) =>
-                    identifiers.has(id)
-                        ? `url(#${identifiers.get(id)})`
-                        : reference,
-            );
-            const linkedId = identifiers.get(value.slice(1));
-            child.setAttribute(
-                attribute.name,
-                (attribute.name === 'href' ||
-                    attribute.name === 'xlink:href') &&
-                    linkedId
-                    ? `#${linkedId}`
-                    : value,
-            );
-        }
-    }
-    Array.from(grid.rows).forEach((row, y) => {
-        Array.from(row.cells).forEach((cell, x) => {
-            Object.assign(clone.rows[y].cells[x].style, {
-                width: `${cell.offsetWidth}px`,
-                minWidth: `${cell.offsetWidth}px`,
-                height: `${cell.offsetHeight}px`,
-                boxSizing: 'border-box',
-            });
-        });
-    });
-    return clone;
-}
-
-function dragViewport(grid: HTMLTableElement) {
-    const ownerWindow = grid.ownerDocument.defaultView!;
-    let left = 0;
-    let top = 0;
-    let right = ownerWindow.innerWidth;
-    let bottom = ownerWindow.innerHeight;
-    for (
-        let parent = grid.parentElement;
-        parent;
-        parent = parent.parentElement
-    ) {
-        const style = ownerWindow.getComputedStyle(parent);
-        const bounds = parent.getBoundingClientRect();
-        if (/(auto|scroll|hidden|clip)/.test(style.overflowX)) {
-            left = Math.max(left, bounds.left);
-            right = Math.min(right, bounds.right);
-        }
-        if (/(auto|scroll|hidden|clip)/.test(style.overflowY)) {
-            top = Math.max(top, bounds.top);
-            bottom = Math.min(bottom, bounds.bottom);
-        }
-    }
-    return {
-        left,
-        top,
-        width: Math.max(0, right - left),
-        height: Math.max(0, bottom - top),
-    };
-}
-
 export function startTableDragMotion({
     grid,
     axis,
@@ -111,11 +36,6 @@ export function startTableDragMotion({
                   bounds: cell.getBoundingClientRect(),
               }));
     const source = groups[index];
-    const left = axis === 'column' ? source.bounds.left : gridBounds.left;
-    const top = axis === 'row' ? source.bounds.top : gridBounds.top;
-    const width = axis === 'column' ? source.bounds.width : gridBounds.width;
-    const height = axis === 'row' ? source.bounds.height : gridBounds.height;
-    const viewport = dragViewport(grid);
     const scrollPositions: {
         element: HTMLElement;
         left: number;
@@ -136,50 +56,6 @@ export function startTableDragMotion({
         left: ownerWindow.scrollX,
         top: ownerWindow.scrollY,
     };
-    const layer = ownerDocument.createElement('div');
-    layer.className =
-        'orbium-editor orbium-markdown-content orbium-table-drag-layer';
-    layer.inert = true;
-    layer.setAttribute('aria-hidden', 'true');
-    if (grid.closest('[data-document-styles]'))
-        layer.setAttribute('data-document-styles', '');
-    Object.assign(layer.style, {
-        left: `${viewport.left}px`,
-        top: `${viewport.top}px`,
-        width: `${viewport.width}px`,
-        height: `${viewport.height}px`,
-        font: style.font,
-        color: style.color,
-        direction: style.direction,
-    });
-    for (const property of style) {
-        if (property.startsWith('--'))
-            layer.style.setProperty(property, style.getPropertyValue(property));
-    }
-    const ghost = ownerDocument.createElement('div');
-    ghost.className = 'orbium-table-drag-ghost';
-    Object.assign(ghost.style, {
-        left: `${left - viewport.left}px`,
-        top: `${top - viewport.top}px`,
-        width: `${width}px`,
-        height: `${height}px`,
-    });
-    const clone = cloneDragTable(grid);
-    Object.assign(clone.style, {
-        position: 'absolute',
-        left: `${gridBounds.left - left}px`,
-        top: `${gridBounds.top - top}px`,
-        width: `${grid.offsetWidth}px`,
-        margin: '0',
-        tableLayout: 'fixed',
-        font: style.font,
-        letterSpacing: style.letterSpacing,
-        transform: `scale(${scaleX}, ${scaleY})`,
-        transformOrigin: 'top left',
-    });
-    ghost.append(clone);
-    layer.append(ghost);
-    ownerDocument.body.append(layer);
     const originalStyles = groups.flatMap((group) =>
         group.cells.map((cell) => ({
             cell,
@@ -208,7 +84,6 @@ export function startTableDragMotion({
         });
         tweens.add(tween);
     }
-    if (!reducedMotion.matches) animate(ghost, { scale: 1.012, opacity: 0.98 });
 
     function preview(nextTarget: number) {
         if (nextTarget === target) return;
@@ -241,7 +116,26 @@ export function startTableDragMotion({
     }
     function follow(delta: number) {
         if (!active) return;
-        gsap.set(ghost, axis === 'row' ? { y: delta } : { x: delta });
+        const minimum = Math.min(
+            ...groups.map(({ bounds }) =>
+                axis === 'row' ? bounds.top : bounds.left,
+            ),
+        );
+        const maximum = Math.max(
+            ...groups.map(({ bounds }) =>
+                axis === 'row' ? bounds.bottom : bounds.right,
+            ),
+        );
+        const start = axis === 'row' ? source.bounds.top : source.bounds.left;
+        const end = axis === 'row' ? source.bounds.bottom : source.bounds.right;
+        const offset = Math.max(
+            minimum - start,
+            Math.min(maximum - end, delta),
+        );
+        gsap.set(
+            source.cells,
+            axis === 'row' ? { y: offset / scaleY } : { x: offset / scaleX },
+        );
     }
     function findTarget(clientX: number, clientY: number) {
         let nearest = index;
@@ -274,7 +168,6 @@ export function startTableDragMotion({
             if (original === null) cell.removeAttribute('style');
             else cell.setAttribute('style', original);
         });
-        layer.remove();
         ownerWindow.removeEventListener('resize', onInterrupt);
         ownerWindow.removeEventListener('blur', onInterrupt);
         ownerDocument.removeEventListener('scroll', interruptAfterScroll, true);
@@ -305,11 +198,9 @@ export function startTableDragMotion({
             onComplete();
             return;
         }
-        const tween = gsap.to(ghost, {
-            x: axis === 'column' ? destination : 0,
-            y: axis === 'row' ? destination : 0,
-            scale: 1,
-            opacity: 1,
+        const tween = gsap.to(source.cells, {
+            x: axis === 'column' ? destination / scaleX : 0,
+            y: axis === 'row' ? destination / scaleY : 0,
             duration: 0.18,
             ease: 'power2.out',
             overwrite: true,

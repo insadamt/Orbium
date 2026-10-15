@@ -53,6 +53,7 @@ export function NodeMediaHeader({
     const [legacyIcon, setLegacyIcon] = useState(node.icon);
     const [iconId, setIconId] = useState(node.icon_attachment_id);
     const [coverId, setCoverId] = useState(node.cover_attachment_id);
+    const [coverRatio, setCoverRatio] = useState(node.cover_aspect_ratio);
     const { coverRef, iconRef } = useCoverIconCutout();
     const [error, setError] = useState('');
     const [iconUploading, setIconUploading] = useState(false);
@@ -122,6 +123,7 @@ export function NodeMediaHeader({
                 })
             ) {
                 setCoverId(attachment.id);
+                setCoverRatio(ratio);
             }
         } catch (error) {
             setError(
@@ -144,7 +146,10 @@ export function NodeMediaHeader({
                 if (kind === 'icon') {
                     setIconId(file.id);
                     setLegacyIcon(null);
-                } else setCoverId(file.id);
+                } else {
+                    setCoverId(file.id);
+                    setCoverRatio('11:3');
+                }
             },
         });
     }
@@ -186,6 +191,7 @@ export function NodeMediaHeader({
     async function removeCover() {
         if (await saveHeader({ cover_attachment_id: null })) {
             setCoverId(null);
+            setCoverRatio(null);
         }
     }
 
@@ -207,6 +213,7 @@ export function NodeMediaHeader({
                 imageUrl={
                     coverId ? nodeImageUrl(workspaceId, node.id, coverId) : null
                 }
+                aspectRatio={coverId ? (coverRatio ?? undefined) : undefined}
                 entityLabel={label}
                 coverRef={coverRef}
                 uploading={coverUploading}

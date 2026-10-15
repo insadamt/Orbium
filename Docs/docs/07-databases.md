@@ -3,6 +3,10 @@
 The database page uses the shared floating top controls. Its title, view controls, table/gallery, and contextual settings sit inside one spacious floating island. Back remains in the top controls. Search expands there into a title filter for the current database documents. The last selected Table or Gallery view is remembered per database across tabs and reloads in the current browser.
 
 
+## Page cover
+
+The database page's top cover uses the same proportional header layout as documents and folders: fit within the available width and min(320px, 35% of the viewport height), centered when narrower. Loaded image dimensions preserve the true ratio for uploaded crops, Library images, and older covers. Saved crop metadata is a loading hint, with a provisional 11:3 fallback. Full-width covers retain the overlapping icon and cutout; narrower covers place the icon below with the title. Reset restores the default cover, and unavailable images fall back to it. This presentation does not alter Gallery view settings or stored crop data.
+
 ## Concept
 
 A database is a structured container of documents.

@@ -18,18 +18,18 @@ Typical document:
 ```text
 breadcrumbs / tabs
 
-page icon       11:3 cover
+page icon       proportional cover
 
 Document Title
 
 Body...
 ```
 
-Every document, folder and database page shows a neutral default 11:3 cover and a type-specific icon when no custom media is set. The icon overlaps the cover edge by half its height, with a rounded transparent cutout around it. Each cover and icon reveals its own Edit button on hover or keyboard focus; touch devices keep these controls visible. Edit offers Change cover/icon and, for custom media, Reset to default. These controls replace the three-dot image menu and open PNG, JPEG, GIF or WebP pickers. Reset clears the custom media reference and restores the default appearance. Existing text icons remain visible until replaced or reset.
+Every document, folder and database page shows a neutral default 11:3 cover and a type-specific icon when no custom media is set. When the displayed cover fills the available width, the icon overlaps its edge by half its height, with a rounded transparent cutout around it. When the cover is narrower, the icon sits with the title below it without overlap or a cutout. Each cover and icon reveals its own Edit button on hover or keyboard focus; touch devices keep these controls visible. Edit offers Change cover/icon and, for custom media, Reset to default. These controls replace the three-dot image menu and open PNG, JPEG, GIF or WebP pickers. Reset clears the custom media reference and restores the default appearance. Existing text icons remain visible until replaced or reset.
 
-Icons that do not match 512×512 open a crop dialog. Every new cover opens the crop dialog with 11:3 (the default), 16:9, 5:2, 9:16, 3:2, 4:3, 1:1, and 4:5 choices. The user can change ratio, position and zoom the crop, or cancel without changing the current image. Document, folder, and database pages display covers in a full-width 11:3 frame with centered fill cropping, including older covers. Saved crop ratios remain available to Gallery previews.
+Icons that do not match 512×512 open a crop dialog. Every new cover opens the crop dialog with 11:3 (the default), 16:9, 5:2, 9:16, 3:2, 4:3, 1:1, and 4:5 choices. The user can change ratio, position and zoom the crop, or cancel without changing the current image. Document, folder, and database page headers preserve cover proportions within the available width and a height limit of min(320px, 35% of the viewport height). Shorter embedded panes use the host viewport height. Covers are centered when narrower than the available width, with no added side background, stretching, or additional cropping. The loaded image dimensions determine the displayed ratio, including Library images and older covers without reliable metadata; saved crop ratios reserve space while loading, otherwise 11:3 is the provisional fallback. The default image retains its own 11:3 ratio. Missing cover images fall back to the default cover. Saved crop ratios remain available to Gallery previews.
 
-The eight cover ratio buttons occupy one row on wider screens and two rows of four on smaller screens. Documents, folders, and databases share these crop controls and the transparent icon cutout treatment.
+The eight cover ratio buttons occupy one row on wider screens and two rows of four on smaller screens. Documents, folders, and databases share these crop controls and the adaptive cover/icon layout.
 
 No permanent formatting toolbar. The document actions menu offers Import, Export and Source/Live Preview; it omits Document outline, Find in document and Add file. Outline navigation remains on the rail, and existing find shortcuts and attachment insertion flows remain available.
 
@@ -198,7 +198,7 @@ Dragging reorders blocks.
 
 ## Table border handles
 
-Markdown Live Preview tables use subtle 8-by-1-pixel marks integrated into the top border of each column and the leading border of each row, with 4-pixel breaks on either side (`----- - -----`), with transparent hit areas and no visible button background. Handles appear on table hover, keyboard focus, and touch devices. Drag a column handle left/right or a row handle up/down to reorder complete columns or rows. A lifted preview follows the pointer along that axis while neighboring cells slide aside to open its destination gap. On release, the preview settles into the gap before the source edit commits. Menu move actions use the same movement. Escape cancels it. Reduced motion retains direct pointer feedback and applies positions immediately without pickup or settling tweens. Clicking a handle opens its options in place of the former column three-dot button.
+Markdown Live Preview tables use subtle 8-by-1-pixel marks integrated into the top border of each column and the leading border of each row, with 4-pixel breaks on either side (`----- - -----`), with transparent hit areas and no visible button background. Handles appear on table hover, keyboard focus, and touch devices. Drag a column handle left/right or a row handle up/down to reorder complete columns or rows. The actual cells follow the pointer along that axis within the table bounds, leaving their original space empty while neighboring cells slide aside to open the destination gap. On release, the cells settle into the gap before the source edit commits. Menu move actions use the same movement. Escape cancels it. Reduced motion retains direct pointer feedback and applies positions immediately without settling tweens. Clicking a handle opens its options in place of the former column three-dot button.
 
 Column options include ascending/descending sorting, Move left/right, and Delete column. Row options include Insert above/below, Move up/down, and Delete row. Boundary move actions and deleting the final row or column are disabled. Tables with merged cells and read-only documents disable structural actions. Markdown tables keep their first row as the header after row changes; rich tables retain explicit header metadata. Changes use normal undo/redo and autosave. Newly inserted rows preserve column widths and alignment.
 

@@ -64,7 +64,7 @@ export function mountTableAxisMenu(options: TableAxisMenuOptions) {
     const menu = element('div');
     const menuSurface = createTableMenuSurface(menu);
     let actions: TableMenuAction[] = [];
-    menu.setAttribute('role', 'dialog');
+    menu.setAttribute('role', 'menu');
     menu.setAttribute('aria-label', 'Column options');
     menu.hidden = true;
     grid.ownerDocument.body.append(menu);
@@ -167,6 +167,7 @@ export function mountTableAxisMenu(options: TableAxisMenuOptions) {
         const wasOpen = anchor === trigger && !menu.hidden;
         close();
         if (wasOpen) return;
+        options.beforeAction();
         anchor = trigger;
         actions = [];
         const readOnly = !view.state.facet(EditorView.editable);
@@ -304,7 +305,7 @@ export function mountTableAxisMenu(options: TableAxisMenuOptions) {
             'aria-label',
             `Options for ${axis} ${index + 1}. Drag to move.`,
         );
-        trigger.setAttribute('aria-haspopup', 'dialog');
+        trigger.setAttribute('aria-haspopup', 'menu');
         trigger.setAttribute('aria-expanded', 'false');
         trigger.append(element('span', 'orbium-table-handle-dash'));
         reordering.bindHandle(trigger, axis, index);
