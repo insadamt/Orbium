@@ -82,7 +82,7 @@ export function blockFormatting(
     };
 }
 
-function renderedBlockMotionElements(
+export function renderedBlockMotionElements(
     editor: Editor,
     position: number,
 ): HTMLElement[] {

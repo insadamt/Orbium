@@ -1,3 +1,4 @@
+import { dispatchMarkdownHistoryWithLayoutMotion } from './interactions/markdown-history-layout-motion';
 import { LibraryPicker } from '@/components/library/library-picker';
 import { ExportDialog } from '@/components/document-transfer/export-dialog';
 import { ImportDialog } from '@/components/document-transfer/import-dialog';
@@ -143,6 +144,8 @@ export default function MarkdownEditor(props: MarkdownEditorProps) {
             () =>
                 new EditorView({
                     parent: host.current!,
+                    dispatchTransactions:
+                        dispatchMarkdownHistoryWithLayoutMotion,
                     state: EditorState.create({
                         doc: initial.current.markdown,
                         extensions: [

@@ -1,3 +1,4 @@
+import { useHistoryLayoutMotion } from './use-history-layout-motion';
 import { LibraryPicker } from '@/components/library/library-picker';
 import { useEditorTabShortcuts } from './use-editor-tab-shortcuts';
 import { RichTextTableOfContents } from './rich-text-table-of-contents';
@@ -311,6 +312,7 @@ export default function DocumentEditor({
         }
     }
 
+    useHistoryLayoutMotion(editor);
     useEditorTabShortcuts(editor, saveNow, documentTab.active, () =>
         setSearchOpen(true),
     );

@@ -483,3 +483,11 @@ reuse width motion. Button state tracks editor width changes. Explicit LTR/RTL/
 Auto direction commands now share alignment movement in both directions when
 they change visible position. Reduced motion remains immediate. See
 [the report and manual checklist](../reports/07-image-size-toggle-direction-motion.md).
+
+Direction history motion correction (2026-10-15): undo and redo of direction or
+alignment now reuse the 260 ms horizontal transition in Markdown and legacy JSON
+editors. History handling captures the old layout before applying the existing
+transaction and animates only restored layout changes, without extra document
+edits or undo entries. Ordinary typing undo remains unchanged. This supersedes
+earlier notes that direction/alignment undo renders immediately. OS reduced motion
+still skips transitions. See [the report and manual checklist](../reports/07-direction-history-motion.md).
