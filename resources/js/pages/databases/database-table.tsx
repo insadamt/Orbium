@@ -1,3 +1,4 @@
+import { useDatabaseDocumentContextMenu } from './use-database-document-context-menu';
 import { Link, router } from '@inertiajs/react';
 import * as DropdownMenu from '@/components/ui/dropdown-menu';
 import {
@@ -42,6 +43,8 @@ export default function DatabaseTable({
     onTrashDocument,
     creating,
 }: Props) {
+    const { contextMenu, openContextMenu, openKeyboardContextMenu } =
+        useDatabaseDocumentContextMenu({ workspaceId, onTrashDocument });
     const [widths, setWidths] = useState(config.widths ?? {});
     const [renamingId, setRenamingId] = useState<number | null>(null);
     const [draftTitle, setDraftTitle] = useState('');
@@ -125,7 +128,16 @@ export default function DatabaseTable({
                 </thead>
                 <tbody>
                     {documents.map((document) => (
-                        <tr key={document.id} className="group/row">
+                        <tr
+                            key={document.id}
+                            className="group/row"
+                            onContextMenu={(event) =>
+                                openContextMenu(event, document)
+                            }
+                            onKeyDown={(event) =>
+                                openKeyboardContextMenu(event, document)
+                            }
+                        >
                             <td>
                                 <div className="flex h-[43px] items-center gap-2 px-3">
                                     <FileText
@@ -240,6 +252,7 @@ export default function DatabaseTable({
                 <Plus size={15} />
                 New document
             </button>
+            {contextMenu}
         </div>
     );
 }

@@ -27,7 +27,7 @@ class ManageDatabase
                 'position' => DatabaseProperty::query()->where('database_node_id', $database->id)->count(),
                 'config' => $data['config'] ?? [],
             ]);
-            $this->showNewPropertyInViews($property);
+            $this->showNewPropertyInTableViews($property);
 
             if (array_key_exists('default', $property->config)) {
                 $value = $this->validateValue($database, $property, $property->config['default']);
@@ -40,11 +40,11 @@ class ManageDatabase
         });
     }
 
-    private function showNewPropertyInViews(DatabaseProperty $property): void
+    private function showNewPropertyInTableViews(DatabaseProperty $property): void
     {
         $views = DatabaseViewSetting::query()
             ->where('database_node_id', $property->database_node_id)
-            ->whereIn('view_type', ['table', 'gallery'])
+            ->where('view_type', 'table')
             ->get();
 
         foreach ($views as $view) {

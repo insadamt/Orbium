@@ -44,7 +44,9 @@ export default function DatabaseViewSettings({
         ...config,
         visible_property_ids: (
             config.visible_property_ids ??
-            properties.map((property) => property.id)
+            (view === 'gallery'
+                ? []
+                : properties.map((property) => property.id))
         ).filter((id) => properties.some((property) => property.id === id)),
     }));
     const visibleIds = draft.visible_property_ids ?? [];

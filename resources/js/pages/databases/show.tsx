@@ -69,7 +69,7 @@ function DatabasePage({ page }: { page: DatabasePageProps }) {
     const config: ViewConfig = views[view] ?? {};
     const visibleIds =
         config.visible_property_ids ??
-        properties.map((property) => property.id);
+        (view === 'gallery' ? [] : properties.map((property) => property.id));
     const visibleProperties = properties
         .filter((property) => visibleIds.includes(property.id))
         .sort(

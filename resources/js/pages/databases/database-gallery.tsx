@@ -1,5 +1,6 @@
+import { useDatabaseDocumentContextMenu } from './use-database-document-context-menu';
 import { Link } from '@inertiajs/react';
-import { FileText, Plus, Trash2 } from 'lucide-react';
+import { FileText, Plus } from 'lucide-react';
 import { useState } from 'react';
 import { MasonryLayout } from '@/components/hierarchy/masonry-layout';
 import { ratioNumber } from '@/components/hierarchy/cover-presentation';
@@ -39,6 +40,8 @@ export default function DatabaseGallery({
     onTrashDocument,
     creating,
 }: Props) {
+    const { contextMenu, openContextMenu, openKeyboardContextMenu } =
+        useDatabaseDocumentContextMenu({ workspaceId, onTrashDocument });
     const preview = config.preview ?? 'cover';
     const natural = (config.gallery_layout ?? 'natural') === 'natural';
     const [unavailableCovers, setUnavailableCovers] = useState<number[]>([]);
@@ -48,7 +51,12 @@ export default function DatabaseGallery({
             document.cover_attachment_id &&
             !unavailableCovers.includes(document.cover_attachment_id);
         return (
-            <div key={document.id} className="relative">
+            <div
+                key={document.id}
+                className="relative"
+                onContextMenu={(event) => openContextMenu(event, document)}
+                onKeyDown={(event) => openKeyboardContextMenu(event, document)}
+            >
                 <Link
                     href={`/workspaces/${workspaceId}/documents/${document.id}`}
                     className="db-gallery-card group"
@@ -116,7 +124,7 @@ export default function DatabaseGallery({
                         </div>
                     )}
                     <div className="flex-1 p-4">
-                        <h2 className="flex items-center gap-2 pr-7 text-sm font-medium">
+                        <h2 className="flex items-center gap-2 text-sm font-medium">
                             <FileText
                                 size={15}
                                 className="shrink-0 text-muted-foreground/60"
@@ -162,15 +170,6 @@ export default function DatabaseGallery({
                         )}
                     </div>
                 </Link>
-                <button
-                    type="button"
-                    aria-label={`Move ${document.title} to Trash`}
-                    title="Move to Trash"
-                    onClick={() => onTrashDocument(document)}
-                    className="db-icon-button absolute top-2 right-2 hover:!text-destructive"
-                >
-                    <Trash2 size={15} />
-                </button>
             </div>
         );
     }
@@ -200,6 +199,7 @@ export default function DatabaseGallery({
         }));
         return (
             <div className="pt-5">
+                {contextMenu}
                 <MasonryLayout
                     items={items}
                     render={(item) => renderCard(item.document)}
@@ -214,6 +214,7 @@ export default function DatabaseGallery({
     }
     return (
         <div className="grid gap-4 pt-5 sm:grid-cols-2 lg:grid-cols-3">
+            {contextMenu}
             {documents.map(renderCard)}
             {createCard}
         </div>

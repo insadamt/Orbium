@@ -91,7 +91,7 @@ Mention is contextual reference, not hierarchy relation.
 
 ## Property schema UX
 
-At the end of Table headers, `+` creates a property. New properties are visible by default in Table and Gallery, appended after the existing visible properties. Previously hidden properties remain hidden; views without an explicit visibility list continue to show all properties.
+At the end of Table headers, `+` creates a property. New properties are visible by default in Table, appended after existing visible properties. Gallery properties are hidden by default and must be enabled explicitly in Gallery settings. Existing explicitly saved Gallery visibility choices are preserved, and new properties are not automatically added to them. Previously hidden Table properties remain hidden; Table views without an explicit visibility list continue to show all properties.
 
 Property controls:
 
@@ -155,7 +155,7 @@ Visible properties
 
 Click card opens document.
 
-Each card has a separate **Move to Trash** button using the same confirmation and recoverable deletion behavior as Table. Using this button does not open the document.
+Gallery cards offer **Move to Trash** through their right-click menu or Shift+F10, using the same confirmation and recoverable deletion behavior as Table. There is no standalone delete button on cards.
 
 Keep visual treatment restrained; do not turn Gallery into a decorative image feed.
 
@@ -265,3 +265,7 @@ Filter and Sort open separate anchored panels without dimming the database. Each
 Saved filters appear as removable chips below the toolbar. Removing a chip or using the chip row's Clear all saves immediately. Sort rules can be moved up or down to change their priority. View settings contains only property display/order, Table inline adding, and Gallery preview/appearance. Existing per-view configuration persistence remains unchanged.
 
 Database action buttons use transparent backgrounds, including hover and active states; text, borders, counts, and focus feedback communicate interaction. The toolbar New button retains its filled primary appearance.
+
+## Document context menus
+
+Right-clicking a Table document row or a Gallery document card opens the shared animated context menu with Open document, Open in new tab (an Orbium app tab), and Move to Trash. Trash uses the existing confirmation. Shift+F10 or the context-menu key opens the same actions from a focused row/card control. Text inputs retain their native editing menu. Existing Table row overflow remains available. The context menu is rendered at the document body so frosted or transformed card/page ancestors cannot offset its viewport coordinates. Menus dismiss on Escape, outside interaction, page scroll, or resize.
