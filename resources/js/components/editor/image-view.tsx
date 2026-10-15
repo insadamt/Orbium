@@ -99,10 +99,19 @@ export default function ImageView({
             return;
         event.preventDefault();
         event.stopPropagation();
+        const figure = imageContainer.current?.querySelector('figure');
+        const displayedWidth =
+            figure?.getBoundingClientRect().width ??
+            Math.min(savedWidth, availableWidth());
+        if (figure) {
+            figure.dataset.resizing = 'true';
+            figure.style.width = `${displayedWidth}px`;
+        }
+        setPreviewWidth(displayedWidth);
         resizeSession.current = {
             pointerId: event.pointerId,
             startX: event.clientX,
-            startWidth: Math.min(savedWidth, availableWidth()),
+            startWidth: displayedWidth,
             direction,
             maximumWidth: availableWidth(),
         };
@@ -161,7 +170,8 @@ export default function ImageView({
         >
             <div ref={imageContainer} contentEditable={false}>
                 <figure
-                    className="max-w-full"
+                    className="editor-image-figure max-w-full"
+                    data-resizing={previewWidth !== null}
                     style={{
                         width: imageWidth,
                         marginLeft:

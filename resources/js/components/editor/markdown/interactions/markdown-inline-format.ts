@@ -1,6 +1,9 @@
 import type { EditorSelection } from '@codemirror/state';
 import type { EditorView } from '@codemirror/view';
-import { applyMarkdownSelectionFormatting } from './markdown-formatting-transaction';
+import {
+    applyMarkdownSelectionFormatting,
+    type MarkdownFormattingOptions,
+} from './markdown-formatting-transaction';
 export { inlineFormattingRange } from './markdown-inline-ranges';
 
 export function formatMarkdownSelection(
@@ -23,18 +26,21 @@ export function setMarkdownInlineMetadata(
     view: EditorView,
     patch: { color?: string | null; underline?: boolean },
     selection?: EditorSelection,
+    options: MarkdownFormattingOptions = {},
 ) {
     if ('color' in patch)
         applyMarkdownSelectionFormatting(
             view,
             { kind: 'color', color: patch.color ?? null },
             selection,
+            options,
         );
     if ('underline' in patch)
         applyMarkdownSelectionFormatting(
             view,
             { kind: 'toggle', mark: 'underline' },
             selection,
+            options,
         );
 }
 

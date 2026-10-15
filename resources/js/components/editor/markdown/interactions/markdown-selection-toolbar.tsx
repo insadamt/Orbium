@@ -198,16 +198,14 @@ function createSelectionToolbar(
                     currentColor={formatting.color}
                     onOpen={() => {}}
                     onChoose={(color, keepOpen) => {
-                        const input = document.activeElement;
                         run(() =>
                             setMarkdownInlineMetadata(
                                 view,
                                 { color },
                                 selectedText.selection,
+                                { focusEditor: !keepOpen },
                             ),
                         );
-                        if (keepOpen && input instanceof HTMLInputElement)
-                            input.focus();
                     }}
                 />
             </>,

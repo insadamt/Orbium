@@ -32,6 +32,7 @@
 @import './appearance-frosted-components.css';
 @import './app-menus.css';
 @import './editor-toolbars.css';
+@import './editor-image-motion.css';
 @import './editor-color-picker.css';
 
 .table-edge-control {

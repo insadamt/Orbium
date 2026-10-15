@@ -27,7 +27,7 @@ export function mountMedia(mount: RichWidgetMount): RichController {
     const imageMode = block.kind === 'image';
     const controls = sourceControls(mount, imageMode ? 'Image' : 'File', false);
     controls.toolbar.hidden = true;
-    const figure = element('figure', 'm-0 max-w-full');
+    const figure = element('figure', 'editor-image-figure m-0 max-w-full');
     const image = element('img', 'block h-auto w-full rounded-lg');
     image.loading = 'lazy';
     image.decoding = 'async';
@@ -152,6 +152,7 @@ export function mountMedia(mount: RichWidgetMount): RichController {
         const measuredWidth = Math.round(frame.getBoundingClientRect().width);
         widthLabel.textContent =
             measuredWidth > 0 ? `${measuredWidth} px` : 'Auto';
+        if (!destroyed) mount.view.requestMeasure();
     });
     if (imageMode) widthObserver.observe(frame);
     const fill = button('', () => {
@@ -273,6 +274,8 @@ export function mountMedia(mount: RichWidgetMount): RichController {
                 direction,
                 maximum: mount.root.clientWidth,
             };
+            figure.dataset.resizing = 'true';
+            figure.style.width = `${resize.width}px`;
             handle.setPointerCapture(event.pointerId);
         });
         handle.addEventListener('pointermove', (event) => {
@@ -303,6 +306,7 @@ export function mountMedia(mount: RichWidgetMount): RichController {
             if (handle.hasPointerCapture(event.pointerId))
                 handle.releasePointerCapture(event.pointerId);
             writeImageMetadata();
+            delete figure.dataset.resizing;
         });
         handle.addEventListener('lostpointercapture', () => {
             if (resize)
@@ -310,6 +314,7 @@ export function mountMedia(mount: RichWidgetMount): RichController {
                     ? String(block.metadata.width)
                     : '';
             resize = null;
+            delete figure.dataset.resizing;
             applyImageWidth();
         });
         handle.addEventListener('keydown', (event) => {

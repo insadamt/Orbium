@@ -1,0 +1,11 @@
+.editor-image-figure {
+    transition: width 260ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.editor-image-figure[data-resizing='true'] {
+    transition: none;
+}
+@media (prefers-reduced-motion: reduce) {
+    .editor-image-figure {
+        transition: none;
+    }
+}

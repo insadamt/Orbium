@@ -26,6 +26,10 @@ export type TextFormattingChange =
     | { kind: 'color'; color: string | null }
     | { kind: 'link'; href: string | null };
 
+export type MarkdownFormattingOptions = {
+    focusEditor?: boolean;
+};
+
 type PreparedBlock = {
     from: number;
     to: number;
@@ -36,6 +40,7 @@ export function applyMarkdownSelectionFormatting(
     view: EditorView,
     change: TextFormattingChange,
     selection: EditorSelection = view.state.selection,
+    options: MarkdownFormattingOptions = {},
 ) {
     if (view.compositionStarted || !view.state.facet(EditorView.editable))
         return;
@@ -114,7 +119,7 @@ export function applyMarkdownSelectionFormatting(
         annotations: isolateHistory.of('full'),
         userEvent: 'input.format',
     });
-    view.focus();
+    if (options.focusEditor !== false) view.focus();
 }
 
 function applyTextMarks(

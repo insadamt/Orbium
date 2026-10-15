@@ -455,3 +455,22 @@ swatches and Default action. Image toolbar buttons and download links share the
 same 28px hit area. Explicit text/block and image alignment commands animate
 horizontal travel over 260 ms in both editor formats; reduced motion applies the
 final position immediately. See [the report and manual checklist](../reports/07-color-spectrum-alignment-motion.md).
+
+Color picker background correction (2026-10-15): the text color picker uses an
+opaque theme-aware popover background in both Normal and Frosted appearances.
+This picker-specific override prevents document content and wallpaper from
+showing through its controls. Other toolbar/menu surfaces retain their styling.
+See [the correction report](../reports/07-color-picker-opaque-background.md).
+
+Color picker drag correction (2026-10-15): applying hue, spectrum or hex changes
+while keeping the picker open no longer focuses the Markdown editor. Focus stays
+inside the picker, avoiding outside-focus dismissal and interrupted slider drags.
+The hue input disables touch panning; outside-click, Escape and preset dismissal
+retain their existing behavior. See [the repair report](../reports/07-color-picker-slider-focus.md).
+
+Image width motion (2026-10-15): Fill available width, keyboard sizing and
+undo/redo width changes ease the image figure's width over 260 ms in both editor
+formats. Height follows the image's natural aspect ratio; caption, controls and
+following content move with layout. Corner dragging bypasses the transition and
+starts from the current displayed width. OS reduced motion makes sizing immediate.
+See [the report and manual checklist](../reports/07-image-width-motion.md).
