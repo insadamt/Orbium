@@ -221,7 +221,7 @@ export function WorkspaceContents({
             setSavingAppearance(false);
         }
     }
-    function renderChild(node: TreeNode, index: number) {
+    function renderChild(node: TreeNode) {
         return (
             <FloatingItem
                 key={node.id}
@@ -246,8 +246,11 @@ export function WorkspaceContents({
                 onOpen={(newTab) => openNode(node, newTab)}
                 onActions={(target) => openActionsAt(node.id, target)}
                 onReorder={(direction) => {
-                    const position = index + direction;
-                    if (position >= 0 && position < children.length)
+                    const position =
+                        directChildren.findIndex(
+                            (child) => child.id === node.id,
+                        ) + direction;
+                    if (position >= 0 && position < directChildren.length)
                         void move(node.id, parentId, position);
                 }}
             />
@@ -327,14 +330,7 @@ export function WorkspaceContents({
                                     ) +
                                 70,
                         }))}
-                        render={(node) =>
-                            renderChild(
-                                node,
-                                children.findIndex(
-                                    (child) => child.id === node.id,
-                                ),
-                            )
-                        }
+                        render={renderChild}
                         minimumWidth={252}
                     />
                 ) : (

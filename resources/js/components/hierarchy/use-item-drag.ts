@@ -7,6 +7,7 @@ import {
     type MouseEvent,
 } from 'react';
 import { createExplorerDragPreview } from './explorer-drag-preview';
+import { startExplorerDragScroll } from './explorer-drag-scroll';
 import {
     findExplorerDropDestination,
     type DropHint,
@@ -54,6 +55,8 @@ export function useItemDrag(
             : [sourceNode];
         const pointerId = event.pointerId;
         const start = { x: event.clientX, y: event.clientY };
+        let pointerPosition = start;
+        let stopScrolling: (() => void) | null = null;
         let preview: ReturnType<typeof createExplorerDragPreview> | null = null;
         let parentZone: HTMLElement | null = null;
         let ending = false;
@@ -79,6 +82,7 @@ export function useItemDrag(
             return destination;
         }
         function removeListeners() {
+            stopScrolling?.();
             document.removeEventListener('pointermove', movePointer);
             document.removeEventListener('pointerup', releasePointer);
             document.removeEventListener('pointercancel', cancelPointer);
@@ -153,6 +157,7 @@ export function useItemDrag(
         }
         function movePointer(pointer: PointerEvent) {
             if (pointer.pointerId !== pointerId || ending) return;
+            pointerPosition = { x: pointer.clientX, y: pointer.clientY };
             if (!preview) {
                 if (
                     Math.hypot(
@@ -169,6 +174,12 @@ export function useItemDrag(
                     setLiftedIds(sources.map((node) => node.id));
                     setDraggedId(sourceNode.id);
                 });
+                stopScrolling = startExplorerDragScroll(
+                    container!,
+                    () => pointerPosition,
+                    () =>
+                        updateDestination(pointerPosition.x, pointerPosition.y),
+                );
             } else preview.follow({ x: pointer.clientX, y: pointer.clientY });
             pointer.preventDefault();
             updateDestination(pointer.clientX, pointer.clientY);

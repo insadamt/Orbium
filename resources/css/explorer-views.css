@@ -182,3 +182,33 @@
     user-select: none;
     touch-action: none;
 }
+
+.floating-item[data-view='gallery'][data-drop='before']::before {
+    left: 3px;
+    width: 4px;
+    z-index: 2;
+}
+.floating-item[data-view='gallery'][data-drop='after']::after {
+    right: 3px;
+    width: 4px;
+    z-index: 2;
+}
+.floating-item:dir(rtl)[data-drop='before']::before {
+    right: -13px;
+    left: auto;
+}
+.floating-item:dir(rtl)[data-drop='after']::after {
+    right: auto;
+    left: -13px;
+}
+.floating-item[data-view='gallery']:dir(rtl)[data-drop='before']::before {
+    right: 3px;
+}
+.floating-item[data-view='gallery']:dir(rtl)[data-drop='after']::after {
+    left: 3px;
+}
+.floating-item[data-view='list']:dir(rtl)[data-drop]::before,
+.floating-item[data-view='list']:dir(rtl)[data-drop]::after {
+    right: 12px;
+    left: 12px;
+}

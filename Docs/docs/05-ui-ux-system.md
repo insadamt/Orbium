@@ -491,3 +491,14 @@ transaction and animates only restored layout changes, without extra document
 edits or undo entries. Ordinary typing undo remains unchanged. This supersedes
 earlier notes that direction/alignment undo renders immediately. OS reduced motion
 still skips transitions. See [the report and manual checklist](../reports/07-direction-history-motion.md).
+
+Explorer reordering usability (2026-10-15): workspace roots and folders support
+larger sibling reorder regions in Grid, List, and Gallery. Drag cards directly;
+card centers retain moving into valid folders/databases and the existing move-out
+and Trash targets. Document cards accept before/after placement across their
+whole surface; nearby gaps snap to sibling insertion points. Gallery insertion
+markers render inside the card to avoid clipping. Long containers scroll when
+dragging near the viewport or scroll container edges. Focused cards retain Alt
++ arrow keys for one-position movement, including while filtering the explorer.
+Review correction: the added six-dot grips were removed at the user's request.
+See [the report and manual checklist](../reports/01-easier-page-reordering.md).

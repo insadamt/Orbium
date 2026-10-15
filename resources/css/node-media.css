@@ -1,9 +1,6 @@
 .floating-folder-header {
     margin: 52px 0 0;
 }
-.floating-folder-header .node-media-header {
-    margin-inline: 0;
-}
 .node-media-header {
     position: relative;
     max-width: 760px;

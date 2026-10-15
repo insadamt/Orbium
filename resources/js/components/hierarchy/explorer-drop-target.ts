@@ -44,6 +44,66 @@ function canDropInside(
     return true;
 }
 
+function findNearbyDropCard(
+    container: Element,
+    sourceIds: Set<number>,
+    x: number,
+    y: number,
+) {
+    let nearest: HTMLElement | null = null;
+    let shortestDistance = 48;
+    for (const element of container.querySelectorAll<HTMLElement>(
+        '[data-node-id]',
+    )) {
+        if (sourceIds.has(Number(element.dataset.nodeId))) continue;
+        const bounds = element.getBoundingClientRect();
+        if (!bounds.width || !bounds.height) continue;
+        const distance = Math.hypot(
+            Math.max(bounds.left - x, 0, x - bounds.right),
+            Math.max(bounds.top - y, 0, y - bounds.bottom),
+        );
+        if (distance < shortestDistance) {
+            nearest = element;
+            shortestDistance = distance;
+        }
+    }
+    return nearest;
+}
+
+function determineDropPlacement({
+    element,
+    x,
+    y,
+    canNest,
+}: {
+    element: HTMLElement;
+    x: number;
+    y: number;
+    canNest: boolean;
+}): DropHint['placement'] {
+    const bounds = element.getBoundingClientRect();
+    const physicalHorizontal = (x - bounds.left) / bounds.width;
+    const horizontal =
+        getComputedStyle(element).direction === 'rtl'
+            ? 1 - physicalHorizontal
+            : physicalHorizontal;
+    const vertical = (y - bounds.top) / bounds.height;
+    const isList = element.dataset.view === 'list';
+    if (!canNest) {
+        if (vertical < 0) return 'before';
+        if (vertical > 1) return 'after';
+        return (isList ? vertical : horizontal) < 0.5 ? 'before' : 'after';
+    }
+    if (isList) {
+        if (vertical < 0.35) return 'before';
+        if (vertical > 0.65) return 'after';
+    } else {
+        if (horizontal < 0.35 || vertical < 0.2) return 'before';
+        if (horizontal > 0.65 || vertical > 0.8) return 'after';
+    }
+    return 'inside';
+}
+
 export function findExplorerDropDestination(
     container: Element,
     nodes: TreeNode[],
@@ -100,26 +160,22 @@ export function findExplorerDropDestination(
         };
     }
     if (!container.contains(hovered)) return null;
-    const element = hovered.closest<HTMLElement>('[data-node-id]');
+    const hoveredCard = hovered.closest<HTMLElement>('[data-node-id]');
+    const element =
+        hoveredCard && !sourceIds.has(Number(hoveredCard.dataset.nodeId))
+            ? hoveredCard
+            : findNearbyDropCard(container, sourceIds, x, y);
     const target = nodes.find(
         (node) => node.id === Number(element?.dataset.nodeId),
     );
     if (!element || !target || sourceIds.has(target.id)) return null;
-    const bounds = element.getBoundingClientRect();
-    const horizontal = (x - bounds.left) / bounds.width;
-    const vertical = (y - bounds.top) / bounds.height;
-    const placement =
-        element.dataset.view === 'list'
-            ? vertical < 0.25
-                ? 'before'
-                : vertical > 0.75
-                  ? 'after'
-                  : 'inside'
-            : horizontal < 0.24 || vertical < 0.18
-              ? 'before'
-              : horizontal > 0.76 || vertical > 0.82
-                ? 'after'
-                : 'inside';
+    const placement = determineDropPlacement({
+        element,
+        x,
+        y,
+        canNest:
+            hoveredCard === element && canDropInside(nodes, sources, target),
+    });
     if (
         placement === 'inside'
             ? !canDropInside(nodes, sources, target)
