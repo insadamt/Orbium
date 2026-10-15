@@ -14,7 +14,7 @@ import {
     type TreeNode,
 } from '@/components/navigation/navigation-types';
 import { openLocation } from '@/components/navigation/tab-navigation';
-import { usePageSearch } from '@/components/navigation/page-search';
+import { useExplorerFilters } from './use-explorer-filters';
 import { useContainerView } from '@/components/navigation/use-container-view';
 import { ExplorerDragDropTargets } from './explorer-drag-drop-targets';
 import { trashExplorerNodes } from './explorer-node-mutations';
@@ -85,19 +85,16 @@ export function WorkspaceContents({
     const [saving, setSaving] = useState(false);
     const [changingHierarchy, setChangingHierarchy] = useState(false);
     const [announcement, setAnnouncement] = useState('');
-    const search = usePageSearch();
-    const normalizedQuery = search.query.trim().toLocaleLowerCase();
-    const directChildren = nodes
-        .filter((node) => node.parent_id === parentId)
-        .sort((a, b) => a.position - b.position || a.id - b.id);
-    const children = directChildren.filter(
-        (node) =>
-            !normalizedQuery ||
-            node.title.toLocaleLowerCase().includes(normalizedQuery),
-    );
-    useEffect(() => {
-        search.setResultCount(normalizedQuery ? children.length : null);
-    }, [children.length, normalizedQuery, search.setResultCount]);
+    const {
+        children,
+        directChildren,
+        sort,
+        setSort,
+        typeFilter,
+        setTypeFilter,
+        hasActiveFilter,
+    } = useExplorerFilters({ workspaceId, parentId, nodes });
+    const canReorder = sort === 'manual';
     const selection = useExplorerSelection(workspaceId, children);
     const menuNode = children.find((node) => node.id === menuPosition?.nodeId);
     const deleteNode = nodes.find((node) => node.id === deleteId);
@@ -151,7 +148,7 @@ export function WorkspaceContents({
         nodes,
         move,
         trashDraggedItems,
-        changingHierarchy || selection.busy,
+        changingHierarchy || selection.busy || !canReorder,
         selection.selectedIds,
     );
     const currentFolder = nodes.find((node) => node.id === parentId);
@@ -245,7 +242,9 @@ export function WorkspaceContents({
                 onSelect={() => selection.toggleSelection(node.id)}
                 onOpen={(newTab) => openNode(node, newTab)}
                 onActions={(target) => openActionsAt(node.id, target)}
+                canReorder={canReorder}
                 onReorder={(direction) => {
+                    if (!canReorder) return;
                     const position =
                         directChildren.findIndex(
                             (child) => child.id === node.id,
@@ -269,6 +268,13 @@ export function WorkspaceContents({
             />
             <ExplorerViewControls
                 view={view}
+                sort={sort}
+                onSortChange={setSort}
+                typeFilter={typeFilter}
+                onTypeFilterChange={setTypeFilter}
+                disabled={
+                    changingHierarchy || selection.busy || draggedId !== null
+                }
                 onChange={setView}
                 onGalleryAppearance={() => setAppearanceDraft(appearance)}
             />
@@ -337,9 +343,9 @@ export function WorkspaceContents({
                     children.map(renderChild)
                 )}
             </section>
-            {normalizedQuery && children.length === 0 && (
+            {hasActiveFilter && children.length === 0 && (
                 <p className="floating-no-results" role="status">
-                    No items match this search.
+                    No items match your search and filters.
                 </p>
             )}
             <p className="sr-only" role="status">

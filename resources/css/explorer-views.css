@@ -1,6 +1,7 @@
 .explorer-view-controls {
     display: flex;
     justify-content: flex-end;
+    flex-wrap: wrap;
     align-items: center;
     gap: 8px;
     margin-top: 42px;
@@ -211,4 +212,31 @@
 .floating-item[data-view='list']:dir(rtl)[data-drop]::after {
     right: 12px;
     left: 12px;
+}
+
+.explorer-option-button {
+    display: grid;
+    width: 42px;
+    height: 42px;
+    flex: none;
+    place-items: center;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--background);
+    color: var(--muted-foreground);
+}
+.explorer-option-button:hover,
+.explorer-option-button[data-active='true'] {
+    background: var(--accent);
+    color: var(--foreground);
+}
+.explorer-option-button:disabled {
+    opacity: 0.5;
+}
+.explorer-sort-hint {
+    padding: 6px 10px;
+    border-radius: 8px;
+    background: var(--background);
+    color: var(--muted-foreground);
+    font-size: 12px;
 }

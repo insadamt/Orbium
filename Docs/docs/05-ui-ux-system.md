@@ -502,3 +502,13 @@ dragging near the viewport or scroll container edges. Focused cards retain Alt
 + arrow keys for one-position movement, including while filtering the explorer.
 Review correction: the added six-dot grips were removed at the user's request.
 See [the report and manual checklist](../reports/01-easier-page-reordering.md).
+
+Workspace sort/filter follow-up (2026-10-15): workspace roots and folders offer
+Manual order, Name A–Z, Name Z–A, and Type sorting plus an All types / Folders /
+Documents / Databases filter. Choices combine with title search across Grid,
+List, and Gallery and persist per container in the browser. Type groups folders,
+databases, then documents. Sorting leaves saved sibling positions intact; drag
+actions and Alt+arrow reordering require Manual order, explained by a toolbar
+hint. Review follow-up: sort and filter triggers show icons only; their menus
+retain option text, accessible names announce the current choice, and active
+choices highlight the trigger. See [the report and manual checklist](../reports/01-workspace-sort-filter.md).

@@ -22,6 +22,7 @@ type Props = {
     disabled?: boolean;
     onOpen: (newTab: boolean) => void;
     onActions: (target: HTMLElement) => void;
+    canReorder: boolean;
     onReorder: (direction: number) => void;
 };
 
@@ -40,6 +41,7 @@ export function FloatingItem({
     disabled,
     onOpen,
     onActions,
+    canReorder,
     onReorder,
 }: Props) {
     const Icon = icons[node.type];
@@ -61,9 +63,11 @@ export function FloatingItem({
             aria-pressed={selected}
             aria-disabled={disabled}
             aria-keyshortcuts={
-                view === 'list'
-                    ? 'Enter Alt+ArrowUp Alt+ArrowDown Shift+F10'
-                    : 'Enter Alt+ArrowLeft Alt+ArrowRight Shift+F10'
+                !canReorder
+                    ? 'Enter Shift+F10'
+                    : view === 'list'
+                      ? 'Enter Alt+ArrowUp Alt+ArrowDown Shift+F10'
+                      : 'Enter Alt+ArrowLeft Alt+ArrowRight Shift+F10'
             }
             data-selected={selected}
             data-revealed={revealed}
@@ -92,6 +96,7 @@ export function FloatingItem({
                     onActions(event.currentTarget);
                 }
                 if (
+                    canReorder &&
                     event.altKey &&
                     (view === 'list'
                         ? ['ArrowUp', 'ArrowDown']

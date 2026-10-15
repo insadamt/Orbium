@@ -25,7 +25,9 @@ Suggested commit messages:
 
 ## Validation
 
-Original implementation checks below passed. Grip-removal checks are pending.
+After removing the grips: formatting/lint, TypeScript, production build (20.2 seconds), and `git diff --check` all passed. The build retains import overlap, chunk size, and plugin timing warnings. No automated tests run.
+
+Original implementation validation:
 
 - `npm run types:check`: passed.
 - `npm run lint`: passed; all 505 files correctly formatted, no warnings or lint errors in 416 files.
