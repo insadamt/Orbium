@@ -2,8 +2,12 @@ import { createRichBlockHeading } from './rich-block-heading';
 import { mountCodeCopyButton } from '../../mount-code-copy-button';
 import { mountAppSelect } from '@/components/ui/mount-app-select';
 import { EditorView } from '@codemirror/view';
-import { codeLanguages, normalizeCodeLanguage } from '../../code-languages';
-import { codeLanguageIconPath } from '../../code-language-icons';
+import {
+    codeLanguageLabel,
+    codeLanguages,
+    normalizeCodeLanguage,
+} from '../../code-languages';
+import { createCodeLanguageIcon } from '../../code-language-icons';
 import { mountCodeInput } from './code-input';
 import { serializeOrbiumBlock } from '../dialect/metadata';
 import type { RichBlock, RichController, RichWidgetMount } from './rich-model';
@@ -36,21 +40,15 @@ export function mountCode(mount: RichWidgetMount): RichController {
     mount.root.append(toolbar, error, codeHost);
     const language = element(
         'select',
-        'min-h-7 cursor-pointer rounded border-0 bg-transparent px-2 py-1 text-xs text-foreground uppercase outline-none hover:bg-accent',
+        'min-h-7 cursor-pointer rounded border-0 bg-transparent px-2 py-1 text-xs text-foreground outline-none hover:bg-accent',
     );
     language.setAttribute('aria-label', 'Code language');
     for (const name of codeLanguages) {
-        const option = element('option', '', name);
+        const option = element('option', '', codeLanguageLabel(name));
         option.value = name;
         language.append(option);
     }
-    const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    icon.setAttribute('viewBox', '0 0 24 24');
-    icon.setAttribute('width', '16');
-    icon.setAttribute('height', '16');
-    icon.setAttribute('fill', 'currentColor');
-    icon.setAttribute('aria-hidden', 'true');
-    heading.icon.replaceChildren(icon);
+    heading.icon.style.color = 'var(--foreground)';
     heading.title.replaceChildren(language);
     const languageSelect = mountAppSelect(language);
     const copyButton = mountCodeCopyButton(
@@ -109,19 +107,7 @@ export function mountCode(mount: RichWidgetMount): RichController {
         language.value = name;
         language.disabled = !mount.view.state.facet(EditorView.editable);
         languageSelect.update();
-        icon.replaceChildren();
-        const path = codeLanguageIconPath(name);
-        if (path) {
-            const shape = document.createElementNS(icon.namespaceURI, 'path');
-            shape.setAttribute('d', path);
-            icon.append(shape);
-        } else {
-            const text = document.createElementNS(icon.namespaceURI, 'text');
-            text.setAttribute('x', '0');
-            text.setAttribute('y', '18');
-            text.textContent = '</>';
-            icon.append(text);
-        }
+        heading.icon.replaceChildren(createCodeLanguageIcon(name));
         input.update(next.content, name, language.disabled);
         return true;
     }

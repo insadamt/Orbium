@@ -22,7 +22,7 @@ import TaskList from '@tiptap/extension-task-list';
 import { PlayfulTaskItem } from './playful-task-item';
 import { ReactNodeViewRenderer, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import { common, createLowlight } from 'lowlight';
+import { createCodeHighlighter } from './code-highlighter';
 import { Download, FileInput } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
 import 'katex/dist/katex.min.css';
@@ -64,7 +64,7 @@ type Props = {
     revision: number;
 };
 
-const lowlight = createLowlight(common);
+const lowlight = createCodeHighlighter();
 
 function insertAttachment(
     editor: Editor,

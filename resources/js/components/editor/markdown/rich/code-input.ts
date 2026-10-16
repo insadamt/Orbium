@@ -10,10 +10,10 @@ import {
 } from '@codemirror/state';
 import { Decoration, EditorView, keymap } from '@codemirror/view';
 import { defaultKeymap, indentWithTab } from '@codemirror/commands';
-import { common, createLowlight } from 'lowlight';
+import { createCodeHighlighter } from '../../code-highlighter';
 import { scheduleEditorIdleWork } from '../../schedule-editor-idle-work';
 
-const lowlight = createLowlight(common);
+const lowlight = createCodeHighlighter();
 type HighlightNode = {
     type: string;
     value?: string;

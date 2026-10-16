@@ -2,32 +2,12 @@ import { mountCodeCopyButton } from './mount-code-copy-button';
 import { mountAppSelect } from '@/components/ui/mount-app-select';
 import type { NodeViewRendererProps } from '@tiptap/core';
 import type { NodeView } from '@tiptap/pm/view';
-import { codeLanguages, normalizeCodeLanguage } from './code-languages';
-import { codeLanguageIconPath } from './code-language-icons';
-
-const svgNamespace = 'http://www.w3.org/2000/svg';
-const fallbackIconPath = 'm18 16 4-4-4-4M6 8l-4 4 4 4m8.5-12-5 16';
-
-function makeLanguageIcon(language: string): SVGSVGElement {
-    const icon = document.createElementNS(svgNamespace, 'svg');
-    icon.setAttribute('width', '15');
-    icon.setAttribute('height', '15');
-    icon.setAttribute('viewBox', '0 0 24 24');
-    icon.setAttribute('fill', 'currentColor');
-    icon.setAttribute('aria-hidden', 'true');
-    const path = document.createElementNS(svgNamespace, 'path');
-    const languagePath = codeLanguageIconPath(language);
-    path.setAttribute('d', languagePath ?? fallbackIconPath);
-    if (!languagePath) {
-        icon.setAttribute('fill', 'none');
-        icon.setAttribute('stroke', 'currentColor');
-        icon.setAttribute('stroke-width', '2');
-        icon.setAttribute('stroke-linecap', 'round');
-        icon.setAttribute('stroke-linejoin', 'round');
-    }
-    icon.append(path);
-    return icon;
-}
+import {
+    codeLanguageLabel,
+    codeLanguages,
+    normalizeCodeLanguage,
+} from './code-languages';
+import { createCodeLanguageIcon } from './code-language-icons';
 
 function fillLanguageOptions(select: HTMLSelectElement, language: string) {
     const languages = codeLanguages.includes(language)
@@ -37,7 +17,7 @@ function fillLanguageOptions(select: HTMLSelectElement, language: string) {
         ...languages.map((name) => {
             const option = document.createElement('option');
             option.value = name;
-            option.textContent = name.toUpperCase();
+            option.textContent = codeLanguageLabel(name);
             return option;
         }),
     );
@@ -63,14 +43,19 @@ export function createCodeBlockNodeView({
         'flex items-center justify-between border-b border-border px-3 py-2 text-xs text-muted-foreground';
     const languageGroup = document.createElement('div');
     languageGroup.className = 'flex items-center gap-2';
-    let languageIcon = makeLanguageIcon(String(node.attrs.language ?? ''));
+    let languageIcon = createCodeLanguageIcon(
+        String(node.attrs.language ?? ''),
+    );
+    languageIcon.dataset.language = normalizeCodeLanguage(
+        String(node.attrs.language || 'plaintext'),
+    );
     languageGroup.append(languageIcon);
     const selectContainer = document.createElement('div');
     selectContainer.className = 'relative flex items-center';
     const select = document.createElement('select');
     select.setAttribute('aria-label', 'Code language');
     select.className =
-        'min-h-7 cursor-pointer appearance-none rounded border-0 bg-transparent py-1 pr-6 pl-2 text-xs text-foreground uppercase outline-none hover:bg-accent';
+        'min-h-7 cursor-pointer appearance-none rounded border-0 bg-transparent py-1 pr-6 pl-2 text-xs text-foreground outline-none hover:bg-accent';
     fillLanguageOptions(
         select,
         normalizeCodeLanguage(String(node.attrs.language || 'plaintext')),
@@ -117,9 +102,10 @@ export function createCodeBlockNodeView({
             const language = normalizeCodeLanguage(
                 String(updatedNode.attrs.language || 'plaintext'),
             );
-            if (select.value !== language) {
+            if (languageIcon.dataset.language !== language) {
                 fillLanguageOptions(select, language);
-                const nextIcon = makeLanguageIcon(language);
+                const nextIcon = createCodeLanguageIcon(language);
+                nextIcon.dataset.language = language;
                 languageIcon.replaceWith(nextIcon);
                 languageIcon = nextIcon;
             }

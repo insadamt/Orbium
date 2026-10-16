@@ -676,3 +676,27 @@ Animation snapshots copy PDF canvas pixels and capture a loaded video's current
 frame without loading or playing another media element. Browser-paused media
 that was playing before DOM relocation is resumed when still connected. Paused
 media stays paused. See `../reports/06-rich-block-move-state.md` for manual checks.
+
+### Code language selector and logo clarity (2026-10-16)
+
+Code headers offer 54 language/format choices with readable names, including
+C++, C#, Objective-C, and Visual Basic .NET. The choices use Lowlight common grammars plus selected Highlight.js grammars
+through a shared highlighter factory for Markdown and legacy JSON editors.
+Highlight.js is an explicit dependency at the already installed version; no
+content format changes are needed.
+Aliases such as `kt`, `rb`, `rs`, `md`, `jsx`, and `tsx` resolve to their language
+in the selector. Unknown language tags remain selectable and preserved.
+Both Markdown and legacy JSON code headers render 24px SVG logos;
+Markdown headers use foreground contrast within the existing 40px icon badge.
+C#, Java, Objective-C, and Visual Basic use pinned Devicon language assets.
+Other matching logos use Simple Icons; SQL, Diff, and Makefile use neutral
+format symbols rather than PostgreSQL, Git, or GNU logos. Plain text, INI,
+and unknown tags use a consistent vector code symbol.
+See `../reports/06-code-language-options-and-logos.md` for manual acceptance.
+
+
+The additional selector options are Clojure, CMake, Dart, Dockerfile, Elixir,
+Erlang, Fortran, F#, Groovy, Haskell, Julia, Lisp, MATLAB, Nginx configuration,
+OCaml, PowerShell, Scala, Scheme, and TOML. Matching Simple Icons marks are used
+where available. PowerShell uses a neutral terminal symbol; Lisp, MATLAB, and
+Scheme use the neutral code symbol. TOML uses the existing INI/TOML grammar.
