@@ -130,7 +130,7 @@ class MarkdownBlockMotion {
                 timeline.to(
                     this.ghost,
                     {
-                        scaleY: 0.65,
+                        scale: 0.9,
                         opacity: 0,
                         duration: 0.08,
                         ease: 'power2.in',
@@ -151,18 +151,16 @@ class MarkdownBlockMotion {
             if (incoming) {
                 this.layoutSnapshots.push(incoming.element);
                 hiddenRows.push(...enteringRows.map((row) => row.element));
-                // A fixed width prevents scaling from reading as sideways arrival on aligned cards.
                 gsap.set(incoming.popElement, {
                     x: 0,
                     y: 0,
-                    scaleX: 1,
-                    scaleY: 0.65,
+                    scale: 0.9,
                     opacity: 0,
                 });
                 timeline.to(
                     incoming.popElement,
                     {
-                        scaleY: 1,
+                        scale: 1,
                         opacity: 1,
                         duration: 0.1,
                         ease: 'power2.out',
