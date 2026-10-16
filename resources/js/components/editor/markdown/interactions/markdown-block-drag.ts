@@ -16,11 +16,11 @@ export function markdownBlockElement(
     const widget = view.dom.querySelector<HTMLElement>(
         `[data-rich-from="${block.from}"]`,
     );
-    if (widget) return widget;
     const { node } = view.domAtPos(
         markdownBlockPresentation(view, block).contentFrom,
     );
-    let element = node instanceof HTMLElement ? node : node.parentElement;
+    let element =
+        widget ?? (node instanceof HTMLElement ? node : node.parentElement);
     if (!element || !view.contentDOM.contains(element)) return null;
     while (
         element?.parentElement &&
@@ -30,15 +30,6 @@ export function markdownBlockElement(
         element = element.parentElement;
     if (!element || element === view.contentDOM) return null;
     return element;
-}
-
-function firstVisibleBlockAnchor(element: HTMLElement, selector: string) {
-    const candidates = element.matches(selector)
-        ? [element]
-        : element.querySelectorAll<HTMLElement>(selector);
-    return Array.from(candidates).find(
-        (candidate) => candidate.getBoundingClientRect().height > 0,
-    );
 }
 
 export function markdownBlockControlTop(
@@ -59,31 +50,51 @@ export function markdownBlockControlTop(
                   controlHeight / 2
             : null;
     }
-    const row =
-        firstVisibleBlockAnchor(
-            element,
-            '[data-block-gutter-anchor]:not([hidden])',
-        ) ?? firstVisibleBlockAnchor(element, 'table tr');
-    if (row) {
-        const bounds = row.getBoundingClientRect();
-        return (
-            (bounds.top - origin) / view.scaleY +
-            (bounds.height / view.scaleY - controlHeight) / 2
-        );
-    }
-    // Presentation wrappers can begin with a zero-height hidden metadata widget.
-    const firstLine =
-        firstVisibleBlockAnchor(
-            element,
-            '.cm-line, p:not([hidden]), summary, li',
-        ) ?? element;
-    const style = getComputedStyle(firstLine);
-    const lineHeight = Number.parseFloat(style.lineHeight);
+    // Choose by screen position: a nested toolbar may be below the container's first line.
+    const candidates = [
+        element,
+        ...element.querySelectorAll<HTMLElement>(
+            '[data-block-gutter-anchor], table tr, .cm-line, p, summary, li, .orbium-rich-block',
+        ),
+    ]
+        .flatMap((candidate) => {
+            const bounds = candidate.getBoundingClientRect();
+            const style = getComputedStyle(candidate);
+            if (
+                !bounds.height ||
+                style.visibility === 'hidden' ||
+                candidate.closest('[hidden]')
+            )
+                return [];
+            if (
+                candidate === element &&
+                !candidate.matches('.cm-line, .orbium-rich-block')
+            )
+                return [];
+            const inset =
+                (Number.parseFloat(style.borderTopWidth) || 0) +
+                (Number.parseFloat(style.paddingTop) || 0);
+            return [
+                {
+                    candidate,
+                    style,
+                    top: bounds.top + inset * view.scaleY,
+                    bounds,
+                },
+            ];
+        })
+        .sort((left, right) => left.top - right.top);
+    const first = candidates[0];
+    if (!first)
+        return (element.getBoundingClientRect().top - origin) / view.scaleY;
+    const lineHeight =
+        Number.parseFloat(first.style.lineHeight) || view.defaultLineHeight;
+    const firstRowHeight = first.candidate.matches('[data-block-gutter-anchor]')
+        ? Math.min(first.bounds.height / view.scaleY, 32)
+        : lineHeight;
     return (
-        (firstLine.getBoundingClientRect().top - origin) / view.scaleY +
-        (Number.parseFloat(style.borderTopWidth) || 0) +
-        (Number.parseFloat(style.paddingTop) || 0) +
-        (Number.isFinite(lineHeight) ? (lineHeight - controlHeight) / 2 : 0)
+        (first.top - origin) / view.scaleY +
+        (firstRowHeight - controlHeight) / 2
     );
 }
 

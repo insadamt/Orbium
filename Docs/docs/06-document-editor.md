@@ -572,16 +572,25 @@ independent blocks. Deletion is one undoable autosave transaction.
 Deletion shrinks and fades the outgoing block for 80 ms, then nearby blocks slide
 into the new layout for 140 ms. Pointer drops, menu moves and Alt+Shift+Up/Down use
 the same consecutive sequence, followed by a 100 ms destination entrance without
-bounce. GSAP stages the surviving live rows immediately after the edit, before
-the next paint, then slides them into place. The editor container is never hidden
+bounce. Rich decorations are refreshed before staging motion. Complete rendered
+rows are identified by their CodeMirror DOM positions, including paragraphs with
+inline math. The destination block pops as one grouped snapshot; neighboring
+row snapshots slide into place while live row geometry stays untransformed.
+A temporary pane-scoped stylesheet masks participating rows without changing
+CodeMirror-owned row attributes. Reasserting an unchanged selection does not
+cancel playback; actual selection changes still do. The editor container is never hidden
 or faded. Only the moved block is temporarily transparent until its entrance;
 unchanged blocks remain visible. One inert outgoing-block snapshot uses a fixed
-screen position clipped to the originating pane, so drop compensation cannot
+screen position clipped to the originating pane. Its fixed positioning uses an
+inline important declaration to override CodeMirror's copied base-theme rule
+(`position: relative !important`), keeping snapshots out of document flow.
+Drop compensation therefore cannot
 carry the outgoing pop downward. The outgoing/destination pop scales between 100% and
 65% around the center of visible text/media, rather than the full-width row box.
 The entrance explicitly clears horizontal and vertical translation; only surrounding blocks
 translate up/down. The outgoing snapshot retains the editor theme and interface
-scale. Completion or interruption restores original row styles and requests a
+scale. Only participating live rows are transparent beneath their snapshots;
+stationary content remains visible. Completion or interruption restores original row styles and requests a
 fresh CodeMirror measurement.
 No persistent block identifiers or new
 content format are required. Source edits, selection changes, pointer interaction,
@@ -612,3 +621,12 @@ editors. Existing restrictions on which block types expose alignment remain.
 ## Rich block card appearance (2026-10-16 review)
 
 Mermaid, display math, and fenced code blocks share the media cards’ rounded theme-aware surface, compact icon/identity header, and muted inset content area. Mermaid and display math use labelled icon actions for editing source and returning to preview; Mermaid retains its full-preview action. Code keeps the language selector, language icon, animated copy button, and directly editable highlighted source, without a Code block subtitle. Rich source editors have 16px internal padding. Document tables have 12px outer corners and matching rounded corner-cell backgrounds while keeping row/column handles accessible. Inline math stays within the text flow. Source formats, undo/redo, autosave, diagnostics, and read-only rules are unchanged. See `../reports/06-expanded-media-and-rich-block-cards.md` for manual acceptance steps.
+
+
+### Block handle and reorder consistency repair (2026-10-16)
+
+Block grips use complete top-level layout bounds for rich and text blocks.
+Their vertical anchor is the earliest visible content row, accounting for padding
+and borders. Nested source toolbars and tall first table rows cannot pull the grip
+toward the middle or bottom of the block. See
+`../reports/06-block-motion-and-top-handles.md` for manual acceptance steps.

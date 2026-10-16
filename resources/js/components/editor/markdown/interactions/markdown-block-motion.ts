@@ -2,14 +2,12 @@ import { gsap } from 'gsap';
 import type { ChangeSet } from '@codemirror/state';
 import { EditorView, ViewPlugin, type ViewUpdate } from '@codemirror/view';
 import type { MarkdownBlockRange } from './markdown-block-actions';
-import { markdownDragViewport } from './markdown-drag-scroll';
-import { markdownBlockPopOrigin } from './markdown-block-pop-origin';
-
-type RenderedRow = {
-    element: HTMLElement;
-    position: number;
-    bounds: DOMRect;
-};
+import { ensureSyntaxTree, syntaxTree } from '@codemirror/language';
+import { refreshRichBlocks } from '../rich/rich-effects';
+import {
+    createMarkdownMotionSnapshot,
+    renderedMarkdownMotionRows,
+} from './markdown-motion-snapshot';
 
 type MotionScrollPosition = { element: HTMLElement; top: number; left: number };
 
@@ -41,161 +39,15 @@ function motionScrollPositionChanged(
     );
 }
 
-let snapshotSequence = 0;
-
-function cloneSnapshotRow(element: HTMLElement) {
-    const clone = element.cloneNode(true) as HTMLElement;
-    const elements = [clone, ...clone.querySelectorAll<HTMLElement>('*')];
-    const identifiers = new Map<string, string>();
-    const prefix = `orbium-motion-${++snapshotSequence}-`;
-    for (const child of elements) {
-        if (child.id) {
-            identifiers.set(child.id, `${prefix}${child.id}`);
-            child.id = `${prefix}${child.id}`;
-        }
-        // Snapshot widgets must never participate in live editor position queries.
-        child.removeAttribute('data-rich-from');
-    }
-    for (const child of elements) {
-        for (const attribute of Array.from(child.attributes)) {
-            let value = attribute.value.replace(
-                /url\(#([^)]*)\)/g,
-                (reference, id: string) =>
-                    identifiers.has(id)
-                        ? `url(#${identifiers.get(id)})`
-                        : reference,
-            );
-            if (attribute.name === 'href' || attribute.name === 'xlink:href') {
-                const mapped = identifiers.get(value.slice(1));
-                if (value.startsWith('#') && mapped) value = `#${mapped}`;
-            }
-            if (value !== attribute.value)
-                child.setAttribute(attribute.name, value);
-        }
-    }
-    return clone;
-}
-
-function renderedRows(view: EditorView): RenderedRow[] {
-    const rows: RenderedRow[] = [];
-    for (const child of view.contentDOM.children) {
-        if (!(child instanceof HTMLElement)) continue;
-        const bounds = child.getBoundingClientRect();
-        if (
-            !bounds.height ||
-            bounds.bottom < 0 ||
-            bounds.top > window.innerHeight
-        )
-            continue;
-        const rich = child.matches('[data-rich-from]')
-            ? child
-            : child.querySelector<HTMLElement>('[data-rich-from]');
-        const position = rich
-            ? Number(rich.dataset.richFrom)
-            : view.posAtDOM(child, 0);
-        if (Number.isFinite(position))
-            rows.push({ element: child, position, bounds });
-    }
-    return rows;
-}
-
-function createOutgoingBlockSnapshot(view: EditorView, rows: RenderedRow[]) {
-    if (!rows.length) return null;
-    const top = Math.min(...rows.map((row) => row.bounds.top));
-    const bottom = Math.max(...rows.map((row) => row.bounds.bottom));
-    const content = view.contentDOM.getBoundingClientRect();
-    const contentStyle = getComputedStyle(view.contentDOM);
-    const viewport = markdownDragViewport(view);
-    const layer = document.createElement('div');
-    layer.className = view.dom.className;
-    layer.inert = true;
-    layer.setAttribute('aria-hidden', 'true');
-    if (view.dom.closest('[data-document-styles]'))
-        layer.setAttribute('data-document-styles', '');
-    Object.assign(layer.style, {
-        position: 'fixed',
-        left: `${content.left}px`,
-        top: `${viewport.top}px`,
-        width: `${content.width}px`,
-        height: `${Math.max(0, viewport.bottom - viewport.top)}px`,
-        minHeight: '0',
-        padding: '0',
-        border: '0',
-        outline: 'none',
-        background: 'transparent',
-        pointerEvents: 'none',
-        zIndex: '45',
-        overflow: 'hidden',
-    });
-    for (const property of contentStyle) {
-        if (property.startsWith('--'))
-            layer.style.setProperty(
-                property,
-                contentStyle.getPropertyValue(property),
-            );
-    }
-    const scroller = document.createElement('div');
-    scroller.className = view.scrollDOM.className;
-    Object.assign(scroller.style, {
-        position: 'absolute',
-        left: '0',
-        top: `${top - viewport.top}px`,
-        overflow: 'visible',
-        width: `${content.width / view.scaleX}px`,
-        height: `${(bottom - top) / view.scaleY}px`,
-        transform: `scale(${view.scaleX}, ${view.scaleY})`,
-        transformOrigin: 'top left',
-    });
-    const ghost = document.createElement('div');
-    ghost.className = view.contentDOM.className;
-    ghost.inert = true;
-    ghost.setAttribute('aria-hidden', 'true');
-    Object.assign(ghost.style, {
-        position: 'absolute',
-        left: '0',
-        top: '0',
-        width: `${content.width / view.scaleX}px`,
-        height: `${(bottom - top) / view.scaleY}px`,
-        margin: '0',
-        padding: '0',
-        pointerEvents: 'none',
-        zIndex: '5',
-        transformOrigin: markdownBlockPopOrigin({
-            view,
-            elements: rows.map((row) => row.element),
-            origin: { left: content.left, top },
-        }),
-        font: contentStyle.font,
-        lineHeight: contentStyle.lineHeight,
-        letterSpacing: contentStyle.letterSpacing,
-        color: contentStyle.color,
-        direction: contentStyle.direction,
-        textAlign: contentStyle.textAlign,
-        whiteSpace: contentStyle.whiteSpace,
-    });
-    for (const row of rows) {
-        const clone = cloneSnapshotRow(row.element);
-        Object.assign(clone.style, {
-            position: 'absolute',
-            left: `${(row.bounds.left - content.left) / view.scaleX}px`,
-            top: `${(row.bounds.top - top) / view.scaleY}px`,
-            width: `${row.bounds.width / view.scaleX}px`,
-            margin: '0',
-        });
-        ghost.append(clone);
-    }
-    scroller.append(ghost);
-    layer.append(scroller);
-    // Viewport anchoring can move the editor immediately; the exit must stay at its captured screen position.
-    document.body.append(layer);
-    return { element: layer, popElement: ghost };
-}
+let motionSequence = 0;
 
 class MarkdownBlockMotion {
     private context: gsap.Context | null = null;
     private ghost: HTMLElement | null = null;
     private outgoingSnapshot: HTMLElement | null = null;
     private frame: number | null = null;
+    private layoutSnapshots: HTMLElement[] = [];
+    private liveRowMask: HTMLStyleElement | null = null;
     private revision = 0;
     private scrollPositions: ReturnType<
         typeof captureMotionScrollPositions
@@ -226,11 +78,11 @@ class MarkdownBlockMotion {
     capture(block: MarkdownBlockRange) {
         this.finish();
         if (this.reducedMotion.matches) return null;
-        const rows = renderedRows(this.view);
+        const rows = renderedMarkdownMotionRows(this.view);
         const outgoing = rows.filter(
             (row) => row.position >= block.from && row.position <= block.to,
         );
-        const ghost = createOutgoingBlockSnapshot(this.view, outgoing);
+        const ghost = createMarkdownMotionSnapshot(this.view, outgoing);
         if (ghost) ghost.popElement.style.visibility = 'hidden';
         // The transaction stays synchronous so drag viewport anchoring and undo remain atomic.
         return {
@@ -245,9 +97,25 @@ class MarkdownBlockMotion {
         changes: ChangeSet,
         movedBlock?: { from: number; to: number },
     ) {
+        // Finish parsing before staging motion so the scheduled rich refresh reuses the same widgets.
+        const from = Math.max(0, this.view.viewport.from - 2000);
+        const to = Math.min(
+            this.view.state.doc.length,
+            this.view.viewport.to + 2000,
+        );
+        this.view.dispatch({
+            effects: refreshRichBlocks.of({
+                from,
+                to,
+                tree:
+                    ensureSyntaxTree(this.view.state, to, 50) ??
+                    syntaxTree(this.view.state),
+            }),
+        });
         this.ghost = snapshot.ghost?.popElement ?? null;
         this.outgoingSnapshot = snapshot.ghost?.element ?? null;
-        const rows = renderedRows(this.view);
+        const rows = renderedMarkdownMotionRows(this.view);
+        const hiddenRows: HTMLElement[] = [];
         if (this.ghost) this.ghost.style.visibility = 'visible';
         this.context = gsap.context(() => {
             const timeline = gsap.timeline();
@@ -262,37 +130,33 @@ class MarkdownBlockMotion {
                     },
                     0,
                 );
-            // Stage live rows before the next paint; the document never depends on a full-page overlay.
-            for (const row of rows) {
-                const entering =
+            const enteringRows = rows.filter(
+                (row) =>
                     movedBlock &&
                     row.position >= movedBlock.from &&
-                    row.position <= movedBlock.to;
-                if (entering) {
-                    const transformOrigin = markdownBlockPopOrigin({
-                        view: this.view,
-                        elements: [row.element],
-                        origin: row.bounds,
-                    });
-                    gsap.set(row.element, {
-                        x: 0,
-                        y: 0,
-                        scale: 0.65,
-                        opacity: 0,
-                        transformOrigin,
-                    });
-                    timeline.to(
-                        row.element,
-                        {
-                            scale: 1,
-                            opacity: 1,
-                            duration: 0.1,
-                            ease: 'power2.out',
-                        },
-                        0.22,
-                    );
-                    continue;
-                }
+                    row.position <= movedBlock.to,
+            );
+            const incoming = createMarkdownMotionSnapshot(
+                this.view,
+                enteringRows,
+            );
+            if (incoming) {
+                this.layoutSnapshots.push(incoming.element);
+                hiddenRows.push(...enteringRows.map((row) => row.element));
+                gsap.set(incoming.popElement, { scale: 0.65, opacity: 0 });
+                timeline.to(
+                    incoming.popElement,
+                    {
+                        scale: 1,
+                        opacity: 1,
+                        duration: 0.1,
+                        ease: 'power2.out',
+                    },
+                    0.22,
+                );
+            }
+            for (const row of rows) {
+                if (enteringRows.includes(row)) continue;
                 const previous = snapshot.rows.find(
                     (old) =>
                         !snapshot.outgoing.includes(old) &&
@@ -302,15 +166,24 @@ class MarkdownBlockMotion {
                 const distance =
                     (previous.bounds.top - row.bounds.top) / this.view.scaleY;
                 if (Math.abs(distance) < 0.5) continue;
-                gsap.set(row.element, { y: distance });
+                const moving = createMarkdownMotionSnapshot(this.view, [row]);
+                if (!moving) continue;
+                this.layoutSnapshots.push(moving.element);
+                hiddenRows.push(row.element);
+                gsap.set(moving.popElement, { y: distance });
                 timeline.to(
-                    row.element,
-                    { y: 0, duration: 0.14, ease: 'power2.inOut' },
+                    moving.popElement,
+                    {
+                        y: 0,
+                        duration: 0.14,
+                        ease: 'power2.inOut',
+                    },
                     0.08,
                 );
             }
             timeline.call(this.interrupt, [], movedBlock ? 0.32 : 0.22);
         });
+        this.maskLiveRows(hiddenRows);
         const revision = this.revision;
         this.frame = requestAnimationFrame(() => {
             this.frame = null;
@@ -325,22 +198,48 @@ class MarkdownBlockMotion {
         });
     }
 
+    private maskLiveRows(elements: HTMLElement[]) {
+        if (!elements.length) return;
+        const owner = `block-motion-${++motionSequence}`;
+        const mask = document.createElement('style');
+        const children = Array.from(this.view.contentDOM.children);
+        mask.textContent =
+            elements
+                .map(
+                    (element) =>
+                        `[data-block-motion-owner="${owner}"] > .cm-scroller > .cm-content > :nth-child(${children.indexOf(element) + 1})`,
+                )
+                .join(',') + ' { opacity: 0 !important; }';
+        // CodeMirror observes row attributes and can reset inline styles while redrawing.
+        this.view.dom.setAttribute('data-block-motion-owner', owner);
+        this.view.dom.ownerDocument.head.append(mask);
+        this.liveRowMask = mask;
+    }
+
     update(update: ViewUpdate) {
-        if (update.docChanged || update.selectionSet) this.finish();
+        const selectionChanged =
+            update.selectionSet &&
+            !update.startState.selection.eq(update.state.selection);
+        if (update.docChanged || selectionChanged) this.finish();
     }
 
     finish() {
-        const animatedLiveRows = this.context !== null;
+        const hadAnimation = this.context !== null;
         this.revision++;
         if (this.frame !== null) cancelAnimationFrame(this.frame);
         this.frame = null;
+        this.liveRowMask?.remove();
+        this.liveRowMask = null;
+        this.view.dom.removeAttribute('data-block-motion-owner');
         this.context?.revert();
         this.context = null;
         this.ghost = null;
         this.outgoingSnapshot?.remove();
         this.outgoingSnapshot = null;
+        for (const element of this.layoutSnapshots) element.remove();
+        this.layoutSnapshots = [];
         this.scrollPositions = null;
-        if (animatedLiveRows && this.view.dom.isConnected)
+        if (hadAnimation && this.view.dom.isConnected)
             this.view.requestMeasure();
     }
 
