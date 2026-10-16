@@ -17,7 +17,7 @@ import { instantiateMermaidSvg } from '../../mermaid-preview-renderer';
 import { applyMermaidPreviewDimensions } from '../../mermaid-preview-layout';
 import type { RichContext } from './rich-model';
 import { readRichBlock } from './read-rich-block';
-import { renderMath } from './math-widget';
+import { renderMath } from './math-preview';
 import { element } from './widget-controls';
 
 const parser = (markdownLanguage.parser as MarkdownParser).configure(
@@ -114,7 +114,11 @@ export function renderRichBody(
             if (block.presentation.align)
                 target.style.textAlign = String(block.presentation.align);
             if (block.kind === 'inline-math' || block.kind === 'math') {
-                renderMath(target, block.content, block.kind === 'math');
+                renderMath(target, {
+                    context,
+                    latex: block.content,
+                    displayMode: block.kind === 'math',
+                });
                 return;
             }
             if (block.kind === 'mermaid') {

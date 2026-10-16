@@ -1,6 +1,9 @@
 import { styleRichSourceControls } from './rich-block-heading';
-import katex from 'katex';
-import 'katex/dist/katex.min.css';
+import {
+    displayMathPreview,
+    findPreparedMathPreview,
+    renderMath,
+} from './math-preview';
 import { mountInlineMathInput } from './inline-math-input';
 import { createRichSourceInput } from './rich-source-input';
 import { scheduleEditorIdleWork } from '../../schedule-editor-idle-work';
@@ -12,27 +15,6 @@ import {
     preservePresentation,
     sourceControls,
 } from './widget-controls';
-
-export function renderMath(
-    output: HTMLElement,
-    latex: string,
-    displayMode: boolean,
-) {
-    try {
-        output.innerHTML = katex.renderToString(latex, {
-            displayMode,
-            throwOnError: true,
-            trust: false,
-            maxExpand: 1000,
-            maxSize: 20,
-        });
-        output.removeAttribute('role');
-    } catch {
-        output.textContent =
-            'Equation could not be rendered. Edit the source to fix it.';
-        output.setAttribute('role', 'alert');
-    }
-}
 
 export function mountMath(mount: RichWidgetMount): RichController {
     let block = mount.block;
@@ -53,11 +35,22 @@ export function mountMath(mount: RichWidgetMount): RichController {
         if (previous === next.content) return true;
         previous = next.content;
         cancel?.();
+        const request = {
+            context: mount.context,
+            latex: next.content,
+            displayMode: !inline,
+        };
+        const prepared = findPreparedMathPreview(request);
+        // Reorders may remount widgets; an unchanged equation must not return to its loading state.
+        if (prepared) {
+            displayMathPreview(output, prepared);
+            return true;
+        }
         output.textContent = 'Rendering equation…';
         cancel = scheduleEditorIdleWork(() => {
             if (!mount.view.dom.isConnected || !mount.context.isVisible())
                 return;
-            renderMath(output, next.content, !inline);
+            renderMath(output, request);
             mount.view.requestMeasure();
         });
         return true;

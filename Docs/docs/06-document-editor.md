@@ -632,3 +632,15 @@ Their vertical anchor is the earliest visible content row, accounting for paddin
 and borders. Nested source toolbars and tall first table rows cannot pull the grip
 toward the middle or bottom of the block. See
 `../reports/06-block-motion-and-top-handles.md` for manual acceptance steps.
+
+
+### Math preview reuse during block movement (2026-10-16)
+
+Markdown math previews reuse prepared KaTeX markup by formula and display/inline
+mode within each editor context. A cache hit is applied immediately when a widget
+remounts during reorder, avoiding a return to “Rendering equation…”. New formulas
+retain idle rendering; nested rich-body equations use the same prepared previews.
+The cache holds at most 128 results per editor, including errors; older entries
+can render again after eviction. Existing KaTeX trust, expansion, and size limits
+are unchanged. Manual acceptance is tracked in
+`../reports/06-math-block-motion-preview-reuse.md`.
