@@ -4,6 +4,7 @@ import type {
     RenderTask,
 } from 'pdfjs-dist';
 import { mediaIconButton } from './media-controls';
+import { mountPdfThumbnails } from './pdf-thumbnails';
 
 export function mountPdfReader(
     url: string,
@@ -35,7 +36,14 @@ export function mountPdfReader(
     let rendering = false;
     let revision = 0;
     let pageNumber = 1;
-    let zoom = 1;
+    let zoom: number | undefined;
+    let renderedScale = 1;
+    let rotation = 0;
+    let sidebarVisible = true;
+    const thumbnails = mountPdfThumbnails({ onSelectPage: changePage });
+    const body = document.createElement('div');
+    body.className = 'attachment-pdf-body';
+    body.append(thumbnails.root, viewport);
     let timer: ReturnType<typeof setTimeout> | undefined;
     const tools = document.createElement('div');
     tools.className = 'attachment-pdf-controls';
@@ -53,17 +61,50 @@ export function mountPdfReader(
     const total = document.createElement('span');
     total.textContent = '/ —';
     const zoomOut = mediaIconButton('Zoom out', 'minus', () =>
-        changeZoom(zoom / 1.25),
+        changeZoom((zoom ?? renderedScale) / 1.25),
     );
     const zoomIn = mediaIconButton('Zoom in', 'plus', () =>
-        changeZoom(zoom * 1.25),
+        changeZoom((zoom ?? renderedScale) * 1.25),
     );
-    const fit = mediaIconButton('Fit page width', 'maximize', () =>
-        changeZoom(1),
+    const zoomLevel = document.createElement('select');
+    zoomLevel.setAttribute('aria-label', 'PDF zoom');
+    for (const value of [50, 75, 100, 125, 150, 200, 300]) {
+        const option = document.createElement('option');
+        option.value = String(value / 100);
+        option.textContent = `${value}%`;
+        zoomLevel.append(option);
+    }
+    const automaticZoom = document.createElement('option');
+    automaticZoom.value = 'auto';
+    automaticZoom.textContent = 'Auto';
+    zoomLevel.prepend(automaticZoom);
+    zoomLevel.value = 'auto';
+    zoomLevel.addEventListener('change', () => {
+        zoom = zoomLevel.value === 'auto' ? undefined : Number(zoomLevel.value);
+        scheduleRender();
+    });
+    const sidebar = mediaIconButton('Toggle page previews', 'sidebar', () => {
+        sidebarVisible = !sidebarVisible;
+        refreshLayout();
+    });
+    const first = mediaIconButton('First page', 'firstPage', () =>
+        changePage(1),
     );
-    const zoomLevel = document.createElement('output');
-    zoomLevel.setAttribute('aria-label', 'Zoom level');
-    zoomLevel.textContent = 'Fit';
+    const last = mediaIconButton('Last page', 'lastPage', () =>
+        changePage(pdf?.numPages ?? 1),
+    );
+    const rotate = mediaIconButton('Rotate clockwise', 'rotate', () => {
+        rotation = (rotation + 90) % 360;
+        scheduleRender();
+    });
+    for (const control of [sidebar, first, last, rotate])
+        control.classList.add('attachment-pdf-expanded-control');
+    function refreshLayout() {
+        const expanded = root.closest('[data-expanded="true"]') !== null;
+        thumbnails.setVisible(expanded && sidebarVisible);
+        sidebar.setAttribute('aria-pressed', String(sidebarVisible));
+        scheduleRender();
+    }
     page.addEventListener('change', () => changePage(Number(page.value)));
     page.addEventListener('keydown', (event) => {
         if (event.key === 'Enter') {
@@ -78,15 +119,36 @@ export function mountPdfReader(
         page.value = String(pageNumber);
         page.max = String(pdf?.numPages ?? 1);
         total.textContent = `/ ${pdf?.numPages ?? '—'}`;
-        zoomOut.disabled = zoom <= 0.5;
-        zoomIn.disabled = zoom >= 3;
-        zoomLevel.textContent =
-            zoom === 1 ? 'Fit' : `${Math.round(zoom * 100)}%`;
+        first.disabled = previous.disabled;
+        last.disabled = next.disabled;
+        rotate.disabled = !pdf;
+        zoomOut.disabled = !pdf || (zoom ?? renderedScale) <= 0.5;
+        zoomIn.disabled = !pdf || (zoom ?? renderedScale) >= 3;
+        zoomLevel.disabled = !pdf;
+        const custom = zoomLevel.querySelector('[data-custom]');
+        custom?.remove();
+        if (
+            zoom !== undefined &&
+            ![...zoomLevel.options].some(
+                (option) => Number(option.value) === zoom,
+            )
+        ) {
+            const option = document.createElement('option');
+            option.dataset.custom = 'true';
+            option.value = String(zoom);
+            option.textContent = `${Math.round(zoom * 100)}%`;
+            zoomLevel.append(option);
+        }
+        zoomLevel.value = zoom === undefined ? 'auto' : String(zoom);
+        thumbnails.selectPage(pageNumber);
     }
     function changePage(value: number) {
         pageNumber = Math.max(
             1,
-            Math.min(pdf?.numPages ?? 1, Math.round(value) || 1),
+            Math.min(
+                pdf?.numPages ?? 1,
+                Number.isFinite(value) ? Math.round(value) || 1 : 1,
+            ),
         );
         viewport.scrollTop = 0;
         scheduleRender();
@@ -115,11 +177,18 @@ export function mountPdfReader(
         try {
             const currentPage = await pdf.getPage(pageNumber);
             if (destroyed || currentRevision !== revision) return;
-            const natural = currentPage.getViewport({ scale: 1 });
+            const pageRotation = (currentPage.rotate + rotation) % 360;
+            const natural = currentPage.getViewport({
+                scale: 1,
+                rotation: pageRotation,
+            });
             const width = Math.max(180, viewport.clientWidth - 40);
             const pageViewport = currentPage.getViewport({
-                scale: (width / natural.width) * zoom,
+                scale: zoom ?? Math.min(1, width / natural.width),
+                rotation: pageRotation,
             });
+            renderedScale = pageViewport.scale;
+            updateControls();
             const outputScale = Math.min(
                 window.devicePixelRatio || 1,
                 2,
@@ -186,7 +255,8 @@ export function mountPdfReader(
             };
             pdf = await documentTask.promise;
             if (destroyed) return;
-            scheduleRender();
+            thumbnails.setDocument(pdf);
+            refreshLayout();
         } catch {
             if (!destroyed) {
                 loading.hidden = true;
@@ -214,26 +284,51 @@ export function mountPdfReader(
     });
     resize.observe(viewport);
     viewport.addEventListener('keydown', (event) => {
-        if (event.target !== viewport) return;
+        if (
+            event.target !== viewport ||
+            event.ctrlKey ||
+            event.metaKey ||
+            event.altKey
+        )
+            return;
         if (event.key === 'ArrowLeft' || event.key === 'PageUp')
             changePage(pageNumber - 1);
         else if (event.key === 'ArrowRight' || event.key === 'PageDown')
             changePage(pageNumber + 1);
+        else if (event.key === 'Home') changePage(1);
+        else if (event.key === 'End') changePage(pdf?.numPages ?? 1);
+        else if (event.key === '+' || event.key === '=')
+            changeZoom((zoom ?? renderedScale) * 1.25);
+        else if (event.key === '-') changeZoom((zoom ?? renderedScale) / 1.25);
         else return;
         event.preventDefault();
         event.stopPropagation();
     });
-    tools.append(previous, page, total, next, zoomOut, zoomLevel, zoomIn, fit);
-    root.append(viewport, tools);
+    tools.append(
+        sidebar,
+        first,
+        previous,
+        page,
+        total,
+        next,
+        last,
+        zoomOut,
+        zoomLevel,
+        zoomIn,
+        rotate,
+    );
+    root.append(body, tools);
+    refreshLayout();
     updateControls();
     return {
         root,
-        refresh: scheduleRender,
+        refresh: refreshLayout,
         destroy() {
             destroyed = true;
             clearTimeout(timer);
             intersection.disconnect();
             resize.disconnect();
+            thumbnails.destroy();
             renderTask?.cancel();
             void documentTask?.destroy();
             canvas.width = canvas.height = 0;

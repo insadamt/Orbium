@@ -1,4 +1,8 @@
 const paths = {
+    sidebar: ['M3 3h18v18H3Z', 'M9 3v18', 'M5 7h2', 'M5 11h2', 'M5 15h2'],
+    firstPage: ['M5 5v14', 'm17 19-7-7 7-7'],
+    lastPage: ['M19 5v14', 'm7 19 7-7-7-7'],
+    rotate: ['M20 7v5h-5', 'M20 12a8 8 0 1 0-2 6'],
     play: ['m8 5 11 7-11 7Z'],
     pause: ['M7 5h3v14H7Z', 'M14 5h3v14h-3Z'],
     volume: [
