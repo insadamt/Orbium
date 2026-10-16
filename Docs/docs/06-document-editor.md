@@ -545,7 +545,20 @@ tracked when text color controls are outside the editor DOM.
 The Markdown editor grip uses pointer capture with an Orbium block controller.
 A fixed insertion line targets complete top-level source blocks. Edge dragging
 and mouse-wheel/trackpad input scroll the enclosing document pane; wheel deltas
-retain their pixel, line or page units. Pointer drops retain the scroll offsets
+retain their pixel, line or page units. Dragging within 96 CSS pixels of the
+visible pane's top or bottom starts automatic scrolling (the band shrinks to a
+quarter of the pane height in short panes). Speed increases toward the edge,
+from 80 up to 1,400 CSS pixels per second. Holding beyond the vertical pane edge
+keeps maximum speed. Edge scrolling does not require a block drop target under
+the pointer; horizontal bounds keep it inside the originating document surface
+and its clipping ancestors, including the grip gutter. Moving back to the center,
+outside those horizontal bounds, or ending/canceling the drag stops it.
+While the pointer remains in an edge band, the scroll loop retries even if a
+frame produces no movement. Same-origin embedded documents include their host
+pane's clipping bounds and scrollbar. Captured pointer coordinates are mapped
+through the moving iframe so holding still continues to track the same screen
+position. Host-pane limits do not spill into scrolling the outer workspace.
+Pointer drops retain the scroll offsets
 reached during the drag in both directions. The insertion line controls block
 order. The previous policy of anchoring the preceding block was removed during
 motion review because deleting content above that anchor compensated downward

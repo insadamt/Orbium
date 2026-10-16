@@ -15,6 +15,7 @@ import {
     scrollMarkdownDragBy,
 } from './markdown-drag-scroll';
 import { preserveMarkdownDropViewport } from './markdown-drop-viewport';
+import { captureMarkdownDragPointer } from './markdown-drag-pointer';
 
 type MarkdownBlockDragOptions = {
     view: EditorView;
@@ -32,6 +33,7 @@ type BlockDragSession = {
     startY: number;
     clientX: number;
     clientY: number;
+    readPointer: () => { clientX: number; clientY: number };
     started: boolean;
     element: HTMLElement | null;
     preview: HTMLElement | null;
@@ -84,6 +86,7 @@ export class MarkdownBlockDragController {
             startY: event.clientY,
             clientX: event.clientX,
             clientY: event.clientY,
+            readPointer: captureMarkdownDragPointer(this.options.view, event),
             started: false,
             element: null,
             preview: null,
@@ -120,6 +123,10 @@ export class MarkdownBlockDragController {
         if (!session || event.pointerId !== session.pointerId) return;
         session.clientX = event.clientX;
         session.clientY = event.clientY;
+        session.readPointer = captureMarkdownDragPointer(
+            this.options.view,
+            event,
+        );
         if (!session.started) {
             if (
                 Math.hypot(
@@ -143,6 +150,7 @@ export class MarkdownBlockDragController {
     private refreshTarget() {
         const session = this.session;
         if (!session?.started) return;
+        Object.assign(session, session.readPointer());
         if (session.preview) {
             session.preview.style.left = `${session.clientX + 16}px`;
             session.preview.style.top = `${session.clientY + 16}px`;
@@ -171,15 +179,17 @@ export class MarkdownBlockDragController {
     private scrollFrame = (time: number) => {
         this.frame = null;
         const session = this.session;
-        if (!session?.started || !this.pointerTarget(session)) return;
-        const scrolled = scrollMarkdownDrag(
+        if (!session?.started) return;
+        Object.assign(session, session.readPointer());
+        const continueEdgeScroll = scrollMarkdownDrag(
             this.options.view,
-            session.clientY,
+            session,
             time - this.previousFrameTime,
         );
         this.previousFrameTime = time;
         this.refreshTarget();
-        if (scrolled) this.frame = requestAnimationFrame(this.scrollFrame);
+        if (continueEdgeScroll)
+            this.frame = requestAnimationFrame(this.scrollFrame);
     };
 
     private scrollWheel = (event: WheelEvent) => {
