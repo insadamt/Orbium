@@ -1,3 +1,4 @@
+import { generate, parse, walk } from 'css-tree';
 import type { EditorView } from '@codemirror/view';
 import { markdownDragViewport } from './markdown-drag-scroll';
 import { markdownBlockPopOrigin } from './markdown-block-pop-origin';
@@ -9,6 +10,25 @@ export type RenderedRow = {
 };
 
 let snapshotSequence = 0;
+
+function remapSnapshotStyles(
+    style: HTMLElement,
+    identifiers: Map<string, string>,
+) {
+    const stylesheet = parse(style.textContent ?? '');
+    // Mermaid scopes typography and geometry to the SVG ID, not just its marker URLs.
+    walk(stylesheet, (node) => {
+        if (node.type === 'IdSelector') {
+            const replacement = identifiers.get(node.name);
+            if (replacement) node.name = replacement;
+        }
+        if (node.type === 'Url' && node.value.startsWith('#')) {
+            const replacement = identifiers.get(node.value.slice(1));
+            if (replacement) node.value = `#${replacement}`;
+        }
+    });
+    style.textContent = generate(stylesheet);
+}
 
 function cloneSnapshotRow(element: HTMLElement) {
     const clone = element.cloneNode(true) as HTMLElement;
@@ -24,6 +44,8 @@ function cloneSnapshotRow(element: HTMLElement) {
         child.removeAttribute('data-rich-from');
     }
     for (const child of elements) {
+        if (child.localName === 'style')
+            remapSnapshotStyles(child, identifiers);
         for (const attribute of Array.from(child.attributes)) {
             let value = attribute.value.replace(
                 /url\(#([^)]*)\)/g,

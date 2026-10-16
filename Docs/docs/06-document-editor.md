@@ -589,7 +589,9 @@ carry the outgoing pop downward. The outgoing/destination pop scales between 100
 65% around the center of visible text/media, rather than the full-width row box.
 The entrance explicitly clears horizontal and vertical translation; only surrounding blocks
 translate up/down. The outgoing snapshot retains the editor theme and interface
-scale. Only participating live rows are transparent beneath their snapshots;
+scale. Snapshot SVG IDs, embedded CSS ID selectors, and CSS fragment URLs are
+remapped together, preserving Mermaid typography, colors, and geometry while
+blocks move. CSS color values remain unchanged. Only participating live rows are transparent beneath their snapshots;
 stationary content remains visible. Completion or interruption restores original row styles and requests a
 fresh CodeMirror measurement.
 No persistent block identifiers or new
