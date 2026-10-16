@@ -21,6 +21,7 @@ import {
 import { WorkspaceSelector } from '@/components/navigation/workspace-selector';
 import type { TreeNode } from '@/components/navigation/navigation-types';
 import type { Auth, BreadcrumbItem } from '@/types';
+import { StatisticsButton } from '@/components/statistics/statistics-button';
 
 type ShellPageProps = {
     [key: string]: unknown;
@@ -71,6 +72,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
         isHomePage ||
         page.component === 'trash/index' ||
         page.component.startsWith('library/') ||
+        page.component.startsWith('statistics/') ||
         page.component === 'documents/show' ||
         page.component === 'databases/show' ||
         page.component.startsWith('settings/');
@@ -106,7 +108,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
               ? 'library'
               : page.component === 'trash/index'
                 ? 'trash'
-                : 'settings';
+                : page.component.startsWith('statistics/')
+                  ? 'statistics'
+                  : 'settings';
     const breadcrumbLinks = page.props.breadcrumbs ?? [];
     const currentPath = page.url.split('?')[0];
     const floatingBreadcrumbs: BreadcrumbItem[] = page.component.startsWith(
@@ -254,7 +258,12 @@ export default function AppLayout({ children }: AppLayoutProps) {
                         />
                     )}
                     {isPane ? (
-                        children
+                        <>
+                            <div className="mb-3 flex justify-end">
+                                <StatisticsButton className="floating-icon-button floating-surface" />
+                            </div>
+                            {children}
+                        </>
                     ) : (
                         <>
                             <RetainedDocumentWorkspace>

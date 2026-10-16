@@ -7,6 +7,7 @@ use App\Models\DatabaseValue;
 use App\Models\Node;
 use App\Models\Workspace;
 use App\Services\Markdown\MarkdownContract;
+use App\Services\Statistics\DocumentStatisticsData;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -29,6 +30,7 @@ class ManageHierarchy
 
             if ($type === 'document') {
                 $node->document()->create([
+                    ...(new DocumentStatisticsData('', [], 0, 0))->attributes(),
                     'content' => ['type' => 'doc', 'content' => [['type' => 'paragraph']]],
                     'content_format_version' => MarkdownContract::FORMAT_VERSION,
                     'markdown' => '',

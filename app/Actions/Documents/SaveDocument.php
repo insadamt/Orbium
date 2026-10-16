@@ -34,6 +34,7 @@ class SaveDocument
             $this->validateAttachments($node, $attachmentIds);
 
             $document->update([
+                ...$inspection->statistics->attributes($attachmentIds),
                 'content' => $content,
                 'plain_text' => $inspection->plainText,
                 'revision' => $revision + 1,

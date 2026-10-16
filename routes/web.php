@@ -11,6 +11,7 @@ use App\Http\Controllers\NavigationController;
 use App\Http\Controllers\NodeController;
 use App\Http\Controllers\OfficeDocumentExportController;
 use App\Http\Controllers\ReferenceAvailabilityController;
+use App\Http\Controllers\StatisticsController;
 use App\Http\Controllers\TrashController;
 use App\Http\Controllers\WorkspaceController;
 use App\Http\Middleware\SerializeWorkspaceWrites;
@@ -19,6 +20,9 @@ use Illuminate\Support\Facades\Route;
 Route::redirect('/', '/dashboard')->name('home');
 
 Route::middleware(['auth', SerializeWorkspaceWrites::class])->group(function () {
+    Route::get('statistics', [StatisticsController::class, 'index'])->name('statistics.index');
+    Route::get('statistics/data', [StatisticsController::class, 'data'])->name('statistics.data');
+    Route::get('workspaces/{workspace}/nodes/{node}/statistics', [StatisticsController::class, 'node'])->name('nodes.statistics');
     Route::get('workspaces/{workspace}/library', [LibraryController::class, 'index'])->name('library.index');
     Route::get('workspaces/{workspace}/library/items/{attachment}', [LibraryController::class, 'show'])->name('library.show');
     Route::post('workspaces/{workspace}/library/selection', [LibraryController::class, 'selection']);

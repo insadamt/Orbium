@@ -48,6 +48,7 @@ final class SaveMarkdownDocument
             $previous = is_string($document->markdown) ? $this->inspector->inspect($document->markdown) : null;
             $this->references->validate($liveSource, $inspection, $previous);
             $document->update([
+                ...$inspection->derived->statistics->attributes($inspection->derived->attachmentIds),
                 'markdown' => $inspection->source,
                 'content_format_version' => MarkdownContract::FORMAT_VERSION,
                 'plain_text' => $inspection->derived->plainText,

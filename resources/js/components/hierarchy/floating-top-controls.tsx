@@ -27,6 +27,7 @@ import { FloatingBreadcrumbs } from '@/components/navigation/floating-breadcrumb
 import { usePageSearch } from '@/components/navigation/page-search';
 import type { TreeNode } from '@/components/navigation/navigation-types';
 import { openLocation } from '@/components/navigation/tab-navigation';
+import { StatisticsButton } from '@/components/statistics/statistics-button';
 import type { Auth, BreadcrumbItem } from '@/types';
 import type { WorkspaceSummary } from './workspace-panel';
 import type { TrashedNode } from './node-browser';
@@ -45,7 +46,8 @@ type Props = {
         | 'database'
         | 'settings'
         | 'trash'
-        | 'library';
+        | 'library'
+        | 'statistics';
 };
 
 export function FloatingTopControls({
@@ -89,6 +91,7 @@ export function FloatingTopControls({
             !workspace ||
             pageType === 'settings' ||
             pageType === 'trash' ||
+            pageType === 'statistics' ||
             pageType === 'library'
         )
             return;
@@ -247,9 +250,10 @@ export function FloatingTopControls({
                     className="floating-account-controls"
                     data-search-open={pageSearch.open}
                 >
-                    {pageType !== 'library' && (
+                    {pageType !== 'library' && pageType !== 'statistics' && (
                         <FloatingPageSearch pageType={pageType} />
                     )}
+                    <StatisticsButton className="floating-icon-button floating-surface" />
                     {workspace && (
                         <button
                             type="button"

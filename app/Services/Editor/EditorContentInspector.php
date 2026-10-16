@@ -2,6 +2,7 @@
 
 namespace App\Services\Editor;
 
+use App\Services\Statistics\LegacyDocumentStatistics;
 use Illuminate\Validation\ValidationException;
 
 class EditorContentInspector
@@ -31,7 +32,7 @@ class EditorContentInspector
         $sources = [];
         $plainText = $this->inspectNode($content, 0, $mentions, $attachments, $sources);
 
-        return new DocumentInspectionResult($mentions, array_keys($attachments), trim($plainText), $sources);
+        return new DocumentInspectionResult($mentions, array_keys($attachments), trim($plainText), $sources, (new LegacyDocumentStatistics)->project($content));
     }
 
     private function inspectNode(array $node, int $depth, array &$mentions, array &$attachments, array &$sources): string

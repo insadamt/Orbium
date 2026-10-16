@@ -60,6 +60,9 @@ export function locationForPage(page: {
     return {
         url: page.url,
         title:
+            (page.url.split('?')[0] === '/statistics'
+                ? 'Statistics'
+                : undefined) ??
             (page.url.split('?')[0].includes('/library')
                 ? (page.props.file?.name ?? 'Library')
                 : undefined) ??

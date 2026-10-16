@@ -1,4 +1,5 @@
 import {
+    ChartNoAxesColumn,
     Database,
     FileText,
     Folder,
@@ -34,6 +35,11 @@ export function NavigationTabIcon({ entry }: { entry: Location }) {
                 {entry.icon}
             </span>
         );
-    const Icon = entry.url.includes('/nodes/') ? Folder : tabIcons[entry.kind];
+    const Icon =
+        entry.url.split('?')[0] === '/statistics'
+            ? ChartNoAxesColumn
+            : entry.url.includes('/nodes/')
+              ? Folder
+              : tabIcons[entry.kind];
     return <Icon size={15} className="shrink-0" aria-hidden="true" />;
 }

@@ -3,6 +3,7 @@
 namespace App\Services\Markdown;
 
 use App\Services\Editor\DocumentInspectionResult;
+use App\Services\Statistics\MarkdownDocumentStatistics;
 use League\CommonMark\Extension\CommonMark\Node\Block\FencedCode;
 use League\CommonMark\Extension\CommonMark\Node\Inline\AbstractWebResource;
 use League\CommonMark\Extension\CommonMark\Node\Inline\Image;
@@ -32,7 +33,7 @@ final class MarkdownDocumentInspector
         $references = [];
         $plainText = $this->deriveText($document, $mentions, $attachments, $mermaid, $references);
 
-        return new MarkdownInspectionResult($source, new DocumentInspectionResult($mentions, array_keys($attachments), $plainText, $mermaid), $references);
+        return new MarkdownInspectionResult($source, new DocumentInspectionResult($mentions, array_keys($attachments), $plainText, $mermaid, (new MarkdownDocumentStatistics)->project($document)), $references);
     }
 
     /**

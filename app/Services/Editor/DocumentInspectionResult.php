@@ -2,6 +2,8 @@
 
 namespace App\Services\Editor;
 
+use App\Services\Statistics\DocumentStatisticsData;
+
 final readonly class DocumentInspectionResult
 {
     /**
@@ -14,5 +16,6 @@ final readonly class DocumentInspectionResult
         public array $attachmentIds,
         public string $plainText,
         public array $mermaidSourcesByHash,
+        public DocumentStatisticsData $statistics,
     ) {}
 }
