@@ -29,12 +29,12 @@ export function StatisticsSection({
     title,
     icon: Icon,
     children,
-    description,
+    action,
 }: {
     title: string;
     icon: LucideIcon;
     children: ReactNode;
-    description: string;
+    action?: ReactNode;
 }) {
     return (
         <section className="statistics-section">
@@ -48,10 +48,8 @@ export function StatisticsSection({
                     <h2 className="text-lg font-semibold tracking-tight">
                         {title}
                     </h2>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                        {description}
-                    </p>
                 </div>
+                {action && <div className="ml-auto">{action}</div>}
             </header>
             {children}
         </section>

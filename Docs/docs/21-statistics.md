@@ -22,34 +22,94 @@ as an account overview. Statistics is absent from item action menus.
 
 ## Display structure
 
-Approved simplification (2026-10-16) supersedes the earlier composition chart,
-asymmetric chart grid, storage ring, and Count/Share and Size/Count controls.
-The page uses a single reading order with clear section headings and icons:
+Card overview review (2026-10-16) supersedes category navigation. Statistics
+shows one compact overview with no vertical tabs, mobile category selector, or
+hidden detail panels:
 
-1. Scope: selector, selected scope name/type, and Refresh.
-2. Overview: Documents, Words, Blocks, Storage used.
-3. Writing: total words, plus average words per document for container/account
-   scopes. Character counts expand under Character counts.
-4. Content: compact icon/count rows for applicable documents, folders, databases,
-   and workspaces. Database entries are labeled as already included in Documents.
-   This entire section is omitted for individual documents.
-5. Blocks: one sorted horizontal chart, initially showing up to six used types.
-   Show all block types expands all types including zeroes. Exact counts are
-   primary; small percentages use the complete block total. Bars scale against
-   the largest displayed count. Average blocks per document appears here for
-   multi-document scopes; inline math appears separately beneath the chart.
-6. Tasks: one progress bar and a readable checked-of-total statement, remaining
-   count, and completion percentage. No tasks has an explicit empty state.
-7. Storage: total original size, a simple proportional Images/Files bar, and a
-   table of category counts/sizes. Storage details expands the average unique
-   upload size and the scope's inclusion rules.
+- Words, Blocks, and Storage used cards at the top.
+- Content organization for applicable scopes; Documents stays here rather than
+  returning to the top cards.
+- Compact Tasks and Uploads summary cards.
+- A shared expandable counting-rules disclosure.
 
-Character counts, storage details, and general counting rules are expandable.
+Each section/card has an inspect icon that opens its detailed insight page.
+Detailed values and charts live only in those pages. Scope selection and Refresh
+remain above the overview. Redundant descriptions and More labels remain absent.
+The former `category` query parameter is ignored and removed when constructing
+scope/insight/return navigation URLs, so old category links still reach Overview.
+
+Independent insight pages review (2026-10-16) supersedes the nested split
+implementation. The Statistics page and insight page are separate sibling page
+surfaces, each with its own header, background, border, padding, and content.
+There is no split inside the Statistics card. The workspace layout animates the
+whole Statistics page into the left 40% and gives the insight page all of the
+remaining width after a 24px gap. The companion page has no narrow fixed width
+or inner panel divider. Closing restores the centered Statistics page.
+
+Each inspect icon selects a metric for the right page. Both pages remain usable;
+card backgrounds remain static. The insight page has its own Refresh control and
+scrolling content. Its Open insights page action opens the real standalone route
+`/statistics/insights/{metric}` in an app tab, preserving scope query parameters.
+That route can be opened directly or reloaded and uses the existing owner-scoped
+statistics data endpoints. Unknown metric slugs return 404.
+
+Below 1024px, inspecting navigates directly to the standalone page, with a
+Statistics return control preserving the original scope. If an already
+open desktop companion is resized below that width, its surface fills the
+workspace until closed. On desktop, Escape inside the companion page or Close
+returns to the centered main page and restores focus to the originating control,
+or to the main page if that control is hidden. Outside clicks leave it open.
+There is no overlay, portal, focus trap, or background scroll lock. Closed page
+content is inert. Reduced motion disables the workspace transition. Scope changes close the
+companion. Cards adapt to their available page width.
+
+The companion reuses the loaded summary and Refresh updates both pages. A
+standalone insight page fetches its own summary. Both expose pending/error/retry
+states using the existing request flow. Charts use the available page width;
+composition rings grow on wider insight pages.
+
+Insight presentation:
+
+- Writing: word total, characters with/without spaces, applicable words/document
+  average, and a character composition ring for non-space characters and spaces.
+- Blocks: total, types used, applicable blocks/document average, inline math,
+  most-used type/share, and a ranked horizontal distribution chart with top/all
+  controls. Full counts remain available including zero types.
+- Tasks: total checklist items and a completed/remaining composition ring with
+  exact counts and completion percentage. Empty tasks have an explicit state.
+- Storage: original byte total, unique uploads, average file size, an Images/Files
+  size-composition ring, and the exact count/size table.
+- Uploads: unique count, total size, average size, an Images/Files count-composition
+  ring, and the exact table. Count and size charts intentionally use different
+  denominators; reusing an upload still counts it once.
+- Content: document/folder/database counts and shares in a horizontal chart;
+  workspaces remain a separate count. Database entries remain included in
+  Documents rather than being added as another category.
+
+Composition chart legends expose values and percentages as buttons. Hovering,
+touching, or keyboard-focusing a legend shows that segment in the chart center;
+values also remain readable without the graphic. Empty charts show zeroes and a
+neutral track; unavailable derived metrics remain pending. All charts describe
+saved current content; no historical timeline is invented. General counting
+rules remain in their shared disclosure.
+
+Documents remains in Content and is omitted from the top cards. Metric columns
+adapt to available width, including while the companion page is open.
+
+Blocks initially show up to six used types; Show all block types includes
+zeroes. Exact counts are primary, percentages use the complete block total,
+and bars scale against the largest displayed count. Average blocks per document
+appears for multi-document scopes; inline math is counted separately.
+Database entries remain labeled as already included in Documents.
+
+General counting rules are expandable; character and storage details are
+available in their insight pages.
 Averages with no denominator and incomplete totals show a dash. Loading, retry,
 empty, and pending states remain explicit. Refresh retains loaded values and
 labels stale totals on a failed refresh; changing scope clears old scope data.
 This presentation adds no history, migrations, dependencies, or backend changes.
-See [the simplified layout report](../reports/07-statistics-simplified-layout.md).
+See [the card overview report](../reports/07-statistics-card-overview.md) and
+[the independent pages report](../reports/07-statistics-independent-pages.md).
 
 Statistics describe saved content. Open, change scope, or press Refresh to fetch
 current totals. There is no polling, typing listener, or per-keystroke calculation.
@@ -165,6 +225,9 @@ reading time, and empty-document counts are outside this milestone.
 ## Read interfaces
 
 - `GET /statistics`: authenticated Inertia page and active workspace choices.
+- `GET /statistics/insights/{metric}`: standalone insight page for `words`,
+  `blocks`, `storage`, `tasks`, `uploads`, or `organization`; scope is carried
+  by the existing query parameters. Other metric slugs return 404.
 - `GET /statistics/data`: account summary; optional `workspace_id` selects an
   owned active workspace.
 - `GET /workspaces/{workspace}/nodes/{node}/statistics`: visible owned node and

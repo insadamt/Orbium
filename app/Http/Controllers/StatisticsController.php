@@ -19,6 +19,14 @@ final class StatisticsController extends Controller
         ]);
     }
 
+    public function insights(string $metric): Response
+    {
+        return Inertia::render('statistics/insights', [
+            'statisticsInsight' => $metric,
+            'breadcrumbs' => [['title' => 'Statistics', 'href' => '/statistics']],
+        ]);
+    }
+
     public function data(Request $request, StatisticsQuery $query): JsonResponse
     {
         $data = $request->validate(['workspace_id' => ['nullable', 'integer', 'min:1']]);
