@@ -585,10 +585,11 @@ screen position clipped to the originating pane. Its fixed positioning uses an
 inline important declaration to override CodeMirror's copied base-theme rule
 (`position: relative !important`), keeping snapshots out of document flow.
 Drop compensation therefore cannot
-carry the outgoing pop downward. The outgoing/destination pop scales between 100% and
-65% around the center of visible text/media, rather than the full-width row box.
-The entrance explicitly clears horizontal and vertical translation; only surrounding blocks
-translate up/down. The outgoing snapshot retains the editor theme and interface
+carry the outgoing pop downward. The outgoing/destination pop scales vertically
+between 100% and 65% around the center of visible text/media. Width stays at 100%
+throughout, so aligned text and wide cards do not appear to arrive from the side.
+Both pops explicitly clear horizontal and vertical translation; only surrounding
+blocks translate up/down. The outgoing snapshot retains the editor theme and interface
 scale. Snapshot SVG IDs, embedded CSS ID selectors, and CSS fragment URLs are
 remapped together, preserving Mermaid typography, colors, and geometry while
 blocks move. CSS color values remain unchanged. Only participating live rows are transparent beneath their snapshots;

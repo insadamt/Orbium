@@ -119,17 +119,25 @@ class MarkdownBlockMotion {
         if (this.ghost) this.ghost.style.visibility = 'visible';
         this.context = gsap.context(() => {
             const timeline = gsap.timeline();
-            if (this.ghost)
+            if (this.ghost) {
+                gsap.set(this.ghost, {
+                    x: 0,
+                    y: 0,
+                    scaleX: 1,
+                    scaleY: 1,
+                    opacity: 1,
+                });
                 timeline.to(
                     this.ghost,
                     {
-                        scale: 0.65,
+                        scaleY: 0.65,
                         opacity: 0,
                         duration: 0.08,
                         ease: 'power2.in',
                     },
                     0,
                 );
+            }
             const enteringRows = rows.filter(
                 (row) =>
                     movedBlock &&
@@ -143,11 +151,18 @@ class MarkdownBlockMotion {
             if (incoming) {
                 this.layoutSnapshots.push(incoming.element);
                 hiddenRows.push(...enteringRows.map((row) => row.element));
-                gsap.set(incoming.popElement, { scale: 0.65, opacity: 0 });
+                // A fixed width prevents scaling from reading as sideways arrival on aligned cards.
+                gsap.set(incoming.popElement, {
+                    x: 0,
+                    y: 0,
+                    scaleX: 1,
+                    scaleY: 0.65,
+                    opacity: 0,
+                });
                 timeline.to(
                     incoming.popElement,
                     {
-                        scale: 1,
+                        scaleY: 1,
                         opacity: 1,
                         duration: 0.1,
                         ease: 'power2.out',
