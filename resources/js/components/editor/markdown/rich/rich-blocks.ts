@@ -22,7 +22,7 @@ import {
 import type { RichBlock, RichContext } from './rich-model';
 import { MarkdownRichWidget } from './rich-widget';
 import { richBlockSelection } from './rich-block-selection';
-import { mapRichBlockEdge } from './rich-range-mapping';
+import { mapRichBlockEdge, mapRichContentPosition } from './rich-range-mapping';
 import { readEditableMarkdownPresentation } from '../interactions/markdown-editable-presentation';
 
 function collectBlocks(
@@ -95,40 +95,38 @@ export function markdownRichBlocks(context: RichContext) {
             let revealed = previous.revealed;
             let layoutChanged = false;
             if (revealed !== null && transaction.docChanged)
-                revealed = mapRichBlockEdge(
-                    transaction.changes,
-                    revealed,
-                    'start',
-                );
+                revealed = mapRichBlockEdge(transaction, revealed, 'start');
             if (transaction.docChanged) {
                 editors = new Set(
                     [...editors].map((from) =>
-                        mapRichBlockEdge(transaction.changes, from, 'start'),
+                        mapRichBlockEdge(transaction, from, 'start'),
                     ),
                 );
                 blocks = blocks
                     .map((block) => {
                         const from = mapRichBlockEdge(
-                            transaction.changes,
+                            transaction,
                             block.from,
                             'start',
                         );
                         const to = mapRichBlockEdge(
-                            transaction.changes,
+                            transaction,
                             block.to,
                             'end',
                         );
                         const contentFrom =
                             block.contentFrom === block.from
                                 ? from
-                                : transaction.changes.mapPos(
+                                : mapRichContentPosition(
+                                      transaction,
                                       block.contentFrom,
                                       -1,
                                   );
                         const contentTo =
                             block.contentTo === block.to
                                 ? to
-                                : transaction.changes.mapPos(
+                                : mapRichContentPosition(
+                                      transaction,
                                       block.contentTo,
                                       1,
                                   );

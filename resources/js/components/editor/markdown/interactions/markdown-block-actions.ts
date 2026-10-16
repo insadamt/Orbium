@@ -1,3 +1,7 @@
+import {
+    preserveRichWidgetsDuringMove,
+    richBlockMove,
+} from '../rich/rich-widget-move';
 import { markdownAlignmentElements } from './markdown-alignment-elements';
 import { animateAlignmentChange } from '../../alignment-motion';
 import { ensureSyntaxTree, syntaxTree } from '@codemirror/language';
@@ -212,18 +216,21 @@ export function moveMarkdownBlock(
         changes.mapPos(destination, -1) + (placement === 'before' ? 0 : 2);
     const motion = view.plugin(markdownBlockMotion);
     const snapshot = motion?.capture(block);
-    view.dispatch({
-        changes,
-        selection: options.preserveViewport ? undefined : { anchor },
-        annotations: isolateHistory.of('full'),
-        userEvent: 'move.block',
-        scrollIntoView: !options.preserveViewport,
-    });
-    if (snapshot)
-        motion?.play(snapshot, changes, {
-            from: anchor,
-            to: anchor + block.source.length,
+    const move = { from: block.from, to: block.to, destination: anchor };
+    preserveRichWidgetsDuringMove(view, move, changes, () => {
+        view.dispatch({
+            changes,
+            selection: options.preserveViewport ? undefined : { anchor },
+            annotations: [isolateHistory.of('full'), richBlockMove.of(move)],
+            userEvent: 'move.block',
+            scrollIntoView: !options.preserveViewport,
         });
+        if (snapshot)
+            motion?.play(snapshot, changes, {
+                from: anchor,
+                to: anchor + block.source.length,
+            });
+    });
     if (!options.preserveViewport) view.focus();
     return changes;
 }

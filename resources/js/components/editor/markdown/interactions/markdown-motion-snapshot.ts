@@ -62,7 +62,58 @@ function cloneSnapshotRow(element: HTMLElement) {
                 child.setAttribute(attribute.name, value);
         }
     }
+    copySnapshotMediaFrames(element, clone);
     return clone;
+}
+
+function copySnapshotMediaFrames(source: HTMLElement, clone: HTMLElement) {
+    const originals = source.querySelectorAll('canvas, video, audio');
+    const copies = clone.querySelectorAll('canvas, video, audio');
+    originals.forEach((original, index) => {
+        const copy = copies[index];
+        if (
+            original instanceof HTMLCanvasElement &&
+            copy instanceof HTMLCanvasElement
+        ) {
+            if (!original.width || !original.height) return;
+            copy.width = original.width;
+            copy.height = original.height;
+            // cloneNode preserves canvas attributes but not the PDF page pixels.
+            copy.getContext('2d')?.drawImage(original, 0, 0);
+        } else if (
+            original instanceof HTMLVideoElement &&
+            copy instanceof HTMLVideoElement
+        ) {
+            copy.removeAttribute('src');
+            copy.querySelectorAll('source').forEach((child) => child.remove());
+            copy.preload = 'none';
+            if (original.readyState < HTMLMediaElement.HAVE_CURRENT_DATA)
+                return;
+            const frame = document.createElement('canvas');
+            frame.width = original.videoWidth;
+            frame.height = original.videoHeight;
+            try {
+                frame.getContext('2d')?.drawImage(original, 0, 0);
+            } catch {
+                return;
+            }
+            frame.className = original.className;
+            const style = getComputedStyle(original);
+            Object.assign(frame.style, {
+                width: style.width,
+                height: style.height,
+                display: style.display,
+                objectFit: style.objectFit,
+                borderRadius: style.borderRadius,
+                background: style.background,
+            });
+            copy.replaceWith(frame);
+        } else if (copy instanceof HTMLAudioElement) {
+            copy.removeAttribute('src');
+            copy.querySelectorAll('source').forEach((child) => child.remove());
+            copy.preload = 'none';
+        }
+    });
 }
 
 export function renderedMarkdownMotionRows(view: EditorView): RenderedRow[] {

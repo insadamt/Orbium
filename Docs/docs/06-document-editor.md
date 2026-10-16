@@ -644,3 +644,20 @@ The cache holds at most 128 results per editor, including errors; older entries
 can render again after eviction. Existing KaTeX trust, expansion, and size limits
 are unchanged. Manual acceptance is tracked in
 `../reports/06-math-block-motion-preview-reuse.md`.
+
+
+### Preserve rich widgets during block reorders (2026-10-16)
+
+Pointer, menu, and keyboard block moves retain already mounted rich-widget roots
+and controllers for the synchronous reorder and motion-staging update. Retention
+matches the original source, widget kind, editor context, and mapped destination,
+so repeated attachment references retain independent player/reader state. Move
+annotations map rich-block content ranges and source-editor positions to the
+inserted source rather than the deletion boundary. Unclaimed removed widgets are
+released after the update; ordinary deletion and editor teardown still dispose
+controllers. Offscreen widgets keep the existing virtualization lifecycle.
+
+Animation snapshots copy PDF canvas pixels and capture a loaded video's current
+frame without loading or playing another media element. Browser-paused media
+that was playing before DOM relocation is resumed when still connected. Paused
+media stays paused. See `../reports/06-rich-block-move-state.md` for manual checks.

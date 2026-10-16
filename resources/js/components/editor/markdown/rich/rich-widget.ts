@@ -1,3 +1,12 @@
+import {
+    canUpdateRetainedRichWidget,
+    claimRetainedRichWidget,
+    deferRichWidgetDisposal,
+    registerMountedRichWidget,
+    findRetainedRichWidget,
+    unregisterMountedRichWidget,
+    updateMountedRichWidget,
+} from './rich-widget-move';
 import { EditorView, WidgetType } from '@codemirror/view';
 import type {
     RichBlock,
@@ -34,6 +43,8 @@ const richBlockMounts: Partial<
 const presentationContainers = new WeakMap<HTMLElement, HTMLElement[]>();
 const controllers = new WeakMap<HTMLElement, RichController>();
 const observers = new WeakMap<HTMLElement, ResizeObserver>();
+const widgetOwners = new WeakMap<HTMLElement, MarkdownRichWidget>();
+
 const currentBlocks = new WeakMap<HTMLElement, RichBlock>();
 
 function richBlockClassName(kind: RichBlock['kind']) {
@@ -97,6 +108,8 @@ export class MarkdownRichWidget extends WidgetType {
         );
     }
     toDOM(view: EditorView) {
+        const retained = findRetainedRichWidget(view, this.block, this.context);
+        if (retained && this.updateDOM(retained)) return retained;
         const root = document.createElement(
             this.block.kind === 'inline-math' ? 'span' : 'div',
         );
@@ -135,19 +148,32 @@ export class MarkdownRichWidget extends WidgetType {
         observers.set(root, observer);
         controllers.set(root, controller);
         this.applyPresentation(root);
+        widgetOwners.set(root, this);
+        registerMountedRichWidget({
+            view,
+            root,
+            block: this.block,
+            context: this.context,
+            dispose: () => this.disposeRoot(root),
+        });
         return root;
     }
     updateDOM(root: HTMLElement) {
         const controller = controllers.get(root);
         if (
             !controller ||
+            !canUpdateRetainedRichWidget(root, this.block, this.context) ||
             root.dataset.richKind !== this.block.kind ||
             (presentationContainers.get(root)?.length ?? 0) !==
                 Math.max(0, (this.block.wrappers?.length ?? 1) - 1)
         )
             return false;
+        if (!controller.update(this.block)) return false;
         this.applyPresentation(root);
-        return controller.update(this.block);
+        widgetOwners.set(root, this);
+        updateMountedRichWidget(root, this.block);
+        claimRetainedRichWidget(root);
+        return true;
     }
     private applyPresentation(root: HTMLElement) {
         currentBlocks.set(root, this.block);
@@ -163,6 +189,13 @@ export class MarkdownRichWidget extends WidgetType {
         });
     }
     destroy(root: HTMLElement) {
+        if (!widgetOwners.get(root)?.eq(this) || deferRichWidgetDisposal(root))
+            return;
+        this.disposeRoot(root);
+    }
+    private disposeRoot(root: HTMLElement) {
+        unregisterMountedRichWidget(root);
+        widgetOwners.delete(root);
         currentBlocks.delete(root);
         presentationContainers.delete(root);
         observers.get(root)?.disconnect();
