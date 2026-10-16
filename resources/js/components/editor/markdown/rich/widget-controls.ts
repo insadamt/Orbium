@@ -155,7 +155,9 @@ export function sourceControls(
         mount.root.addEventListener('orbium-edit-rich', () => setEditing(true));
     return {
         toolbar,
-        input,
+        get input() {
+            return input;
+        },
         output,
         error,
         update(next: RichBlock) {
