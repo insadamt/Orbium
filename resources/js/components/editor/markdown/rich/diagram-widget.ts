@@ -1,3 +1,4 @@
+import { styleRichSourceControls } from './rich-block-heading';
 import { serializeOrbiumBlock } from '../dialect/metadata';
 import { fencedCodeSource } from './code-widget';
 import { createRichSourceInput } from './rich-source-input';
@@ -19,12 +20,6 @@ export function mountDiagram(mount: RichWidgetMount): RichController {
     let current = mount.block;
     const controls = sourceControls(mount, 'Mermaid');
     const previewControls = createMermaidPreviewControls();
-    controls.toolbar.classList.add('mermaid-inline-toolbar');
-    const actions = element('div', 'mermaid-inline-actions');
-    const modes = controls.toolbar.lastElementChild;
-    if (modes) actions.append(modes);
-    actions.append(previewControls.button);
-    controls.toolbar.append(actions);
     const input = createRichSourceInput('Mermaid source', current.content);
     controls.useContentEditor(input);
     input.addEventListener('keydown', (event) => {
@@ -46,6 +41,13 @@ export function mountDiagram(mount: RichWidgetMount): RichController {
     });
     controls.output.className =
         'overflow-auto [&>svg]:block [&>svg]:h-auto [&>svg]:w-full';
+    const heading = styleRichSourceControls(mount, controls, {
+        title: 'Mermaid',
+        description: 'Diagram',
+        icon: 'diagram',
+    });
+    previewControls.button.className = 'attachment-action';
+    heading.actions.append(previewControls.button);
     controls.output.dataset.mermaidPreview = '';
     controls.output.style.minHeight = '100px';
     let unsubscribe: (() => void) | undefined;

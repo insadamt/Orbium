@@ -6,7 +6,7 @@
 
 .attachment-pdf-viewport {
     position: relative;
-    height: min(480px, 55vh);
+    height: min(620px, 70vh);
     min-height: 160px;
     overflow: auto;
     overscroll-behavior: contain;
@@ -209,4 +209,17 @@
         gap: 3px;
         padding-inline: 6px;
     }
+}
+
+.attachment-full-dialog {
+    inset: 8px;
+}
+
+.attachment-full-dialog .attachment-full-stage {
+    inset: 64px 12px 12px;
+    align-items: stretch;
+}
+
+.attachment-full-stage .attachment-player-pdf[data-expanded='true'] {
+    max-width: none;
 }

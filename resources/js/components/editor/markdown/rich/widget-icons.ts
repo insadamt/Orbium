@@ -1,4 +1,11 @@
 const paths = {
+    diagram: [
+        'M8 3h8v5H8Z',
+        'M2 16h8v5H2Z',
+        'M14 16h8v5h-8Z',
+        'M12 8v4',
+        'M6 16v-4h12v4',
+    ],
     sidebar: ['M3 3h18v18H3Z', 'M9 3v18', 'M5 7h2', 'M5 11h2', 'M5 15h2'],
     firstPage: ['M5 5v14', 'm17 19-7-7 7-7'],
     lastPage: ['M19 5v14', 'm7 19 7-7-7-7'],

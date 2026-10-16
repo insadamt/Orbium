@@ -9,7 +9,6 @@ type MediaFullPreviewOptions = {
     trigger: HTMLElement;
     title: string;
     onClose: () => void;
-    beforeRelocate: () => void;
     afterRelocate: () => void;
 };
 
@@ -23,7 +22,6 @@ function MediaFullPreview({
     const [open, setOpen] = useState(true);
     const viewport = useRef<HTMLDivElement>(null);
     useLayoutEffect(() => {
-        options.beforeRelocate();
         options.content.dataset.expanded = 'true';
         viewport.current?.append(options.content);
         options.afterRelocate();
@@ -75,7 +73,6 @@ export function openMediaFullPreview(options: MediaFullPreviewOptions) {
     const dispose = () => {
         if (disposed) return;
         disposed = true;
-        options.beforeRelocate();
         delete options.content.dataset.expanded;
         placeholder.replaceWith(options.content);
         options.afterRelocate();

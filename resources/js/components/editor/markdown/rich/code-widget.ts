@@ -1,3 +1,4 @@
+import { createRichBlockHeading } from './rich-block-heading';
 import { mountCodeCopyButton } from '../../mount-code-copy-button';
 import { mountAppSelect } from '@/components/ui/mount-app-select';
 import { EditorView } from '@codemirror/view';
@@ -22,15 +23,16 @@ export function fencedCodeSource(content: string, language: string): string {
 
 export function mountCode(mount: RichWidgetMount): RichController {
     let block = mount.block;
-    const toolbar = element(
-        'div',
-        'orbium-code-toolbar flex items-center justify-between border-b border-border bg-background/30 px-4 py-2 text-xs text-muted-foreground',
-    );
+    const toolbar = element('div');
+    const heading = createRichBlockHeading(mount, toolbar, {
+        title: 'Code',
+        icon: 'code',
+    });
     toolbar.dataset.blockGutterAnchor = '';
     const error = element('p', 'px-3 py-2 text-sm text-destructive');
     error.hidden = true;
     error.setAttribute('role', 'alert');
-    const codeHost = element('div');
+    const codeHost = element('div', 'orbium-rich-card-code');
     mount.root.append(toolbar, error, codeHost);
     const language = element(
         'select',
@@ -48,11 +50,13 @@ export function mountCode(mount: RichWidgetMount): RichController {
     icon.setAttribute('height', '16');
     icon.setAttribute('fill', 'currentColor');
     icon.setAttribute('aria-hidden', 'true');
-    const identity = element('span', 'inline-flex items-center gap-2');
-    identity.append(icon, language);
-    toolbar.prepend(identity);
+    heading.icon.replaceChildren(icon);
+    heading.title.replaceChildren(language);
     const languageSelect = mountAppSelect(language);
-    const copyButton = mountCodeCopyButton(toolbar, () => block.content);
+    const copyButton = mountCodeCopyButton(
+        heading.actions,
+        () => block.content,
+    );
     const input = mountCodeInput({
         host: codeHost,
         source: block.content,

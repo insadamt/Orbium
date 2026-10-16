@@ -1,3 +1,4 @@
+import { styleRichSourceControls } from './rich-block-heading';
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
 import { mountInlineMathInput } from './inline-math-input';
@@ -65,6 +66,11 @@ export function mountMath(mount: RichWidgetMount): RichController {
         const input = createRichSourceInput('Math source', block.content);
         equationInput = input;
         controls.useContentEditor(input);
+        styleRichSourceControls(mount, controls, {
+            title: 'Math',
+            description: 'Equation',
+            icon: 'math',
+        });
         input.addEventListener('keydown', (event) => {
             if (!(event.ctrlKey || event.metaKey)) event.stopPropagation();
         });

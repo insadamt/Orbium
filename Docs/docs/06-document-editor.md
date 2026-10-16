@@ -607,3 +607,8 @@ state. Text content, image size, captions and autosave retain their existing
 behavior. Editing, pointer input or wheel scrolling interrupts the visual
 transition. OS reduced motion skips it. This applies to Markdown and legacy JSON
 editors. Existing restrictions on which block types expose alignment remain.
+
+
+## Rich block card appearance (2026-10-16 review)
+
+Mermaid, display math, and fenced code blocks share the media cards’ rounded theme-aware surface, compact icon/identity header, and muted inset content area. Mermaid and display math use labelled icon actions for editing source and returning to preview; Mermaid retains its full-preview action. Code keeps the language selector, language icon, animated copy button, and directly editable highlighted source, without a Code block subtitle. Rich source editors have 16px internal padding. Document tables have 12px outer corners and matching rounded corner-cell backgrounds while keeping row/column handles accessible. Inline math stays within the text flow. Source formats, undo/redo, autosave, diagnostics, and read-only rules are unchanged. See `../reports/06-expanded-media-and-rich-block-cards.md` for manual acceptance steps.

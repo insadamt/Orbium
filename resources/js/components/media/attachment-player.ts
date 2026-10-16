@@ -3,6 +3,7 @@ import { attachmentMediaKind } from './attachment-media';
 import { mediaIconButton, mountPlaybackControls } from './media-controls';
 import { openMediaFullPreview } from './media-full-preview';
 import { mountPdfReader } from './pdf-reader';
+import { mountVideoFullscreen } from './video-fullscreen';
 
 type AttachmentPlayerOptions = {
     url: string;
@@ -18,7 +19,7 @@ export function createAttachmentPlayer(options: AttachmentPlayerOptions) {
     if (!kind) return null;
     let destroyed = false;
     let closePreview: (() => void) | undefined;
-    let resumeAfterRelocate = false;
+    let videoFullscreen: ReturnType<typeof mountVideoFullscreen> | undefined;
     const root = document.createElement('div');
     root.className = `attachment-player attachment-player-${kind}`;
     root.dataset.mediaKind = kind;
@@ -56,33 +57,27 @@ export function createAttachmentPlayer(options: AttachmentPlayerOptions) {
         'Open fullscreen preview',
         'maximize',
         () => {
-            if (closePreview || destroyed) return;
+            if (destroyed) return;
+            if (kind === 'video') {
+                void videoFullscreen?.open();
+                return;
+            }
+            if (kind !== 'pdf' || closePreview) return;
             closePreview = openMediaFullPreview({
                 content: root,
                 trigger: fullscreen,
-                title: `${kind === 'pdf' ? 'PDF' : kind === 'audio' ? 'Audio' : 'Video'} preview`,
+                title: 'PDF preview',
                 onClose: () => {
                     closePreview = undefined;
                     options.onResize?.();
                 },
-                beforeRelocate: () => {
-                    resumeAfterRelocate = Boolean(media && !media.paused);
-                },
-                afterRelocate: () => {
-                    if (
-                        resumeAfterRelocate &&
-                        !destroyed &&
-                        !document.hidden &&
-                        options.isVisible?.() !== false
-                    )
-                        void media?.play().catch(() => showError());
-                    reader?.refresh();
-                },
+                afterRelocate: () => reader?.refresh(),
             });
         },
     );
-    fullscreen.setAttribute('aria-haspopup', 'dialog');
-    actions.append(download, fullscreen);
+    if (kind === 'pdf') fullscreen.setAttribute('aria-haspopup', 'dialog');
+    actions.append(download);
+    if (kind !== 'audio') actions.append(fullscreen);
     header.append(icon, identity, actions);
     const status = document.createElement('p');
     status.className = 'attachment-status';
@@ -116,6 +111,11 @@ export function createAttachmentPlayer(options: AttachmentPlayerOptions) {
         media.src = options.url;
         controls = mountPlaybackControls(media, () => showError());
         if (media instanceof HTMLVideoElement) {
+            videoFullscreen = mountVideoFullscreen(
+                media,
+                fullscreen,
+                showError,
+            );
             media.playsInline = true;
             media.tabIndex = 0;
             const stage = document.createElement('div');
@@ -126,9 +126,17 @@ export function createAttachmentPlayer(options: AttachmentPlayerOptions) {
                 controls.togglePlayback,
             );
             play.classList.add('attachment-video-play');
-            media.addEventListener('click', controls.togglePlayback);
+            media.addEventListener('click', () => {
+                if (!media?.controls) controls?.togglePlayback();
+            });
             media.addEventListener('keydown', (event) => {
-                if (event.ctrlKey || event.metaKey || event.altKey) return;
+                if (
+                    media?.controls ||
+                    event.ctrlKey ||
+                    event.metaKey ||
+                    event.altKey
+                )
+                    return;
                 if (event.key === ' ' || event.key === 'k')
                     controls?.togglePlayback();
                 else if (
@@ -189,6 +197,7 @@ export function createAttachmentPlayer(options: AttachmentPlayerOptions) {
             document.removeEventListener('visibilitychange', visibilityChanged);
             observer.disconnect();
             pause();
+            videoFullscreen?.destroy();
             controls?.destroy();
             reader?.destroy();
             if (media) {

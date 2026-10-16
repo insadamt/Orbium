@@ -1,0 +1,59 @@
+.orbium-editor .orbium-rich-card {
+    padding: 0;
+    border-radius: 18px;
+    background: color-mix(in srgb, var(--card) 92%, transparent);
+}
+
+.orbium-rich-card-heading {
+    margin: 0;
+    direction: ltr;
+}
+
+.orbium-rich-card .orbium-rich-card-content,
+.orbium-rich-card .orbium-rich-card-code {
+    margin: 4px 10px 10px;
+    padding: 16px;
+    overflow: auto;
+    border-radius: 11px;
+    background: color-mix(in srgb, var(--muted) 65%, var(--background));
+}
+
+.orbium-rich-card .orbium-rich-card-code {
+    padding: 0;
+    direction: ltr;
+}
+
+.orbium-rich-card .orbium-rich-card-source {
+    width: calc(100% - 20px);
+    padding: 16px;
+    margin: 4px 10px 10px;
+    border-radius: 11px;
+}
+
+.orbium-rich-card .orbium-rich-card-error {
+    padding: 0 18px;
+}
+
+.orbium-rich-card .attachment-title > button {
+    min-height: 26px;
+    padding: 0;
+    font-size: 13px;
+}
+
+.orbium-rich-card .attachment-actions button {
+    border-radius: 9px;
+}
+
+.orbium-rich-card .attachment-action[aria-pressed='true'] {
+    background: var(--accent);
+    color: var(--foreground);
+}
+
+.orbium-rich-card .attachment-action:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+}
+
+.orbium-rich-card [data-mermaid-preview] {
+    width: calc(100% - 20px) !important;
+}

@@ -53,8 +53,8 @@ function estimateDiagramWidgetHeight(block: RichBlock, context: RichContext) {
     if (block.kind !== 'mermaid') return -1;
     const dimensions = context.mermaid.previews.get(block.content)?.dimensions;
     if (!dimensions || !context.diagramWidth) return -1;
-    const frameHorizontalPaddingAndBorders = 34;
-    const frameAndToolbarHeight = 74;
+    const frameHorizontalPaddingAndBorders = 54;
+    const frameAndToolbarHeight = 112;
     const outputWidth = Math.min(
         Math.max(1, context.diagramWidth - frameHorizontalPaddingAndBorders),
         dimensions.maxWidth ?? Infinity,
