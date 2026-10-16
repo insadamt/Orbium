@@ -5,6 +5,7 @@ import {
     loadAttachmentMetadata,
     richAttachmentUrl,
 } from './attachment-metadata';
+import { widgetIcon } from './widget-icons';
 import { installMediaAvailability } from './media-availability';
 import type { RichBlock, RichController, RichWidgetMount } from './rich-model';
 import {
@@ -49,6 +50,10 @@ export function mountFileMedia(mount: RichWidgetMount): RichController {
         player = null;
         mediaKind = null;
         delete mount.root.dataset.mediaKind;
+        controls.toolbar.hidden = false;
+        updateActionAppearance(false);
+        controls.toolbar.append(replace, remove);
+        download.hidden = details.hidden = false;
     }
     function setMissing() {
         availability.setMissing(true);
@@ -67,6 +72,22 @@ export function mountFileMedia(mount: RichWidgetMount): RichController {
         applyRichSource(mount.view, block, ''),
     );
     controls.toolbar.append(replace, remove);
+    function updateActionAppearance(mediaPreview: boolean) {
+        replace.className = remove.className = mediaPreview
+            ? 'attachment-action attachment-edit-action'
+            : 'rounded p-1.5 text-xs hover:bg-accent';
+        replace.title = 'Replace file';
+        replace.setAttribute('aria-label', 'Replace file');
+        remove.title = 'Remove file';
+        remove.setAttribute('aria-label', 'Remove file');
+        if (mediaPreview) {
+            replace.replaceChildren(widgetIcon('edit', 16));
+            remove.replaceChildren(widgetIcon('trash', 16));
+        } else {
+            replace.textContent = 'Replace';
+            remove.textContent = 'Remove';
+        }
+    }
     const pause = () => player?.pause();
     mount.view.dom.addEventListener('orbium:pause-media', pause);
     controls.toolbar.addEventListener('click', () => {
@@ -88,10 +109,14 @@ export function mountFileMedia(mount: RichWidgetMount): RichController {
         if (!next.attachmentId) return true;
         if (loadingId === next.attachmentId) {
             const metadata = mount.context.metadata.get(loadingId);
-            if (metadata) download.textContent = next.label || metadata.name;
+            if (metadata) {
+                download.textContent = next.label || metadata.name;
+                player?.setName(next.label || metadata.name);
+            }
             return true;
         }
         clearPlayer();
+        controls.toolbar.hidden = true;
         availability.setMissing(false);
         controls.error.hidden = true;
         loadingId = next.attachmentId;
@@ -118,12 +143,18 @@ export function mountFileMedia(mount: RichWidgetMount): RichController {
                     controls.toolbar.firstElementChild.textContent = label;
                 player = createAttachmentPlayer({
                     url,
-                    name: metadata.name,
+                    name: block.label || metadata.name,
                     mime: metadata.mime_type,
+                    sizeBytes: metadata.size_bytes,
                     onResize: () => mount.view.requestMeasure(),
                     isVisible: mount.context.isVisible,
                 });
+                if (!player) controls.toolbar.hidden = false;
                 if (player) {
+                    controls.toolbar.hidden = true;
+                    updateActionAppearance(true);
+                    download.hidden = details.hidden = true;
+                    player.actions.prepend(replace, remove);
                     controls.output.prepend(player.root);
                     mount.root.dataset.mediaKind = mediaKind!;
                     mount.root.setAttribute('aria-label', `${mediaKind} block`);

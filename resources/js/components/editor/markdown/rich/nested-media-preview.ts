@@ -62,10 +62,14 @@ export function mountNestedMedia(
                         url,
                         name: metadata.name,
                         mime: metadata.mime_type,
+                        sizeBytes: metadata.size_bytes,
                         onResize: measure,
                         isVisible: context.isVisible,
                     });
-                    if (player) target.prepend(player.root);
+                    if (player) {
+                        target.prepend(player.root);
+                        link.hidden = true;
+                    }
                 }
                 link.addEventListener('click', (event) => {
                     event.preventDefault();

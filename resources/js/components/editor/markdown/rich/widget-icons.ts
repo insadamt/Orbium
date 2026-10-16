@@ -1,4 +1,13 @@
 const paths = {
+    play: ['m8 5 11 7-11 7Z'],
+    pause: ['M7 5h3v14H7Z', 'M14 5h3v14h-3Z'],
+    volume: [
+        'M3 9h4l5-4v14l-5-4H3Z',
+        'M16 8a6 6 0 0 1 0 8',
+        'M19 5a10 10 0 0 1 0 14',
+    ],
+    volumeMuted: ['M3 9h4l5-4v14l-5-4H3Z', 'm17 9 5 6', 'm22 9-5 6'],
+    minus: ['M5 12h14'],
     text: ['M4 5h16', 'M12 5v14', 'M8 19h8'],
     heading: ['M4 4v16', 'M16 4v16', 'M4 12h12'],
     list: [

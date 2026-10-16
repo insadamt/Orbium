@@ -1,3 +1,5 @@
+import pdfjsPackage from 'pdfjs-dist/package.json' with { type: 'json' };
+import { viteStaticCopy } from 'vite-plugin-static-copy';
 import inertia from '@inertiajs/vite';
 import { wayfinder } from '@laravel/vite-plugin-wayfinder';
 import babel from '@rolldown/plugin-babel';
@@ -13,6 +15,22 @@ export default defineConfig({
             refresh: true,
         }),
         inertia(),
+        viteStaticCopy({
+            targets: [
+                ...['cmaps', 'standard_fonts', 'wasm', 'iccs'].map(
+                    (directory) => ({
+                        src: `node_modules/pdfjs-dist/${directory}/*`,
+                        dest: `pdfjs-${pdfjsPackage.version}/${directory}`,
+                        rename: { stripBase: true as const },
+                    }),
+                ),
+                {
+                    src: 'node_modules/pdfjs-dist/LICENSE',
+                    dest: `pdfjs-${pdfjsPackage.version}`,
+                    rename: { stripBase: true },
+                },
+            ],
+        }),
         react(),
         babel({
             presets: [reactCompilerPreset()],

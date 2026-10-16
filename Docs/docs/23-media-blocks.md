@@ -10,15 +10,18 @@ Files dropped or pasted into the editor use their detected upload type. Choosing
 
 ## Playback and reading
 
-- Video: native browser controls for play/pause, seeking, volume, and supported fullscreen behavior.
-- Audio: native browser controls for play/pause, progress/seeking, and volume.
-- PDF: Open PDF mounts the browser's embedded reader on request. Page navigation and zoom are provided by the browser reader. A Fullscreen action expands the preview where supported.
-- Media never autoplays; audio/video uses `preload=none`. PDF readers are not mounted until requested.
-- Hiding a document/browser tab pauses playback. Removing or unmounting a viewer releases its media source. Returning to a hidden tab does not resume automatically. Scrolling out of the virtualized editor viewport may unmount a player and reset its playback position.
+- Audio and video use Orbium's own playback controls: play/pause, seek, elapsed/total time, mute, and volume. Media uses the browser decoder without its default control bar.
+- Filename/type headers, file size where available, monochrome icon actions, and theme-aware rounded surfaces replace the file/code editing toolbar. Replace/remove actions appear on hover, keyboard focus, and touch devices. General non-media file blocks retain their existing controls.
+- PDF pages render through a lazy-loaded PDF.js worker. The app provides previous/next page, page-number input, zoom, and fit-width controls. Only the current page is rendered. Extracted page text is available to assistive technology; text selection, annotations, search, and forms are outside this first custom reader.
+- All three types expand into an app modal using the same shell, backdrop, close control, transitions, and reduced-motion behavior as table fullscreen. Escape/Close restores focus. The same player/reader is moved into the dialog so playback position, PDF page, and zoom remain with the viewer; no browser fullscreen permission is requested.
+- Media never autoplays. Audio/video requests metadata for duration; nearby PDF readers load their first page when they enter the viewport margin. PDF.js and its rendering assets are served locally rather than from a CDN.
+- Hiding a document/browser tab pauses playback. Removing or unmounting a viewer releases its media source and closes its expanded view. Returning to a hidden tab does not resume automatically. Scrolling out of the virtualized editor viewport may unmount a player and reset its playback position.
 - Replace and Remove use document history/autosave and preserve block presentation wrappers. Removal deletes the reference, retaining the upload in Library. Downloads remain available.
 - Supported nested file previews in callouts and table cells use the same player; editing remains owned by their enclosing block.
 
-Browser playback depends on the codecs inside the container. Preview failures offer a download fallback; no server transcoding is added. PDF embedding, controls, and fullscreen vary by browser, especially on mobile or installations with the built-in PDF viewer disabled. Use Download when a native reader is unavailable.
+Browser playback depends on the codecs inside the container. Preview failures offer a download fallback; no server transcoding is added. Password-protected PDFs retain a download option for opening in another PDF app. Large PDF pages have bounded rendering dimensions and are rendered one page at a time.
+
+PDF rendering follows the [PDF.js document/page/render lifecycle](https://mozilla.github.io/pdf.js/examples/). Versioned fonts, CMaps, color profiles, and WebAssembly assets are copied with [vite-plugin-static-copy](https://github.com/sapphi-red/vite-plugin-static-copy) for both local development and production builds, including their distributed licenses.
 
 The preview allowlist is MP4, WebM, Ogg, and QuickTime video MIME types; MPEG/MP3, MP4/M4A, Ogg, WebM, WAV, FLAC, and AAC audio MIME types; and `application/pdf`. Other uploads remain downloadable generic files. The server determines MIME from file contents rather than trusting the filename or the browser's supplied MIME.
 

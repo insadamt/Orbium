@@ -11,7 +11,7 @@ import type { RichBlock } from './rich-model';
 import { revealRichSource } from './rich-effects';
 
 const interactiveTarget =
-    'video, audio, iframe, button, a, input, textarea, select, summary, [role="button"], .cm-editor, [data-rich-writing]';
+    '.attachment-player, video, audio, iframe, button, a, input, textarea, select, summary, [role="button"], .cm-editor, [data-rich-writing]';
 
 function adjacentWritingPosition(
     view: EditorView,

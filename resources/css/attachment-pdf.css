@@ -1,0 +1,86 @@
+.attachment-pdf-reader {
+    display: flex;
+    min-height: 0;
+    flex-direction: column;
+}
+
+.attachment-pdf-viewport {
+    position: relative;
+    height: min(480px, 55vh);
+    min-height: 160px;
+    overflow: auto;
+    overscroll-behavior: contain;
+    margin: 4px 10px 0;
+    padding: 20px;
+    border-radius: 11px;
+    background: color-mix(in srgb, var(--muted) 65%, var(--background));
+    direction: ltr;
+    scrollbar-width: thin;
+}
+
+.attachment-pdf-viewport canvas {
+    display: block;
+    max-width: none;
+    margin-inline: auto;
+    background: white;
+    box-shadow: 0 2px 14px rgb(0 0 0 / 0.09);
+}
+
+.attachment-pdf-loading {
+    position: absolute;
+    top: 24px;
+    left: 50%;
+    padding: 6px 12px;
+    border-radius: 20px;
+    background: var(--card);
+    color: var(--muted-foreground);
+    font-size: 12px;
+    white-space: nowrap;
+    transform: translateX(-50%);
+}
+
+.attachment-pdf-controls {
+    display: flex;
+    min-height: 56px;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 12px;
+    direction: ltr;
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+    color: var(--muted-foreground);
+}
+
+.attachment-pdf-controls input {
+    width: 38px;
+    height: 28px;
+    margin: 0;
+    border: 0;
+    border-radius: 7px;
+    background: var(--muted);
+    color: var(--foreground);
+    text-align: center;
+    appearance: textfield;
+}
+
+.attachment-pdf-controls input::-webkit-inner-spin-button {
+    appearance: none;
+}
+
+.attachment-pdf-controls output {
+    min-width: 35px;
+    text-align: center;
+}
+
+.attachment-player-pdf[data-expanded='true'] .attachment-pdf-reader {
+    flex: 1;
+}
+
+.attachment-player-pdf[data-expanded='true'] .attachment-pdf-viewport {
+    height: auto;
+    min-height: 0;
+    flex: 1;
+}
