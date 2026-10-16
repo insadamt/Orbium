@@ -494,9 +494,13 @@ Current manual acceptance is recorded in `../reports/05-editor-styles-redesign.m
 In the Markdown editor, double-click a rendered divider to open its dedicated floating
 toolbar. Alt+Enter also opens it when the caret is in a divider. The toolbar includes a
 compact row matching the text toolbar's padding, spacing, and button sizes, with a
-native custom color picker, a theme-default color button, integer thicknesses from
+shared text-style color menu (spectrum, hue, HEX field, presets, and theme-default
+color), integer thicknesses from
 1 to 12 CSS pixels, and illustrated solid/dashed/dotted/double style buttons. The
-row wraps on narrow screens. Every change updates the divider
+row wraps on narrow screens and shares the text toolbar's positioned reveal and
+moving hover highlight. Arrow Left/Right and Home/End move between toolbar controls;
+menus retain their own keyboard handling. Preset colors save as concrete hex values.
+Every change updates the divider
 immediately and enters the normal autosave queue. The toolbar remains open while
 adjusting controls. Reset clears local overrides immediately. Escape, Close, and
 clicking outside dismiss the toolbar; Undo reverses changes. There is no Apply button.

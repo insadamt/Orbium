@@ -24,7 +24,8 @@ export function markdownDividerToolbar(onNotice: (message: string) => void) {
     function createToolbar(view: EditorView, block: MarkdownBlockRange) {
         const dom = document.createElement('div');
         dom.className =
-            'orbium-divider-toolbar orbium-editor-toolbar glass-surface rounded-xl border border-border text-foreground shadow-lg';
+            'editor-animated-toolbar orbium-divider-toolbar orbium-editor-toolbar glass-surface flex max-w-[calc(100vw-24px)] flex-wrap items-center gap-1 rounded-xl p-1 border border-border text-foreground shadow-lg';
+        dom.dataset.toolbarPositioned = 'false';
         dom.setAttribute('role', 'toolbar');
         dom.setAttribute('aria-label', 'Divider formatting');
         const root = createRoot(dom);
@@ -77,24 +78,53 @@ export function markdownDividerToolbar(onNotice: (message: string) => void) {
             view.dispatch({ effects: setDividerToolbar.of(null) });
         }
         dom.addEventListener('keydown', (event) => {
+            if (
+                event.defaultPrevented ||
+                (event.target instanceof Element &&
+                    event.target.closest('[data-app-menu-content]'))
+            )
+                return;
             if (event.key === 'Escape') {
                 event.preventDefault();
                 event.stopPropagation();
                 closeToolbar(view);
+                return;
             }
+            if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key))
+                return;
+            const controls = Array.from(
+                dom.querySelectorAll<HTMLElement>('.editor-toolbar-button'),
+            ).filter((control) => !control.closest('[data-app-menu-content]'));
+            const index = controls.indexOf(
+                document.activeElement as HTMLElement,
+            );
+            if (index < 0) return;
+            const next =
+                event.key === 'Home'
+                    ? 0
+                    : event.key === 'End'
+                      ? controls.length - 1
+                      : (index +
+                            (event.key === 'ArrowRight' ? 1 : -1) +
+                            controls.length) %
+                        controls.length;
+            event.preventDefault();
+            controls[next]?.focus({ preventScroll: true });
         });
+        let focusOnPosition = true;
         return {
             dom,
+            positioned() {
+                dom.dataset.toolbarPositioned = 'true';
+                if (focusOnPosition) {
+                    focusOnPosition = false;
+                    dom.querySelector<HTMLElement>('button')?.focus({
+                        preventScroll: true,
+                    });
+                }
+            },
             mount() {
                 document.addEventListener('pointerdown', dismissOutside, true);
-                requestAnimationFrame(() => {
-                    if (dom.isConnected)
-                        dom.querySelector<HTMLElement>(
-                            'input[type="color"]',
-                        )?.focus({
-                            preventScroll: true,
-                        });
-                });
             },
             destroy() {
                 document.removeEventListener(

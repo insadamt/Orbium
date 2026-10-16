@@ -1,6 +1,8 @@
 import { RotateCcw, X } from 'lucide-react';
 import { AppSelect } from '@/components/ui/app-select';
 import { FormatButton } from '../../ui/format-button';
+import { TextColorMenu } from '../../ui/text-color-menu';
+import { ToolbarHighlight } from '../../ui/toolbar-motion';
 import type { OrbiumMetadata } from '../dialect/metadata';
 
 type Props = {
@@ -20,35 +22,22 @@ export function MarkdownDividerControls({
     const style = metadata.dividerStyle ?? 'solid';
 
     return (
-        <div className="flex max-w-[calc(100vw-24px)] flex-wrap items-center gap-1 p-1">
-            <input
-                type="color"
-                aria-label="Divider color"
-                title="Divider color"
-                className="h-8 w-8 shrink-0 cursor-pointer rounded border border-border bg-transparent p-1 hover:bg-accent"
-                value={color || '#808080'}
-                onChange={(event) =>
-                    onChange({ dividerColor: event.target.value.toLowerCase() })
+        <>
+            <ToolbarHighlight />
+            <TextColorMenu
+                active
+                colorLabel="Divider color"
+                presetColorFormat="hex"
+                currentColor={color || undefined}
+                onOpen={() => {}}
+                onChoose={(selectedColor) =>
+                    onChange({ dividerColor: selectedColor ?? undefined })
                 }
             />
-            <button
-                type="button"
-                aria-label="Use theme default divider color"
-                title="Theme default color"
-                className="rounded p-2 hover:bg-accent"
-                onClick={() => onChange({ dividerColor: undefined })}
-            >
-                <span
-                    className="flex h-4 w-4 items-center justify-center rounded-sm border border-border text-[10px]"
-                    aria-hidden="true"
-                >
-                    ↺
-                </span>
-            </button>
             <AppSelect
                 label="Divider thickness"
                 contentClassName="divider-toolbar-select-content"
-                className="h-8 min-h-8 w-auto gap-1 rounded border-0 bg-transparent px-2 py-1 text-xs shadow-none"
+                className="editor-toolbar-button h-8 min-h-8 w-auto gap-1 rounded border-0 bg-transparent px-2 py-1 text-xs shadow-none"
                 value={thickness}
                 placeholder="1 px"
                 clearLabel="Default (1 px)"
@@ -91,7 +80,7 @@ export function MarkdownDividerControls({
                 type="button"
                 aria-label="Reset divider appearance"
                 title="Reset divider appearance"
-                className="rounded p-2 hover:bg-accent"
+                className="editor-toolbar-button rounded p-2 hover:bg-accent"
                 onClick={() =>
                     onChange({
                         dividerColor: undefined,
@@ -106,11 +95,11 @@ export function MarkdownDividerControls({
                 type="button"
                 aria-label="Close divider toolbar"
                 title="Close"
-                className="rounded p-2 text-muted-foreground hover:bg-accent hover:text-foreground"
+                className="editor-toolbar-button rounded p-2 text-muted-foreground hover:bg-accent hover:text-foreground"
                 onClick={onClose}
             >
                 <X size={16} />
             </button>
-        </div>
+        </>
     );
 }

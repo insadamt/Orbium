@@ -1,6 +1,7 @@
 import { Check, Palette, RotateCcw } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { ColorSpectrum } from './color-spectrum';
+import { resolveColorHex } from './color-spectrum-values';
 import * as Menu from '@/components/ui/dropdown-menu';
 
 const PRESET_COLORS = [
@@ -27,7 +28,11 @@ export function TextColorMenu({
     currentColor,
     onOpen,
     onChoose,
+    colorLabel = 'Text color',
+    presetColorFormat = 'token',
 }: {
+    colorLabel?: string;
+    presetColorFormat?: 'token' | 'hex';
     active: boolean;
     currentColor?: string;
     onOpen: () => void;
@@ -35,6 +40,13 @@ export function TextColorMenu({
 }) {
     const [open, setOpen] = useState(false);
     const pickerRef = useRef<HTMLDivElement>(null);
+    const presetColors = PRESET_COLORS.map((preset) => ({
+        ...preset,
+        storedColor:
+            presetColorFormat === 'hex'
+                ? resolveColorHex(preset.value).toLowerCase()
+                : preset.value,
+    }));
 
     useEffect(() => {
         if (!active) setOpen(false);
@@ -58,8 +70,8 @@ export function TextColorMenu({
                 <Menu.Trigger asChild>
                     <button
                         type="button"
-                        aria-label="Text color"
-                        title="Text color"
+                        aria-label={colorLabel}
+                        title={colorLabel}
                         aria-expanded={open}
                         aria-haspopup="true"
                         onMouseDown={(event) => event.preventDefault()}
@@ -80,12 +92,12 @@ export function TextColorMenu({
                     container={pickerRef.current}
                     align="end"
                     sideOffset={8}
-                    aria-label="Text colors"
+                    aria-label={`${colorLabel} choices`}
                     className="editor-color-picker"
                     onCloseAutoFocus={(event) => event.preventDefault()}
                 >
                     <div className="editor-color-picker-heading">
-                        Text color
+                        {colorLabel}
                     </div>
                     <ColorSpectrum
                         currentColor={currentColor}
@@ -95,19 +107,19 @@ export function TextColorMenu({
                         className="editor-color-picker-presets"
                         aria-label="Preset colors"
                     >
-                        {PRESET_COLORS.map(({ name, value }) => (
+                        {presetColors.map(({ name, value, storedColor }) => (
                             <Menu.Item
                                 key={value}
                                 asChild
                                 textValue={name}
-                                onSelect={() => chooseColor(value)}
+                                onSelect={() => chooseColor(storedColor)}
                             >
                                 <button
                                     type="button"
                                     data-menu-swatch
                                     className="editor-color-swatch"
                                     aria-label={name}
-                                    aria-pressed={currentColor === value}
+                                    aria-pressed={currentColor === storedColor}
                                     title={
                                         value === 'preset:purple'
                                             ? 'Violet in light mode, yellow in dark mode'
@@ -125,7 +137,7 @@ export function TextColorMenu({
                                                 displayedTextColor(value),
                                         }}
                                     />
-                                    {currentColor === value && (
+                                    {currentColor === storedColor && (
                                         <Check
                                             size={12}
                                             className="editor-color-swatch-check"
@@ -138,7 +150,7 @@ export function TextColorMenu({
                     </div>
                     <Menu.Item
                         asChild
-                        textValue="Default text color"
+                        textValue={`Default ${colorLabel.toLowerCase()}`}
                         onSelect={() => chooseColor(null)}
                     >
                         <button
@@ -147,7 +159,7 @@ export function TextColorMenu({
                             onMouseDown={(event) => event.preventDefault()}
                         >
                             <RotateCcw size={14} aria-hidden="true" />
-                            <span>Default text color</span>
+                            <span>Default {colorLabel.toLowerCase()}</span>
                             {!currentColor && (
                                 <Check
                                     size={12}
