@@ -11,7 +11,7 @@ final readonly class LibraryBrowseData
     public static function fromRequest(Request $request): self
     {
         $data = $request->validate([
-            'q' => ['nullable', 'string', 'max:255'], 'type' => ['nullable', 'in:all,images,files'],
+            'q' => ['nullable', 'string', 'max:255'], 'type' => ['nullable', 'in:all,images,files,videos,audios,pdfs'],
             'sort' => ['nullable', 'in:newest,name,size'], 'page' => ['nullable', 'integer', 'min:1'],
         ]);
 

@@ -85,6 +85,12 @@ final class LibraryCatalog
             $query->whereIn('mime_type', LibraryImagePreview::IMAGE_TYPES);
         } elseif ($browse->type === 'files') {
             $query->whereNotIn('mime_type', LibraryImagePreview::IMAGE_TYPES);
+        } elseif ($browse->type === 'videos') {
+            $query->whereIn('mime_type', AttachmentMediaTypes::VIDEO);
+        } elseif ($browse->type === 'audios') {
+            $query->whereIn('mime_type', AttachmentMediaTypes::AUDIO);
+        } elseif ($browse->type === 'pdfs') {
+            $query->where('mime_type', 'application/pdf');
         }
 
         return match ($browse->sort) {

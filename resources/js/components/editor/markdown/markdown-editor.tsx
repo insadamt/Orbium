@@ -326,7 +326,9 @@ export default function MarkdownEditor(props: MarkdownEditorProps) {
 
     useEffect(() => {
         richContext.mermaid.setActive(active && visible && livePreview);
-    }, [richContext, active, visible, livePreview]);
+        if (!visible || !livePreview)
+            view?.dom.dispatchEvent(new Event('orbium:pause-media'));
+    }, [richContext, active, visible, livePreview, view]);
 
     useEffect(() => {
         if (autosave.status === 'saved') richContext.mermaid.notifySaved();
@@ -431,6 +433,11 @@ export default function MarkdownEditor(props: MarkdownEditorProps) {
                     workspaceId={props.workspaceId}
                     imagesOnly={upload.kind === 'image'}
                     filesOnly={upload.kind === 'file'}
+                    mediaKind={
+                        ['video', 'audio', 'pdf'].includes(upload.kind)
+                            ? (upload.kind as 'video' | 'audio' | 'pdf')
+                            : undefined
+                    }
                     onClose={upload.closeLibrary}
                     onChoose={upload.chooseLibraryFile}
                     onUpload={upload.uploadNewFile}

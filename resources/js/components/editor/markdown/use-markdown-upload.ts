@@ -6,7 +6,15 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useDocumentTab } from '@/components/navigation/document-tab-context';
 import { useNavigation } from '@/components/navigation/navigation-store';
 import { type UploadedAttachment, uploadAttachment } from '../editor-api';
-import type { MarkdownUploadRequest } from './markdown-slash-commands';
+import {
+    acceptsUploadKind,
+    uploadAccept,
+    uploadKindForMime,
+} from '@/components/media/attachment-media';
+import type {
+    MarkdownUploadKind,
+    MarkdownUploadRequest,
+} from './markdown-slash-commands';
 import {
     markdownUploadAnchor,
     setMarkdownUploadAnchor,
@@ -23,7 +31,7 @@ export function useMarkdownUpload(workspaceId: number, nodeId: number) {
         null,
     );
     const [libraryOpen, setLibraryOpen] = useState(false);
-    const [kind, setKind] = useState<'image' | 'file'>('file');
+    const [kind, setKind] = useState<MarkdownUploadKind>('file');
     const [uploading, setUploading] = useState(false);
     const [error, setError] = useState('');
     const uploadingNow = useRef(false);
@@ -74,10 +82,7 @@ export function useMarkdownUpload(workspaceId: number, nodeId: number) {
         (next: MarkdownUploadRequest) => {
             if (!fileInput.current || !prepareUpload(next)) return;
             fileInput.current.multiple = next.kind === 'file';
-            fileInput.current.accept =
-                next.kind === 'image'
-                    ? 'image/png,image/jpeg,image/gif,image/webp'
-                    : '';
+            fileInput.current.accept = uploadAccept(next.kind);
             fileInput.current.value = '';
             fileInput.current.click();
         },
@@ -102,15 +107,12 @@ export function useMarkdownUpload(workspaceId: number, nodeId: number) {
             const current = request.current;
             if (!current || uploadingNow.current) return;
             if (
-                current.kind === 'image' &&
-                ![
-                    'image/png',
-                    'image/jpeg',
-                    'image/gif',
-                    'image/webp',
-                ].includes(file instanceof File ? file.type : file.mime_type)
+                !acceptsUploadKind(
+                    current.kind,
+                    file instanceof File ? file.type : file.mime_type,
+                )
             ) {
-                setError('Choose a PNG, JPEG, GIF, or WebP image.');
+                setError(`Choose a supported ${current.kind} file.`);
                 clearUploadRequest();
                 return;
             }
@@ -139,17 +141,9 @@ export function useMarkdownUpload(workspaceId: number, nodeId: number) {
                 for (const wrapper of [...wrappers].reverse())
                     source = serializeOrbiumBlock(wrapper, source);
                 const anchor = current.view.state.field(markdownUploadAnchor);
-                if (
-                    current.kind === 'image' &&
-                    ![
-                        'image/png',
-                        'image/jpeg',
-                        'image/gif',
-                        'image/webp',
-                    ].includes(attachment.mime_type)
-                )
+                if (!acceptsUploadKind(current.kind, attachment.mime_type))
                     throw new Error(
-                        'The uploaded file is not a supported image.',
+                        `The uploaded file is not a supported ${current.kind}.`,
                     );
                 if (!mounted.current || !current.view.dom.isConnected) return;
                 if (
@@ -263,14 +257,7 @@ export function useMarkdownUpload(workspaceId: number, nodeId: number) {
                     !activeTab.current
                 )
                     break;
-                const kind = [
-                    'image/png',
-                    'image/jpeg',
-                    'image/gif',
-                    'image/webp',
-                ].includes(file.type)
-                    ? 'image'
-                    : 'file';
+                const kind = uploadKindForMime(file.type);
                 if (
                     !prepareUpload({
                         ...next,

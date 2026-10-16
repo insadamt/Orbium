@@ -31,6 +31,9 @@ const completionIcons: Record<string, Parameters<typeof widgetIcon>[0]> = {
     Table: 'table',
     Image: 'image',
     File: 'file',
+    Video: 'video',
+    Audio: 'audio',
+    PDF: 'file',
 };
 
 export function completionMenuIcon(completion: Completion) {

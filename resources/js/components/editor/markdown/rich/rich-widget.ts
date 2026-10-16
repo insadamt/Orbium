@@ -1,8 +1,14 @@
 import { EditorView, WidgetType } from '@codemirror/view';
-import type { RichBlock, RichContext, RichController } from './rich-model';
+import type {
+    RichBlock,
+    RichContext,
+    RichController,
+    RichWidgetMount,
+} from './rich-model';
 import { mountDiagram } from './diagram-widget';
 import { mountMath } from './math-widget';
 import { mountCode } from './code-widget';
+import { mountFileMedia } from './file-media-widget';
 import { mountMedia } from './media-widget';
 import { mountTable } from './table-widget';
 import { mountContainer } from './container-widget';
@@ -10,6 +16,20 @@ import { mountEmptyParagraph } from './empty-widget';
 import { mountCallout } from './callout-widget';
 import { bindRichBlockHistory } from './widget-controls';
 import { bindRichBlockSelection } from './rich-block-selection';
+
+const richBlockMounts: Partial<
+    Record<RichBlock['kind'], (mount: RichWidgetMount) => RichController>
+> = {
+    empty: mountEmptyParagraph,
+    mermaid: mountDiagram,
+    math: mountMath,
+    'inline-math': mountMath,
+    code: mountCode,
+    file: mountFileMedia,
+    image: mountMedia,
+    table: mountTable,
+    callout: mountCallout,
+};
 
 const presentationContainers = new WeakMap<HTMLElement, HTMLElement[]>();
 const controllers = new WeakMap<HTMLElement, RichController>();
@@ -105,22 +125,9 @@ export class MarkdownRichWidget extends WidgetType {
         bindRichBlockHistory(root, view);
         if (!['inline-math', 'metadata', 'empty'].includes(this.block.kind))
             bindRichBlockSelection(root, view, () => this.currentBlock(root));
-        const controller =
-            this.block.kind === 'empty'
-                ? mountEmptyParagraph(mount)
-                : this.block.kind === 'mermaid'
-                  ? mountDiagram(mount)
-                  : ['math', 'inline-math'].includes(this.block.kind)
-                    ? mountMath(mount)
-                    : this.block.kind === 'code'
-                      ? mountCode(mount)
-                      : ['image', 'file'].includes(this.block.kind)
-                        ? mountMedia(mount)
-                        : this.block.kind === 'table'
-                          ? mountTable(mount)
-                          : this.block.kind === 'callout'
-                            ? mountCallout(mount)
-                            : mountContainer(mount);
+        const controller = (richBlockMounts[this.block.kind] ?? mountContainer)(
+            mount,
+        );
         const observer = new ResizeObserver(() => {
             if (view.dom.isConnected) view.requestMeasure();
         });

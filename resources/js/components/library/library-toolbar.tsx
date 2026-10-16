@@ -47,7 +47,16 @@ export function LibraryToolbar({
             </label>
             {!imagesOnly && !filesOnly && (
                 <div className="library-type-tabs" aria-label="File type">
-                    {(['all', 'images', 'files'] as const).map((type) => (
+                    {(
+                        [
+                            'all',
+                            'images',
+                            'videos',
+                            'audios',
+                            'pdfs',
+                            'files',
+                        ] as const
+                    ).map((type) => (
                         <button
                             type="button"
                             key={type}
@@ -55,11 +64,11 @@ export function LibraryToolbar({
                             data-active={filters.type === type}
                             onClick={() => onChange({ ...filters, type })}
                         >
-                            {type === 'all'
-                                ? 'All'
-                                : type === 'images'
-                                  ? 'Images'
-                                  : 'Files'}
+                            {type === 'pdfs'
+                                ? 'PDFs'
+                                : type === 'audios'
+                                  ? 'Audio'
+                                  : type[0].toUpperCase() + type.slice(1)}
                         </button>
                     ))}
                 </div>

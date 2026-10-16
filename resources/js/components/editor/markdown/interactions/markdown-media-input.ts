@@ -1,14 +1,8 @@
+import { uploadKindForMime } from '@/components/media/attachment-media';
 import { EditorView } from '@codemirror/view';
 import { markdownBlockAt } from './markdown-block-actions';
 import { isMarkdownLiteralPosition } from '../markdown-syntax';
 import type { MarkdownUploadRequest } from '../markdown-slash-commands';
-
-const imageTypes = new Set([
-    'image/png',
-    'image/jpeg',
-    'image/gif',
-    'image/webp',
-]);
 
 export function markdownMediaInput(
     upload: (files: File[], request: MarkdownUploadRequest) => Promise<void>,
@@ -35,7 +29,7 @@ export function markdownMediaInput(
             view,
             from: position,
             to,
-            kind: imageTypes.has(files[0].type) ? 'image' : 'file',
+            kind: uploadKindForMime(files[0].type),
         });
         return true;
     };

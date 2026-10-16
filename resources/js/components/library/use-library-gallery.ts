@@ -1,3 +1,4 @@
+import type { AttachmentMediaKind } from '@/components/media/attachment-media';
 import { useEffect, useRef, useState } from 'react';
 import {
     libraryFilterParams,
@@ -18,6 +19,7 @@ type LibraryGalleryOptions = {
     imagesOnly: boolean;
     picker: boolean;
     filesOnly: boolean;
+    mediaKind?: AttachmentMediaKind;
 };
 
 export function useLibraryGallery({
@@ -26,6 +28,7 @@ export function useLibraryGallery({
     imagesOnly,
     picker,
     filesOnly,
+    mediaKind,
 }: LibraryGalleryOptions) {
     const [initial] = useState(() =>
         initialLibraryState(storageKey, { imagesOnly, picker, filesOnly }),
@@ -35,7 +38,13 @@ export function useLibraryGallery({
     );
     const filters: LibraryFilters = {
         ...draftFilters,
-        type: imagesOnly ? 'images' : filesOnly ? 'files' : draftFilters.type,
+        type: mediaKind
+            ? `${mediaKind}s`
+            : imagesOnly
+              ? 'images'
+              : filesOnly
+                ? 'files'
+                : draftFilters.type,
     };
     const [files, setFiles] = useState<LibraryFile[]>([]);
     const [total, setTotal] = useState(0);

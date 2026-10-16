@@ -12,6 +12,7 @@ type MediaElements = {
     download: HTMLAnchorElement;
     details: HTMLElement;
     readBlock: () => RichBlock;
+    onMissing?: () => void;
 };
 export function installMediaAvailability(
     mount: RichWidgetMount,
@@ -32,6 +33,7 @@ export function installMediaAvailability(
     if (elements.imageMode) elements.frame.append(missingButton);
     else elements.output.append(missingButton);
     function setMissing(missing: boolean) {
+        if (missing) elements.onMissing?.();
         missingButton.hidden = !missing;
         elements.image.hidden = missing;
         elements.download.hidden = missing;

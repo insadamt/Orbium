@@ -6,6 +6,8 @@ Library provides a workspace-owned collection of existing uploads and new files.
 
 ## First version
 
+The 2026-10-16 approved media extension adds Videos, Audio, and PDFs filters, type-restricted editor pickers, and video/audio/PDF previews on file detail pages. See [23-media-blocks.md](23-media-blocks.md). Files continues to include all non-image uploads.
+
 - Browse uploaded files and images, including earlier uploads and files whose original page was removed.
 - Search filenames, filter images/files, and sort newest, name, or largest first.
 - Show image thumbnails, filename, MIME type, size, upload date, storage availability, and saved usage links.

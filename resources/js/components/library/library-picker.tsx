@@ -1,3 +1,4 @@
+import type { AttachmentMediaKind } from '@/components/media/attachment-media';
 import * as Dialog from '@radix-ui/react-dialog';
 import { LibraryBrowser } from './library-browser';
 import type { LibraryFile } from './library-api';
@@ -6,6 +7,7 @@ export function LibraryPicker({
     workspaceId,
     imagesOnly,
     filesOnly,
+    mediaKind,
     onChoose,
     onClose,
     onUpload,
@@ -13,6 +15,7 @@ export function LibraryPicker({
     workspaceId: number;
     imagesOnly?: boolean;
     filesOnly?: boolean;
+    mediaKind?: AttachmentMediaKind;
     onChoose: (file: LibraryFile) => void;
     onClose: () => void;
     onUpload?: () => void;
@@ -43,13 +46,18 @@ export function LibraryPicker({
                             className="library-button library-button-upload mb-5"
                             onClick={onUpload}
                         >
-                            Upload a new {imagesOnly ? 'image' : 'file'}
+                            Upload a new{' '}
+                            {mediaKind === 'pdf'
+                                ? 'PDF'
+                                : (mediaKind ??
+                                  (imagesOnly ? 'image' : 'file'))}
                         </button>
                     )}
                     <LibraryBrowser
                         workspaceId={workspaceId}
                         imagesOnly={imagesOnly}
                         filesOnly={filesOnly}
+                        mediaKind={mediaKind}
                         onChoose={onChoose}
                     />
                 </Dialog.Content>

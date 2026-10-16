@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Attachment;
 use App\Models\Node;
+use App\Services\Library\AttachmentMediaTypes;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -95,7 +96,7 @@ class AttachmentController extends Controller
             ->nodes()->where('type', 'document')->findOrFail($node);
         $this->assertVisible($documentNode);
 
-        return $this->serveAttachment($workspace, $attachment, false);
+        return $this->serveAttachment($workspace, $attachment, false, $request->boolean('download'));
     }
 
     public function metadata(Request $request, int $workspace, int $node, int $attachment): JsonResponse
@@ -105,6 +106,8 @@ class AttachmentController extends Controller
         $this->assertVisible($documentNode);
         $file = Attachment::query()->where('workspace_id', $workspace)
             ->findOrFail($attachment);
+
+        abort_unless(Storage::disk('local')->exists($file->storage_key), 404);
 
         return response()->json([
             'id' => $file->id,
@@ -124,7 +127,7 @@ class AttachmentController extends Controller
         return $this->serveAttachment($workspace, $attachment, true);
     }
 
-    private function serveAttachment(int $workspace, int $attachment, bool $imageOnly): BinaryFileResponse
+    private function serveAttachment(int $workspace, int $attachment, bool $imageOnly, bool $download = false): BinaryFileResponse
     {
         $file = Attachment::query()->where('workspace_id', $workspace)->findOrFail($attachment);
         abort_if($imageOnly && $file->purpose !== 'image', 404);
@@ -138,8 +141,8 @@ class AttachmentController extends Controller
             'Content-Security-Policy' => "default-src 'none'",
         ];
 
-        if (in_array($file->mime_type, ['image/png', 'image/jpeg', 'image/gif', 'image/webp'], true)) {
-            return response()->file($path, $headers)->setPrivate();
+        if (! $download && (in_array($file->mime_type, ['image/png', 'image/jpeg', 'image/gif', 'image/webp'], true) || AttachmentMediaTypes::canPreview($file->mime_type))) {
+            return response()->file($path, $headers)->setContentDisposition('inline', $file->original_name)->setPrivate();
         }
 
         return response()->download($path, $file->original_name, $headers)->setPrivate();

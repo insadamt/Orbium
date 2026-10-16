@@ -1,3 +1,7 @@
+import {
+    attachmentMediaKind,
+    type AttachmentMediaKind,
+} from '@/components/media/attachment-media';
 import { useRef, useState } from 'react';
 import { usePage } from '@inertiajs/react';
 import { Check, ImagePlus, Loader2 } from 'lucide-react';
@@ -29,11 +33,13 @@ export function LibraryBrowser({
     workspaceId,
     imagesOnly = false,
     filesOnly = false,
+    mediaKind,
     onChoose,
 }: {
     workspaceId: number;
     imagesOnly?: boolean;
     filesOnly?: boolean;
+    mediaKind?: AttachmentMediaKind;
     onChoose?: (file: LibraryFile) => void;
 }) {
     const { auth } = usePage<{ auth: Auth }>().props;
@@ -44,6 +50,7 @@ export function LibraryBrowser({
         imagesOnly,
         picker,
         filesOnly,
+        mediaKind,
     });
     const [contextMenu, setContextMenu] = useState<LibraryMenuPosition | null>(
         null,
@@ -59,6 +66,8 @@ export function LibraryBrowser({
     const busy = Boolean(upload);
     function select(file: LibraryFile) {
         if (!picker) return;
+        if (mediaKind && attachmentMediaKind(file.mime_type) !== mediaKind)
+            return;
         if (imagesOnly && !isLibraryImage(file)) return;
         if (filesOnly && isLibraryImage(file)) return;
         setSelected((previous) => (previous[0]?.id === file.id ? [] : [file]));
@@ -142,7 +151,7 @@ export function LibraryBrowser({
                 onRefresh={gallery.refresh}
                 busy={busy || gallery.loading}
                 imagesOnly={imagesOnly}
-                filesOnly={filesOnly}
+                filesOnly={filesOnly || Boolean(mediaKind)}
                 picker={picker}
             />
             <div className="library-collection-status" role="status">
@@ -303,7 +312,13 @@ export function LibraryBrowser({
                         }}
                     >
                         <Check size={15} />
-                        {imagesOnly ? 'Use image' : 'Use file'}
+                        {mediaKind === 'pdf'
+                            ? 'Use PDF'
+                            : mediaKind
+                              ? `Use ${mediaKind}`
+                              : imagesOnly
+                                ? 'Use image'
+                                : 'Use file'}
                     </button>
                 </div>
             )}

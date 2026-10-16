@@ -1,0 +1,43 @@
+.attachment-player {
+    display: flex;
+    width: 100%;
+    min-width: 0;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+    padding-block: 0.75rem;
+}
+
+.library-type-tabs {
+    max-width: 100%;
+    flex-wrap: wrap;
+}
+
+.attachment-player video,
+.attachment-player audio {
+    display: block;
+    width: 100%;
+    max-height: 65vh;
+    border-radius: 0.5rem;
+}
+
+.attachment-pdf-frame {
+    width: 100%;
+    height: min(65vh, 720px);
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    background: var(--background);
+}
+
+.attachment-player:fullscreen {
+    align-content: center;
+    overflow: auto;
+    background: var(--background);
+    padding: 1rem;
+}
+
+.attachment-player:fullscreen video,
+.attachment-player:fullscreen iframe {
+    max-height: none;
+    height: calc(100vh - 6rem);
+}

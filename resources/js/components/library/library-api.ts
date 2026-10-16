@@ -53,7 +53,7 @@ export type LibraryFileDetails = LibraryFile & {
 
 export type LibraryFilters = {
     q: string;
-    type: 'all' | 'images' | 'files';
+    type: 'all' | 'images' | 'files' | 'videos' | 'audios' | 'pdfs';
     sort: 'newest' | 'name' | 'size';
 };
 export type LibraryPageResult = {

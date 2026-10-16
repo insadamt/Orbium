@@ -169,6 +169,9 @@ Callout
 Code
 Image
 File
+Video
+Audio
+PDF
 Table
 Mermaid
 Math block
@@ -308,6 +311,8 @@ File attachment block shows at minimum:
 - size.
 
 Opening/downloading must use authorized routes, not direct arbitrary storage paths.
+
+The approved 2026-10-16 extension adds Video, Audio, and PDF commands to the Markdown editor, with inline viewers and type-restricted Library reuse. See [23-media-blocks.md](23-media-blocks.md) for playback, supported types, transfer compatibility, and browser limitations.
 
 ## Mentions
 

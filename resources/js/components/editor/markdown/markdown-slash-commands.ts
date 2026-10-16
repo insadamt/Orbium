@@ -21,7 +21,7 @@ import {
     isMarkdownSourceOnlyLine,
 } from './markdown-syntax';
 
-export type MarkdownUploadKind = 'image' | 'file';
+export type MarkdownUploadKind = 'image' | 'file' | 'video' | 'audio' | 'pdf';
 export type MarkdownUploadRequest = {
     imageMetadata?: OrbiumMetadata;
     presentation?: OrbiumMetadata;
@@ -182,8 +182,15 @@ export function markdownSlashCommands(
                     to: number,
                 ) => insertBlockTemplate(view, template, from, to),
             }));
-        for (const kind of ['image', 'file'] as const) {
-            const label = kind === 'image' ? 'Image' : 'File';
+        for (const kind of [
+            'image',
+            'file',
+            'video',
+            'audio',
+            'pdf',
+        ] as const) {
+            const label =
+                kind === 'pdf' ? 'PDF' : kind[0].toUpperCase() + kind.slice(1);
             if (!label.toLowerCase().includes(query)) continue;
             options.push({
                 label,

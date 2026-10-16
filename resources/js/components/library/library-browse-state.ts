@@ -16,7 +16,9 @@ export function readLibraryState(key: string): LibraryBrowseState | null {
         if (
             !raw ||
             typeof raw.filters?.q !== 'string' ||
-            !['all', 'images', 'files'].includes(raw.filters.type) ||
+            !['all', 'images', 'files', 'videos', 'audios', 'pdfs'].includes(
+                raw.filters.type,
+            ) ||
             !['newest', 'name', 'size'].includes(raw.filters.sort)
         )
             return null;
@@ -65,7 +67,11 @@ export function initialLibraryState(
     const sort = params.get('sort');
     const filters: LibraryFilters = {
         q: (params.get('q') ?? '').slice(0, 255),
-        type: type === 'files' || type === 'images' ? type : 'all',
+        type:
+            type &&
+            ['images', 'files', 'videos', 'audios', 'pdfs'].includes(type)
+                ? (type as LibraryFilters['type'])
+                : 'all',
         sort: sort === 'name' || sort === 'size' ? sort : 'newest',
     };
     return saved &&

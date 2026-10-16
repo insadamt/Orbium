@@ -1,3 +1,5 @@
+import { attachmentMediaKind } from '@/components/media/attachment-media';
+import { AttachmentPreview } from '@/components/media/attachment-preview';
 import { useState } from 'react';
 import { Download, FileText, Maximize2, Minus, Plus } from 'lucide-react';
 import {
@@ -43,6 +45,12 @@ export function LibraryFilePreview({ file }: { file: LibraryFile }) {
                             }
                         />
                     </>
+                ) : file.available && attachmentMediaKind(file.mime_type) ? (
+                    <AttachmentPreview
+                        url={file.url}
+                        name={file.name}
+                        mime={file.mime_type}
+                    />
                 ) : (
                     <div className="library-detail-file-art">
                         <FileText size={68} strokeWidth={1} />

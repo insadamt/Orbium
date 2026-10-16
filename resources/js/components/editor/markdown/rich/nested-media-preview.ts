@@ -1,3 +1,4 @@
+import { createAttachmentPlayer } from '@/components/media/attachment-player';
 import type { RichBlock, RichContext } from './rich-model';
 import {
     loadAttachmentMetadata,
@@ -14,10 +15,13 @@ export function mountNestedMedia(
     measure: () => void,
 ): () => void {
     let destroyed = false;
+    let player: ReturnType<typeof createAttachmentPlayer> = null;
     const abort = new AbortController();
     const kind = block.kind === 'image' ? 'image' : 'file';
     const missing = () => {
         if (destroyed) return;
+        player?.destroy();
+        player = null;
         const button = element(
             'button',
             'flex min-h-20 w-full items-center justify-center rounded-lg border border-dashed border-border bg-muted/30 p-4 text-sm text-muted-foreground hover:bg-accent',
@@ -50,7 +54,19 @@ export function mountNestedMedia(
             .then((metadata) => {
                 if (destroyed) return;
                 link.href = richAttachmentUrl(context, String(metadata.id));
+                const url = link.href;
+                link.href = `${url}?download=1`;
                 link.download = metadata.name;
+                if (kind === 'file') {
+                    player = createAttachmentPlayer({
+                        url,
+                        name: metadata.name,
+                        mime: metadata.mime_type,
+                        onResize: measure,
+                        isVisible: context.isVisible,
+                    });
+                    if (player) target.prepend(player.root);
+                }
                 link.addEventListener('click', (event) => {
                     event.preventDefault();
                     void checkReferenceAvailability(
@@ -99,7 +115,7 @@ export function mountNestedMedia(
                     );
                     image.alt = block.label ?? '';
                     image.loading = 'lazy';
-                    image.src = link.href;
+                    image.src = url;
                     image.style.width = block.metadata.width
                         ? `${Number(block.metadata.width)}px`
                         : '';
@@ -124,5 +140,6 @@ export function mountNestedMedia(
     return () => {
         destroyed = true;
         abort.abort();
+        player?.destroy();
     };
 }

@@ -1,8 +1,11 @@
+import { attachmentMediaKind } from '@/components/media/attachment-media';
 import * as Menu from '@/components/ui/dropdown-menu';
 import {
     Check,
     Download,
     FileArchive,
+    Film,
+    Music,
     FileText,
     File,
     MoreHorizontal,
@@ -46,12 +49,17 @@ export function LibraryCard({
     const [failed, setFailed] = useState(false);
     const image = isLibraryImage(file);
     const label = libraryFileLabel(file);
+    const mediaKind = attachmentMediaKind(file.mime_type);
     const FileIcon =
-        label === 'PDF' || file.mime_type.startsWith('text/')
-            ? FileText
-            : /zip|compressed|archive/.test(file.mime_type)
-              ? FileArchive
-              : File;
+        mediaKind === 'video'
+            ? Film
+            : mediaKind === 'audio'
+              ? Music
+              : label === 'PDF' || file.mime_type.startsWith('text/')
+                ? FileText
+                : /zip|compressed|archive/.test(file.mime_type)
+                  ? FileArchive
+                  : File;
     const open = picker ? onSelect : onOpen;
     return (
         <article
