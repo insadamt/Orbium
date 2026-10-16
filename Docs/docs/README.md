@@ -24,3 +24,4 @@
 | `19-library.md` | Workspace uploads, reuse, gallery, details, and safe bulk deletion |
 | `20-office-document-export.md` | Shared Word/PDF layout, direct downloads, and renderer deployment |
 | `21-statistics.md` | Scoped writing, block usage, unique uploads, storage, and statistics rebuild |
+| `22-advanced-statistics-plan.md` | Final feature before V1: per-page/workspace history, navigable periods, deltas, extensible metrics, and release acceptance |

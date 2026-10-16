@@ -2,6 +2,10 @@
 
 Approved 2026-10-15 as one review milestone; no advancement to another product phase.
 
+Future work: [Advanced statistics plan](22-advanced-statistics-plan.md) is
+reserved as the final feature before V1. Historical tracking remains unimplemented;
+this document describes the current saved-content statistics.
+
 ## Opening statistics
 
 The chart button in the floating navigation opens a dedicated Statistics page
