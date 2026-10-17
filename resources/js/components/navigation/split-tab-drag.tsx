@@ -21,15 +21,10 @@ export function useSplitTabDrag(
     const activeTab = tabs.find((tab) => tab.id === activeId);
     const eligible = Boolean(
         draggedTab &&
+        draggedTab.id !== activeId &&
         !groupForTab(splitGroups, draggedTab.id) &&
         !groupForTab(splitGroups, activeId) &&
-        (draggedTab.id === activeId
-            ? tabs.some(
-                  (tab) =>
-                      !groupForTab(splitGroups, tab.id) &&
-                      canSplitTabs(draggedTab, tab),
-              )
-            : canSplitTabs(draggedTab, activeTab)),
+        canSplitTabs(draggedTab, activeTab),
     );
 
     useEffect(() => {
@@ -57,15 +52,13 @@ export function useSplitTabDrag(
     }, [eligible]);
 
     function prepareHeldTab(tab: Tab) {
-        if (groupForTab(splitGroups, tab.id)) return Promise.resolve(false);
-        const companion =
-            tab.id === activeId
-                ? tabs.find(
-                      (candidate) =>
-                          !groupForTab(splitGroups, candidate.id) &&
-                          canSplitTabs(tab, candidate),
-                  )
-                : activeTab;
+        if (
+            tab.id === activeId ||
+            groupForTab(splitGroups, tab.id) ||
+            groupForTab(splitGroups, activeId)
+        )
+            return Promise.resolve(false);
+        const companion = activeTab;
         if (!canSplitTabs(tab, companion)) return Promise.resolve(false);
         return Promise.all([
             prepareTabForSplit(tab, version),
@@ -77,6 +70,7 @@ export function useSplitTabDrag(
 
     async function splitPreparedTab(tab: Tab, placement: 'left' | 'right') {
         const previous = useNavigation.getState();
+        if (tab.id === previous.activeId) return;
         const companion = previous.tabs.find(
             (item) => item.id === previous.activeId,
         );

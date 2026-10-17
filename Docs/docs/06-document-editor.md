@@ -33,6 +33,8 @@ Page headers now adapt to the cover shape on documents, folders, and databases. 
 
 The eight cover ratio buttons occupy one row on wider screens and two rows of four on smaller screens. Documents, folders, and databases share these crop controls and the adaptive cover/icon layout.
 
+Split header correction (2026-10-17): overlapping icon positions and cover cutouts are calculated in layout coordinates, independently of tab and split animation transforms. Entering or ending a split must keep the cutout aligned with its icon without an extra notch on the opposite cover edge. See [the report and manual checklist](../reports/05-split-cover-icon-alignment.md).
+
 No permanent formatting toolbar. The document actions menu offers Import, Export and Source/Live Preview; it omits Document outline, Find in document and Add file. Outline navigation remains on the rail, and existing find shortcuts and attachment insertion flows remain available.
 
 Each visible document has a small outline rail aligned with its document layout, at

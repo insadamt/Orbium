@@ -212,9 +212,16 @@ html.orbium-embedded-document *::-webkit-scrollbar {
     padding: 44px 52px 64px;
 }
 .orbium-embedded-pane .floating-workspace {
+    position: relative;
     display: flow-root;
     min-height: 0;
     padding: 0;
+}
+.embedded-pane-actions {
+    position: absolute;
+    z-index: 10;
+    top: 0;
+    right: 0;
 }
 html.orbium-embedded-document,
 html.orbium-embedded-document body,

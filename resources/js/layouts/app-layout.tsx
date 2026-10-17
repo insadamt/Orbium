@@ -259,7 +259,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                     )}
                     {isPane ? (
                         <>
-                            <div className="mb-3 flex justify-end">
+                            <div className="embedded-pane-actions">
                                 <StatisticsButton className="floating-icon-button floating-surface" />
                             </div>
                             {children}

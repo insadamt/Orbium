@@ -1,5 +1,17 @@
 # Phase 5 — Explorer review
 
+Split top alignment correction (2026-10-17): embedded pane Statistics controls no
+longer reserve a row above the page. Retained and embedded document surfaces
+start at the same top gap. See [the report and manual checklist](../reports/05-split-document-top-alignment.md).
+
+Split header correction (2026-10-17): cover cutouts and icon alignment use layout
+coordinates so split/merge animation transforms cannot leave misplaced notches.
+See [the report and manual checklist](../reports/05-split-cover-icon-alignment.md).
+
+Active-tab drag correction (2026-10-17): active tabs stay within the tab strip
+while reordering and cannot create a split. Inactive eligible tabs can still
+split beside the active page. See [the report and manual checklist](../reports/05-active-tab-split-guard.md).
+
 Navigation entry correction (2026-10-13): opening tabs now use the reverse of
 the closing scale/fade motion, with matching 140 ms timing and no overshoot.
 See [the report and manual checklist](../reports/05-navigation-tab-entry-refinement.md).

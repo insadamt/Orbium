@@ -149,7 +149,7 @@ export function NavigationTabStrip({
     async function reorderTabs({ active, over }: DragEndEvent) {
         setDraggedTab(null);
         clearEdge();
-        if (splitEdge) {
+        if (draggedCanSplit && splitEdge) {
             const tab = tabs.find((item) => item.id === String(active.id));
             if (tab) await splitPreparedTab(tab, splitEdge);
             return;

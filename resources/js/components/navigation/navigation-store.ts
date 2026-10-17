@@ -361,15 +361,8 @@ export const useNavigation = create<NavigationState>((set, get) => ({
     splitTab(id, edge) {
         const state = get();
         const draggedTab = state.tabs.find((tab) => tab.id === id);
-        if (groupForTab(state.splitGroups, id)) return;
-        const companionId =
-            id === state.activeId
-                ? state.tabs.find(
-                      (tab) =>
-                          !groupForTab(state.splitGroups, tab.id) &&
-                          canSplitTabs(draggedTab, tab),
-                  )?.id
-                : state.activeId;
+        if (id === state.activeId || groupForTab(state.splitGroups, id)) return;
+        const companionId = state.activeId;
         const companion = state.tabs.find((tab) => tab.id === companionId);
         if (
             !companionId ||

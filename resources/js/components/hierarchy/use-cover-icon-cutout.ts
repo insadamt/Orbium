@@ -1,16 +1,34 @@
 import { useLayoutEffect, useState } from 'react';
 
-function applyCoverIconCutout(cover: HTMLImageElement, icon: HTMLDivElement) {
-    const coverBounds = cover.getBoundingClientRect();
-    if (!coverBounds.width || !coverBounds.height) return;
+function layoutPosition(element: HTMLElement) {
+    let left = 0;
+    let top = 0;
+    let current: HTMLElement | null = element;
+    while (current) {
+        left += current.offsetLeft;
+        top += current.offsetTop;
+        const offsetParent: Element | null = current.offsetParent;
+        current = offsetParent instanceof HTMLElement ? offsetParent : null;
+        if (current) {
+            left += current.clientLeft;
+            top += current.clientTop;
+        }
+    }
+    return { left, top };
+}
 
-    const slot = cover.closest('.page-media-cover-slot');
-    const availableWidth =
-        slot?.getBoundingClientRect().width ?? coverBounds.width;
+function applyCoverIconCutout(cover: HTMLImageElement, icon: HTMLDivElement) {
+    // Split and tab motion transform screen bounds without changing header layout.
+    const coverWidth = cover.offsetWidth;
+    const coverHeight = cover.offsetHeight;
+    if (!coverWidth || !coverHeight) return;
+
+    const slot = cover.closest<HTMLElement>('.page-media-cover-slot');
+    const availableWidth = slot?.clientWidth ?? coverWidth;
     const layout = cover.closest('.node-media-layout');
     const besideCover =
         layout !== null && getComputedStyle(layout).display === 'grid';
-    const compact = besideCover || coverBounds.width < availableWidth - 1;
+    const compact = besideCover || coverWidth < availableWidth - 1;
     icon.dataset.coverLayout = compact ? 'compact' : 'banner';
     if (compact) {
         cover.style.removeProperty('mask-image');
@@ -19,17 +37,16 @@ function applyCoverIconCutout(cover: HTMLImageElement, icon: HTMLDivElement) {
         return;
     }
 
-    const iconBounds = icon.getBoundingClientRect();
+    const coverPosition = layoutPosition(cover);
+    const iconPosition = layoutPosition(icon);
     const iconStyle = getComputedStyle(icon);
     const radius = Number.parseFloat(iconStyle.borderTopLeftRadius);
-    const previousOffset = Number.parseFloat(icon.style.translate) || 0;
-    const naturalIconLeft = iconBounds.left - previousOffset;
     const inset = Number.parseFloat(iconStyle.marginLeft) || 0;
-    const offset = Math.max(0, coverBounds.left + inset - naturalIconLeft);
+    const offset = Math.max(0, coverPosition.left + inset - iconPosition.left);
     icon.style.translate = `${offset}px`;
-    const x = naturalIconLeft + offset - coverBounds.left;
-    const y = iconBounds.top - coverBounds.top;
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${coverBounds.width}" height="${coverBounds.height}"><defs><mask id="cutout" maskUnits="userSpaceOnUse"><rect width="100%" height="100%" fill="white"/><rect x="${x}" y="${y}" width="${iconBounds.width}" height="${iconBounds.height}" rx="${radius}" fill="black"/></mask></defs><rect width="100%" height="100%" fill="white" mask="url(#cutout)"/></svg>`;
+    const x = iconPosition.left + offset - coverPosition.left;
+    const y = iconPosition.top - coverPosition.top;
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${coverWidth}" height="${coverHeight}"><defs><mask id="cutout" maskUnits="userSpaceOnUse"><rect width="100%" height="100%" fill="white"/><rect x="${x}" y="${y}" width="${icon.offsetWidth}" height="${icon.offsetHeight}" rx="${radius}" fill="black"/></mask></defs><rect width="100%" height="100%" fill="white" mask="url(#cutout)"/></svg>`;
     const maskImage = `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
     cover.style.maskImage = maskImage;
     cover.style.webkitMaskImage = maskImage;
