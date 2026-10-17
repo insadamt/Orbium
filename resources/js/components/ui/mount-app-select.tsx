@@ -1,7 +1,19 @@
+import type { ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { AppSelect } from './app-select';
+import { cn } from '@/lib/utils';
 
-export function mountAppSelect(select: HTMLSelectElement) {
+type MountAppSelectOptions = {
+    triggerClassName?: string;
+    searchPlaceholder?: string;
+    getSearchKeywords?: (value: string) => string[];
+    renderOptionIcon?: (value: string) => ReactNode;
+};
+
+export function mountAppSelect(
+    select: HTMLSelectElement,
+    options: MountAppSelectOptions = {},
+) {
     const host = document.createElement('span');
     host.className = 'inline-flex min-w-0';
     select.replaceWith(host);
@@ -14,11 +26,17 @@ export function mountAppSelect(select: HTMLSelectElement) {
                 label={select.getAttribute('aria-label') ?? 'Select option'}
                 value={select.value}
                 disabled={select.disabled}
-                className="min-h-7 border-0 bg-transparent px-2 py-1 text-xs shadow-none"
+                searchPlaceholder={options.searchPlaceholder}
+                className={cn(
+                    'min-h-7 border-0 bg-transparent px-2 py-1 text-xs shadow-none',
+                    options.triggerClassName,
+                )}
                 options={Array.from(select.options, (option) => ({
                     value: option.value,
                     label: option.text,
                     disabled: option.disabled,
+                    icon: options.renderOptionIcon?.(option.value),
+                    searchKeywords: options.getSearchKeywords?.(option.value),
                 }))}
                 onValueChange={(value) => {
                     select.value = value;

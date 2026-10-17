@@ -126,12 +126,19 @@ export function sourceControls(
     function setEditing(next: boolean) {
         if (destroyed || !mount.view.dom.isConnected) return;
         if (next && !mount.view.state.facet(EditorView.editable)) return;
+        const modeChanged = editing !== next;
         editing = next;
         mount.view.dispatch({
             effects: toggleRichSource.of({ from: block.from, open: next }),
         });
         input.hidden = !next;
         output.hidden = next;
+        if (modeChanged) {
+            delete (next ? output : input).dataset.richModeEntrance;
+            (next ? input : output).dataset.richModeEntrance = next
+                ? 'editor'
+                : 'preview';
+        }
         edit.setAttribute('aria-pressed', String(next));
         preview.setAttribute('aria-pressed', String(!next));
         editLabel.textContent = customEditor

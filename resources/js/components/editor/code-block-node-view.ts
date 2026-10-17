@@ -1,5 +1,5 @@
 import { mountCodeCopyButton } from './mount-code-copy-button';
-import { mountAppSelect } from '@/components/ui/mount-app-select';
+import { mountCodeLanguageSelect } from './mount-code-language-select';
 import type { NodeViewRendererProps } from '@tiptap/core';
 import type { NodeView } from '@tiptap/pm/view';
 import {
@@ -75,7 +75,7 @@ export function createCodeBlockNodeView({
         { signal: eventController.signal },
     );
     selectContainer.append(select);
-    const languageSelect = mountAppSelect(select);
+    const languageSelect = mountCodeLanguageSelect(select);
     languageGroup.append(selectContainer);
     toolbar.append(languageGroup);
 

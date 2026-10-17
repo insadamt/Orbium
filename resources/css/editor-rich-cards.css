@@ -54,6 +54,35 @@
     outline-offset: 2px;
 }
 
+[data-rich-mode-entrance] {
+    animation: rich-block-mode-enter 200ms ease-out;
+}
+
+[data-rich-mode-entrance='editor'] {
+    --rich-mode-offset: -5px;
+}
+
+[data-rich-mode-entrance='preview'] {
+    --rich-mode-offset: 5px;
+}
+
+@keyframes rich-block-mode-enter {
+    from {
+        opacity: 0;
+        transform: translateY(var(--rich-mode-offset));
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    [data-rich-mode-entrance] {
+        animation: none;
+    }
+}
+
 .orbium-rich-card [data-mermaid-preview] {
     width: calc(100% - 20px) !important;
 }

@@ -59,4 +59,6 @@ The original 35-choice contact sheet was rendered and visually inspected at 20px
 
 `feat(editor): add more code languages and enlarge language icons`
 
-No commit created. Awaiting manual review.
+Committed as `ffc6f02` (`feat(editor): expand code languages and improve language logos`).
+Subsequent compact-mark and dropdown-icon review is recorded in
+`06-code-language-picker-icons.md`.

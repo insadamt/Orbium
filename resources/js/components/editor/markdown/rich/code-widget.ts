@@ -1,6 +1,6 @@
 import { createRichBlockHeading } from './rich-block-heading';
 import { mountCodeCopyButton } from '../../mount-code-copy-button';
-import { mountAppSelect } from '@/components/ui/mount-app-select';
+import { mountCodeLanguageSelect } from '../../mount-code-language-select';
 import { EditorView } from '@codemirror/view';
 import {
     codeLanguageLabel,
@@ -50,7 +50,7 @@ export function mountCode(mount: RichWidgetMount): RichController {
     }
     heading.icon.style.color = 'var(--foreground)';
     heading.title.replaceChildren(language);
-    const languageSelect = mountAppSelect(language);
+    const languageSelect = mountCodeLanguageSelect(language);
     const copyButton = mountCodeCopyButton(
         heading.actions,
         () => block.content,

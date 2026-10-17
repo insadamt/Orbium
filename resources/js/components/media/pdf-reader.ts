@@ -182,7 +182,13 @@ export function mountPdfReader(
                 scale: 1,
                 rotation: pageRotation,
             });
-            const width = Math.max(180, viewport.clientWidth - 40);
+            const viewportStyle = getComputedStyle(viewport);
+            const width = Math.max(
+                1,
+                viewport.clientWidth -
+                    parseFloat(viewportStyle.paddingLeft) -
+                    parseFloat(viewportStyle.paddingRight),
+            );
             const pageViewport = currentPage.getViewport({
                 scale: zoom ?? width / natural.width,
                 rotation: pageRotation,

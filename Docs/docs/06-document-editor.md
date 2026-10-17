@@ -679,16 +679,16 @@ media stays paused. See `../reports/06-rich-block-move-state.md` for manual chec
 
 ### Code language selector and logo clarity (2026-10-16)
 
-Code headers offer 54 language/format choices with readable names, including
+Code headers offer 106 language/format choices with readable names, including
 C++, C#, Objective-C, and Visual Basic .NET. The choices use Lowlight common grammars plus selected Highlight.js grammars
 through a shared highlighter factory for Markdown and legacy JSON editors.
 Highlight.js is an explicit dependency at the already installed version; no
 content format changes are needed.
-Aliases such as `kt`, `rb`, `rs`, `md`, `jsx`, and `tsx` resolve to their language
+Aliases such as `kt`, `rb`, `rs`, and `md` resolve to their language
 in the selector. Unknown language tags remain selectable and preserved.
 Both Markdown and legacy JSON code headers render 24px SVG logos;
 Markdown headers use foreground contrast within the existing 40px icon badge.
-C#, Java, Objective-C, and Visual Basic use pinned Devicon language assets.
+C#, Java, and Visual Basic use pinned Devicon language assets.
 Other matching logos use Simple Icons; SQL, Diff, and Makefile use neutral
 format symbols rather than PostgreSQL, Git, or GNU logos. Plain text, INI,
 and unknown tags use a consistent vector code symbol.
@@ -698,5 +698,100 @@ See `../reports/06-code-language-options-and-logos.md` for manual acceptance.
 The additional selector options are Clojure, CMake, Dart, Dockerfile, Elixir,
 Erlang, Fortran, F#, Groovy, Haskell, Julia, Lisp, MATLAB, Nginx configuration,
 OCaml, PowerShell, Scala, Scheme, and TOML. Matching Simple Icons marks are used
-where available. PowerShell uses a neutral terminal symbol; Lisp, MATLAB, and
-Scheme use the neutral code symbol. TOML uses the existing INI/TOML grammar.
+where available. PowerShell uses a neutral terminal symbol. TOML uses the existing INI/TOML grammar.
+
+
+### Language dropdown icons (2026-10-16 review)
+
+Both editors show matching 24px icons in language dropdown rows and code headers.
+The reviewed Simple Icons and Devicon logos are retained, including the original
+Rust, Perl, PHP, XML, Go, Lua, Less and Objective-C artwork. Abbreviation badges
+were removed at the user's request. Neutral symbols remain for formats without
+matching logos. Decorative menu icons do not alter accessible names or keyboard
+typeahead; typeahead uses the full language name. Unknown tags keep a neutral
+code icon. Text-only selects elsewhere retain their existing appearance.
+See `../reports/06-code-language-picker-icons.md` for validation and manual checks.
+
+The code language selector trigger uses a subtle focus background without a focus
+ring, including after selecting an option. Keyboard focus and menu navigation
+remain available. Other selects retain their existing focus styles.
+
+
+### Searchable code language selector (2026-10-16)
+
+The language picker now offers 65 choices, adding HTTP, Protocol Buffers, LaTeX,
+Windows Batch, Apache configuration, x86 Assembly, ARM Assembly, Nix and Nim.
+JSX and TSX are separate choices and preserve their fence tags, using the existing
+JavaScript and TypeScript grammars. Existing `javascript` and `typescript` tags
+keep their respective labels. Additional grammars are registered in both editors.
+
+The dropdown search filters labels, canonical tags and aliases, ignoring case.
+Examples: `bat`, `proto`, `tex`, `ps1`, `arm` and `react`. React matches JSX and TSX.
+Opening the menu focuses search; arrow keys enter the results, Enter selects,
+and Escape dismisses. Arrow Up from the first result returns to search. Typing
+while a result is focused returns to search and adds to the query. No results
+shows “No matches found.” Closing/reopening resets search. The search field stays
+above an independently scrollable results list. Unknown language tags remain
+selectable and searchable. Original logos, 24px sizing and the trigger's
+border-free focus style remain. Neutral symbols identify generic formats without
+matching logos. Other app selects remain text-only without search unless opted in.
+See `../reports/06-searchable-code-languages.md` for manual validation.
+
+### Additional code languages (2026-10-17)
+
+The picker now offers 78 language/format choices. Added GLSL, Awk, Gradle,
+Handlebars, Twig, Crystal, D, Haxe, Pascal, Delphi, Prolog, Verilog and VHDL.
+Pascal and Delphi have separate labels using the same Delphi/Pascal grammar.
+Highlighting is registered in the shared factory for both editors. Search and
+fence normalization recognize aliases such as `frag`, `vert`, `gawk`, `hbs`,
+`cr`, `hx`, `pas`, `dpr`, `sv` and `vhd`. The existing `pl` alias continues to
+identify Perl; use `prolog` for Prolog.
+
+Gradle, Handlebars, Crystal, D, Haxe and Delphi use matching Simple Icons marks.
+GLSL, Awk, Twig, Verilog and VHDL use neutral shader, terminal, template and chip
+symbols. Pascal and Prolog use the code fallback. Original logo artwork, 24px
+sizing, search behavior and the border-free selector trigger remain.
+See `../reports/06-additional-code-languages.md` for validation and manual checks.
+
+### Automation and specialist code languages (2026-10-17)
+
+The picker now offers 93 choices. Added AppleScript, AutoHotkey, AutoIt, Tcl, Ada,
+CoffeeScript, Elm, QML, ReasonML, Smalltalk, Vala, SAS, Stata, AsciiDoc and Gherkin.
+All 15 grammars are registered in the shared highlighter for both editors.
+Names and aliases such as `osascript`, `ahk`, `au3`, `tk`, `coffee`, `qt`, `re`,
+`st`, `ado`, `adoc` and `feature` work in search and fence normalization.
+
+Ada, AutoHotkey, AutoIt, CoffeeScript, Elm, ReasonML and Vala use matching
+Simple Icons marks. AppleScript, AsciiDoc, Gherkin, SAS and Stata use neutral
+terminal, document, checklist and chart symbols. Tcl, QML and Smalltalk use the
+code fallback. Existing original logos, 24px sizing, searchable selection and
+border-free trigger focus styling remain. There are no dependency or format
+changes. See `../reports/06-automation-and-specialist-code-languages.md` for
+manual validation.
+
+### Git and additional technical formats (2026-10-17)
+
+The picker now offers 106 choices. Added Git commands, PostgreSQL / PL/pgSQL,
+Vim Script, OpenSCAD, Processing, LLVM IR, VBScript, Stylus, XQuery, Thrift, Coq,
+Java Properties and DNS zone files. Both editors share the 12 added grammars.
+Git commands preserves the `git` fence tag and uses Bash highlighting via a
+highlighter alias, with the Git logo. It describes shell commands, not commit
+messages or interactive rebase files; patches still use Diff.
+
+Search/fence aliases include `postgresql`, `plpgsql`, `vimscript`, `scad`, `pde`,
+`ll`, `vbs`, `styl`, `xpath`, `xq`, `bind` and `zone`. PostgreSQL has its own logo;
+generic SQL retains its neutral database symbol. Vim, OpenSCAD, LLVM and Stylus
+use matching logos; the other additions use neutral symbols where no matching
+logo is available. Search, original artwork, 24px sizing, border-free trigger
+focus styling and unknown-tag preservation remain.
+See `../reports/06-git-and-technical-code-formats.md` for manual acceptance.
+
+### Block Edit/Preview motion (2026-10-17)
+
+Switching the shared rich-block source controls between Edit and Preview reveals
+its incoming panel with a 200 ms fade and short vertical movement. The mode,
+focus, source transaction, and editor measurement update immediately. Repeated
+selection of the current mode does not restart the animation. OS reduced motion
+removes the reveal. This applies to blocks using the shared mode controls,
+including Mermaid and display math; code remains directly editable.
+See `../reports/06-block-mode-motion-and-pdf-space.md` for manual acceptance.
