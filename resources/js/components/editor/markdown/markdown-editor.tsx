@@ -22,12 +22,12 @@ import {
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
 import { search } from '@codemirror/search';
-import { closeCompletion } from '@codemirror/autocomplete';
 import { markdownBlockWrappers } from './interactions/markdown-block-wrappers';
 import { markdownPresentationCommands } from './interactions/markdown-presentation-commands';
 import { markdownFindHighlights } from './interactions/markdown-find-highlights';
 import { markdownDividerToolbar } from './interactions/markdown-divider-toolbar';
 import { markdownSelectionToolbar } from './interactions/markdown-selection-toolbar';
+import { registerMarkdownSplitBlockTarget } from './interactions/markdown-split-block-targets';
 import { markdownBlockGutter } from './interactions/markdown-block-gutter';
 import { markdownTrailingParagraph } from './interactions/markdown-trailing-paragraph';
 import { markdownMediaInput } from './interactions/markdown-media-input';
@@ -62,6 +62,7 @@ import { markdownSourceHighlighting, markdownTheme } from './markdown-theme';
 import { useMarkdownAutosave } from './use-markdown-autosave';
 import { useMarkdownSearch } from './use-markdown-search';
 import { MarkdownTableOfContents } from './markdown-table-of-contents';
+import { useMarkdownEditorActivity } from './use-markdown-editor-activity';
 
 export type MarkdownEditorProps = {
     workspaceId: number;
@@ -109,7 +110,6 @@ export default function MarkdownEditor(props: MarkdownEditorProps) {
     };
     const initial = useRef(props);
     const appearance = useRef(resolvedAppearance);
-    const activity = useRef(active);
     const visibility = useRef(visible);
     visibility.current = visible;
     const theme = useRef(new Compartment());
@@ -229,7 +229,7 @@ export default function MarkdownEditor(props: MarkdownEditorProps) {
                                 markdownTheme(appearance.current === 'dark'),
                             ),
                             editing.current.of(
-                                EditorView.editable.of(activity.current),
+                                EditorView.editable.of(visibility.current),
                             ),
                             EditorView.contentAttributes.of({
                                 'aria-label': 'Document body',
@@ -245,6 +245,15 @@ export default function MarkdownEditor(props: MarkdownEditorProps) {
                     }),
                 }),
         );
+        const unregisterBlockTarget = registerMarkdownSplitBlockTarget({
+            view: editor,
+            richContext,
+            onNotice: setNotice,
+            workspaceId: initial.current.workspaceId,
+            nodeId: initial.current.nodeId,
+            limits: initial.current.limits,
+            isVisible: () => visibility.current,
+        });
         mermaidSession.start(editor.dom);
         editorView.current = editor;
         setView(editor);
@@ -258,6 +267,7 @@ export default function MarkdownEditor(props: MarkdownEditorProps) {
         return () => {
             cancelAnimationFrame(frame);
             editorView.current = null;
+            unregisterBlockTarget();
             editor.destroy();
             mermaidSession.destroy();
             adjustEditorPerformanceCounter('codemirror.mounted-editors', -1);
@@ -273,18 +283,12 @@ export default function MarkdownEditor(props: MarkdownEditorProps) {
         });
     }, [view, resolvedAppearance]);
 
-    useEffect(() => {
-        if (!view) return;
-        view.dispatch({
-            effects: editing.current.reconfigure(
-                EditorView.editable.of(active),
-            ),
-        });
-        if (!active) {
-            closeCompletion(view);
-            view.contentDOM.blur();
-        }
-    }, [view, active]);
+    useMarkdownEditorActivity({
+        view,
+        editing: editing.current,
+        active,
+        visible,
+    });
 
     useEffect(() => {
         if (!view) return;

@@ -118,6 +118,7 @@ export class MarkdownRichWidget extends WidgetType {
                 ? 'relative inline-block align-baseline'
                 : richBlockClassName(this.block.kind);
         root.contentEditable = 'false';
+        root.dataset.richFrom = String(this.block.from);
         let content = root;
         const nestedContainers: HTMLElement[] = [];
         for (const wrapper of (this.block.wrappers ?? []).slice(1)) {

@@ -5,15 +5,19 @@ import {
     type MarkdownBlockRange,
 } from './markdown-block-actions';
 import {
-    markdownBlockDropTarget,
     markdownBlockElement,
     createMarkdownBlockDragPreview,
 } from './markdown-block-drag';
 import {
-    markdownDragViewport,
-    scrollMarkdownDrag,
-    scrollMarkdownDragBy,
-} from './markdown-drag-scroll';
+    markdownBlockDragDocuments,
+    markdownBlockDragHost,
+    markdownHostPointer,
+    resolveMarkdownSplitBlockTarget,
+    collectMarkdownSplitTransferPreviews,
+} from './markdown-split-block-targets';
+import { removeTransferredMarkdownBlock } from './markdown-block-transfer';
+import { performLinkedMarkdownMove } from './markdown-linked-move-history';
+import { markdownBlockMotion } from './markdown-block-motion';
 import { preserveMarkdownDropViewport } from './markdown-drop-viewport';
 import { captureMarkdownDragPointer } from './markdown-drag-pointer';
 
@@ -44,6 +48,7 @@ export class MarkdownBlockDragController {
     private indicator = document.createElement('div');
     private frame: number | null = null;
     private previousFrameTime = 0;
+    private eventDocuments = new Set<Document>();
     private clickReset: ReturnType<typeof setTimeout> | null = null;
     suppressHandleClick = false;
 
@@ -55,7 +60,9 @@ export class MarkdownBlockDragController {
         options.handle.addEventListener('lostpointercapture', this.end);
         this.indicator.className = 'orbium-markdown-drop-indicator';
         this.indicator.hidden = true;
-        document.body.append(this.indicator);
+        markdownBlockDragHost(options.view).document.body.append(
+            this.indicator,
+        );
     }
 
     get active() {
@@ -95,12 +102,23 @@ export class MarkdownBlockDragController {
         document.addEventListener('pointermove', this.movePointer, true);
         document.addEventListener('pointerup', this.releasePointer, true);
         document.addEventListener('pointercancel', this.end, true);
-        document.addEventListener('wheel', this.scrollWheel, {
-            capture: true,
-            passive: false,
-        });
-        document.addEventListener('scroll', this.refreshAfterScroll, true);
-        document.addEventListener('keydown', this.cancelWithEscape, true);
+        this.eventDocuments = markdownBlockDragDocuments(this.options.view);
+        for (const eventDocument of this.eventDocuments) {
+            eventDocument.addEventListener('wheel', this.scrollWheel, {
+                capture: true,
+                passive: false,
+            });
+            eventDocument.addEventListener(
+                'scroll',
+                this.refreshAfterScroll,
+                true,
+            );
+            eventDocument.addEventListener(
+                'keydown',
+                this.cancelWithEscape,
+                true,
+            );
+        }
         window.addEventListener('blur', this.end);
     };
 
@@ -112,6 +130,9 @@ export class MarkdownBlockDragController {
         );
         session.element?.classList.add('editor-block-dragging');
         session.preview = createMarkdownBlockDragPreview(session.block);
+        markdownBlockDragHost(this.options.view).document.body.append(
+            session.preview,
+        );
         this.suppressHandleClick = true;
         if (this.clickReset !== null) clearTimeout(this.clickReset);
         this.options.onNotice('');
@@ -144,7 +165,7 @@ export class MarkdownBlockDragController {
     };
 
     private pointerTarget(session: BlockDragSession) {
-        return markdownBlockDropTarget(this.options.view, session);
+        return resolveMarkdownSplitBlockTarget(this.options.view, session);
     }
 
     private refreshTarget() {
@@ -152,20 +173,20 @@ export class MarkdownBlockDragController {
         if (!session?.started) return;
         Object.assign(session, session.readPointer());
         if (session.preview) {
-            session.preview.style.left = `${session.clientX + 16}px`;
-            session.preview.style.top = `${session.clientY + 16}px`;
+            const pointer = markdownHostPointer(this.options.view, session);
+            session.preview.style.left = `${pointer.clientX + 16}px`;
+            session.preview.style.top = `${pointer.clientY + 16}px`;
         }
         const target = this.canMove() ? this.pointerTarget(session) : null;
         this.indicator.hidden =
-            !target || target.block.from === session.block.from;
+            !target ||
+            !target.visible ||
+            (target.endpoint.view === this.options.view &&
+                target.block.from === session.block.from);
         if (!target) return;
-        const bounds = this.options.view.contentDOM.getBoundingClientRect();
-        const viewport = markdownDragViewport(this.options.view);
-        this.indicator.hidden ||=
-            target.top < viewport.top || target.top > viewport.bottom;
         this.indicator.style.top = `${target.top}px`;
-        this.indicator.style.left = `${bounds.left}px`;
-        this.indicator.style.width = `${bounds.width}px`;
+        this.indicator.style.left = `${target.left}px`;
+        this.indicator.style.width = `${target.width}px`;
     }
 
     private refreshAfterScroll = () => this.refreshTarget();
@@ -181,9 +202,9 @@ export class MarkdownBlockDragController {
         const session = this.session;
         if (!session?.started) return;
         Object.assign(session, session.readPointer());
-        const continueEdgeScroll = scrollMarkdownDrag(
-            this.options.view,
-            session,
+        const target = this.pointerTarget(session);
+        const continueEdgeScroll = target?.endpoint.scroll(
+            target.pointer,
             time - this.previousFrameTime,
         );
         this.previousFrameTime = time;
@@ -194,18 +215,12 @@ export class MarkdownBlockDragController {
 
     private scrollWheel = (event: WheelEvent) => {
         const session = this.session;
-        if (!session?.started || event.ctrlKey || !this.pointerTarget(session))
-            return;
+        if (!session?.started || event.ctrlKey) return;
+        const target = this.pointerTarget(session);
+        if (!target) return;
         event.preventDefault();
         event.stopPropagation();
-        const viewport = markdownDragViewport(this.options.view);
-        const unit =
-            event.deltaMode === WheelEvent.DOM_DELTA_LINE
-                ? this.options.view.defaultLineHeight
-                : event.deltaMode === WheelEvent.DOM_DELTA_PAGE
-                  ? viewport.bottom - viewport.top
-                  : 1;
-        scrollMarkdownDragBy(this.options.view, event.deltaY * unit);
+        target.endpoint.wheel(event);
         this.refreshTarget();
         this.scheduleScrollFrame();
     };
@@ -229,10 +244,46 @@ export class MarkdownBlockDragController {
         if (
             !session.started ||
             !target ||
+            !target.visible ||
             session.doc !== this.options.view.state.doc
         )
             return;
         try {
+            if (target.endpoint.view !== this.options.view) {
+                const previews = collectMarkdownSplitTransferPreviews(
+                    this.options.view,
+                    session.block,
+                );
+                performLinkedMarkdownMove({
+                    source: this.options.view,
+                    target: target.endpoint.view,
+                    block: session.block,
+                    perform: (id) => {
+                        const snapshot = this.options.view
+                            .plugin(markdownBlockMotion)
+                            ?.capture(session.block);
+                        try {
+                            const inserted = target.endpoint.insert(
+                                session.block,
+                                target,
+                                previews,
+                                id,
+                            );
+                            removeTransferredMarkdownBlock(
+                                this.options.view,
+                                session.block,
+                                { moveId: id, snapshot },
+                            );
+                            return inserted;
+                        } catch (error) {
+                            snapshot?.ghost?.element.remove();
+                            throw error;
+                        }
+                    },
+                });
+                target.endpoint.view.focus();
+                return;
+            }
             preserveMarkdownDropViewport(this.options.view, {
                 targetBlock: target.block,
                 placement: target.placement,
@@ -274,9 +325,20 @@ export class MarkdownBlockDragController {
         document.removeEventListener('pointermove', this.movePointer, true);
         document.removeEventListener('pointerup', this.releasePointer, true);
         document.removeEventListener('pointercancel', this.end, true);
-        document.removeEventListener('wheel', this.scrollWheel, true);
-        document.removeEventListener('scroll', this.refreshAfterScroll, true);
-        document.removeEventListener('keydown', this.cancelWithEscape, true);
+        for (const eventDocument of this.eventDocuments) {
+            eventDocument.removeEventListener('wheel', this.scrollWheel, true);
+            eventDocument.removeEventListener(
+                'scroll',
+                this.refreshAfterScroll,
+                true,
+            );
+            eventDocument.removeEventListener(
+                'keydown',
+                this.cancelWithEscape,
+                true,
+            );
+        }
+        this.eventDocuments.clear();
         window.removeEventListener('blur', this.end);
         if (session && this.options.handle.hasPointerCapture(session.pointerId))
             this.options.handle.releasePointerCapture(session.pointerId);

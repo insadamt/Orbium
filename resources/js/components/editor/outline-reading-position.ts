@@ -22,20 +22,38 @@ export function subscribeOutlineScrolling(
     editor: HTMLElement,
     refresh: () => void,
 ): () => void {
-    const owner = outlineScrollOwner(editor);
-    const viewport = owner.ownerDocument.defaultView ?? window;
-    const scrollHost: EventTarget =
-        owner === owner.ownerDocument.scrollingElement ? viewport : owner;
+    const documentViewport = editor.ownerDocument.defaultView ?? window;
+    const frameElement = documentViewport.frameElement;
+    const viewport =
+        frameElement?.ownerDocument.defaultView ?? documentViewport;
+    const viewports = new Set([documentViewport, viewport]);
     let frame = 0;
     const schedule = () => {
         cancelAnimationFrame(frame);
         frame = requestAnimationFrame(refresh);
     };
-    scrollHost.addEventListener('scroll', schedule, { passive: true });
+    // Retained editors change scroll owners when splitting without remounting their outlines.
+
+    const scheduleOwnerScroll = (event: Event) => {
+        const owner = outlineScrollOwner(editor);
+        if (event.target === owner || event.target === owner.ownerDocument)
+            schedule();
+    };
+    viewports.forEach((host) =>
+        host.addEventListener('scroll', scheduleOwnerScroll, {
+            passive: true,
+            capture: true,
+        }),
+    );
     viewport.addEventListener('resize', schedule);
+    const observer = new ResizeObserver(schedule);
+    observer.observe(editor);
     return () => {
         cancelAnimationFrame(frame);
-        scrollHost.removeEventListener('scroll', schedule);
+        observer.disconnect();
+        viewports.forEach((host) =>
+            host.removeEventListener('scroll', scheduleOwnerScroll, true),
+        );
         viewport.removeEventListener('resize', schedule);
     };
 }

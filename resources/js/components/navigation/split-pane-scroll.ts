@@ -12,6 +12,11 @@ function nestedContentOwnsWheel(event: WheelEvent, boundary: EventTarget) {
         if (target === boundary) break;
         const element = target as Element;
         if (element.nodeType !== 1) continue;
+        if (
+            element === element.ownerDocument.scrollingElement ||
+            element === element.ownerDocument.body
+        )
+            continue;
         const styles =
             element.ownerDocument.defaultView?.getComputedStyle(element);
         if (!styles || !/(auto|scroll)/.test(styles.overflowY)) continue;
@@ -34,7 +39,7 @@ export function attachPaneWheelScrolling({
     pane: HTMLElement;
     eventTarget: Document;
 }) {
-    function scrollPanes(event: WheelEvent) {
+    function scrollPane(event: WheelEvent) {
         if (
             event.ctrlKey ||
             event.metaKey ||
@@ -52,20 +57,22 @@ export function attachPaneWheelScrolling({
         pane.scrollTop += distance;
     }
 
-    eventTarget.addEventListener('wheel', scrollPanes as EventListener, {
+    eventTarget.addEventListener('wheel', scrollPane as EventListener, {
         passive: false,
         capture: true,
     });
-    return () =>
+    return () => {
         eventTarget.removeEventListener(
             'wheel',
-            scrollPanes as EventListener,
+            scrollPane as EventListener,
             true,
         );
+    };
 }
 
 export function attachWorkspaceWheelScrolling(workspace: HTMLElement) {
-    function scrollOutsidePanes(event: WheelEvent) {
+    const ownerDocument = workspace.ownerDocument;
+    function scrollOutsideDocuments(event: WheelEvent) {
         if (
             event.defaultPrevented ||
             event.ctrlKey ||
@@ -75,8 +82,10 @@ export function attachWorkspaceWheelScrolling(workspace: HTMLElement) {
         )
             return;
         const target = event.target as Element;
-        if (target.closest?.('.split-pane:not([hidden])')) return;
-        if (nestedContentOwnsWheel(event, document.body)) return;
+        const pane = target.closest?.('.split-pane:not([hidden])');
+        if (pane && target.closest?.('.floating-body-island, iframe')) return;
+        if (target.closest?.('.document-outline-widget')) return;
+        if (nestedContentOwnsWheel(event, pane ?? ownerDocument.body)) return;
         const panes = workspace.querySelectorAll<HTMLElement>(
             '.split-pane:not([hidden])',
         );
@@ -87,6 +96,9 @@ export function attachWorkspaceWheelScrolling(workspace: HTMLElement) {
             pane.scrollTop += distance;
         });
     }
-    document.addEventListener('wheel', scrollOutsidePanes, { passive: false });
-    return () => document.removeEventListener('wheel', scrollOutsidePanes);
+    ownerDocument.addEventListener('wheel', scrollOutsideDocuments, {
+        passive: false,
+    });
+    return () =>
+        ownerDocument.removeEventListener('wheel', scrollOutsideDocuments);
 }

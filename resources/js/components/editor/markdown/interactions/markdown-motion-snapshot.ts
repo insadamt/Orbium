@@ -71,34 +71,37 @@ function copySnapshotMediaFrames(source: HTMLElement, clone: HTMLElement) {
     const copies = clone.querySelectorAll('canvas, video, audio');
     originals.forEach((original, index) => {
         const copy = copies[index];
-        if (
-            original instanceof HTMLCanvasElement &&
-            copy instanceof HTMLCanvasElement
-        ) {
-            if (!original.width || !original.height) return;
-            copy.width = original.width;
-            copy.height = original.height;
-            // cloneNode preserves canvas attributes but not the PDF page pixels.
-            copy.getContext('2d')?.drawImage(original, 0, 0);
+        // Adopted media keeps its original window's prototype after crossing iframe panes.
+
+        if (original.localName === 'canvas' && copy?.localName === 'canvas') {
+            const sourceCanvas = original as HTMLCanvasElement;
+            const targetCanvas = copy as HTMLCanvasElement;
+            if (!sourceCanvas.width || !sourceCanvas.height) return;
+            targetCanvas.width = sourceCanvas.width;
+            targetCanvas.height = sourceCanvas.height;
+            targetCanvas.getContext('2d')?.drawImage(sourceCanvas, 0, 0);
         } else if (
-            original instanceof HTMLVideoElement &&
-            copy instanceof HTMLVideoElement
+            original.localName === 'video' &&
+            copy?.localName === 'video'
         ) {
-            copy.removeAttribute('src');
-            copy.querySelectorAll('source').forEach((child) => child.remove());
-            copy.preload = 'none';
-            if (original.readyState < HTMLMediaElement.HAVE_CURRENT_DATA)
-                return;
+            const video = original as HTMLVideoElement;
+            const videoCopy = copy as HTMLVideoElement;
+            videoCopy.removeAttribute('src');
+            videoCopy
+                .querySelectorAll('source')
+                .forEach((child) => child.remove());
+            videoCopy.preload = 'none';
+            if (video.readyState < 2) return;
             const frame = document.createElement('canvas');
-            frame.width = original.videoWidth;
-            frame.height = original.videoHeight;
+            frame.width = video.videoWidth;
+            frame.height = video.videoHeight;
             try {
-                frame.getContext('2d')?.drawImage(original, 0, 0);
+                frame.getContext('2d')?.drawImage(video, 0, 0);
             } catch {
                 return;
             }
-            frame.className = original.className;
-            const style = getComputedStyle(original);
+            frame.className = video.className;
+            const style = getComputedStyle(video);
             Object.assign(frame.style, {
                 width: style.width,
                 height: style.height,
@@ -107,11 +110,11 @@ function copySnapshotMediaFrames(source: HTMLElement, clone: HTMLElement) {
                 borderRadius: style.borderRadius,
                 background: style.background,
             });
-            copy.replaceWith(frame);
-        } else if (copy instanceof HTMLAudioElement) {
+            videoCopy.replaceWith(frame);
+        } else if (copy?.localName === 'audio') {
             copy.removeAttribute('src');
             copy.querySelectorAll('source').forEach((child) => child.remove());
-            copy.preload = 'none';
+            (copy as HTMLAudioElement).preload = 'none';
         }
     });
 }

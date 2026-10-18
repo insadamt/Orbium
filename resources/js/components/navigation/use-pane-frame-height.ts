@@ -30,7 +30,7 @@ export function usePaneFrameHeight({
                 '--orbium-host-viewport-height',
                 `${window.innerHeight}px`,
             );
-            const nextHeight = Math.ceil(main.getBoundingClientRect().height);
+            const nextHeight = Math.max(main.offsetHeight, main.scrollHeight);
             if (nextHeight > 0)
                 setHeight((previous) =>
                     previous === nextHeight ? previous : nextHeight,

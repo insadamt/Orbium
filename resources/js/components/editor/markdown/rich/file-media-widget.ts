@@ -1,9 +1,15 @@
+import {
+    claimTransferredMediaPlayer,
+    registerTransferableMediaPlayer,
+} from './transferred-media-players';
+import type { AttachmentMetadata } from './rich-model';
 import { EditorView } from '@codemirror/view';
 import { attachmentMediaKind } from '@/components/media/attachment-media';
 import { createAttachmentPlayer } from '@/components/media/attachment-player';
 import {
     loadAttachmentMetadata,
     richAttachmentUrl,
+    richMediaSourceUrl,
 } from './attachment-metadata';
 import { widgetIcon } from './widget-icons';
 import { installMediaAvailability } from './media-availability';
@@ -21,6 +27,7 @@ export function mountFileMedia(mount: RichWidgetMount): RichController {
     let loadingId = '';
     let request: AbortController | undefined;
     let player: ReturnType<typeof createAttachmentPlayer> = null;
+    let unregisterPlayer: (() => void) | undefined;
     let mediaKind: 'video' | 'audio' | 'pdf' | null = null;
     const controls = sourceControls(mount, 'File', false);
     const download = element(
@@ -46,6 +53,8 @@ export function mountFileMedia(mount: RichWidgetMount): RichController {
         onMissing: clearPlayer,
     });
     function clearPlayer() {
+        unregisterPlayer?.();
+        unregisterPlayer = undefined;
         player?.destroy();
         player = null;
         mediaKind = null;
@@ -124,58 +133,82 @@ export function mountFileMedia(mount: RichWidgetMount): RichController {
         request = new AbortController();
         download.removeAttribute('href');
         const id = next.attachmentId;
-        void loadAttachmentMetadata(mount.context, id, request.signal)
-            .then((metadata) => {
-                if (destroyed || loadingId !== id) return;
-                const url = richAttachmentUrl(mount.context, id);
-                download.href = `${url}?download=1`;
-                download.download = metadata.name;
-                download.textContent = block.label || metadata.name;
-                details.textContent = `${metadata.mime_type} · ${Math.ceil(metadata.size_bytes / 1024)} KB`;
-                mediaKind = attachmentMediaKind(metadata.mime_type);
-                const label =
-                    mediaKind === 'pdf'
-                        ? 'PDF'
-                        : mediaKind
-                          ? mediaKind[0].toUpperCase() + mediaKind.slice(1)
-                          : 'File';
-                if (controls.toolbar.firstElementChild)
-                    controls.toolbar.firstElementChild.textContent = label;
-                player = createAttachmentPlayer({
-                    url,
-                    name: block.label || metadata.name,
-                    mime: metadata.mime_type,
-                    sizeBytes: metadata.size_bytes,
-                    onResize: () => mount.view.requestMeasure(),
-                    isVisible: mount.context.isVisible,
+        const installPlayer = (metadata: AttachmentMetadata) => {
+            if (destroyed || loadingId !== id) return;
+            const url = richAttachmentUrl(mount.context, id);
+            download.href = `${url}?download=1`;
+            download.download = metadata.name;
+            download.textContent = block.label || metadata.name;
+            details.textContent = `${metadata.mime_type} · ${Math.ceil(metadata.size_bytes / 1024)} KB`;
+            mediaKind = attachmentMediaKind(metadata.mime_type);
+            const label =
+                mediaKind === 'pdf'
+                    ? 'PDF'
+                    : mediaKind
+                      ? mediaKind[0].toUpperCase() + mediaKind.slice(1)
+                      : 'File';
+            if (controls.toolbar.firstElementChild)
+                controls.toolbar.firstElementChild.textContent = label;
+            const playerOptions = {
+                url: richMediaSourceUrl(mount.context, id),
+                name: block.label || metadata.name,
+                mime: metadata.mime_type,
+                sizeBytes: metadata.size_bytes,
+                onResize: () => mount.view.requestMeasure(),
+                isVisible: mount.context.isVisible,
+            };
+            player =
+                claimTransferredMediaPlayer(mount.context, id, mount.root) ??
+                createAttachmentPlayer(playerOptions);
+            if (!player) controls.toolbar.hidden = false;
+            if (player) {
+                controls.toolbar.hidden = true;
+                updateActionAppearance(true);
+                download.hidden = details.hidden = true;
+                player.actions.prepend(replace, remove);
+                controls.output.prepend(player.root);
+                player.relocate(playerOptions);
+                unregisterPlayer = registerTransferableMediaPlayer(
+                    player.root,
+                    {
+                        attachmentId: id,
+                        take: () => {
+                            const retained = player;
+                            retained?.prepareRelocation();
+                            player = null;
+                            replace.remove();
+                            remove.remove();
+                            unregisterPlayer?.();
+                            unregisterPlayer = undefined;
+                            return retained;
+                        },
+                    },
+                );
+                mount.root.dataset.mediaKind = mediaKind!;
+                mount.root.setAttribute('aria-label', `${mediaKind} block`);
+            }
+            mount.view.requestMeasure();
+        };
+        const cachedMetadata = mount.context.metadata.get(id);
+        if (cachedMetadata) installPlayer(cachedMetadata);
+        else
+            void loadAttachmentMetadata(mount.context, id, request.signal)
+                .then(installPlayer)
+                .catch((failure: unknown) => {
+                    if (
+                        destroyed ||
+                        loadingId !== id ||
+                        (failure instanceof DOMException &&
+                            failure.name === 'AbortError')
+                    )
+                        return;
+                    setMissing();
+                    controls.error.textContent =
+                        failure instanceof Error
+                            ? failure.message
+                            : 'Attachment unavailable.';
+                    controls.error.hidden = false;
                 });
-                if (!player) controls.toolbar.hidden = false;
-                if (player) {
-                    controls.toolbar.hidden = true;
-                    updateActionAppearance(true);
-                    download.hidden = details.hidden = true;
-                    player.actions.prepend(replace, remove);
-                    controls.output.prepend(player.root);
-                    mount.root.dataset.mediaKind = mediaKind!;
-                    mount.root.setAttribute('aria-label', `${mediaKind} block`);
-                }
-                mount.view.requestMeasure();
-            })
-            .catch((failure: unknown) => {
-                if (
-                    destroyed ||
-                    loadingId !== id ||
-                    (failure instanceof DOMException &&
-                        failure.name === 'AbortError')
-                )
-                    return;
-                setMissing();
-                controls.error.textContent =
-                    failure instanceof Error
-                        ? failure.message
-                        : 'Attachment unavailable.';
-                controls.error.hidden = false;
-            });
         return true;
     }
     update(block);

@@ -8,6 +8,7 @@ export function mountVideoFullscreen(
     reportError: (message: string) => void,
 ) {
     let fullscreen = false;
+    let ownerDocument = video.ownerDocument;
     function updateFullscreen(active: boolean) {
         const wasFullscreen = fullscreen;
         fullscreen = active;
@@ -16,14 +17,25 @@ export function mountVideoFullscreen(
             trigger.focus({ preventScroll: true });
     }
     const fullscreenChanged = () =>
-        updateFullscreen(document.fullscreenElement === video);
+        updateFullscreen(ownerDocument.fullscreenElement === video);
     const nativeFullscreenStarted = () => updateFullscreen(true);
     const nativeFullscreenEnded = () => updateFullscreen(false);
-    document.addEventListener('fullscreenchange', fullscreenChanged);
+    ownerDocument.addEventListener('fullscreenchange', fullscreenChanged);
     video.addEventListener('webkitbeginfullscreen', nativeFullscreenStarted);
     video.addEventListener('webkitendfullscreen', nativeFullscreenEnded);
     trigger.disabled = !video.requestFullscreen && !video.webkitEnterFullscreen;
     return {
+        relocate() {
+            ownerDocument.removeEventListener(
+                'fullscreenchange',
+                fullscreenChanged,
+            );
+            ownerDocument = video.ownerDocument;
+            ownerDocument.addEventListener(
+                'fullscreenchange',
+                fullscreenChanged,
+            );
+        },
         async open() {
             video.controls = true;
             try {
@@ -39,7 +51,10 @@ export function mountVideoFullscreen(
             }
         },
         destroy() {
-            document.removeEventListener('fullscreenchange', fullscreenChanged);
+            ownerDocument.removeEventListener(
+                'fullscreenchange',
+                fullscreenChanged,
+            );
             video.removeEventListener(
                 'webkitbeginfullscreen',
                 nativeFullscreenStarted,
@@ -48,8 +63,8 @@ export function mountVideoFullscreen(
                 'webkitendfullscreen',
                 nativeFullscreenEnded,
             );
-            if (document.fullscreenElement === video)
-                void document.exitFullscreen().catch(() => {});
+            if (ownerDocument.fullscreenElement === video)
+                void ownerDocument.exitFullscreen().catch(() => {});
             video.controls = false;
         },
     };

@@ -28,7 +28,7 @@ function MediaFullPreview({
     }, [options]);
     return (
         <Dialog.Root open={open} onOpenChange={setOpen}>
-            <Dialog.Portal container={document.body}>
+            <Dialog.Portal container={options.content.ownerDocument.body}>
                 <Dialog.Overlay className="mermaid-full-overlay" />
                 <Dialog.Content
                     className="mermaid-full-dialog attachment-full-dialog"
@@ -63,11 +63,12 @@ function MediaFullPreview({
 }
 
 export function openMediaFullPreview(options: MediaFullPreviewOptions) {
-    const placeholder = document.createElement('div');
+    const ownerDocument = options.content.ownerDocument;
+    const placeholder = ownerDocument.createElement('div');
     placeholder.style.height = `${options.content.getBoundingClientRect().height}px`;
     options.content.before(placeholder);
-    const host = document.createElement('div');
-    document.body.append(host);
+    const host = ownerDocument.createElement('div');
+    ownerDocument.body.append(host);
     const root = createRoot(host);
     let disposed = false;
     const dispose = () => {

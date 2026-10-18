@@ -17,24 +17,23 @@ export function useSplitPaneScroll({
     useLayoutEffect(() => {
         const pane = paneRef.current;
         if (!pane) return;
-        if (split && !wasSplit.current) {
+        if (split && visible && !wasSplit.current) {
             const tab = useNavigation
                 .getState()
                 .tabs.find((tab) => tab.id === tabId);
             pane.scrollTop = tab?.entries[tab.index].scroll ?? 0;
-        } else if (!split && wasSplit.current && visible) {
-            window.scrollTo(0, lastPaneScroll.current);
+            wasSplit.current = true;
+        } else if (!split && wasSplit.current) {
+            if (visible) window.scrollTo(0, lastPaneScroll.current);
+            wasSplit.current = false;
         }
-        wasSplit.current = split;
-        if (!split) return;
+        if (!split || !visible) return;
         const rememberScroll = () => {
             lastPaneScroll.current = pane.scrollTop;
         };
         rememberScroll();
         pane.addEventListener('scroll', rememberScroll, { passive: true });
-        return () => {
-            pane.removeEventListener('scroll', rememberScroll);
-        };
+        return () => pane.removeEventListener('scroll', rememberScroll);
     }, [split, tabId, visible]);
 
     return paneRef;

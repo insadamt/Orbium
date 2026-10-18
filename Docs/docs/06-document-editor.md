@@ -203,6 +203,41 @@ Block menu:
 
 Dragging reorders blocks.
 
+In split screen, dragging a Markdown Live Preview block by its grip into another
+Markdown Live Preview page in the same workspace moves the complete top-level
+block to the displayed insertion line. This includes nested list contents,
+presentation metadata, attachments and mentions. Wheel and edge scrolling follow
+the destination pane. An empty destination accepts the block. Source mode,
+legacy JSON pages, other workspaces and a second view of the same page are not
+cross-page destinations. Escape or releasing outside a valid destination cancels.
+
+Split interaction correction (2026-10-18): visible Markdown split panes stay editable independently of which pane owns shortcuts. This allows a block to move directly into the companion pane without selecting it first and keeps both endpoints available for linked undo/redo. Hovering a document surface selects its pane without a click. Hover activation waits while pointer buttons are held so it cannot cancel a drag, and a successful transfer focuses the destination. See [the report and manual checklist](../reports/05-split-hover-activation-and-block-transfer.md).
+
+Cross-page moves use the same block motion as in-page moves: the source block
+shrinks/fades out, neighboring blocks slide into their new positions in both
+pages, and the inserted block scales/fades in. Reduced motion applies both edits
+immediately without animation.
+
+Moving already-rendered Mermaid and math blocks carries their prepared previews
+to the destination editor before insertion, including inline math. The move must
+not replace a prepared preview with a fresh rendering/loading placeholder.
+Attachment metadata is reused for moved media. Loaded PDF/video/audio players
+move to the destination without reconstructing their readers, retaining PDF
+page/zoom/rotation and playback time/volume. This also applies to media inside
+callouts and table cells, with separate state for repeated references. PDF resize
+renders keep the previous page canvas visible until the new raster is ready.
+Media sources use workspace Library URLs so their availability does not depend
+on the original page remaining present. Page-owned editing controls are rebound.
+
+Ctrl/Cmd+Z undoes a cross-page move in both mounted pages together; Ctrl+Y or
+Ctrl/Cmd+Shift+Z redoes it. Ordinary newer edits in the focused page undo first.
+If the other page has newer edits, is closed or is not editable, the move is
+blocked with a notice instead of undoing only half. Both pages must remain open
+in the same session for linked history; reloading resets editor history.
+Autosaves remain independent: wait for both pages to show Saved before reloading.
+The two page saves are not one server transaction. See
+[the report and manual checklist](../reports/06-split-page-block-moves.md).
+
 ## Table border handles
 
 Markdown Live Preview tables use subtle 8-by-1-pixel marks integrated into the top border of each column and the leading border of each row, with 4-pixel breaks on either side (`----- - -----`), with transparent hit areas and no visible button background. Handles appear on table hover, keyboard focus, and touch devices. Drag a column handle left/right or a row handle up/down to reorder complete columns or rows. The actual cells follow the pointer along that axis within the table bounds, leaving their original space empty while neighboring cells slide aside to open the destination gap. On release, the cells settle into the gap before the source edit commits. Menu move actions use the same movement. Escape cancels it. Reduced motion retains direct pointer feedback and applies positions immediately without settling tweens. Clicking a handle opens its options in place of the former column three-dot button.

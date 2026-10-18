@@ -134,9 +134,7 @@
     min-width: 0;
     min-height: 0;
     align-items: start;
-    --split-page-gap: 80px;
     margin-top: calc(-1 * var(--split-workspace-offset, 0px));
-    overflow-x: clip;
 }
 .split-frame-group.is-active {
     display: contents;
@@ -158,34 +156,18 @@
     container-type: inline-size;
 }
 .split-pane {
-    width: 100%;
-    height: 100dvh;
+    display: flow-root;
     min-width: 0;
-    min-height: 0;
-    padding-top: calc(
-        var(--split-workspace-offset, 0px) + var(--split-page-gap, 80px)
-    );
-    padding-bottom: 64px;
-    overflow-x: hidden;
-    overflow-y: auto;
+    height: 100dvh;
+    overflow: auto;
     overscroll-behavior-y: contain;
 }
-.split-pane,
-.split-pane *,
-html.orbium-embedded-document,
-html.orbium-embedded-document * {
-    scrollbar-width: none;
-}
-.split-pane::-webkit-scrollbar,
-.split-pane *::-webkit-scrollbar,
-html.orbium-embedded-document::-webkit-scrollbar,
-html.orbium-embedded-document *::-webkit-scrollbar {
+.split-pane[hidden] {
     display: none;
 }
 .split-pane iframe {
     display: block;
     width: 100%;
-    height: 100%;
     border: 0;
     background: transparent;
     visibility: hidden;
@@ -196,6 +178,12 @@ html.orbium-embedded-document *::-webkit-scrollbar {
 .split-pane-framed {
     position: relative;
 }
+.split-pane > .floating-body-island,
+.split-pane > iframe {
+    margin-top: calc(
+        var(--split-workspace-offset, 0px) + var(--page-surface-top-gap)
+    );
+}
 .split-pane-loading {
     position: absolute;
     inset: 0;
@@ -204,7 +192,6 @@ html.orbium-embedded-document *::-webkit-scrollbar {
     color: var(--muted-foreground);
     font-size: 12px;
 }
-.split-pane .floating-body-island,
 .orbium-embedded-pane .floating-body-island {
     width: 100%;
     max-width: 100%;
@@ -230,11 +217,6 @@ html.orbium-embedded-document .orbium-embedded-pane .floating-workspace {
     background: transparent;
     background-image: none;
 }
-@media (max-width: 1000px) {
-    .split-workspace {
-        --split-page-gap: 64px;
-    }
-}
 @media (max-width: 700px) {
     .split-workspace {
         grid-template-columns: minmax(0, 1fr);
@@ -249,9 +231,6 @@ html.orbium-embedded-document .orbium-embedded-pane .floating-workspace {
     }
 }
 @media (max-width: 480px) {
-    .split-workspace {
-        --split-page-gap: 48px;
-    }
     .orbium-embedded-pane .floating-body-island {
         padding: 22px 18px 36px;
         border-radius: 24px;

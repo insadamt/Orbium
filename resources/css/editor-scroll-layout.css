@@ -37,16 +37,6 @@
     padding-bottom: 16px;
 }
 
-.split-pane:has(> .floating-document-island) {
-    display: flex;
-    flex-direction: column;
-    padding-bottom: 16px;
-}
-
-.split-pane > .floating-document-island {
-    flex: 1 0 auto;
-}
-
 .orbium-embedded-pane
     .floating-workspace.document-workspace:not(
         :has(> .split-workspace.is-active)

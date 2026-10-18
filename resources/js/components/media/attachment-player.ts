@@ -5,7 +5,7 @@ import { openMediaFullPreview } from './media-full-preview';
 import { mountPdfReader } from './pdf-reader';
 import { mountVideoFullscreen } from './video-fullscreen';
 
-type AttachmentPlayerOptions = {
+export type AttachmentPlayerOptions = {
     url: string;
     name: string;
     mime: string;
@@ -18,6 +18,9 @@ export function createAttachmentPlayer(options: AttachmentPlayerOptions) {
     const kind = attachmentMediaKind(options.mime);
     if (!kind) return null;
     let destroyed = false;
+    let relocationPlayback:
+        | { time: number; playing: boolean; volume: number; muted: boolean }
+        | undefined;
     let closePreview: (() => void) | undefined;
     let videoFullscreen: ReturnType<typeof mountVideoFullscreen> | undefined;
     const root = document.createElement('div');
@@ -166,7 +169,7 @@ export function createAttachmentPlayer(options: AttachmentPlayerOptions) {
             });
         media.addEventListener('play', () => {
             status.hidden = true;
-            if (document.hidden || options.isVisible?.() === false)
+            if (root.ownerDocument.hidden || options.isVisible?.() === false)
                 media?.pause();
         });
         media.addEventListener('loadedmetadata', () => {
@@ -177,10 +180,11 @@ export function createAttachmentPlayer(options: AttachmentPlayerOptions) {
     root.append(status);
     const pause = () => media?.pause();
     const visibilityChanged = () => {
-        if (document.hidden) pause();
+        if (root.ownerDocument.hidden) pause();
     };
-    document.addEventListener('visibilitychange', visibilityChanged);
-    const observer = new IntersectionObserver(() => {
+    let ownerDocument = root.ownerDocument;
+    ownerDocument.addEventListener('visibilitychange', visibilityChanged);
+    let observer = new IntersectionObserver(() => {
         if (options.isVisible?.() === false) pause();
     });
     observer.observe(root);
@@ -188,13 +192,78 @@ export function createAttachmentPlayer(options: AttachmentPlayerOptions) {
         root,
         actions,
         pause,
+        prepareRelocation() {
+            closePreview?.();
+            if (media)
+                relocationPlayback = {
+                    time: media.currentTime,
+                    playing: !media.paused && !media.ended,
+                    volume: media.volume,
+                    muted: media.muted,
+                };
+        },
+        relocate(next: AttachmentPlayerOptions) {
+            closePreview?.();
+            options = next;
+            ownerDocument.removeEventListener(
+                'visibilitychange',
+                visibilityChanged,
+            );
+            ownerDocument = root.ownerDocument;
+            observer.disconnect();
+            const OwnerIntersectionObserver =
+                (ownerDocument.defaultView as typeof window | null)
+                    ?.IntersectionObserver ?? IntersectionObserver;
+            observer = new OwnerIntersectionObserver(() => {
+                if (options.isVisible?.() === false) pause();
+            });
+            observer.observe(root);
+            ownerDocument.addEventListener(
+                'visibilitychange',
+                visibilityChanged,
+            );
+            download.href = `${next.url}?download=1`;
+            download.download = next.name;
+            title.textContent = title.title = next.name;
+            reader?.relocate(next.onResize);
+            videoFullscreen?.relocate();
+            if (media && relocationPlayback) {
+                const playback = relocationPlayback;
+                relocationPlayback = undefined;
+                const restorePlayback = () => {
+                    if (!media || destroyed) return;
+                    media.volume = playback.volume;
+                    media.muted = playback.muted;
+                    if (
+                        Number.isFinite(playback.time) &&
+                        Math.abs(media.currentTime - playback.time) > 0.1
+                    ) {
+                        try {
+                            media.currentTime = playback.time;
+                        } catch {
+                            /* A decoder can temporarily reject seeking during document adoption. */
+                        }
+                    }
+                    if (playback.playing && options.isVisible?.() !== false)
+                        void media.play().catch(() => {});
+                };
+                if (media.readyState >= 1) restorePlayback();
+                else
+                    media.addEventListener('loadedmetadata', restorePlayback, {
+                        once: true,
+                    });
+            }
+        },
         setName(name: string) {
             title.textContent = title.title = name;
         },
         destroy() {
             destroyed = true;
             closePreview?.();
-            document.removeEventListener('visibilitychange', visibilityChanged);
+            ownerDocument.removeEventListener(
+                'visibilitychange',
+                visibilityChanged,
+            );
             observer.disconnect();
             pause();
             videoFullscreen?.destroy();

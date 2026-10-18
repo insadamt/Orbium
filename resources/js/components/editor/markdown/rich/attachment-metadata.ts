@@ -5,6 +5,12 @@ export function richAttachmentUrl(context: RichContext, id: string): string {
     return `${documentUrl(context.workspaceId, context.nodeId)}/attachments/${id}`;
 }
 
+export function richMediaSourceUrl(context: RichContext, id: string): string {
+    // A retained player must not depend on the page it was originally inserted into.
+
+    return `/workspaces/${context.workspaceId}/library/files/${id}`;
+}
+
 export async function loadAttachmentMetadata(
     context: RichContext,
     id: string,

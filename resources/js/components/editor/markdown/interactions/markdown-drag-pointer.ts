@@ -2,7 +2,7 @@ import type { EditorView } from '@codemirror/view';
 
 type DragPointer = { clientX: number; clientY: number };
 
-function measureHostProjection(view: EditorView) {
+export function measureHostProjection(view: EditorView) {
     let ownerWindow = view.dom.ownerDocument.defaultView;
     let offsetX = 0;
     let offsetY = 0;

@@ -172,8 +172,9 @@ export function mountPdfReader(
         }
         const currentRevision = revision;
         rendering = true;
-        loading.hidden = false;
+        loading.hidden = !canvas.hidden;
         viewport.setAttribute('aria-busy', 'true');
+        let pendingCanvas: HTMLCanvasElement | undefined;
         try {
             const currentPage = await pdf.getPage(pageNumber);
             if (destroyed || currentRevision !== revision) return;
@@ -202,21 +203,29 @@ export function mountPdfReader(
                     8_388_608 / (pageViewport.width * pageViewport.height),
                 ),
             );
-            canvas.width = Math.ceil(pageViewport.width * outputScale);
-            canvas.height = Math.ceil(pageViewport.height * outputScale);
+            const nextCanvas = root.ownerDocument.createElement('canvas');
+            pendingCanvas = nextCanvas;
+            nextCanvas.width = Math.ceil(pageViewport.width * outputScale);
+            nextCanvas.height = Math.ceil(pageViewport.height * outputScale);
+            renderTask = currentPage.render({
+                canvas: nextCanvas,
+                viewport: pageViewport,
+                transform: [outputScale, 0, 0, outputScale, 0, 0],
+            });
+            await renderTask.promise;
+            if (destroyed || currentRevision !== revision) return;
+            // Keep the displayed page intact until its replacement raster is ready.
+
+            canvas.width = nextCanvas.width;
+            canvas.height = nextCanvas.height;
+            canvas.getContext('2d')?.drawImage(nextCanvas, 0, 0);
+            nextCanvas.width = nextCanvas.height = 0;
             canvas.style.width = `${pageViewport.width}px`;
             canvas.style.height = `${pageViewport.height}px`;
             canvas.setAttribute(
                 'aria-label',
                 `${name}, page ${pageNumber} of ${pdf.numPages}`,
             );
-            renderTask = currentPage.render({
-                canvas,
-                viewport: pageViewport,
-                transform: [outputScale, 0, 0, outputScale, 0, 0],
-            });
-            await renderTask.promise;
-            if (destroyed || currentRevision !== revision) return;
             loading.hidden = true;
             canvas.hidden = false;
             viewport.setAttribute('aria-busy', 'false');
@@ -242,6 +251,7 @@ export function mountPdfReader(
                 );
             }
         } finally {
+            if (pendingCanvas) pendingCanvas.width = pendingCanvas.height = 0;
             rendering = false;
         }
     }
@@ -329,6 +339,18 @@ export function mountPdfReader(
     return {
         root,
         refresh: refreshLayout,
+        relocate(nextOnResize?: () => void) {
+            onResize = nextOnResize;
+            if (!started) {
+                intersection.disconnect();
+                void load();
+            }
+
+            // Keep the loaded PDF and canvas; a different pane width alone can require a new raster size.
+
+            if (Math.abs(viewport.clientWidth - lastWidth) >= 2)
+                refreshLayout();
+        },
         destroy() {
             destroyed = true;
             clearTimeout(timer);

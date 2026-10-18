@@ -5,6 +5,7 @@ import {
     useMemo,
     useRef,
     type ReactNode,
+    type PointerEvent,
 } from 'react';
 import { flushSync } from 'react-dom';
 import type { Page } from '@inertiajs/core';
@@ -19,7 +20,7 @@ import { useTabPageCache } from './tab-page-cache';
 import { groupForTab } from './split-group-state';
 import { SplitWorkspace } from './split-workspace';
 import { useSplitPaneScroll } from './use-split-pane-scroll';
-import { attachWorkspaceWheelScrolling } from './split-pane-scroll';
+import { useSplitWorkspaceScroll } from './use-split-workspace-scroll';
 import { useTabContentMotion } from './use-tab-content-motion';
 import {
     disposeSplitMotion,
@@ -71,6 +72,25 @@ const RetainedDocumentTab = memo(function RetainedDocumentTab({
             flushSync(() => useNavigation.getState().activate(tabId));
     }
 
+    function activateHoveredPane(event: PointerEvent<HTMLDivElement>) {
+        if (
+            !side ||
+            !visible ||
+            event.pointerType === 'touch' ||
+            event.buttons !== 0 ||
+            !(event.target instanceof Element) ||
+            !event.target.closest('.floating-body-island') ||
+            useNavigation.getState().activeId === tabId
+        )
+            return;
+        activatePane();
+        event.currentTarget
+            .querySelector<HTMLElement>(
+                '.cm-content[contenteditable="true"], .tiptap[contenteditable="true"]',
+            )
+            ?.focus({ preventScroll: true });
+    }
+
     const documentTab = useMemo(
         () => ({ tabId, active, visible, url: page.url }),
         [tabId, active, visible, page.url],
@@ -90,6 +110,7 @@ const RetainedDocumentTab = memo(function RetainedDocumentTab({
             data-split-pane-id={side ? tabId : undefined}
             tabIndex={side ? -1 : undefined}
             onPointerDownCapture={activatePane}
+            onPointerMoveCapture={activateHoveredPane}
             onFocusCapture={activatePane}
         >
             <DocumentTabContext.Provider value={documentTab}>
@@ -159,32 +180,7 @@ export function RetainedDocumentWorkspace({
         [surfaceTabId, trailingTabId, surfaceTabIndex, surfacePageKey],
     );
     useTabContentMotion({ workspaceRef, surface: motionSurface });
-
-    useLayoutEffect(() => {
-        const workspace = workspaceRef.current;
-        if (!activeGroup || !workspace) return;
-        window.scrollTo(0, 0);
-        let previousOffset = 0;
-        const updateWorkspaceOffset = () => {
-            const top =
-                workspace.getBoundingClientRect().top +
-                window.scrollY +
-                previousOffset;
-            previousOffset = top;
-            workspace.style.setProperty('--split-workspace-offset', `${top}px`);
-        };
-        updateWorkspaceOffset();
-        const detachWheel = attachWorkspaceWheelScrolling(workspace);
-        const observer = new ResizeObserver(updateWorkspaceOffset);
-        observer.observe(workspace);
-        window.addEventListener('resize', updateWorkspaceOffset);
-        return () => {
-            observer.disconnect();
-            detachWheel();
-            window.removeEventListener('resize', updateWorkspaceOffset);
-            workspace.style.removeProperty('--split-workspace-offset');
-        };
-    }, [activeGroup]);
+    useSplitWorkspaceScroll(workspaceRef, Boolean(activeGroup));
 
     useLayoutEffect(() => {
         playPendingSplitMotion();

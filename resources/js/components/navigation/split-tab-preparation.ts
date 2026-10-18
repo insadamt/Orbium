@@ -65,7 +65,7 @@ export function prepareTabForSplit(
     const path = splitPagePath(tab);
     if (!path) return Promise.resolve(false);
     if (hasRetainedDocument(tab.id)) return Promise.resolve(true);
-    if (tab.entries[tab.index].kind === 'database') {
+    if (path.includes('/databases/')) {
         useSplitPreparation.setState((state) => ({
             frameTabIds: state.frameTabIds.includes(tab.id)
                 ? state.frameTabIds

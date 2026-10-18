@@ -5,6 +5,8 @@ import { openLocation } from './tab-navigation';
 import { hasRetainedDocument, useTabPageCache } from './tab-page-cache';
 import { useSplitPreparation } from './split-tab-preparation';
 import { usePaneFrameHeight } from './use-pane-frame-height';
+import { SplitDocumentLoading } from './split-document-loading';
+import { splitPagePath } from './split-tab-rules';
 import { useSplitPaneScroll } from './use-split-pane-scroll';
 
 function PaneFrame({
@@ -159,6 +161,15 @@ export function SplitWorkspace({ children }: { children: ReactNode }) {
                         ? 'left'
                         : 'right'
                     : undefined;
+                if (splitPagePath(tab)?.includes('/documents/')) {
+                    return group === activeGroup && side ? (
+                        <SplitDocumentLoading
+                            key={tab.id}
+                            tab={tab}
+                            side={side}
+                        />
+                    ) : null;
+                }
                 return (
                     <PaneFrame
                         key={tab.id}

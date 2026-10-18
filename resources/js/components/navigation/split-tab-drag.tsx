@@ -6,6 +6,7 @@ import { useNavigation, type SplitTabs, type Tab } from './navigation-store';
 import { hasRetainedDocument } from './tab-page-cache';
 import { groupForTab } from './split-group-state';
 import { canSplitTabs } from './split-tab-rules';
+import { toast } from 'sonner';
 
 export function useSplitTabDrag(
     draggedTab: Tab | null,
@@ -81,7 +82,10 @@ export function useSplitTabDrag(
         )
             setPreparingDropTitle(tab.entries[tab.index].title);
         try {
-            await prepareHeldTab(tab);
+            if (!(await prepareHeldTab(tab))) {
+                toast.error('Could not open this split. Try again.');
+                return;
+            }
             const current = useNavigation.getState();
             const currentCompanion = current.tabs.find(
                 (item) => item.id === current.activeId,

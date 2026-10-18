@@ -75,12 +75,13 @@ class MarkdownBlockMotion {
             this.finish();
     };
 
-    capture(block: MarkdownBlockRange) {
+    capture(block?: MarkdownBlockRange) {
         this.finish();
         if (this.reducedMotion.matches) return null;
         const rows = renderedMarkdownMotionRows(this.view);
         const outgoing = rows.filter(
-            (row) => row.position >= block.from && row.position <= block.to,
+            (row) =>
+                block && row.position >= block.from && row.position <= block.to,
         );
         const ghost = createMarkdownMotionSnapshot(this.view, outgoing);
         if (ghost) ghost.popElement.style.visibility = 'hidden';
@@ -266,3 +267,6 @@ class MarkdownBlockMotion {
 }
 
 export const markdownBlockMotion = ViewPlugin.fromClass(MarkdownBlockMotion);
+export type MarkdownBlockMotionSnapshot = NonNullable<
+    ReturnType<MarkdownBlockMotion['capture']>
+>;

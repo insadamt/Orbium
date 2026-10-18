@@ -1,5 +1,31 @@
 # Phase 5 — Explorer review
 
+Split interaction correction (2026-10-18): hovering a document surface selects
+its editor without clicking. Both visible Markdown panes remain editable so
+cross-page block moves and linked history can use the companion pane. Dragging
+does not trigger hover activation; successful drops focus the destination.
+See [the report and manual checklist](../reports/05-split-hover-activation-and-block-transfer.md).
+
+Independent scrolling and TOC correction (2026-10-17): the user rejected shared
+browser scrolling. Each native document pane scrolls alone when hovered; wheel
+input outside document surfaces scrolls both. TOC targets and reading-position
+subscriptions now follow the live pane scroll owner through split/merge.
+This supersedes the shared-flow entry below. See [the report and manual checklist](../reports/05-independent-split-scroll-and-toc.md).
+
+Natural split scrolling correction (2026-10-17): after rejection of the edge
+spacing patches, document splits now use the normal browser page flow and the
+retained document component. No document iframe fallback or viewport-sized pane
+scroller remains. This supersedes the split-scrolling entries below.
+See [the report and manual checklist](../reports/05-natural-split-document-scrolling.md).
+
+Split bottom-edge correction (2026-10-17): retained and framed panes share
+scrolling page spacers and a 16px ending gap, with non-shrinking content-sized
+iframes. See [the report and manual checklist](../reports/05-split-bottom-edge-scrolling.md).
+
+Embedded page scroll correction (2026-10-17): iframe root scrolling is forwarded
+to the outer split pane so the whole document moves beneath the navbar instead
+of scrolling behind the iframe's initial top edge. See [the report and manual checklist](../reports/05-embedded-split-page-scrolling.md).
+
 Split top alignment correction (2026-10-17): embedded pane Statistics controls no
 longer reserve a row above the page. Retained and embedded document surfaces
 start at the same top gap. See [the report and manual checklist](../reports/05-split-document-top-alignment.md).

@@ -8,7 +8,7 @@ type MathPreviewRequest = {
     displayMode: boolean;
 };
 
-type MathPreview = { markup: string; failed: boolean };
+export type MathPreview = { markup: string; failed: boolean };
 
 const editorPreviews = new WeakMap<RichContext, Map<string, MathPreview>>();
 const maximumPreviewsPerEditor = 128;
@@ -19,6 +19,20 @@ function mathPreviewKey(request: MathPreviewRequest) {
 
 export function findPreparedMathPreview(request: MathPreviewRequest) {
     return editorPreviews.get(request.context)?.get(mathPreviewKey(request));
+}
+
+export function cachePreparedMathPreview(
+    request: MathPreviewRequest,
+    preview: MathPreview,
+) {
+    let previews = editorPreviews.get(request.context);
+    if (!previews) {
+        previews = new Map();
+        editorPreviews.set(request.context, previews);
+    }
+    if (previews.size >= maximumPreviewsPerEditor)
+        previews.delete(previews.keys().next().value!);
+    previews.set(mathPreviewKey(request), preview);
 }
 
 function prepareMathPreview(request: MathPreviewRequest): MathPreview {
@@ -42,14 +56,7 @@ function prepareMathPreview(request: MathPreviewRequest): MathPreview {
             failed: true,
         };
     }
-    let previews = editorPreviews.get(request.context);
-    if (!previews) {
-        previews = new Map();
-        editorPreviews.set(request.context, previews);
-    }
-    if (previews.size >= maximumPreviewsPerEditor)
-        previews.delete(previews.keys().next().value!);
-    previews.set(mathPreviewKey(request), preview);
+    cachePreparedMathPreview(request, preview);
     return preview;
 }
 

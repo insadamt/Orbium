@@ -10,7 +10,10 @@ export function attachFloatingOutlinePositioning(
     const viewport = host.ownerDocument.defaultView ?? documentViewport;
     const controls = viewport.document.querySelector('.floating-top-controls');
     const positionRail = () => {
-        const paneBounds = pane?.getBoundingClientRect();
+        const currentPane =
+            container.closest<HTMLElement>('[data-split-pane-id]') ??
+            frame?.closest<HTMLElement>('[data-split-pane-id]');
+        const paneBounds = currentPane?.getBoundingClientRect();
         const documentBounds = container.getBoundingClientRect();
         const frameBounds = frame?.getBoundingClientRect();
         const embedded = container.ownerDocument !== host.ownerDocument;

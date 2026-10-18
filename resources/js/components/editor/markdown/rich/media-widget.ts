@@ -18,6 +18,7 @@ import {
     isDisplayImage,
     loadAttachmentMetadata,
     richAttachmentUrl,
+    richMediaSourceUrl,
 } from './attachment-metadata';
 
 export function mountMedia(mount: RichWidgetMount): RichController {
@@ -429,7 +430,7 @@ export function mountMedia(mount: RichWidgetMount): RichController {
                         throw new Error(
                             'This attachment is not a supported image.',
                         );
-                    image.src = url;
+                    image.src = richMediaSourceUrl(mount.context, id);
                 }
                 mount.view.requestMeasure();
             })

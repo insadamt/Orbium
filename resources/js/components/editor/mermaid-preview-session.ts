@@ -335,6 +335,9 @@ export class MermaidPreviewSession {
                     ),
             );
             if (!this.isCurrent(entry)) return;
+            // A split-page move can supply the rendered preview while this lookup is awaiting I/O.
+
+            if (entry.sanitized && entry.preview) return;
             if (preview) {
                 entry.persisted = true;
                 entry.preview = preview;
