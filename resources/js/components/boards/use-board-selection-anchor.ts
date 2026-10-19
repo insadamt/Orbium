@@ -60,12 +60,10 @@ export function useBoardSelectionAnchor(
                 inspector && !compact ? inspector.offsetWidth + 40 : 12;
             const availableWidth = viewport.clientWidth - rightInset - 12;
             toolbar.style.maxWidth = `${Math.min(640, availableWidth)}px`;
-            const minimumTop = viewport.clientWidth < 640 ? 100 : 80;
+            const minimumTop = 56;
             const maximumTop = Math.max(
                 minimumTop,
-                viewport.clientHeight -
-                    toolbar.offsetHeight -
-                    (compact ? 152 : 100),
+                viewport.clientHeight - toolbar.offsetHeight - 72,
             );
             const preferredTop = top - toolbar.offsetHeight - 14;
             toolbar.style.left = `${clamp((editing ? availableWidth : left + right) / 2 - toolbar.offsetWidth / 2, 12, Math.max(12, viewport.clientWidth - rightInset - toolbar.offsetWidth))}px`;

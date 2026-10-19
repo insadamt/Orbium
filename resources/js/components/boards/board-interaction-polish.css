@@ -1,8 +1,10 @@
 /*
  * Keep history available while editing; placement tools would interrupt the active editor.
  */
-.board-stage[data-editing='true'] .board-creation-dock > .board-tool-button,
-.board-stage[data-editing='true'] .board-creation-dock > .board-tool-separator {
+.board-workspace[data-editing='true'] .board-creation-dock > .board-tool-button,
+.board-workspace[data-editing='true']
+    .board-creation-dock
+    > .board-tool-separator {
     display: none;
 }
 .board-selection-tools > [id^='board-formatting-'] {
@@ -142,14 +144,10 @@
     font-size: 12px;
     color: var(--destructive);
 }
-.board-canvas:focus-visible,
-.board-back-button:focus-visible {
-    outline: none;
-}
 @media (max-width: 899px) {
     .board-properties-panel {
         top: auto;
-        bottom: 144px;
+        bottom: 68px;
         right: 12px;
         width: calc(100% - 24px);
         max-height: 45%;

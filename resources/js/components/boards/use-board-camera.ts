@@ -153,10 +153,9 @@ export function useBoardCamera(location: BoardLocation) {
         );
         const compact = host.clientWidth < 900;
         const left = 48;
-        const top = 112;
+        const top = 64;
         const right = inspector && !compact ? inspector.offsetWidth + 48 : 48;
-        const bottom =
-            inspector && compact ? inspector.offsetHeight + 160 : 160;
+        const bottom = inspector && compact ? inspector.offsetHeight + 88 : 88;
         const availableWidth = Math.max(80, host.clientWidth - left - right);
         const availableHeight = Math.max(80, host.clientHeight - top - bottom);
         const zoom = clamp(

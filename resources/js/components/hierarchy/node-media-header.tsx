@@ -48,7 +48,7 @@ export function NodeMediaHeader({
     workspaceId: number;
     node: MediaContainer;
     detail?: string;
-    layout?: 'compact' | 'document';
+    layout?: 'compact' | 'document' | 'toolbar';
 }) {
     const [title, setTitle] = useState(node.title);
     const [legacyIcon, setLegacyIcon] = useState(node.icon);
@@ -214,6 +214,30 @@ export function NodeMediaHeader({
             setTitle(nextTitle);
             void saveHeader({ title: nextTitle });
         }
+    }
+
+    //
+    // Canvas pages reuse title persistence without reserving space for a cover above their working area.
+    //
+    if (layout === 'toolbar') {
+        return (
+            <div className="node-media-header" data-layout="toolbar">
+                <div className="node-media-title-row">
+                    <PageTitleField
+                        label={`${label} title`}
+                        value={title}
+                        onChange={setTitle}
+                        onSave={saveTitle}
+                        placeholder={`Untitled ${node.type}`}
+                    />
+                </div>
+                {error && (
+                    <p role="alert" className="node-media-error">
+                        {error}
+                    </p>
+                )}
+            </div>
+        );
     }
 
     return (

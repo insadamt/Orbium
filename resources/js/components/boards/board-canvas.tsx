@@ -133,6 +133,7 @@ function BoardWorkspace({
         save.blocked || uploading || resourceLocked,
     );
     const [helpOpen, setHelpOpen] = useState(false);
+    const [toolbarHost, setToolbarHost] = useState<HTMLDivElement | null>(null);
     const activeModel = useRef(model);
     activeModel.current = model;
     const viewportRef = camera.viewportRef;
@@ -203,6 +204,7 @@ function BoardWorkspace({
     return (
         <section
             className="board-workspace"
+            data-editing={Boolean(model.editingId)}
             aria-label="Board workspace"
             onKeyDownCapture={(event) => {
                 if (
@@ -228,6 +230,7 @@ function BoardWorkspace({
                 });
             }}
         >
+            <div ref={setToolbarHost} className="board-toolbar-slot" />
             <div
                 className="board-stage"
                 data-editing={Boolean(model.editingId)}
@@ -371,6 +374,7 @@ function BoardWorkspace({
                     </div>
                 )}
                 <BoardToolbar
+                    toolbarHost={toolbarHost}
                     model={model}
                     camera={camera}
                     blocked={save.blocked || uploading || resourceLocked}

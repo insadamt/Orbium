@@ -1,5 +1,5 @@
 import { Head, usePage } from '@inertiajs/react';
-import { ArrowLeft, Ellipsis, Star, Settings2 } from 'lucide-react';
+import { Ellipsis, Star, Settings2 } from 'lucide-react';
 import { useRef, useState } from 'react';
 import * as Menu from '@/components/ui/dropdown-menu';
 import {
@@ -9,10 +9,6 @@ import {
 import type { TreeNode } from '@/components/navigation/navigation-types';
 import { useNodeFavorite } from '@/components/navigation/use-node-favorite';
 import { useNavigation } from '@/components/navigation/navigation-store';
-import {
-    openLocation,
-    stepHistory,
-} from '@/components/navigation/tab-navigation';
 import { useBoardWorkspace } from '@/components/boards/use-board-workspace';
 import {
     Dialog,
@@ -42,36 +38,17 @@ export default function BoardPage() {
         currentNode,
     );
 
-    function leaveBoard() {
-        const navigation = useNavigation.getState();
-        const activeTab = navigation.tabs.find(
-            (tab) => tab.id === navigation.activeId,
-        );
-        if (activeTab && activeTab.index > 0) {
-            stepHistory(-1);
-            return;
-        }
-        const parentUrl =
-            currentNode.parent_id === null
-                ? `/workspaces/${workspace.id}`
-                : `/workspaces/${workspace.id}/nodes/${currentNode.parent_id}`;
-        openLocation(parentUrl);
-    }
-
     return (
         <>
             <Head title={currentNode.title} />
-            <div ref={pageRef} className="board-page">
+            <div ref={pageRef} className="board-page floating-body-island">
                 <div className="board-page-heading">
-                    <button
-                        type="button"
-                        className="board-back-button"
-                        aria-label="Back to previous page or parent"
-                        onClick={leaveBoard}
-                    >
-                        <ArrowLeft size={16} aria-hidden="true" /> Back
-                    </button>
-                    <h1 title={currentNode.title}>{currentNode.title}</h1>
+                    <NodeMediaHeader
+                        key={`${currentNode.id}:${currentNode.title}`}
+                        workspaceId={workspace.id}
+                        node={currentNode}
+                        layout="toolbar"
+                    />
                     <Menu.Root
                         modal={false}
                         onOpenChange={(open) => {
@@ -142,7 +119,7 @@ export default function BoardPage() {
                         <DialogTitle>Board details</DialogTitle>
                         <div id={`board-details-${currentNode.id}`}>
                             <NodeMediaHeader
-                                key={currentNode.id}
+                                key={`${currentNode.id}:${currentNode.title}`}
                                 workspaceId={workspace.id}
                                 node={currentNode}
                                 detail="Board"

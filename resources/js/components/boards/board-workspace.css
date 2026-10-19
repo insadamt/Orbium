@@ -1,53 +1,70 @@
-body:has(.board-page) {
-    overflow: hidden;
+/*
+ * Boards share the app shell; only the working surface consumes the space below its measured navigation bar.
+ */
+.orbium-main.floating-workspace:has(.board-page) {
+    padding-bottom: 16px;
 }
-.orbium-shell:has(.board-page) .floating-top-controls,
-.orbium-shell:has(.board-page) .embedded-pane-actions {
-    display: none;
-}
-.board-page {
-    position: fixed;
-    inset: 0;
-    z-index: 30;
+.board-page.floating-body-island {
+    display: flex;
+    flex-direction: column;
     width: 100%;
-    height: var(--board-viewport-height, 100dvh);
-    min-height: 0;
-    margin: 0;
-    background: var(--background);
-}
-.board-page .board-stage {
-    min-height: 0;
-}
-.board-page .board-canvas {
-    border: 0;
-    border-radius: 0;
+    height: var(--board-workspace-height, 70dvh);
+    min-height: 280px;
+    margin-top: 24px;
+    padding: 16px;
 }
 .board-page-heading {
-    position: absolute;
-    top: 16px;
-    left: 16px;
-    z-index: 5;
-    width: min(320px, calc(100% - 32px));
-    min-height: 40px;
+    display: flex;
+    flex: 0 0 auto;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 4px 8px 12px;
+}
+.board-page-heading .node-media-header[data-layout='toolbar'] {
+    flex: 1;
+    min-width: 0;
+    max-width: none;
     margin: 0;
-    padding: 4px 8px;
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    background: var(--background);
 }
-.board-page-heading button {
-    padding: 6px;
+.node-media-header[data-layout='toolbar'] .page-title-field {
+    font-size: clamp(1.25rem, 2vw, 1.75rem);
+    letter-spacing: -0.025em;
 }
-.board-page-heading h1 {
+.board-toolbar-slot {
+    flex: 0 0 auto;
+    min-height: 44px;
+    padding-bottom: 8px;
+}
+.board-page .board-stage {
+    min-height: 120px;
+}
+.board-page .board-creation-dock {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 2px;
+    padding: 0;
+}
+.board-page .board-creation-dock .board-tool-button {
+    flex-direction: row;
+    width: auto;
+    min-width: 34px;
+    height: 34px;
+    gap: 6px;
+}
+.board-page .board-dock-label {
     font-size: 12px;
+}
+.board-page .board-history-controls {
+    margin-inline-start: auto;
+}
+.board-page .board-creation-dock .board-tool-button[aria-pressed='true'] {
+    background: var(--accent);
+    color: var(--foreground);
 }
 .board-details-dialog {
     max-height: 80dvh;
     overflow: auto;
-}
-.board-creation-dock .board-tool-button[aria-pressed='true'] {
-    background: var(--foreground);
-    color: var(--background);
 }
 .board-save-status[data-status='saved'][data-expanded='false'] {
     background: transparent;
@@ -58,9 +75,9 @@ body:has(.board-page) {
 .board-save-status[data-expanded='true'],
 .board-save-status[data-status='error'] {
     max-width: min(600px, calc(100% - 32px));
-    top: 72px;
+    top: 16px;
     bottom: auto;
-    max-height: min(240px, calc(100% - 200px));
+    max-height: min(240px, calc(100% - 32px));
     z-index: 6;
 }
 .board-canvas[data-tool='hand'] {
@@ -80,7 +97,7 @@ body:has(.board-page) {
     cursor: grabbing;
 }
 .board-placement-hint {
-    bottom: 92px;
+    bottom: 68px;
     left: 50%;
     transform: translateX(-50%);
     max-width: calc(100% - 24px);
@@ -150,19 +167,31 @@ body:has(.board-page) {
 .board-text-style-menu {
     min-width: 200px;
 }
-@media (max-width: 1000px) {
-    .board-placement-hint {
-        bottom: 146px;
-    }
-}
 @media (max-width: 640px) {
+    .board-page.floating-body-island {
+        margin-top: 16px;
+        padding: 10px;
+        border-radius: 20px;
+    }
+    .board-page-heading {
+        gap: 8px;
+        padding-inline: 4px;
+    }
+    .board-page .board-creation-dock .board-tool-button {
+        gap: 4px;
+        padding-inline: 6px;
+    }
+    .board-page .board-dock-label {
+        font-size: 11px;
+    }
+    .board-creation-dock
+        > .board-tool-button:nth-child(-n + 2)
+        .board-dock-label {
+        display: none;
+    }
     .board-placement-hint {
-        bottom: 134px;
+        bottom: 68px;
         width: max-content;
         gap: 8px;
-    }
-    .board-save-status[data-expanded='true'],
-    .board-save-status[data-status='error'] {
-        top: 106px;
     }
 }

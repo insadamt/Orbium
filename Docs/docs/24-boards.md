@@ -220,3 +220,17 @@ The user approved a focused interface reduction within the existing phase-4 revi
 - Shared theme/frosted surfaces, selection/edit gestures, automatic block height, corner scaling, save locks and linked-page ownership remain in force.
 
 See `../reports/12-boards-interface-simplification.md` for manual acceptance and verification limits. This does not authorize a later feature phase.
+
+
+## Native app-shell correction (2026-10-19)
+
+The user approved integrating Boards into the normal Orbium interface. This supersedes earlier full-screen-default, hidden app controls, separate Board Back/header and bottom creation-dock presentation rules.
+
+- Boards render as a normal `floating-body-island` below the existing app bar, tabs and breadcrumbs. The Board no longer fixes itself over the viewport, hides application controls, marks them inert or disables body scrolling. Existing navigation guards continue to protect unsaved Board/hosted Document work.
+- The Board heading reuses `NodeMediaHeader` in its compact `toolbar` layout: the existing `PageTitleField`, validation, header save endpoint and error feedback, without allocating a cover above the canvas. The existing details dialog retains cover/icon editing, and the Board options menu retains favorites. Title changes remount only the title/header view, not the active canvas.
+- Select, Hand, Text, Add and history occupy a normal toolbar row between the heading and canvas. It uses the existing accent/foreground styles instead of a separate floating dock or inverted selected-tool palette. Add opens downward. Placement tools hide while editing; history remains available. Narrow layouts abbreviate Select/Hand to labeled icons and allow toolbar wrapping.
+- The canvas retains a rounded contained surface with zoom in its bottom corner and contextual selection/editing controls. Camera fit, contextual placement and properties positioning reserve space for this contained layout. Recovery/error feedback stays inside the canvas and scrolls when height is limited.
+- The page height is measured from its actual position beneath the responsive app bar and responds to app-bar/spacer changes, window resizing and visual viewport changes. A minimum working height permits normal page scrolling on short screens instead of covering navigation.
+- No Node hierarchy, block content, persistence version, endpoint, archive or feature-phase change is introduced.
+
+Actual checks and exact manual acceptance: `../reports/12-boards-native-app-shell.md`. Remain in phase-4 review.

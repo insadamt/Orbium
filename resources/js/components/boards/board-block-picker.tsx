@@ -119,7 +119,7 @@ export function BoardBlockPicker({
             </Menu.Trigger>
             <Menu.Content
                 className="board-block-picker"
-                side="top"
+                side="bottom"
                 align="center"
                 sideOffset={14}
                 collisionPadding={12}

@@ -39,3 +39,6 @@ The subsequent approved redesign explicitly follows Document block styling witho
 The user then requested matching editing ergonomics. Native click-to-edit, selection formatting, writing commands/shortcuts and focused Math/Diagram source editing are recorded in `../reports/12-boards-document-editing.md`. This remains the same phase and keeps typed independent Board objects.
 
 The subsequent user report of widespread glitches authorized stabilization, recorded in `../reports/12-boards-editing-stabilization.md`. Reproduced crash/event-ownership failures were repaired and exercised in a disposable Board through the browser. This is a repair pass, not complete manual acceptance or authorization for another phase.
+
+
+Native app integration correction (2026-10-19): the user approved the normal app bar/tabs, shared page styling, shared editable title and toolbar above the canvas. This supersedes the full-screen/separate-header presentation decisions in earlier review notes. Follow `../docs/24-boards.md` and `../reports/12-boards-native-app-shell.md`; this remains phase-4 review.

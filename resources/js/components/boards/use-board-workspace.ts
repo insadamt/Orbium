@@ -3,35 +3,43 @@ import { useLayoutEffect, useRef } from 'react';
 export function useBoardWorkspace() {
     const pageRef = useRef<HTMLDivElement>(null);
     useLayoutEffect(() => {
-        const shell = pageRef.current?.closest('.orbium-shell');
-        const controls = [
-            ...(shell?.querySelectorAll<HTMLElement>(
-                '.floating-top-controls, .embedded-pane-actions',
-            ) ?? []),
-        ].map((element) => ({ element, wasInert: element.inert }));
-
-        //
-        // The Board owns the viewport, so hidden application controls must also leave keyboard navigation until it unmounts.
-        //
-        for (const { element } of controls) element.inert = true;
-        const updateViewportHeight = () => {
-            const height = window.visualViewport?.height ?? window.innerHeight;
-            pageRef.current?.style.setProperty(
-                '--board-viewport-height',
-                `${height}px`,
+        const page = pageRef.current;
+        if (!page) return;
+        let pendingFrame: number | undefined;
+        const updateAvailableHeight = () => {
+            pendingFrame = undefined;
+            const viewportHeight =
+                window.visualViewport?.height ?? window.innerHeight;
+            const pageTop = page.getBoundingClientRect().top;
+            //
+            // The app bar wraps on smaller screens; size the canvas from its real position instead of hiding navigation.
+            //
+            page.style.setProperty(
+                '--board-workspace-height',
+                `${Math.max(280, viewportHeight - pageTop - 16)}px`,
             );
         };
-        updateViewportHeight();
-        window.visualViewport?.addEventListener('resize', updateViewportHeight);
-        window.addEventListener('resize', updateViewportHeight);
+        const scheduleHeightUpdate = () => {
+            if (pendingFrame === undefined)
+                pendingFrame = requestAnimationFrame(updateAvailableHeight);
+        };
+        const observer = new ResizeObserver(scheduleHeightUpdate);
+        const shell = page.closest('.orbium-shell');
+        for (const element of shell?.querySelectorAll(
+            '.floating-top-controls, .floating-top-controls-spacer',
+        ) ?? [])
+            observer.observe(element);
+        updateAvailableHeight();
+        window.visualViewport?.addEventListener('resize', scheduleHeightUpdate);
+        window.addEventListener('resize', scheduleHeightUpdate);
         return () => {
+            observer.disconnect();
             window.visualViewport?.removeEventListener(
                 'resize',
-                updateViewportHeight,
+                scheduleHeightUpdate,
             );
-            window.removeEventListener('resize', updateViewportHeight);
-            for (const { element, wasInert } of controls)
-                element.inert = wasInert;
+            window.removeEventListener('resize', scheduleHeightUpdate);
+            if (pendingFrame !== undefined) cancelAnimationFrame(pendingFrame);
         };
     }, []);
     return pageRef;

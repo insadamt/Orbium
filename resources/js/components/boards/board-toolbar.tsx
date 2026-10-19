@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import {
     Type,
     MousePointer2,
@@ -23,6 +24,7 @@ import { BoardBlockPicker } from './board-block-picker';
 import { BoardToolButton } from './board-tool-button';
 
 export function BoardToolbar({
+    toolbarHost,
     model,
     camera,
     blocked,
@@ -33,6 +35,7 @@ export function BoardToolbar({
     onUndo,
     onRedo,
 }: {
+    toolbarHost: HTMLDivElement | null;
     model: BoardObjectsController;
     camera: BoardCameraController;
     blocked: boolean;
@@ -48,68 +51,72 @@ export function BoardToolbar({
     );
     return (
         <>
-            <div
-                className="board-creation-dock board-panel glass-surface"
-                role="group"
-                aria-label="Create on board"
-            >
-                <BoardToolButton
-                    label="Select objects"
-                    icon={MousePointer2}
-                    disabled={blocked}
-                    aria-pressed={tool === 'select'}
-                    onClick={() => onChooseTool('select')}
-                >
-                    <span className="board-dock-label">Select</span>
-                </BoardToolButton>
-                <BoardToolButton
-                    label="Hand — pan the canvas"
-                    icon={Hand}
-                    disabled={blocked}
-                    aria-pressed={tool === 'hand'}
-                    onClick={() => onChooseTool('hand')}
-                >
-                    <span className="board-dock-label">Hand</span>
-                </BoardToolButton>
-                <span className="board-tool-separator" />
-                <BoardToolButton
-                    label="Place text"
-                    icon={Type}
-                    disabled={blocked}
-                    aria-pressed={tool === 'text'}
-                    onClick={() => onChooseTool('text')}
-                >
-                    <span className="board-dock-label">Text</span>
-                </BoardToolButton>
-                <BoardBlockPicker
-                    disabled={blocked}
-                    active={!['select', 'hand', 'text'].includes(tool)}
-                    onResource={onResource}
-                    onAdd={(kind) => {
-                        if (kind !== 'resource') onChooseTool(kind);
-                    }}
-                />
-                <span className="board-tool-separator" />
-                <div
-                    className="board-history-controls"
-                    role="group"
-                    aria-label="Board history"
-                    onMouseDown={(event) => event.preventDefault()}
-                >
-                    <BoardToolButton
-                        label="Undo (Ctrl/Cmd+Z)"
-                        icon={Undo2}
-                        disabled={!model.canUndo || blocked}
-                        onClick={onUndo}
-                    />
-                    <BoardToolButton
-                        label="Redo (Ctrl/Cmd+Shift+Z)"
-                        icon={Redo2}
-                        disabled={!model.canRedo || blocked}
-                        onClick={onRedo}
-                    />
-                </div>
-            </div>
+            {toolbarHost &&
+                createPortal(
+                    <div
+                        className="board-creation-dock"
+                        role="group"
+                        aria-label="Create on board"
+                    >
+                        <BoardToolButton
+                            label="Select objects"
+                            icon={MousePointer2}
+                            disabled={blocked}
+                            aria-pressed={tool === 'select'}
+                            onClick={() => onChooseTool('select')}
+                        >
+                            <span className="board-dock-label">Select</span>
+                        </BoardToolButton>
+                        <BoardToolButton
+                            label="Hand — pan the canvas"
+                            icon={Hand}
+                            disabled={blocked}
+                            aria-pressed={tool === 'hand'}
+                            onClick={() => onChooseTool('hand')}
+                        >
+                            <span className="board-dock-label">Hand</span>
+                        </BoardToolButton>
+                        <span className="board-tool-separator" />
+                        <BoardToolButton
+                            label="Place text"
+                            icon={Type}
+                            disabled={blocked}
+                            aria-pressed={tool === 'text'}
+                            onClick={() => onChooseTool('text')}
+                        >
+                            <span className="board-dock-label">Text</span>
+                        </BoardToolButton>
+                        <BoardBlockPicker
+                            disabled={blocked}
+                            active={!['select', 'hand', 'text'].includes(tool)}
+                            onResource={onResource}
+                            onAdd={(kind) => {
+                                if (kind !== 'resource') onChooseTool(kind);
+                            }}
+                        />
+                        <span className="board-tool-separator" />
+                        <div
+                            className="board-history-controls"
+                            role="group"
+                            aria-label="Board history"
+                            onMouseDown={(event) => event.preventDefault()}
+                        >
+                            <BoardToolButton
+                                label="Undo (Ctrl/Cmd+Z)"
+                                icon={Undo2}
+                                disabled={!model.canUndo || blocked}
+                                onClick={onUndo}
+                            />
+                            <BoardToolButton
+                                label="Redo (Ctrl/Cmd+Shift+Z)"
+                                icon={Redo2}
+                                disabled={!model.canRedo || blocked}
+                                onClick={onRedo}
+                            />
+                        </div>
+                    </div>,
+                    toolbarHost,
+                )}
             <div
                 className="board-navigation-dock board-panel glass-surface"
                 role="group"
