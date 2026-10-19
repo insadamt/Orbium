@@ -1,6 +1,7 @@
 import {
     ChartNoAxesColumn,
     Database,
+    PanelsTopLeft,
     FileText,
     Folder,
     Home,
@@ -12,6 +13,7 @@ import type { Location } from './navigation-store';
 const tabIcons = {
     document: FileText,
     database: Database,
+    board: PanelsTopLeft,
     settings: Settings2,
     trash: Trash2,
     workspace: Home,

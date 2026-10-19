@@ -1,7 +1,7 @@
 import { applyLibraryPageImage } from '@/components/library/library-page-media';
 import type { LibraryFile } from '@/components/library/library-api';
 import { router } from '@inertiajs/react';
-import { Database, Folder } from 'lucide-react';
+import { Database, Folder, PanelsTopLeft } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { csrfToken } from '@/components/editor/editor-api';
 import DocumentImageCropDialog from '@/pages/documents/document-image-crop-dialog';
@@ -21,7 +21,7 @@ import { useCoverIconCutout } from './use-cover-icon-cutout';
 export type MediaContainer = {
     id: number;
     title: string;
-    type: 'folder' | 'database';
+    type: 'folder' | 'database' | 'board';
     icon: string | null;
     cover_attachment_id: number | null;
     cover_aspect_ratio: CoverRatio | null;
@@ -65,8 +65,18 @@ export function NodeMediaHeader({
     } | null>(null);
     const iconInput = useRef<HTMLInputElement>(null);
     const coverInput = useRef<HTMLInputElement>(null);
-    const ContainerIcon = node.type === 'folder' ? Folder : Database;
-    const label = node.type === 'folder' ? 'Folder' : 'Database';
+    const ContainerIcon =
+        node.type === 'board'
+            ? PanelsTopLeft
+            : node.type === 'folder'
+              ? Folder
+              : Database;
+    const label =
+        node.type === 'board'
+            ? 'Board'
+            : node.type === 'folder'
+              ? 'Folder'
+              : 'Database';
 
     async function saveHeader(changes: HeaderChanges): Promise<boolean> {
         setError('');

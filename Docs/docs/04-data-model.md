@@ -38,7 +38,7 @@ Indexes:
 id
 workspace_id
 parent_id nullable -> nodes.id
-type enum/string: folder|document|database
+type enum/string: folder|document|database|board
 title
 icon nullable
 position
@@ -61,9 +61,33 @@ Rules enforced through actions/services:
 - valid parent type;
 - no cycles;
 - database → document only;
-- document → no children.
+- document/board → no children.
+
+Boards are native leaf Nodes (requested 2026-10-18). The foundation adds no `documents` record or content table for a Board. A new migration extends `nodes_type_check`; its rollback refuses while any Boards remain, including trashed Boards. Subsequent approved Board phases add the spatial tables described below; see `24-boards.md`.
+
+## boards and board_objects (phase 2, approved 2026-10-18)
+
+`boards.node_id` is the primary key and cascades from `nodes.id`. It owns `format_version` (1), optimistic `revision` (starting at 0), and timestamps. Existing Board Nodes, including trashed ones, are backfilled; future Board creation initializes this extension in the hierarchy transaction.
+
+`board_objects` has an internal row ID, `board_node_id` cascading from `boards.node_id`, `object_id` UUID with a unique `(board_node_id, object_id)` pair, `block_type` (initially paragraph), `content_format_version` (2), canonical `markdown`, numeric `x/y/width/height`, integer `layer`, and timestamps. IDs in the canvas/API are stable object UUIDs, never Document/Node identities. Soft-deleting a Board or its container retains these rows; permanent deletion cascades through them.
+
+The snapshot endpoint validates the complete bounded object list, paragraph syntax/links, geometry, IDs and versions, then saves atomically under workspace and Board locks. Concurrent stale revisions return 409. Reads hold a shared Board row lock so object content and revision are consistent. Foreign-key and CHECK constraints protect identity ownership and basic geometry/version invariants. See `24-boards.md` and `../phases/10-boards-canvas.md` for limits and later content boundaries.
+
+Phase 3 upgrades the spatial envelope/default to format **2** using `2026_10_18_000003_enable_board_markdown_blocks.php`; `block_type` now permits legacy `paragraph` and native `markdown` fragments. It preserves stored source/UUIDs and refuses downgrade while objects remain. Canonical Markdown inspection validates native blocks, safe links and workspace-owned attachments before atomic saves. Board page mentions remain rejected until their separate lifecycle is implemented. Limits are 128 KiB per fragment and 2 MiB total, with unchanged object/geometry limits. Library usage derives attachment references from saved Board objects, including Trash. See `../phases/11-boards-blocks.md`.
+
+Boards phase-3 review correction supersedes the envelope above: spatial format **3**, with native Board JSON content format **1** in `board_objects.data`. Native rows have `markdown = null`; preserved legacy paragraph/Markdown rows retain content format 2 until converted and saved. The additive `2026_10_18_000004_add_native_board_blocks.php` leaves legacy source/UUID rows intact and changes the envelope/default/geometry constraints. Old clients reject spatial format 3. Native kinds are text, heading, list, quote, callout, code, table, image, file, math, Mermaid and divider. No arbitrary nested document block arrays are accepted. See `24-boards.md` and `../phases/11-boards-native-correction.md`.
+
+
+## Board resource references (phase 4, approved 2026-10-18)
+
+`2026_10_18_000005_add_board_resource_cards.php` upgrades the spatial envelope/default to **4**, preserving the native content-format-1 and legacy content-format-2 row contracts. The new `resource` kind stores only a positive safe-integer `target_node_id` in JSON data. Resource titles/previews/source are live reads from the original owned Node/Document, not Board snapshot fields. Self/foreign/folder targets are rejected. New references require visible ancestry; previously saved unavailable targets can remain as placeholders. JSON target IDs have no cascading foreign key, so permanent target deletion preserves the reference and never deletes its Board.
+
+`board_document_creations` contains an internal ID, cascading `board_node_id` FK to `boards.node_id`, UUID `request_id`, 64-character request hash, nullable `document_node_id` FK to Nodes with **SET NULL** on permanent target deletion, result revision and timestamps. `(board_node_id, request_id)` is unique. Creation locks the Board and atomically creates the Document through the hierarchy service, appends its card, validates/saves the complete snapshot and records the receipt. The Document parent is the Board’s current folder/root. Identical retries cannot create duplicates; differing payloads or a later Board revision return 409, removed targets return 410. Rollback refuses while resource objects or creation receipts remain.
+
+Document source/format/revision/mention/attachment records remain owned by the original Document, using existing save actions. Board layout revision does not advance when Document source changes. Card removal, Undo and Board deletion retain original resources; only Board-owned rows/receipts cascade with the Board. See `../phases/12-boards-resource-cards.md`.
 
 ## documents
+
 
 ```text
 node_id PK/FK -> nodes.id

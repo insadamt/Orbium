@@ -1,3 +1,4 @@
+import { useHostedLegacyDocument } from './use-hosted-document-activity';
 import { useHistoryLayoutMotion } from './use-history-layout-motion';
 import { LibraryPicker } from '@/components/library/library-picker';
 import { useEditorTabShortcuts } from './use-editor-tab-shortcuts';
@@ -226,6 +227,7 @@ export default function DocumentEditor({
         [extensions],
     );
 
+    const hosted = useHostedLegacyDocument(editor);
     useEditorReadiness(editor, nodeId, mermaidSession);
 
     const {
@@ -246,28 +248,33 @@ export default function DocumentEditor({
     }, [status, mermaidSession]);
 
     async function addFiles(files: FileList | File[]) {
-        if (!editor) return;
+        if (!editor || hosted?.readOnly || hosted?.isOperationPending()) return;
         setUploadError('');
-        for (const file of Array.from(files)) {
-            try {
-                const uploaded = await uploadAttachment(
-                    workspaceId,
-                    nodeId,
-                    file,
-                );
-                insertAttachment(editor, uploaded);
-            } catch (failure) {
-                setUploadError(
-                    failure instanceof Error
-                        ? failure.message
-                        : 'Upload failed.',
-                );
+        hosted?.setBusy('upload', true);
+        try {
+            for (const file of Array.from(files)) {
+                try {
+                    const uploaded = await uploadAttachment(
+                        workspaceId,
+                        nodeId,
+                        file,
+                    );
+                    insertAttachment(editor, uploaded);
+                } catch (failure) {
+                    setUploadError(
+                        failure instanceof Error
+                            ? failure.message
+                            : 'Upload failed.',
+                    );
+                }
             }
+        } finally {
+            hosted?.setBusy('upload', false);
         }
     }
 
     async function importMarkdown(file: File) {
-        if (!editor) return;
+        if (!editor || hosted?.readOnly || hosted?.isOperationPending()) return;
         if (!editor.isEmpty) {
             setImportError(
                 'Markdown import is available only in an empty document.',
@@ -275,6 +282,7 @@ export default function DocumentEditor({
             return;
         }
         setImportError('');
+        hosted?.setBusy('import', true);
         try {
             const imported = await readMarkdownFile(file);
             if (!editor.isEmpty) {
@@ -290,6 +298,8 @@ export default function DocumentEditor({
                     ? failure.message
                     : 'Could not import the Markdown file.',
             );
+        } finally {
+            hosted?.setBusy('import', false);
         }
     }
 
@@ -350,7 +360,7 @@ export default function DocumentEditor({
                     )}
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
-                    <RichTextTableOfContents editor={editor} />
+                    {!hosted && <RichTextTableOfContents editor={editor} />}
                     {editor?.isEmpty && (
                         <button
                             type="button"
@@ -440,7 +450,7 @@ export default function DocumentEditor({
             )}
 
             {!editor && <DocumentOpeningPreview content={content} />}
-            {editor && (
+            {editor && !hosted && (
                 <EditorBlockGutter
                     editor={editor}
                     activityController={activityController}

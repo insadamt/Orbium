@@ -1,3 +1,4 @@
+import { DocumentSaveError } from '../document-save-error';
 import type { Text } from '@codemirror/state';
 import { csrfToken, documentUrl } from '../editor-api';
 import {
@@ -70,14 +71,23 @@ export async function saveMarkdown(
         message?: string;
     } | null;
     if (!response.ok)
-        throw new Error(
+        throw new DocumentSaveError(
             result?.errors?.revision?.[0] ??
                 result?.errors?.markdown?.[0] ??
                 result?.errors?.content_format_version?.[0] ??
                 result?.message ??
                 'Could not save this document.',
+            response.status,
+            response.status === 409 ||
+                Boolean(
+                    result?.errors?.revision ||
+                    result?.errors?.content_format_version,
+                ),
         );
-    if (typeof result?.revision !== 'number')
+    if (
+        !Number.isSafeInteger(result?.revision) ||
+        result?.revision !== request.revision + 1
+    )
         throw new Error(
             'The server returned an invalid save response. Reload before saving again.',
         );

@@ -1,3 +1,4 @@
+import { useHostedDocumentSession } from '../hosted-document-session';
 import type { Text } from '@codemirror/state';
 import { router } from '@inertiajs/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -15,6 +16,7 @@ type AutosaveOptions = {
 
 export function useMarkdownAutosave(options: AutosaveOptions) {
     const { tabId, active } = useDocumentTab();
+    const hostedSession = useHostedDocumentSession();
     const activeTab = useRef(active);
     activeTab.current = active;
     const [status, setStatus] = useState<
@@ -159,5 +161,13 @@ export function useMarkdownAutosave(options: AutosaveOptions) {
         };
     }, [flush, tabId]);
 
-    return { status, error, navigationNotice, queueSave, saveNow: flush };
+    return (
+        hostedSession ?? {
+            status,
+            error,
+            navigationNotice,
+            queueSave,
+            saveNow: flush,
+        }
+    );
 }

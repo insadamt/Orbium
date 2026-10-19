@@ -1,4 +1,10 @@
-import { Database, FileText, Folder, MoreHorizontal } from 'lucide-react';
+import {
+    PanelsTopLeft,
+    Database,
+    FileText,
+    Folder,
+    MoreHorizontal,
+} from 'lucide-react';
 import type { HTMLAttributes } from 'react';
 import { useState } from 'react';
 import type { TreeNode } from '@/components/navigation/navigation-types';
@@ -6,7 +12,12 @@ import { attachmentUrl } from '@/components/editor/editor-api';
 import { nodeImageUrl } from './node-media-api';
 import { ratioNumber, type GalleryAppearance } from './cover-presentation';
 
-const icons = { folder: Folder, document: FileText, database: Database };
+const icons = {
+    folder: Folder,
+    document: FileText,
+    database: Database,
+    board: PanelsTopLeft,
+};
 type Props = {
     workspaceId: number;
     view: 'grid' | 'list' | 'gallery';

@@ -1,5 +1,11 @@
 import { Link } from '@inertiajs/react';
-import { Database, FileText, Folder, MoreHorizontal } from 'lucide-react';
+import {
+    PanelsTopLeft,
+    Database,
+    FileText,
+    Folder,
+    MoreHorizontal,
+} from 'lucide-react';
 import { useState, type DragEvent } from 'react';
 import {
     nodeUrl,
@@ -17,7 +23,12 @@ type Props = {
     onMove: (nodeId: number, parentId: number | null, position: number) => void;
 };
 
-const nodeIcons = { folder: Folder, document: FileText, database: Database };
+const nodeIcons = {
+    folder: Folder,
+    document: FileText,
+    database: Database,
+    board: PanelsTopLeft,
+};
 
 function containsNode(nodes: TreeNode[], parentId: number, childId: number) {
     let current = nodes.find((node) => node.id === parentId);

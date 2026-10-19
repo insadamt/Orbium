@@ -9,7 +9,12 @@ import {
     type Range,
 } from '@codemirror/state';
 import { Decoration, EditorView, keymap } from '@codemirror/view';
-import { defaultKeymap, indentWithTab } from '@codemirror/commands';
+import {
+    defaultKeymap,
+    indentWithTab,
+    history,
+    historyKeymap,
+} from '@codemirror/commands';
 import { createCodeHighlighter } from '../../code-highlighter';
 import { scheduleEditorIdleWork } from '../../schedule-editor-idle-work';
 
@@ -50,12 +55,14 @@ export function mountCodeInput({
     language,
     isVisible,
     onChange,
+    standalone = false,
 }: {
     host: HTMLElement;
     source: string;
     language: string;
     isVisible: () => boolean;
     onChange: (source: string) => void;
+    standalone?: boolean;
 }) {
     const replaceHighlights =
         StateEffect.define<ReturnType<typeof Decoration.set>>();
@@ -81,7 +88,12 @@ export function mountCodeInput({
             markdownSelectAll,
             highlighting,
             editing.of(EditorView.editable.of(true)),
-            keymap.of([indentWithTab, ...defaultKeymap]),
+            ...(standalone ? [history()] : []),
+            keymap.of([
+                indentWithTab,
+                ...(standalone ? historyKeymap : []),
+                ...defaultKeymap,
+            ]),
             EditorView.editorAttributes.of({ class: 'orbium-code-input' }),
             EditorView.contentAttributes.of({
                 'aria-label': 'Code source',

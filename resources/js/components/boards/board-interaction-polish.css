@@ -1,0 +1,198 @@
+/*
+ * Keep history available while editing; placement tools would interrupt the active editor.
+ */
+.board-stage[data-editing='true'] .board-creation-dock > .board-tool-button,
+.board-stage[data-editing='true'] .board-creation-dock > .board-tool-separator {
+    display: none;
+}
+.board-selection-tools > [id^='board-formatting-'] {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+}
+.board-selection-tools select {
+    min-height: 34px;
+    padding: 5px 8px;
+    border-radius: 7px;
+    background: var(--background);
+    color: var(--foreground);
+    font-size: 12px;
+}
+.board-table-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+}
+.board-table-actions button {
+    min-height: 34px;
+    padding: 5px 8px;
+    border-radius: 7px;
+    font-size: 11px;
+}
+.board-table-actions button:hover {
+    background: var(--accent);
+}
+.board-list,
+.board-list .board-inline-input {
+    counter-reset: board-list-item;
+}
+.board-list-item {
+    counter-increment: board-list-item;
+    align-items: baseline;
+}
+.board-list-marker {
+    min-width: 18px;
+    flex-shrink: 0;
+    text-align: end;
+    color: var(--muted-foreground);
+    user-select: none;
+}
+.board-list[data-list-style='ordered']
+    [data-native-list-item]
+    > .board-list-marker::before {
+    content: counter(board-list-item) '.';
+}
+.board-list-content {
+    min-width: 0;
+    flex: 1;
+    min-height: 32px;
+    white-space: pre-wrap;
+}
+.board-list[data-list-style='bullet']
+    [data-native-list-item]
+    > .board-list-marker::before {
+    content: '•';
+}
+.board-list:not([data-list-style='check']) [data-native-list-item] > input,
+.board-list[data-list-style='check']
+    [data-native-list-item]
+    > .board-list-marker {
+    display: none;
+}
+.board-table .tableWrapper {
+    overflow-x: auto;
+}
+.board-table tr td.selectedCell {
+    background: var(--accent);
+}
+.board-table td p {
+    margin: 0;
+}
+.board-writing-heading .board-inline-input,
+.board-writing-quote .board-inline-input {
+    min-height: 1em;
+    font: inherit;
+    line-height: inherit;
+}
+.board-object[data-editing='true'] [data-board-editor] {
+    cursor: text;
+}
+.board-resource-kind {
+    display: block;
+}
+.board-resource-preview {
+    font-size: 14px;
+    line-height: 1.65;
+}
+.board-resource-header button {
+    min-width: 32px;
+    min-height: 32px;
+}
+.board-link-popover {
+    z-index: 60;
+    width: min(320px, calc(100vw - 24px));
+    padding: 14px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--background);
+    color: var(--foreground);
+}
+.board-link-popover label {
+    display: grid;
+    gap: 8px;
+    font-size: 12px;
+}
+.board-link-popover input {
+    min-width: 0;
+    width: 100%;
+    padding: 9px;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    background: transparent;
+}
+.board-link-popover form > div {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+}
+.board-link-popover button {
+    min-height: 34px;
+    padding: 6px 10px;
+    border-radius: 7px;
+    background: var(--accent);
+    font-size: 12px;
+}
+.board-link-popover button:disabled {
+    opacity: 0.4;
+}
+.board-link-popover p {
+    margin-top: 8px;
+    font-size: 12px;
+    color: var(--destructive);
+}
+.board-canvas:focus-visible,
+.board-back-button:focus-visible {
+    outline: none;
+}
+@media (max-width: 899px) {
+    .board-properties-panel {
+        top: auto;
+        bottom: 144px;
+        right: 12px;
+        width: calc(100% - 24px);
+        max-height: 45%;
+    }
+    .board-properties-panel section {
+        padding-block: 12px;
+    }
+    .board-properties-panel header {
+        position: sticky;
+        top: -16px;
+        padding-block: 8px;
+        background: var(--background);
+    }
+}
+@media (max-width: 640px) {
+    .board-selection-tools {
+        max-height: max(48px, calc(100% - 180px));
+    }
+    .board-selection-label {
+        font-size: 10px;
+        padding-inline: 5px;
+    }
+}
+@media (pointer: coarse) {
+    .board-tool-button,
+    .board-inline-toolbar button,
+    .board-resource-header button,
+    .board-table-actions button {
+        min-width: 42px;
+        min-height: 42px;
+    }
+    .board-creation-dock .board-tool-button {
+        width: 42px;
+        min-width: 36px;
+    }
+    .board-resize-e,
+    .board-resize-se {
+        width: calc(24px * var(--board-inverse-zoom, 1));
+        right: calc(-12px * var(--board-inverse-zoom, 1));
+    }
+    .board-resize-s,
+    .board-resize-se {
+        height: calc(24px * var(--board-inverse-zoom, 1));
+        bottom: calc(-12px * var(--board-inverse-zoom, 1));
+    }
+}

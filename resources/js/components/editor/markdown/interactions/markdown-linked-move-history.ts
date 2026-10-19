@@ -9,6 +9,12 @@ import { StateEffect, StateField, type Text } from '@codemirror/state';
 import { EditorView } from '@codemirror/view';
 import type { MarkdownBlockRange } from './markdown-block-actions';
 import type { RichTransferPreviews } from '../rich/rich-transfer-previews';
+import { withPreparedMarkdownHistoryMotion } from './markdown-block-history-motion';
+import {
+    cancelMarkdownHistoryReveal,
+    historyRestorationAnchor,
+    revealMarkdownHistoryLocation,
+} from './markdown-history-viewport';
 
 type Direction = 'undo' | 'redo';
 type Phase = 'done' | 'undone';
@@ -63,6 +69,8 @@ type Registry = {
     endpoints: Map<string, Endpoint>;
     moves: Move[];
     lastEndpointId?: string;
+    preparingHistory?: boolean;
+    queuedHistory?: { endpointId: string; direction: Direction }[];
 };
 type HistoryHost = Window & { orbiumLinkedBlockHistory?: Registry };
 
@@ -94,7 +102,7 @@ function matches(endpoint: Endpoint, expected: Snapshot, direction: Direction) {
 }
 
 export function linkedMarkdownMoveEffect(id?: string) {
-    return id ? linkedMoveEffect.of({ id, phase: 'done' }) : [];
+    return id ? [linkedMoveEffect.of({ id, phase: 'done' })] : [];
 }
 
 export function performLinkedMarkdownMove(options: {
@@ -128,8 +136,18 @@ export function performLinkedMarkdownMove(options: {
     });
 }
 
-function handleLinkedHistory(endpoint: Endpoint, direction: Direction) {
+function handleLinkedHistory(
+    endpoint: Endpoint,
+    direction: Direction,
+): boolean {
     const state = registry(endpoint.view);
+    if (state.preparingHistory) {
+        (state.queuedHistory ??= []).push({
+            endpointId: endpoint.id,
+            direction,
+        });
+        return true;
+    }
     const phase = direction === 'undo' ? 'done' : 'undone';
     const move = [...state.moves].reverse().find((candidate) => {
         if (candidate.phase !== phase || endpoint.phase(candidate.id) !== phase)
@@ -165,19 +183,73 @@ function handleLinkedHistory(endpoint: Endpoint, direction: Direction) {
     const range = direction === 'undo' ? move.targetRange : move.sourceRange;
     const restoredRange =
         direction === 'undo' ? move.sourceRange : move.targetRange;
-    const release = restoring.prepare(removing.collect(range), restoredRange);
-    try {
-        // Restore first so the loaded viewer is claimed before its former widget is removed.
+    const restoringAnchor = historyRestorationAnchor(
+        restoring.view,
+        direction,
+        restoredRange.from,
+    );
+    if (restoringAnchor === null) return false;
+    state.preparingHistory = true;
+    void Promise.resolve()
+        .then(() =>
+            Promise.all([
+                revealMarkdownHistoryLocation(removing.view, range.from),
+                revealMarkdownHistoryLocation(restoring.view, restoringAnchor),
+            ]),
+        )
+        .then(() => {
+            if (
+                !source.available() ||
+                !target.available() ||
+                !matches(source, move.source, direction) ||
+                !matches(target, move.target, direction) ||
+                source.phase(move.id) !== phase ||
+                target.phase(move.id) !== phase
+            ) {
+                endpoint.notice(
+                    'The pages changed while revealing this move. Try undo or redo again.',
+                );
+                return;
+            }
 
-        restoring.applyHistory(direction);
-        removing.applyHistory(direction);
-        move.phase = direction === 'undo' ? 'undone' : 'done';
-        move.source = source.snapshot();
-        move.target = target.snapshot();
-        endpoint.notice('');
-    } finally {
-        queueMicrotask(release);
-    }
+            // Capture the outgoing player after revealing it, before restoration adopts its live media.
+
+            withPreparedMarkdownHistoryMotion(removing.view, range, () => {
+                const release = restoring.prepare(
+                    removing.collect(range),
+                    restoredRange,
+                );
+                try {
+                    restoring.applyHistory(direction);
+                    removing.applyHistory(direction);
+                    move.phase = direction === 'undo' ? 'undone' : 'done';
+                    move.source = source.snapshot();
+                    move.target = target.snapshot();
+                    endpoint.notice('');
+                } finally {
+                    queueMicrotask(release);
+                }
+            });
+        })
+        .catch((error: unknown) =>
+            endpoint.notice(
+                error instanceof Error
+                    ? error.message
+                    : 'Could not reveal this block move.',
+            ),
+        )
+        .finally(() => {
+            state.preparingHistory = false;
+            while (!state.preparingHistory && state.queuedHistory?.length) {
+                const next = state.queuedHistory.shift()!;
+                const nextEndpoint = state.endpoints.get(next.endpointId);
+                if (
+                    nextEndpoint?.available() &&
+                    !handleLinkedHistory(nextEndpoint, next.direction)
+                )
+                    nextEndpoint.applyHistory(next.direction);
+            }
+        });
     return true;
 }
 
@@ -250,6 +322,7 @@ export function registerLinkedMarkdownHistory(
     for (const document of eventDocuments)
         document.addEventListener('keydown', keydown, true);
     return () => {
+        cancelMarkdownHistoryReveal(view);
         view.dom.removeEventListener('pointerdown', markInteracted, true);
         for (const document of eventDocuments)
             document.removeEventListener('keydown', keydown, true);

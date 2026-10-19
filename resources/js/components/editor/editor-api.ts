@@ -18,6 +18,16 @@ export function documentUrl(workspaceId: number, nodeId: number): string {
     return `/workspaces/${workspaceId}/documents/${nodeId}`;
 }
 
+export type ContentOwnerKind = 'document' | 'board';
+
+export function contentOwnerUrl(
+    workspaceId: number,
+    nodeId: number,
+    kind: ContentOwnerKind = 'document',
+): string {
+    return `/workspaces/${workspaceId}/${kind === 'board' ? 'boards' : 'documents'}/${nodeId}`;
+}
+
 export function attachmentUrl(
     workspaceId: number,
     nodeId: number,
@@ -55,11 +65,12 @@ export async function uploadAttachment(
     workspaceId: number,
     nodeId: number,
     file: File,
+    ownerKind: ContentOwnerKind = 'document',
 ): Promise<UploadedAttachment> {
     const body = new FormData();
     body.append('file', file);
     const response = await fetch(
-        `${documentUrl(workspaceId, nodeId)}/attachments`,
+        `${contentOwnerUrl(workspaceId, nodeId, ownerKind)}/attachments`,
         {
             method: 'POST',
             headers: {

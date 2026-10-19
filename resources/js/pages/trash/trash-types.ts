@@ -1,7 +1,7 @@
 export type TrashEntry = {
     key: string;
     title: string;
-    type: 'workspace' | 'folder' | 'database' | 'document';
+    type: 'workspace' | 'folder' | 'database' | 'document' | 'board';
     workspace_id: number;
     workspace_name: string;
     deleted_at: string;

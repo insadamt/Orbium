@@ -9,6 +9,7 @@ import {
     DialogTitle,
 } from '@/components/navigation/navigation-dialog';
 import { CreateNodeForm } from '@/components/navigation/create-node-form';
+import { useNodeFavorite } from '@/components/navigation/use-node-favorite';
 import {
     nodeUrl,
     type TreeNode,
@@ -97,6 +98,10 @@ export function WorkspaceContents({
     const canReorder = sort === 'manual';
     const selection = useExplorerSelection(workspaceId, children);
     const menuNode = children.find((node) => node.id === menuPosition?.nodeId);
+    const { toggleFavorite, savingFavorite } = useNodeFavorite(
+        workspaceId,
+        menuNode,
+    );
     const deleteNode = nodes.find((node) => node.id === deleteId);
     function move(
         nodeId: number,
@@ -354,6 +359,10 @@ export function WorkspaceContents({
             <ExplorerContextMenu
                 position={menuPosition}
                 nodeTitle={menuNode?.title}
+                isFavorite={menuNode?.is_favorite}
+                onToggleFavorite={
+                    menuNode && !savingFavorite ? toggleFavorite : undefined
+                }
                 onClose={() => setMenuPosition(null)}
                 onImport={() => setImportOpen(true)}
                 onExport={

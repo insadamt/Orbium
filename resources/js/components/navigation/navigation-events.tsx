@@ -45,8 +45,12 @@ export function NavigationEvents() {
               ? 'Settings'
               : 'Home');
     const parent =
-        locationKind(page.url) === 'document'
-            ? (nodes.find((item) => item.id === node?.parent_id) ?? null)
+        locationKind(page.url) === 'document' ||
+        locationKind(page.url) === 'board'
+            ? (nodes.find(
+                  (item) =>
+                      item.id === (node?.parent_id ?? currentNode?.parent_id),
+              ) ?? null)
             : (nodes.find((item) => item.id === currentId) ?? null);
 
     useLayoutEffect(() => {

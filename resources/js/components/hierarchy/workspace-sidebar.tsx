@@ -3,6 +3,7 @@ import {
     ChevronDown,
     ChevronRight,
     Database,
+    PanelsTopLeft,
     Folder,
     Search,
 } from 'lucide-react';
@@ -69,7 +70,12 @@ export default function WorkspaceSidebar({
                 const expanded = filter.trim()
                     ? true
                     : expandedIds.has(node.id);
-                const Icon = node.type === 'database' ? Database : Folder;
+                const Icon =
+                    node.type === 'board'
+                        ? PanelsTopLeft
+                        : node.type === 'database'
+                          ? Database
+                          : Folder;
                 return (
                     <div key={node.id}>
                         <div

@@ -1,8 +1,8 @@
-import { documentUrl } from '../../editor-api';
+import { contentOwnerUrl } from '../../editor-api';
 import type { AttachmentMetadata, RichContext } from './rich-model';
 
 export function richAttachmentUrl(context: RichContext, id: string): string {
-    return `${documentUrl(context.workspaceId, context.nodeId)}/attachments/${id}`;
+    return `${contentOwnerUrl(context.workspaceId, context.nodeId, context.ownerKind)}/attachments/${id}`;
 }
 
 export function richMediaSourceUrl(context: RichContext, id: string): string {

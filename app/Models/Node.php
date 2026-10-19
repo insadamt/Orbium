@@ -12,6 +12,8 @@ class Node extends Model
 {
     use SoftDeletes;
 
+    public const TYPES = ['folder', 'document', 'database', 'board'];
+
     protected $fillable = ['parent_id', 'type', 'title', 'icon', 'icon_attachment_id', 'cover_attachment_id', 'cover_aspect_ratio', 'gallery_config', 'position', 'is_favorite'];
 
     protected function casts(): array
@@ -46,5 +48,11 @@ class Node extends Model
     public function database(): HasOne
     {
         return $this->hasOne(Database::class);
+    }
+
+    /** @return HasOne<Board, $this> */
+    public function board(): HasOne
+    {
+        return $this->hasOne(Board::class);
     }
 }

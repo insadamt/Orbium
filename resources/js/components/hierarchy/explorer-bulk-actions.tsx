@@ -36,7 +36,7 @@ export function ExplorerBulkActions({
     const selectedIds = new Set(selectedNodes.map((node) => node.id));
     function isValidDestination(node: TreeNode) {
         if (
-            node.type === 'document' ||
+            (node.type !== 'folder' && node.type !== 'database') ||
             (node.type === 'database' &&
                 selectedNodes.some((item) => item.type !== 'document'))
         )

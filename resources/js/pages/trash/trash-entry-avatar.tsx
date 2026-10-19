@@ -1,4 +1,4 @@
-import { Database, FileText, Folder } from 'lucide-react';
+import { PanelsTopLeft, Database, FileText, Folder } from 'lucide-react';
 import type { TrashEntry } from './trash-types';
 
 export function TrashEntryAvatar({
@@ -6,7 +6,13 @@ export function TrashEntryAvatar({
     title,
 }: Pick<TrashEntry, 'type' | 'title'>) {
     const Icon =
-        type === 'folder' ? Folder : type === 'database' ? Database : FileText;
+        type === 'board'
+            ? PanelsTopLeft
+            : type === 'folder'
+              ? Folder
+              : type === 'database'
+                ? Database
+                : FileText;
     return (
         <span
             className="workspace-manager-avatar trash-avatar"

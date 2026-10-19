@@ -5,7 +5,11 @@ import { router } from '@inertiajs/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useDocumentTab } from '@/components/navigation/document-tab-context';
 import { useNavigation } from '@/components/navigation/navigation-store';
-import { type UploadedAttachment, uploadAttachment } from '../editor-api';
+import {
+    type UploadedAttachment,
+    type ContentOwnerKind,
+    uploadAttachment,
+} from '../editor-api';
 import {
     acceptsUploadKind,
     uploadAccept,
@@ -25,7 +29,16 @@ import {
 } from './markdown-syntax';
 import { markdownBlockAt } from './interactions/markdown-block-actions';
 
-export function useMarkdownUpload(workspaceId: number, nodeId: number) {
+export function useMarkdownUpload(
+    workspaceId: number,
+    nodeId: number,
+    options?: {
+        ownerKind?: ContentOwnerKind;
+        onUploadingChange?: (busy: boolean) => void;
+    },
+) {
+    const uploadOptions = useRef(options);
+    uploadOptions.current = options;
     const fileInput = useRef<HTMLInputElement>(null);
     const request = useRef<(MarkdownUploadRequest & { id: string }) | null>(
         null,
@@ -117,11 +130,17 @@ export function useMarkdownUpload(workspaceId: number, nodeId: number) {
                 return;
             }
             uploadingNow.current = true;
+            uploadOptions.current?.onUploadingChange?.(true);
             setUploading(true);
             try {
                 const attachment =
                     file instanceof File
-                        ? await uploadAttachment(workspaceId, nodeId, file)
+                        ? await uploadAttachment(
+                              workspaceId,
+                              nodeId,
+                              file,
+                              uploadOptions.current?.ownerKind,
+                          )
                         : file;
                 const label = escapeMarkdownLabel(attachment.name || file.name);
                 let source = `${current.kind === 'image' ? '!' : ''}[${label}](orbium:attachment/${attachment.id})`;
@@ -193,6 +212,7 @@ export function useMarkdownUpload(workspaceId: number, nodeId: number) {
                     );
             } finally {
                 uploadingNow.current = false;
+                uploadOptions.current?.onUploadingChange?.(false);
                 if (mounted.current) {
                     setUploading(false);
                     clearUploadRequest();
@@ -215,7 +235,7 @@ export function useMarkdownUpload(workspaceId: number, nodeId: number) {
                 return;
             event.preventDefault();
             setError(
-                'Wait for the attachment upload to finish before leaving this document.',
+                'Wait for the attachment upload to finish before leaving this page.',
             );
         };
         const removeGuard = router.on('before', (event) => {
@@ -227,16 +247,21 @@ export function useMarkdownUpload(workspaceId: number, nodeId: number) {
             )
                 return;
             setError(
-                'Wait for the attachment upload to finish before leaving this document.',
+                'Wait for the attachment upload to finish before leaving this page.',
             );
             return false;
         });
+        window.addEventListener('orbium:before-page-leave', blockUploadRemoval);
         window.addEventListener('beforeunload', blockUploadRemoval);
         window.addEventListener('orbium:before-tab-close', blockUploadRemoval);
         return () => {
             mounted.current = false;
             input?.removeEventListener('cancel', clearUploadRequest);
             removeGuard();
+            window.removeEventListener(
+                'orbium:before-page-leave',
+                blockUploadRemoval,
+            );
             window.removeEventListener('beforeunload', blockUploadRemoval);
             window.removeEventListener(
                 'orbium:before-tab-close',

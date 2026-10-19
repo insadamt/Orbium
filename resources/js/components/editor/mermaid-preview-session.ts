@@ -1,3 +1,4 @@
+import type { ContentOwnerKind } from './editor-api';
 import type {
     MermaidPreviewEntry as Entry,
     MermaidSubscriber as Subscriber,
@@ -68,6 +69,7 @@ export class MermaidPreviewSession {
     constructor(
         private workspaceId: number,
         private nodeId: number,
+        private ownerKind: ContentOwnerKind = 'document',
     ) {}
 
     register(source: string, element: HTMLElement, subscriber: Subscriber) {
@@ -332,6 +334,7 @@ export class MermaidPreviewSession {
                         this.nodeId,
                         entry.source,
                         this.controller.signal,
+                        this.ownerKind,
                     ),
             );
             if (!this.isCurrent(entry)) return;
@@ -467,6 +470,7 @@ export class MermaidPreviewSession {
                 entry.source,
                 entry.preview!,
                 this.controller.signal,
+                this.ownerKind,
             );
         })
             .catch(() => undefined)

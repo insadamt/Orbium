@@ -10,11 +10,16 @@ type PageContext = {
     workspace?: { id: number; name: string };
     node?: { id: number; title: string };
     database?: { id: number; title: string };
-    currentNode?: { id: number; title: string } | null;
+    currentNode?: { id: number; title: string; type?: string } | null;
 };
 
 function statisticsTarget(context: PageContext): StatisticsTarget {
-    const node = context.node ?? context.database ?? context.currentNode;
+    // Board content statistics depend on spatial content; use workspace statistics for now.
+
+    const node =
+        context.node ??
+        context.database ??
+        (context.currentNode?.type === 'board' ? null : context.currentNode);
     return {
         workspaceId: context.workspace?.id ?? null,
         nodeId: node?.id ?? null,

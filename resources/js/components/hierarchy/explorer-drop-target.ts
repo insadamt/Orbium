@@ -27,7 +27,7 @@ function canDropInside(
     target: TreeNode,
 ) {
     if (
-        target.type === 'document' ||
+        (target.type !== 'folder' && target.type !== 'database') ||
         (target.type === 'database' &&
             sources.some((source) => source.type !== 'document'))
     )

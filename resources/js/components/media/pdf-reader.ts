@@ -1,3 +1,7 @@
+import {
+    observePdfDisplayDensity,
+    pdfOutputScale,
+} from './pdf-display-density';
 import type {
     PDFDocumentLoadingTask,
     PDFDocumentProxy,
@@ -196,13 +200,7 @@ export function mountPdfReader(
             });
             renderedScale = pageViewport.scale;
             updateControls();
-            const outputScale = Math.min(
-                window.devicePixelRatio || 1,
-                2,
-                Math.sqrt(
-                    8_388_608 / (pageViewport.width * pageViewport.height),
-                ),
-            );
+            const outputScale = pdfOutputScale(viewport, pageViewport);
             const nextCanvas = root.ownerDocument.createElement('canvas');
             pendingCanvas = nextCanvas;
             nextCanvas.width = Math.ceil(pageViewport.width * outputScale);
@@ -258,6 +256,7 @@ export function mountPdfReader(
     async function load() {
         if (started || destroyed) return;
         started = true;
+        displayDensity.refresh();
         try {
             const { loadPdfDocument } = await import('./pdf-engine');
             if (destroyed) return;
@@ -292,6 +291,7 @@ export function mountPdfReader(
         { rootMargin: '200px' },
     );
     intersection.observe(root);
+    const displayDensity = observePdfDisplayDensity(viewport, scheduleRender);
     let lastWidth = 0;
     const resize = new ResizeObserver(() => {
         if (Math.abs(viewport.clientWidth - lastWidth) < 2) return;
@@ -341,6 +341,7 @@ export function mountPdfReader(
         refresh: refreshLayout,
         relocate(nextOnResize?: () => void) {
             onResize = nextOnResize;
+            displayDensity.refresh();
             if (!started) {
                 intersection.disconnect();
                 void load();
@@ -356,6 +357,7 @@ export function mountPdfReader(
             clearTimeout(timer);
             intersection.disconnect();
             resize.disconnect();
+            displayDensity.destroy();
             thumbnails.destroy();
             renderTask?.cancel();
             void documentTask?.destroy();

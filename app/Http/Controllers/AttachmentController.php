@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Attachment;
 use App\Models\Node;
+use App\Services\Boards\BoardAccess;
 use App\Services\Library\AttachmentMediaTypes;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -38,9 +39,7 @@ class AttachmentController extends Controller
 
     public function store(Request $request, int $workspace, int $node): JsonResponse
     {
-        $documentNode = $request->user()->workspaces()->findOrFail($workspace)
-            ->nodes()->where('type', 'document')->findOrFail($node);
-        $this->assertVisible($documentNode);
+        $this->assertContentOwnerVisible($request, $workspace, $node);
         $data = $request->validate(['file' => ['required', 'file', 'max:'.(config('uploads.max_attachment_mb') * 1024)]]);
 
         return $this->persistAttachment($workspace, $node, $data['file']);
@@ -49,7 +48,7 @@ class AttachmentController extends Controller
     public function storeNodeImage(Request $request, int $workspace, int $node): JsonResponse
     {
         $container = $request->user()->workspaces()->findOrFail($workspace)
-            ->nodes()->whereIn('type', ['folder', 'database'])->findOrFail($node);
+            ->nodes()->whereIn('type', ['folder', 'database', 'board'])->findOrFail($node);
         $this->assertVisible($container);
         $data = $request->validate(['file' => ['required', 'file', 'mimetypes:image/png,image/jpeg,image/gif,image/webp', 'max:10240']]);
 
@@ -92,18 +91,14 @@ class AttachmentController extends Controller
 
     public function show(Request $request, int $workspace, int $node, int $attachment): BinaryFileResponse
     {
-        $documentNode = $request->user()->workspaces()->findOrFail($workspace)
-            ->nodes()->where('type', 'document')->findOrFail($node);
-        $this->assertVisible($documentNode);
+        $this->assertContentOwnerVisible($request, $workspace, $node);
 
         return $this->serveAttachment($workspace, $attachment, false, $request->boolean('download'));
     }
 
     public function metadata(Request $request, int $workspace, int $node, int $attachment): JsonResponse
     {
-        $documentNode = $request->user()->workspaces()->findOrFail($workspace)
-            ->nodes()->where('type', 'document')->findOrFail($node);
-        $this->assertVisible($documentNode);
+        $this->assertContentOwnerVisible($request, $workspace, $node);
         $file = Attachment::query()->where('workspace_id', $workspace)
             ->findOrFail($attachment);
 
@@ -121,7 +116,7 @@ class AttachmentController extends Controller
     public function showNodeImage(Request $request, int $workspace, int $node, int $attachment): BinaryFileResponse
     {
         $container = $request->user()->workspaces()->findOrFail($workspace)
-            ->nodes()->whereIn('type', ['folder', 'database'])->findOrFail($node);
+            ->nodes()->whereIn('type', ['folder', 'database', 'board'])->findOrFail($node);
         $this->assertVisible($container);
 
         return $this->serveAttachment($workspace, $attachment, true);
@@ -146,6 +141,18 @@ class AttachmentController extends Controller
         }
 
         return response()->download($path, $file->original_name, $headers)->setPrivate();
+    }
+
+    private function assertContentOwnerVisible(Request $request, int $workspace, int $node): void
+    {
+        if ($request->routeIs('boards.attachments.*')) {
+            app(BoardAccess::class)->visibleBoard($request->user(), $workspace, $node);
+
+            return;
+        }
+        $documentNode = $request->user()->workspaces()->findOrFail($workspace)
+            ->nodes()->where('type', 'document')->findOrFail($node);
+        $this->assertVisible($documentNode);
     }
 
     private function assertVisible(Node $node): void

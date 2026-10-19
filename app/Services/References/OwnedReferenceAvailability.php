@@ -38,7 +38,7 @@ final class OwnedReferenceAvailability
     public function findAttachment(Workspace $workspace, int $ownerId, int $id): ?Attachment
     {
         $owner = $this->findNode($workspace, $ownerId);
-        if ($owner === null || $owner->type !== 'document') {
+        if ($owner === null || ! in_array($owner->type, ['document', 'board'], true)) {
             return null;
         }
         $file = Attachment::query()->where('workspace_id', $workspace->id)->whereKey($id)->first();

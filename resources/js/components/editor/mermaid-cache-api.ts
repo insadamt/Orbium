@@ -1,4 +1,4 @@
-import { csrfToken, documentUrl } from './editor-api';
+import { csrfToken, documentUrl, type ContentOwnerKind } from './editor-api';
 import {
     mermaidRendererVersion,
     type CachedPreview,
@@ -9,7 +9,11 @@ export async function fetchSavedMermaidPreview(
     nodeId: number,
     source: string,
     signal: AbortSignal,
+    ownerKind: ContentOwnerKind = 'document',
 ): Promise<CachedPreview | null> {
+    // Board fragments have no Document row; keep their previews in the client session.
+
+    if (ownerKind === 'board') return null;
     const bytes = await crypto.subtle.digest(
         'SHA-256',
         new TextEncoder().encode(source),
@@ -35,7 +39,9 @@ export async function persistMermaidPreview(
     source: string,
     preview: CachedPreview,
     signal: AbortSignal,
+    ownerKind: ContentOwnerKind = 'document',
 ): Promise<boolean> {
+    if (ownerKind === 'board') return true;
     const response = await fetch(
         `${documentUrl(workspaceId, nodeId)}/mermaid-previews`,
         {

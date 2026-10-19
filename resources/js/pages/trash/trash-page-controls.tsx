@@ -74,6 +74,7 @@ export function TrashPageControls({
                             ['folder', 'Folders'],
                             ['database', 'Databases'],
                             ['document', 'Documents'],
+                            ['board', 'Boards'],
                         ].map(([value, label]) => (
                             <Menu.RadioItem
                                 key={value}

@@ -19,6 +19,7 @@ import type { RichContext } from './rich-model';
 import { readRichBlock } from './read-rich-block';
 import { renderMath } from './math-preview';
 import { element } from './widget-controls';
+import { mountCodePreview } from './code-preview';
 
 const parser = (markdownLanguage.parser as MarkdownParser).configure(
     orbiumMarkdownDialect,
@@ -154,6 +155,10 @@ export function renderRichBody(
                 return;
             }
             if (block.kind === 'code') {
+                if (context.ownerKind === 'board') {
+                    disposals.push(mountCodePreview(target, block));
+                    return;
+                }
                 const pre = element('pre');
                 const code = element('code', '', block.content);
                 pre.append(code);

@@ -16,6 +16,10 @@ class ManageHierarchy
 {
     public function create(Workspace $workspace, string $type, string $title, ?int $parentId): Node
     {
+        if (! in_array($type, Node::TYPES, true)) {
+            throw ValidationException::withMessages(['type' => 'Choose a supported page type.']);
+        }
+
         return DB::transaction(function () use ($workspace, $type, $title, $parentId): Node {
             $this->lockWorkspace($workspace);
             $parent = $this->findParent($workspace, $parentId);
@@ -39,6 +43,9 @@ class ManageHierarchy
             }
             if ($type === 'database') {
                 $node->database()->create();
+            }
+            if ($type === 'board') {
+                $node->board()->create();
             }
             if ($type === 'document' && $parent?->type === 'database') {
                 app(ManageDatabase::class)->initializeDocument($parent, $node);
@@ -119,7 +126,7 @@ class ManageHierarchy
             return;
         }
 
-        if ($parent->trashed() || $parent->workspace_id !== $workspace->id || $parent->type === 'document'
+        if ($parent->trashed() || $parent->workspace_id !== $workspace->id || ! in_array($parent->type, ['folder', 'database'], true)
             || ($parent->type === 'database' && $childType !== 'document')) {
             throw ValidationException::withMessages(['parent_id' => 'This parent cannot contain that node.']);
         }

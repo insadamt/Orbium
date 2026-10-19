@@ -12,6 +12,7 @@ import type { SyntaxNode } from '@lezer/common';
 import { readRichBlock } from '../rich/read-rich-block';
 import { fencedCodeSource } from '../rich/code-widget';
 import { markdownBlockMotion } from './markdown-block-motion';
+import { markdownBlockMotionEffect } from './markdown-block-history-motion';
 import {
     readOrbiumMetadata,
     serializeOrbiumBlock,
@@ -149,6 +150,9 @@ export function deleteMarkdownBlock(
         },
         annotations: isolateHistory.of('full'),
         userEvent: 'delete.block',
+        effects: markdownBlockMotionEffect.of({
+            before: { from: block.from, to: block.to },
+        }),
     });
     if (snapshot) motion?.play(snapshot, changes);
     view.focus();
@@ -223,6 +227,10 @@ export function moveMarkdownBlock(
             selection: options.preserveViewport ? undefined : { anchor },
             annotations: [isolateHistory.of('full'), richBlockMove.of(move)],
             userEvent: 'move.block',
+            effects: markdownBlockMotionEffect.of({
+                before: { from: block.from, to: block.to },
+                after: { from: anchor, to: anchor + block.source.length },
+            }),
             scrollIntoView: !options.preserveViewport,
         });
         if (snapshot)

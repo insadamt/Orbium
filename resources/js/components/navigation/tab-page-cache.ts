@@ -134,6 +134,9 @@ export function hasRetainedDocument(tabId: string) {
 export function cachedPageForTab(id: string) {
     const tab = useNavigation.getState().tabs.find((item) => item.id === id);
     const cached = useTabPageCache.getState().pages[id];
+    // Board snapshots must be fresh before editing; a cached revision may already be obsolete.
+
+    if (cached?.page.component === 'boards/show') return undefined;
     if (cached?.page.url !== tab?.entries[tab.index].url) return undefined;
 
     return retainedNavigationPage(cached.page, id);

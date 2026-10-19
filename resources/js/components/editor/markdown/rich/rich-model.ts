@@ -2,6 +2,7 @@ import type { EditorView } from '@codemirror/view';
 import type { MermaidPreviewSession } from '../../mermaid-preview-session';
 import type { MarkdownUploadRequest } from '../markdown-slash-commands';
 import type { OrbiumMetadata } from '../dialect/metadata';
+import type { ContentOwnerKind } from '../../editor-api';
 
 export type RichCell = {
     from: number;
@@ -53,6 +54,7 @@ export type AttachmentMetadata = {
     purpose: string;
 };
 export type RichContext = {
+    ownerKind?: ContentOwnerKind;
     workspaceId: number;
     nodeId: number;
     mermaid: MermaidPreviewSession;

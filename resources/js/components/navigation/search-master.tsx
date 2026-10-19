@@ -1,6 +1,7 @@
 import {
     FileText,
     Folder,
+    PanelsTopLeft,
     Database,
     Search,
     CornerDownLeft,
@@ -25,7 +26,12 @@ type Props = {
     onOpen: (url: string, newTab?: boolean) => void;
 };
 
-const resultIcons = { document: FileText, folder: Folder, database: Database };
+const resultIcons = {
+    document: FileText,
+    folder: Folder,
+    database: Database,
+    board: PanelsTopLeft,
+};
 
 export function SearchMaster({
     workspaceId,
@@ -108,6 +114,7 @@ export function SearchMaster({
                       label: 'New database',
                       action: () => beginCreate('database'),
                   },
+                  { label: 'New Board', action: () => beginCreate('board') },
               ]),
         {
             label: 'Workspace root',

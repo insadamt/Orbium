@@ -9,7 +9,7 @@ import type { DeletionPreview } from './trash-types';
 
 function isDeletedLocation(url: string, preview: DeletionPreview): boolean {
     const match =
-        /^\/workspaces\/(\d+)(?:\/(?:nodes|documents|databases)\/(\d+))?/.exec(
+        /^\/workspaces\/(\d+)(?:\/(?:nodes|documents|databases|boards)\/(\d+))?/.exec(
             url,
         );
     if (!match) return false;

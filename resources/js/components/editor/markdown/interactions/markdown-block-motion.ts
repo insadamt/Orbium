@@ -75,7 +75,7 @@ class MarkdownBlockMotion {
             this.finish();
     };
 
-    capture(block?: MarkdownBlockRange) {
+    capture(block?: Pick<MarkdownBlockRange, 'from' | 'to'>) {
         this.finish();
         if (this.reducedMotion.matches) return null;
         const rows = renderedMarkdownMotionRows(this.view);
@@ -90,7 +90,60 @@ class MarkdownBlockMotion {
             rows,
             outgoing,
             ghost,
+            scrollPositions: captureMotionScrollPositions(this.view),
         };
+    }
+
+    playAfterLayout(
+        snapshot: NonNullable<ReturnType<MarkdownBlockMotion['capture']>>,
+        changes: ChangeSet,
+        movedBlock?: { from: number; to: number },
+    ) {
+        this.refreshRichLayout();
+        this.outgoingSnapshot = snapshot.ghost?.element ?? null;
+        const revision = this.revision;
+        this.view.requestMeasure({
+            read: () => undefined,
+            write: () => {
+                queueMicrotask(() => {
+                    if (revision !== this.revision) return;
+                    if (
+                        !this.view.dom.isConnected ||
+                        this.view.dom.closest('[hidden], [inert]')
+                    ) {
+                        this.finish();
+                        return;
+                    }
+                    const previous = snapshot.scrollPositions;
+                    const scrollDistance =
+                        previous.positions.reduce(
+                            (distance, { element, top }) =>
+                                element ===
+                                element.ownerDocument.scrollingElement
+                                    ? distance
+                                    : distance + top - element.scrollTop,
+                            previous.windowTop - window.scrollY,
+                        ) * this.view.scaleY;
+                    const rows = snapshot.rows.map((row) => ({
+                        ...row,
+                        bounds: new DOMRect(
+                            row.bounds.x,
+                            row.bounds.y + scrollDistance,
+                            row.bounds.width,
+                            row.bounds.height,
+                        ),
+                    }));
+                    const outgoing = snapshot.outgoing.map(
+                        (row) => rows[snapshot.rows.indexOf(row)],
+                    );
+                    this.playSnapshot(
+                        { ...snapshot, rows, outgoing },
+                        changes,
+                        movedBlock,
+                    );
+                });
+            },
+        });
     }
 
     play(
@@ -98,6 +151,11 @@ class MarkdownBlockMotion {
         changes: ChangeSet,
         movedBlock?: { from: number; to: number },
     ) {
+        this.refreshRichLayout();
+        this.playSnapshot(snapshot, changes, movedBlock);
+    }
+
+    private refreshRichLayout() {
         // Finish parsing before staging motion so the scheduled rich refresh reuses the same widgets.
         const from = Math.max(0, this.view.viewport.from - 2000);
         const to = Math.min(
@@ -113,6 +171,13 @@ class MarkdownBlockMotion {
                     syntaxTree(this.view.state),
             }),
         });
+    }
+
+    private playSnapshot(
+        snapshot: NonNullable<ReturnType<MarkdownBlockMotion['capture']>>,
+        changes: ChangeSet,
+        movedBlock?: { from: number; to: number },
+    ) {
         this.ghost = snapshot.ghost?.popElement ?? null;
         this.outgoingSnapshot = snapshot.ghost?.element ?? null;
         const rows = renderedMarkdownMotionRows(this.view);

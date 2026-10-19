@@ -1,5 +1,17 @@
 # Phase 5 — Explorer review
 
+Split loading handoff correction (2026-10-18): document placeholders now render
+from subscribed cache readiness and remove themselves when the matching document
+is available. See [the report and manual checklist](../reports/05-split-loading-handoff.md).
+
+History reveal refinement (2026-10-18): linked undo/redo reveals both block sites
+before changing content and stages pop/slide motion after CodeMirror layout and
+scrolling settle. See [the report and manual checklist](../reports/05-block-history-reveal-refinement.md).
+
+Block history motion correction (2026-10-18): undo/redo now reuse the existing
+block pop/slide/pop motion for same-page moves, linked cross-page moves, and
+block deletion/restoration. See [the report and manual checklist](../reports/05-block-undo-redo-motion.md).
+
 Split interaction correction (2026-10-18): hovering a document surface selects
 its editor without clicking. Both visible Markdown panes remain editable so
 cross-page block moves and linked history can use the companion pane. Dragging

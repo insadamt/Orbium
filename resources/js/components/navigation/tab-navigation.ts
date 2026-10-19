@@ -26,7 +26,7 @@ type PageContext = {
     currentNode?: {
         id: number;
         title: string;
-        type: 'folder' | 'document' | 'database';
+        type: 'folder' | 'document' | 'database' | 'board';
         icon?: string | null;
         icon_attachment_id?: number | null;
     } | null;
@@ -34,6 +34,7 @@ type PageContext = {
 export function locationKind(url: string): Location['kind'] {
     if (url.includes('/documents/')) return 'document';
     if (url.includes('/databases/')) return 'database';
+    if (url.includes('/boards/')) return 'board';
     if (url.split('?')[0] === '/trash') return 'trash';
     if (url.startsWith('/settings/')) return 'settings';
     return 'workspace';
@@ -144,6 +145,7 @@ function visitTab(
     });
 }
 export function openLocation(url: string, newTab = false) {
+    if (!allowPageLeave()) return;
     const isSettingsLocation = locationKind(url) === 'settings';
     const shouldOpenNewTab = newTab || isSettingsLocation;
     if (window.self !== window.top) {
@@ -198,6 +200,7 @@ export function activateTab(id: string) {
     const tab = navigation.tabs.find((item) => item.id === id);
     if (!tab) return;
     if (navigation.activeId === id || navigation.pending) return;
+    if (!allowPageLeave()) return;
     const location = tab.entries[tab.index];
     if (restoreCachedTab(id, () => useNavigation.getState().activate(id)))
         return;
@@ -211,9 +214,16 @@ export function stepHistory(delta: number) {
     const tab = state.tabs.find((item) => item.id === state.activeId);
     const location = tab?.entries[tab.index + delta];
     if (!location) return;
+    if (!allowPageLeave()) return;
     visitTab(location.url, () => useNavigation.getState().step(delta), {
         scroll: location.scroll,
     });
+}
+
+function allowPageLeave(): boolean {
+    return window.dispatchEvent(
+        new Event('orbium:before-page-leave', { cancelable: true }),
+    );
 }
 export function restoreBrowserHistory(url: string) {
     const state = useNavigation.getState();

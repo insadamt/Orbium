@@ -1,0 +1,187 @@
+.board-multi-selection {
+    position: absolute;
+    z-index: 1000004;
+    pointer-events: none;
+    outline: calc(1px * var(--board-inverse-zoom, 1)) solid var(--foreground);
+    outline-offset: calc(7px * var(--board-inverse-zoom, 1));
+}
+.board-selection-edge {
+    position: absolute;
+    pointer-events: auto;
+    cursor: move;
+}
+.board-selection-edge-top,
+.board-selection-edge-bottom {
+    left: 0;
+    right: 0;
+    height: calc(12px * var(--board-inverse-zoom, 1));
+}
+.board-selection-edge-left,
+.board-selection-edge-right {
+    top: 0;
+    bottom: 0;
+    width: calc(12px * var(--board-inverse-zoom, 1));
+}
+.board-selection-edge-top {
+    top: calc(-12px * var(--board-inverse-zoom, 1));
+}
+.board-selection-edge-bottom {
+    bottom: calc(-12px * var(--board-inverse-zoom, 1));
+}
+.board-selection-edge-left {
+    left: calc(-12px * var(--board-inverse-zoom, 1));
+}
+.board-selection-edge-right {
+    right: calc(-12px * var(--board-inverse-zoom, 1));
+}
+.board-alignment-guides {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1000003;
+    pointer-events: none;
+}
+.board-alignment-guide {
+    position: absolute;
+    border-color: var(--foreground);
+    opacity: 0.55;
+}
+.board-alignment-guide[data-axis='x'] {
+    border-left: calc(1px * var(--board-inverse-zoom, 1)) dashed;
+}
+.board-alignment-guide[data-axis='y'] {
+    border-top: calc(1px * var(--board-inverse-zoom, 1)) dashed;
+}
+.board-properties-panel {
+    position: absolute;
+    z-index: 6;
+    top: 76px;
+    right: 16px;
+    bottom: 96px;
+    width: min(264px, calc(100vw - 24px));
+    padding: 16px;
+    overflow-y: auto;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: var(--background);
+    box-shadow: 0 8px 32px rgb(0 0 0 / 0.08);
+    color: var(--foreground);
+}
+.board-properties-panel header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 13px;
+    font-weight: 600;
+}
+.board-properties-panel header button {
+    padding: 5px;
+    border-radius: 6px;
+}
+.board-properties-panel section {
+    padding-block: 18px;
+    border-bottom: 1px solid var(--border);
+}
+.board-properties-panel h3 {
+    margin-bottom: 10px;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--muted-foreground);
+}
+.board-properties-panel p {
+    margin-top: 10px;
+    font-size: 11px;
+    line-height: 1.6;
+    color: var(--muted-foreground);
+}
+.board-property-type {
+    margin-top: 18px;
+    font-size: 18px;
+    font-weight: 550;
+    letter-spacing: -0.025em;
+}
+.board-property-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+.board-property-field {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    font-size: 11px;
+    color: var(--muted-foreground);
+}
+.board-property-field input {
+    width: 100%;
+    min-width: 0;
+    padding: 8px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    color: var(--foreground);
+    background: transparent;
+}
+.board-property-field input:disabled {
+    opacity: 0.45;
+}
+.board-properties-panel footer {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    padding-top: 16px;
+    font-size: 10px;
+    color: var(--muted-foreground);
+}
+@media (max-width: 640px) {
+    .board-page-heading {
+        top: 12px;
+        left: 12px;
+    }
+    .board-properties-panel {
+        top: 68px;
+        right: 12px;
+        bottom: 136px;
+    }
+}
+
+.board-world[data-multi-selection='true'] .board-object[data-selected='true'] {
+    outline: none;
+}
+.board-world[data-multi-selection='true'] .board-resize {
+    display: none;
+}
+.board-field-actions .board-media-upload:hover {
+    background: var(--foreground);
+    color: var(--background);
+    opacity: 0.85;
+}
+.board-page > p[role='alert'] {
+    position: absolute;
+    top: 72px;
+    left: 16px;
+    right: 16px;
+    z-index: 6;
+    padding: 12px;
+    border-radius: 10px;
+    background: var(--background);
+}
+
+.board-page-heading .board-back-button {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 5px;
+    min-height: 32px;
+    padding: 6px 9px;
+    border-radius: 8px;
+    font-size: 12px;
+}
+.board-back-button:hover {
+    background: var(--accent);
+}
+.board-back-button:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+}

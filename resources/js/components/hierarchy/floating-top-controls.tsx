@@ -44,6 +44,7 @@ type Props = {
         | 'explorer'
         | 'document'
         | 'database'
+        | 'board'
         | 'settings'
         | 'trash'
         | 'library'
@@ -250,9 +251,11 @@ export function FloatingTopControls({
                     className="floating-account-controls"
                     data-search-open={pageSearch.open}
                 >
-                    {pageType !== 'library' && pageType !== 'statistics' && (
-                        <FloatingPageSearch pageType={pageType} />
-                    )}
+                    {pageType !== 'library' &&
+                        pageType !== 'statistics' &&
+                        pageType !== 'board' && (
+                            <FloatingPageSearch pageType={pageType} />
+                        )}
                     <StatisticsButton className="floating-icon-button floating-surface" />
                     {workspace && (
                         <button
@@ -311,6 +314,7 @@ export function FloatingTopControls({
                                             'document',
                                             'folder',
                                             'database',
+                                            'board',
                                         ] as const
                                     ).map((type) => (
                                         <Menu.Item

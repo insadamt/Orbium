@@ -1,5 +1,7 @@
 import {
     Database,
+    PanelsTopLeft,
+    Star,
     FilePlus,
     FolderPlus,
     Upload,
@@ -12,6 +14,7 @@ import {
 } from 'lucide-react';
 import { PositionedMenu } from '@/components/ui/positioned-menu';
 import * as Menu from '@/components/ui/dropdown-menu';
+import type { TreeNode } from '@/components/navigation/navigation-types';
 
 export type ExplorerMenuPosition = {
     nodeId: number | null;
@@ -37,16 +40,20 @@ export function ExplorerContextMenu({
     onDelete,
     onImport,
     onExport,
+    isFavorite,
+    onToggleFavorite,
 }: {
     position: ExplorerMenuPosition | null;
     nodeTitle?: string;
     onClose: () => void;
-    onCreate: (type: 'document' | 'folder' | 'database') => void;
+    onCreate: (type: TreeNode['type']) => void;
     onOpen: (newTab: boolean) => void;
     onRename: () => void;
     onDelete: () => void;
     onImport: () => void;
     onExport?: () => void;
+    isFavorite?: boolean;
+    onToggleFavorite?: () => void;
 }) {
     if (!position) return null;
     const actions: MenuAction[] =
@@ -67,6 +74,11 @@ export function ExplorerContextMenu({
                       label: 'New database',
                       run: () => onCreate('database'),
                   },
+                  {
+                      icon: PanelsTopLeft,
+                      label: 'New Board',
+                      run: () => onCreate('board'),
+                  },
                   { icon: Upload, label: 'Import…', run: onImport },
               ]
             : [
@@ -81,6 +93,17 @@ export function ExplorerContextMenu({
                       run: () => onOpen(true),
                   },
                   { icon: Pencil, label: 'Rename', run: onRename },
+                  ...(onToggleFavorite
+                      ? [
+                            {
+                                icon: Star,
+                                label: isFavorite
+                                    ? 'Remove from favorites'
+                                    : 'Add to favorites',
+                                run: onToggleFavorite,
+                            },
+                        ]
+                      : []),
                   ...(onExport
                       ? [{ icon: Download, label: 'Export…', run: onExport }]
                       : []),

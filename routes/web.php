@@ -1,6 +1,9 @@
 <?php
 
 use App\Http\Controllers\AttachmentController;
+use App\Http\Controllers\BoardContentController;
+use App\Http\Controllers\BoardController;
+use App\Http\Controllers\BoardResourceController;
 use App\Http\Controllers\BulkNodeController;
 use App\Http\Controllers\DatabaseController;
 use App\Http\Controllers\DocumentController;
@@ -61,6 +64,17 @@ Route::middleware(['auth', SerializeWorkspaceWrites::class])->group(function () 
     Route::post('workspaces/{workspace}/nodes/bulk', BulkNodeController::class)->name('nodes.bulk');
     Route::post('workspaces/{workspace}/nodes', [NodeController::class, 'store'])->name('nodes.store');
     Route::get('workspaces/{workspace}/nodes/{node}', [WorkspaceController::class, 'showNode'])->name('nodes.show');
+    Route::get('workspaces/{workspace}/boards/{node}', [BoardController::class, 'show'])->name('boards.show');
+    Route::get('workspaces/{workspace}/boards/{node}/content', [BoardContentController::class, 'show'])->name('boards.content.show');
+    Route::put('workspaces/{workspace}/boards/{node}/content', [BoardContentController::class, 'update'])->name('boards.content.update');
+    Route::get('workspaces/{workspace}/boards/{node}/resources', [BoardResourceController::class, 'index'])->name('boards.resources.index');
+    Route::get('workspaces/{workspace}/boards/{node}/resources/previews', [BoardResourceController::class, 'previews'])->name('boards.resources.previews');
+    Route::get('workspaces/{workspace}/boards/{node}/resources/{target}/document', [BoardResourceController::class, 'document'])->name('boards.resources.document');
+    Route::post('workspaces/{workspace}/boards/{node}/documents', [BoardResourceController::class, 'createDocument'])->name('boards.documents.store');
+    Route::post('workspaces/{workspace}/boards/{node}/attachments', [AttachmentController::class, 'store'])->name('boards.attachments.store');
+    Route::get('workspaces/{workspace}/boards/{node}/attachments/{attachment}/metadata', [AttachmentController::class, 'metadata'])->name('boards.attachments.metadata');
+    Route::get('workspaces/{workspace}/boards/{node}/attachments/{attachment}', [AttachmentController::class, 'show'])->name('boards.attachments.show');
+    Route::patch('workspaces/{workspace}/nodes/{node}/favorite', [NodeController::class, 'updateFavorite'])->name('nodes.favorite.update');
     Route::get('workspaces/{workspace}/databases/{node}', [DatabaseController::class, 'show'])->name('databases.show');
     Route::post('workspaces/{workspace}/databases/{node}/documents', [DatabaseController::class, 'createDocument'])->name('databases.documents.store');
     Route::delete('workspaces/{workspace}/databases/{node}/documents/{document}', [DatabaseController::class, 'trashDocument'])->name('databases.documents.destroy');

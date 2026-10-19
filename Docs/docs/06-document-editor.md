@@ -218,6 +218,10 @@ shrinks/fades out, neighboring blocks slide into their new positions in both
 pages, and the inserted block scales/fades in. Reduced motion applies both edits
 immediately without animation.
 
+Block history motion correction (2026-10-18): undo and redo of block moves replay the same outgoing pop, neighboring-block slide, and incoming pop as the original move, including linked moves between split documents. Undoing a block deletion pops the block back in; redoing it pops it out. Exact before/after block ranges travel with the session history rather than being guessed from matching text. Outgoing media snapshots are captured before linked history adopts a player into the other page. Ordinary typing undo keeps its existing behavior, and reduced motion remains immediate. See [the report and manual checklist](../reports/05-block-undo-redo-motion.md).
+
+History reveal refinement (2026-10-18): linked undo/redo first reveals the outgoing block and the corresponding restoration position in their own panes, then rechecks both histories before applying the paired change. Each history transaction also reveals the restored block or removal site, overriding an unrelated old caret position. Animation waits for CodeMirror's scroll/layout measurement to settle; neighboring-row motion excludes reveal scrolling, and outgoing snapshots keep their captured screen position. Rapid history requests queue in order while reveal is pending. Changes or closed/hidden editors abort stale requests safely. See [the refinement report and manual checklist](../reports/05-block-history-reveal-refinement.md).
+
 Moving already-rendered Mermaid and math blocks carries their prepared previews
 to the destination editor before insertion, including inline math. The move must
 not replace a prepared preview with a fresh rendering/loading placeholder.
@@ -832,3 +836,8 @@ selection of the current mode does not restart the animation. OS reduced motion
 removes the reveal. This applies to blocks using the shared mode controls,
 including Mermaid and display math; code remains directly editable.
 See `../reports/06-block-mode-motion-and-pdf-space.md` for manual acceptance.
+
+
+## Editing original Documents from Board cards
+
+Boards phase 4 may mount this editor for the single active Document reference card. Its optional hosted session supplies autosave/recovery/guards while retaining the original Document identity, content format, revision, save endpoints, attachment ownership, mention indexing and Mermaid cache. Inactive cards show bounded previews without editor instances. Hosted sessions register local-only block transfer targets, hide the page outline and freeze on revision/content-format conflicts; normal Document pages keep their default editor session. Board-native text/code/table/media objects use their own schemas and controls. See `24-boards.md` and `../phases/12-boards-resource-cards.md`.

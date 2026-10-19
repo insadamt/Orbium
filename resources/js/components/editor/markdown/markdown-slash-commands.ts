@@ -147,6 +147,7 @@ export function insertBlockTemplate(
 export function markdownSlashCommands(
     onUpload: (request: MarkdownUploadRequest) => void,
     workspaceId: number,
+    allowMentions = true,
 ) {
     const slashSource = (context: CompletionContext) => {
         if (
@@ -224,7 +225,10 @@ export function markdownSlashCommands(
     return [
         markdownCompletionMenu,
         autocompletion({
-            override: [slashSource, markdownMentionSource(workspaceId)],
+            override: [
+                slashSource,
+                ...(allowMentions ? [markdownMentionSource(workspaceId)] : []),
+            ],
             defaultKeymap: false,
             activateOnTypingDelay: 0,
             interactionDelay: 0,

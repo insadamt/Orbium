@@ -81,6 +81,8 @@ export function mountNestedMedia(
                         target,
                     ) ?? createAttachmentPlayer(playerOptions);
                 if (player) {
+                    if (context.ownerKind === 'board')
+                        player.root.dataset.boardInteractive = '';
                     target.prepend(player.root);
                     player.relocate(playerOptions);
                     unregisterPlayer = registerTransferableMediaPlayer(

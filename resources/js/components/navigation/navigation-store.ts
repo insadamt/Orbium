@@ -17,7 +17,13 @@ import { captureSplitMotion } from './split-workspace-motion';
 export type Location = {
     url: string;
     title: string;
-    kind: 'workspace' | 'document' | 'database' | 'settings' | 'trash';
+    kind:
+        | 'workspace'
+        | 'document'
+        | 'database'
+        | 'board'
+        | 'settings'
+        | 'trash';
     scroll: number;
     viewState?: Record<string, unknown>;
     icon?: string | null;
@@ -146,6 +152,7 @@ export const useNavigation = create<NavigationState>((set, get) => ({
                             kind: [
                                 'document',
                                 'database',
+                                'board',
                                 'settings',
                                 'trash',
                             ].includes(entry.kind)

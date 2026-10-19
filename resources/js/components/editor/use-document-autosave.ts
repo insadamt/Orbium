@@ -1,3 +1,4 @@
+import { useHostedDocumentSession } from './hosted-document-session';
 import {
     measureEditorWork,
     measureEditorAsync,
@@ -19,6 +20,7 @@ export function useDocumentAutosave(
     initialRevision: number,
 ) {
     const { tabId, active } = useDocumentTab();
+    const hostedSession = useHostedDocumentSession();
     const activeTab = useRef(active);
     activeTab.current = active;
     const [status, setStatus] = useState<SaveStatus>('saved');
@@ -206,5 +208,7 @@ export function useDocumentAutosave(
         };
     }, [flush, tabId]);
 
-    return { status, error, navigationNotice, queueSave, saveNow };
+    return (
+        hostedSession ?? { status, error, navigationNotice, queueSave, saveNow }
+    );
 }

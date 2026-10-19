@@ -1,0 +1,224 @@
+.board-panel {
+    position: absolute;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 5px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--background);
+    box-shadow: 0 2px 12px rgb(0 0 0 / 0.04);
+}
+.board-tool-button,
+.board-inline-toolbar button {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-width: 34px;
+    height: 34px;
+    padding-inline: 8px;
+    border-radius: 9px;
+    font-size: 12px;
+    color: var(--muted-foreground);
+}
+.board-tool-button:hover,
+.board-inline-toolbar button:hover,
+.board-tool-button[aria-pressed='true'] {
+    background: var(--accent);
+    color: var(--foreground);
+}
+.board-stage :is(button, select):focus-visible,
+.board-page-heading button:focus-visible {
+    background: var(--accent);
+    color: var(--foreground);
+}
+.board-tool-button:disabled {
+    cursor: default;
+    opacity: 0.35;
+}
+.board-creation-dock {
+    left: 50%;
+    bottom: 20px;
+    transform: translateX(-50%);
+    max-width: calc(100% - 24px);
+    padding: 6px;
+}
+.board-creation-dock .board-tool-button {
+    flex-direction: column;
+    gap: 5px;
+    width: 42px;
+    height: 46px;
+}
+.board-dock-label {
+    font-size: 10px;
+    line-height: 1;
+}
+.board-tool-separator {
+    align-self: stretch;
+    width: 1px;
+    margin: 5px 3px;
+    background: var(--border);
+}
+.board-history-controls {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+.board-history-controls .board-tool-button {
+    width: 34px;
+    height: 34px;
+}
+.board-navigation-dock {
+    right: 16px;
+    bottom: 16px;
+}
+.board-zoom-label {
+    min-width: 42px;
+    text-align: center;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    color: var(--foreground);
+}
+.board-save-status {
+    position: absolute;
+    z-index: 3;
+    top: 64px;
+    bottom: auto;
+    left: 16px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 14px;
+    max-width: min(480px, calc(100% - 32px));
+    max-height: min(240px, calc(100% - 200px));
+    overflow: auto;
+    padding: 9px 12px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--background);
+    font-size: 11px;
+    box-shadow: 0 2px 8px rgb(0 0 0 / 0.03);
+}
+.board-save-status > span:first-child {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    white-space: nowrap;
+    color: var(--muted-foreground);
+}
+.board-save-status > span:first-child::before {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: currentColor;
+    content: '';
+}
+.board-save-status[data-status='error'] {
+    border-color: var(--destructive);
+}
+.board-save-status button {
+    color: var(--foreground);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+.board-selection-tools {
+    z-index: 4;
+    flex-wrap: wrap;
+    max-width: min(640px, calc(100% - 24px));
+    gap: 3px;
+}
+.board-selection-tools[hidden] {
+    display: none;
+}
+.board-selection-tools :disabled {
+    opacity: 0.4;
+}
+.board-selection-label {
+    padding-inline: 8px;
+    font-size: 11px;
+    color: var(--muted-foreground);
+}
+.board-selection-actions {
+    display: flex;
+    gap: 2px;
+    border-inline-start: 1px solid var(--border);
+    padding-inline-start: 3px;
+}
+.board-block-picker {
+    width: min(360px, calc(100vw - 24px));
+    max-height: min(520px, calc(100dvh - 160px));
+    overflow-y: auto;
+    padding: 6px;
+    border-radius: 12px;
+}
+.board-picker-heading {
+    padding: 6px 8px;
+    font-size: 12px;
+    color: var(--muted-foreground);
+}
+.board-picker-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 2px;
+}
+.board-picker-item {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+    padding: 9px 8px;
+    border-radius: 7px;
+}
+.board-picker-item[data-highlighted] {
+    background: var(--accent);
+}
+.board-picker-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--foreground);
+    font-size: 12px;
+    font-weight: 500;
+}
+.board-picker-description {
+    color: var(--muted-foreground);
+    font-size: 10px;
+    line-height: 1.4;
+}
+@media (max-width: 1000px) {
+    .board-creation-dock {
+        bottom: 76px;
+    }
+}
+@media (max-width: 640px) {
+    .board-creation-dock {
+        bottom: 70px;
+        padding: 4px;
+    }
+    .board-history-controls .board-tool-button {
+        width: 32px;
+        height: 34px;
+    }
+    .board-creation-dock > .board-tool-button {
+        width: 38px;
+        height: 42px;
+        min-width: 32px;
+    }
+    .board-navigation-dock {
+        right: 12px;
+        bottom: 12px;
+    }
+    .board-save-status {
+        top: 62px;
+        bottom: auto;
+        left: 12px;
+        max-width: calc(100% - 24px);
+    }
+    .board-selection-tools {
+        max-height: max(48px, calc(100% - 240px));
+        overflow-y: auto;
+    }
+}

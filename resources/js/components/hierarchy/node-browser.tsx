@@ -52,7 +52,7 @@ export default function NodeBrowser({
     >();
     const [localTags, setLocalTags] = useState<Record<number, string[]>>({});
     const parentId =
-        currentNode?.type === 'document'
+        currentNode?.type === 'document' || currentNode?.type === 'board'
             ? currentNode.parent_id
             : (currentNode?.id ?? null);
     const children = nodes.filter(
@@ -63,7 +63,9 @@ export default function NodeBrowser({
     const allowedTypes: HierarchyNode['type'][] =
         currentNode?.type === 'database'
             ? ['document']
-            : ['document', 'folder', 'database'];
+            : currentNode && currentNode.type !== 'folder'
+              ? []
+              : ['document', 'folder', 'database', 'board'];
     const selectedNode = nodes.find((node) => node.id === actionsId);
     const ancestors = ancestorPath(currentNode, nodes);
     const locations = [
@@ -169,7 +171,9 @@ export default function NodeBrowser({
                                     ? 'Folder'
                                     : currentNode.type === 'database'
                                       ? 'Database'
-                                      : 'Document'
+                                      : currentNode.type === 'board'
+                                        ? 'Board'
+                                        : 'Document'
                                 : 'Workspace'}{' '}
                             · {children.length}{' '}
                             {children.length === 1 ? 'item' : 'items'}
@@ -239,7 +243,7 @@ export default function NodeBrowser({
                                 : 'This workspace is empty'}
                         </p>
                         <p className="mt-2 text-sm text-muted-foreground">
-                            Create a document, folder, or database to get
+                            Create a document, folder, database, or Board to get
                             started.
                         </p>
                         <div className="mt-5 flex justify-center gap-2">

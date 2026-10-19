@@ -75,6 +75,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
         page.component.startsWith('statistics/') ||
         page.component === 'documents/show' ||
         page.component === 'databases/show' ||
+        page.component === 'boards/show' ||
         page.component.startsWith('settings/');
     const [settingsWorkspaceId, setSettingsWorkspaceId] = useState<
         number | null
@@ -98,19 +99,22 @@ export default function AppLayout({ children }: AppLayoutProps) {
                   (workspace) => workspace.id === settingsWorkspaceId,
               ) ??
               page.props.workspaces?.[0]);
-    const pageType = isHomePage
-        ? 'explorer'
-        : page.component === 'documents/show'
-          ? 'document'
-          : page.component === 'databases/show'
-            ? 'database'
-            : page.component.startsWith('library/')
-              ? 'library'
-              : page.component === 'trash/index'
-                ? 'trash'
-                : page.component.startsWith('statistics/')
-                  ? 'statistics'
-                  : 'settings';
+    const pageType =
+        page.component === 'boards/show'
+            ? 'board'
+            : isHomePage
+              ? 'explorer'
+              : page.component === 'documents/show'
+                ? 'document'
+                : page.component === 'databases/show'
+                  ? 'database'
+                  : page.component.startsWith('library/')
+                    ? 'library'
+                    : page.component === 'trash/index'
+                      ? 'trash'
+                      : page.component.startsWith('statistics/')
+                        ? 'statistics'
+                        : 'settings';
     const breadcrumbLinks = page.props.breadcrumbs ?? [];
     const currentPath = page.url.split('?')[0];
     const floatingBreadcrumbs: BreadcrumbItem[] = page.component.startsWith(

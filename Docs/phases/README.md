@@ -16,6 +16,10 @@ The phases are designed to produce manually inspectable results without letting 
 
 ## Gate
 
+The 2026-10-18 Boards feature begins with `09-boards-foundation.md`. Its subsequent feature phases require the same explicit approval gate and do not imply approval of the existing release phases.
+
+Boards phases 1–3, including the independent native-block correction in `11-boards-native-correction.md`, were approved on 2026-10-18. Phase 4 is authorized by “okey go ahead”: follow `12-boards-resource-cards.md` and stop after `../reports/12-boards-resource-cards.md` for manual review. The initial document-fragment implementation remains superseded. Mind Maps require a separate approval and the missing source requirements.
+
 After every phase:
 
 ```text

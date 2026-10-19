@@ -1,6 +1,13 @@
 import { router } from '@inertiajs/react';
 import gsap from 'gsap';
-import { Database, FileText, Folder, Plus, X } from 'lucide-react';
+import {
+    PanelsTopLeft,
+    Database,
+    FileText,
+    Folder,
+    Plus,
+    X,
+} from 'lucide-react';
 import {
     useEffect,
     useMemo,
@@ -29,7 +36,12 @@ type Props = {
     onManageWorkspaces: () => void;
 };
 
-const nodeIcons = { folder: Folder, document: FileText, database: Database };
+const nodeIcons = {
+    folder: Folder,
+    document: FileText,
+    database: Database,
+    board: PanelsTopLeft,
+};
 
 function wrapIndex(index: number, count: number) {
     return (index + count) % count;
@@ -79,7 +91,9 @@ export default function OrbitalExplorer({
     const allowedTypes: HierarchyNode['type'][] =
         currentNode?.type === 'database'
             ? ['document']
-            : ['document', 'folder', 'database'];
+            : currentNode && currentNode.type !== 'folder'
+              ? []
+              : ['document', 'folder', 'database', 'board'];
     const radius = Math.min(
         stageSize.height * 0.39,
         stageSize.width * 0.39,

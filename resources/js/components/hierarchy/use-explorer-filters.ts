@@ -15,13 +15,15 @@ export const explorerTypeOptions = [
     { value: 'folder', label: 'Folders' },
     { value: 'document', label: 'Documents' },
     { value: 'database', label: 'Databases' },
+    { value: 'board', label: 'Boards' },
+    { value: 'favorites', label: 'Favorites' },
 ];
 
 const titleCollator = new Intl.Collator(undefined, {
     numeric: true,
     sensitivity: 'base',
 });
-const typeOrder = { folder: 0, database: 1, document: 2 };
+const typeOrder = { folder: 0, database: 1, document: 2, board: 3 };
 
 function compareNodes(first: TreeNode, second: TreeNode, sort: string) {
     const manualOrder =
@@ -74,7 +76,10 @@ export function useExplorerFilters({
     const children = directChildren
         .filter(
             (node) =>
-                (typeFilter === 'all' || node.type === typeFilter) &&
+                (typeFilter === 'all' ||
+                    (typeFilter === 'favorites'
+                        ? node.is_favorite
+                        : node.type === typeFilter)) &&
                 (!normalizedQuery ||
                     node.title.toLocaleLowerCase().includes(normalizedQuery)),
         )

@@ -13,9 +13,13 @@ import { router } from '@inertiajs/react';
 import type { EditorState } from '@codemirror/state';
 import { EditorView } from '@codemirror/view';
 import type { SyntaxNode } from '@lezer/common';
-import { documentUrl } from '../../editor-api';
+import { contentOwnerUrl, type ContentOwnerKind } from '../../editor-api';
 
-export type MarkdownLinkContext = { workspaceId: number; nodeId: number };
+export type MarkdownLinkContext = {
+    workspaceId: number;
+    nodeId: number;
+    ownerKind?: ContentOwnerKind;
+};
 
 function hasUrlControlCharacters(source: string): boolean {
     for (const character of source) {
@@ -44,7 +48,7 @@ export function markdownLinkDestination(
         return `/workspaces/${context.workspaceId}/nodes/${mention[1]}`;
     const attachment = /^orbium:attachment\/([1-9]\d*)$/.exec(source);
     if (attachment)
-        return `${documentUrl(context.workspaceId, context.nodeId)}/attachments/${attachment[1]}`;
+        return `${contentOwnerUrl(context.workspaceId, context.nodeId, context.ownerKind)}/attachments/${attachment[1]}`;
     if (hasUrlControlCharacters(source) || /&(?:#\w+|\w+);/.test(source))
         return null;
     try {

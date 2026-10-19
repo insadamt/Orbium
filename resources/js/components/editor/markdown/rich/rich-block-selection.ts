@@ -9,6 +9,7 @@ import {
 } from '@codemirror/view';
 import type { RichBlock } from './rich-model';
 import { revealRichSource } from './rich-effects';
+import { markdownBlockMotionEffect } from '../interactions/markdown-block-history-motion';
 
 const interactiveTarget =
     '.attachment-player, video, audio, iframe, button, a, input, textarea, select, summary, [role="button"], .cm-editor, [data-rich-writing]';
@@ -168,6 +169,9 @@ export function bindRichBlockSelection(
                 selection: { anchor: block.from },
                 annotations: isolateHistory.of('full'),
                 userEvent: 'delete.block',
+                effects: markdownBlockMotionEffect.of({
+                    before: { from: block.from, to: block.to },
+                }),
             });
             view.focus();
         } else if (event.key.length === 1 && !event.isComposing) {

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { usePage } from '@inertiajs/react';
 import type { Tab } from './navigation-store';
 import { prepareTabForSplit } from './split-tab-preparation';
+import { useTabPageCache } from './tab-page-cache';
 
 export function SplitDocumentLoading({
     tab,
@@ -14,10 +15,15 @@ export function SplitDocumentLoading({
     const [failed, setFailed] = useState(false);
     const [attempt, setAttempt] = useState(0);
     const url = tab.entries[tab.index].url;
+    const documentReady = useTabPageCache((state) => {
+        const page = state.pages[tab.id]?.page;
+        return page?.component === 'documents/show' && page.url === url;
+    });
 
     // Restored documents must mount the normal editor instead of creating another scrolling viewport.
 
     useEffect(() => {
+        if (documentReady) return;
         let cancelled = false;
         setFailed(false);
         void prepareTabForSplit(tab, version).then((prepared) => {
@@ -26,7 +32,11 @@ export function SplitDocumentLoading({
         return () => {
             cancelled = true;
         };
-    }, [tab, url, version, attempt]);
+    }, [tab, url, version, attempt, documentReady]);
+
+    // Cache readiness must remove this surface even if its parent reused a memoized child tree.
+
+    if (documentReady) return null;
 
     return (
         <section

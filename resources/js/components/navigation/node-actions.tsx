@@ -4,6 +4,7 @@ import {
     FilePlus2,
     FolderPlus,
     Database,
+    PanelsTopLeft,
     Pencil,
     Tags,
     Trash2,
@@ -303,7 +304,7 @@ export function NodeActions({
                     >
                         <Tags size={15} /> Tags
                     </button>
-                    {node.type !== 'document' && (
+                    {(node.type === 'folder' || node.type === 'database') && (
                         <button
                             className={actionClass}
                             onClick={() => setCreateType('document')}
@@ -324,6 +325,12 @@ export function NodeActions({
                                 onClick={() => setCreateType('database')}
                             >
                                 <Database size={15} /> Database
+                            </button>
+                            <button
+                                className={actionClass}
+                                onClick={() => setCreateType('board')}
+                            >
+                                <PanelsTopLeft size={15} /> Board
                             </button>
                         </>
                     )}

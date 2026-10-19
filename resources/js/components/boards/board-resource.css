@@ -1,0 +1,120 @@
+.board-resource-card {
+    min-height: 160px;
+}
+.board-resource-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px 12px;
+    border-bottom: 1px solid var(--border);
+    font-size: 14px;
+}
+.board-resource-header strong {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.board-resource-header img {
+    width: 24px;
+    height: 24px;
+    object-fit: cover;
+    border-radius: 5px;
+}
+.board-resource-header button {
+    padding: 5px;
+    border-radius: 6px;
+}
+.board-resource-header button:hover {
+    background: var(--accent);
+}
+.board-resource-preview {
+    padding: 14px 10px;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+.board-resource-kind {
+    display: inline-block;
+    margin-bottom: 8px;
+    font-size: 11px;
+    color: var(--muted-foreground);
+    text-transform: capitalize;
+}
+.board-document-editor {
+    min-width: 0;
+    padding: 10px;
+    user-select: text;
+    cursor: auto;
+}
+.board-document-hint {
+    margin-bottom: 12px;
+    font-size: 11px;
+    color: var(--muted-foreground);
+}
+.board-document-error {
+    margin-bottom: 12px;
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 12px;
+    color: var(--destructive);
+}
+.board-document-editor .orbium-markdown-live-preview.cm-editor {
+    min-height: 160px;
+    height: auto;
+}
+.board-document-editor .ProseMirror {
+    min-height: 160px;
+}
+.board-resource-picker {
+    max-height: 80dvh;
+    overflow: auto;
+}
+.board-resource-picker input {
+    padding: 9px 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: transparent;
+    font-size: 13px;
+}
+.board-resource-results {
+    max-height: 32dvh;
+    overflow: auto;
+}
+.board-resource-results > button {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    border-radius: 8px;
+    font-size: 13px;
+    text-align: start;
+}
+.board-resource-results > button:hover {
+    background: var(--accent);
+}
+.board-resource-results span {
+    flex: 1;
+}
+.board-resource-results small {
+    color: var(--muted-foreground);
+}
+.board-new-document {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border-top: 1px solid var(--border);
+    padding-top: 12px;
+    font-size: 13px;
+}
+.board-new-document button {
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: var(--foreground);
+    color: var(--background);
+}
+.board-new-document button:disabled {
+    opacity: 0.4;
+}

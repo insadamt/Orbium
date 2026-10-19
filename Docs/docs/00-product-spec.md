@@ -7,6 +7,7 @@
 It combines:
 
 - hierarchical organization through workspaces, folders, documents, and databases;
+- native Board pages for spatial knowledge organization (2026-10-18 request; phased delivery in `24-boards.md`);
 - free-form Notion-like documents;
 - Markdown-first authoring shortcuts;
 - structured database documents;
@@ -23,7 +24,7 @@ Three interaction modes define the product:
 
 ```text
 Explore → 3D Orbit
-Work    → Documents and Databases
+Work    → Documents, Databases, and Boards
 Jump    → Search Master
 ```
 
@@ -55,7 +56,8 @@ User
     └── Node
         ├── Folder
         ├── Document
-        └── Database
+        ├── Database
+        └── Board
 ```
 
 A node has one parent except a root-level node in a workspace, where `parent_id` is null.
@@ -66,13 +68,17 @@ Containment:
 Folder
 ├── Folder
 ├── Document
-└── Database
+├── Database
+└── Board
 
 Database
 └── Document
 
 Document
 └── no children
+
+Board
+└── no hierarchical children
 ```
 
 A document inside a database has the database as its parent. It is not simultaneously parented by a folder.
@@ -255,6 +261,7 @@ Orbium also supports workspace-style tabs. Tabs can hold:
 - Orbit locations;
 - Documents;
 - Databases;
+- Boards;
 - Settings.
 
 Tab state should survive normal page refresh/reload. Each tab preserves relevant local UI state.

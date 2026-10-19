@@ -7,6 +7,7 @@ import {
     markdownBlockAt,
     markdownBlockPresentation,
 } from './markdown-block-actions';
+import { animateMarkdownBlockHistory } from './markdown-block-history-motion';
 
 function layoutSignature(source: string) {
     const header = /^:{3,}orbium (.+)$/m.exec(source.split('\n', 1)[0]);
@@ -21,6 +22,7 @@ export function dispatchMarkdownHistoryWithLayoutMotion(
     transactions: readonly Transaction[],
     view: EditorView,
 ) {
+    if (animateMarkdownBlockHistory(transactions, view)) return;
     const historyChanged = transactions.some(
         (transaction) =>
             transaction.docChanged &&

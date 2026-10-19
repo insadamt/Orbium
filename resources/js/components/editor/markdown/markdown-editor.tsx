@@ -1,4 +1,6 @@
+import { useHostedMarkdownDocument } from '../use-hosted-document-activity';
 import { dispatchMarkdownHistoryWithLayoutMotion } from './interactions/markdown-history-layout-motion';
+import { markdownBlockHistoryMotion } from './interactions/markdown-block-history-motion';
 import { LibraryPicker } from '@/components/library/library-picker';
 import { ExportDialog } from '@/components/document-transfer/export-dialog';
 import { ImportDialog } from '@/components/document-transfer/import-dialog';
@@ -85,6 +87,11 @@ export default function MarkdownEditor(props: MarkdownEditorProps) {
     const [livePreview, setLivePreview] = useState(true);
     const upload = useMarkdownUpload(props.workspaceId, props.nodeId);
     const { active, visible } = useDocumentTab();
+    const hosted = useHostedMarkdownDocument(
+        view,
+        upload.uploading,
+        transfer.busy,
+    );
     const { resolvedAppearance } = useAppearance();
     const editorView = useRef<EditorView | null>(null);
     const autosave = useMarkdownAutosave({
@@ -128,7 +135,10 @@ export default function MarkdownEditor(props: MarkdownEditorProps) {
     const [interactionExtensions] = useState(() => [
         markdownSelectionToolbar(setNotice),
         markdownDividerToolbar(setNotice),
-        markdownBlockGutter(setNotice),
+        //
+        // A hosted Board document uses canvas selection instead of document drag handles.
+        //
+        ...(hosted ? [] : [markdownBlockGutter(setNotice)]),
     ]);
 
     useEffect(() => {
@@ -150,6 +160,7 @@ export default function MarkdownEditor(props: MarkdownEditorProps) {
                         doc: initial.current.markdown,
                         extensions: [
                             history(),
+                            markdownBlockHistoryMotion,
                             outlineUpdates.current.of([]),
                             orbiumSelectionAppearance,
                             markdownSelectAll,
@@ -247,6 +258,7 @@ export default function MarkdownEditor(props: MarkdownEditorProps) {
         );
         const unregisterBlockTarget = registerMarkdownSplitBlockTarget({
             view: editor,
+            localOnly: Boolean(hosted),
             richContext,
             onNotice: setNotice,
             workspaceId: initial.current.workspaceId,
@@ -288,6 +300,7 @@ export default function MarkdownEditor(props: MarkdownEditorProps) {
         editing: editing.current,
         active,
         visible,
+        readOnly: hosted?.readOnly ?? false,
     });
 
     useEffect(() => {
@@ -378,10 +391,12 @@ export default function MarkdownEditor(props: MarkdownEditorProps) {
         >
             <MarkdownEditorControls
                 tableOfContents={
-                    <MarkdownTableOfContents
-                        view={view}
-                        updates={outlineUpdates.current}
-                    />
+                    hosted ? null : (
+                        <MarkdownTableOfContents
+                            view={view}
+                            updates={outlineUpdates.current}
+                        />
+                    )
                 }
                 status={autosave.status}
                 livePreview={livePreview}

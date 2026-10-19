@@ -18,7 +18,7 @@ class NodeController extends Controller
     {
         $workspace = $this->ownedWorkspace($request, $workspace);
         $data = $request->validate([
-            'type' => ['required', 'in:folder,document,database'],
+            'type' => ['required', Rule::in(Node::TYPES)],
             'title' => ['required', 'string', 'max:255'],
             'parent_id' => ['nullable', 'integer'],
         ]);
@@ -39,7 +39,7 @@ class NodeController extends Controller
     public function updateHeader(Request $request, int $workspace, int $node): JsonResponse
     {
         $container = $this->visibleNode($request, $workspace, $node);
-        abort_unless(in_array($container->type, ['folder', 'database'], true), 404);
+        abort_unless(in_array($container->type, ['folder', 'database', 'board'], true), 404);
         $data = $request->validate([
             'title' => ['sometimes', 'required', 'string', 'max:255'],
             'icon' => ['sometimes', 'nullable', 'string', 'max:16'],
@@ -78,6 +78,15 @@ class NodeController extends Controller
             'position' => ['required', 'integer', 'min:0'],
         ]);
         $hierarchy->move($node, $data['parent_id'] ?? null, $data['position']);
+
+        return back();
+    }
+
+    public function updateFavorite(Request $request, int $workspace, int $node): RedirectResponse
+    {
+        $node = $this->visibleNode($request, $workspace, $node);
+        $data = $request->validate(['is_favorite' => ['required', 'boolean']]);
+        $node->update($data);
 
         return back();
     }

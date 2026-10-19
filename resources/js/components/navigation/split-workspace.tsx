@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useNavigation, type Tab } from './navigation-store';
 import { groupForTab } from './split-group-state';
 import { openLocation } from './tab-navigation';
-import { hasRetainedDocument, useTabPageCache } from './tab-page-cache';
+import { useTabPageCache } from './tab-page-cache';
 import { useSplitPreparation } from './split-tab-preparation';
 import { usePaneFrameHeight } from './use-pane-frame-height';
 import { SplitDocumentLoading } from './split-document-loading';
@@ -78,7 +78,7 @@ function PaneFrame({
 }
 
 export function SplitWorkspace({ children }: { children: ReactNode }) {
-    useTabPageCache((state) => state.pages);
+    const pages = useTabPageCache((state) => state.pages);
     const frameTabIds = useSplitPreparation((state) => state.frameTabIds);
     const splitGroups = useNavigation((state) => state.splitGroups);
     const tabs = useNavigation((state) => state.tabs);
@@ -150,8 +150,12 @@ export function SplitWorkspace({ children }: { children: ReactNode }) {
             {!activeGroup && children}
             {tabs.map((tab) => {
                 const group = groupForTab(splitGroups, tab.id);
+                const cachedPage = pages[tab.id]?.page;
+                const documentReady =
+                    cachedPage?.component === 'documents/show' &&
+                    cachedPage.url === tab.entries[tab.index].url;
                 if (
-                    hasRetainedDocument(tab.id) ||
+                    documentReady ||
                     ((!group || group !== activeGroup) &&
                         !frameTabIds.includes(tab.id))
                 )

@@ -24,7 +24,7 @@ final readonly class SearchQuery
 
         return new self(
             trim($text),
-            ['doc' => 'document', 'folder' => 'folder', 'db' => 'database'][$filters['type:'] ?? ''] ?? null,
+            ['doc' => 'document', 'folder' => 'folder', 'db' => 'database', 'board' => 'board'][$filters['type:'] ?? ''] ?? null,
             $filters['#'] ?? null,
             $filters['in:'] ?? null,
             $input['parent_id'] ?? null,

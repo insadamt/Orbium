@@ -3,11 +3,13 @@
 namespace App\Services\Library;
 
 use App\Models\Attachment;
+use App\Models\BoardObject;
 use App\Models\DatabaseProperty;
 use App\Models\DatabaseValue;
 use App\Models\Document;
 use App\Models\Node;
 use App\Models\Workspace;
+use App\Services\Boards\BoardBlockData;
 use App\Services\Editor\EditorContentInspector;
 use App\Services\Markdown\MarkdownDocumentInspector;
 use Illuminate\Database\Eloquent\Builder;
@@ -110,9 +112,15 @@ final class LibraryCatalog
                 return;
             }
             $inTrash = $trashState[$node->id] ??= $this->hasTrashedAncestry($node, $nodes);
+            $pageRoute = match ($node->type) {
+                'document' => 'documents.show',
+                'database' => 'databases.show',
+                'board' => 'boards.show',
+                default => 'nodes.show',
+            };
             $usage[$attachmentId][$node->id] = [
                 'id' => $node->id, 'title' => $node->title, 'trashed' => $inTrash,
-                'url' => $inTrash ? '/trash?workspace='.$node->workspace_id : '/workspaces/'.$node->workspace_id.'/'.($node->type === 'document' ? 'documents' : ($node->type === 'database' ? 'databases' : 'nodes')).'/'.$node->id,
+                'url' => $inTrash ? '/trash?workspace='.$node->workspace_id : route($pageRoute, [$node->workspace_id, $node->id], false),
             ];
         };
         foreach ($nodes as $node) {
@@ -128,6 +136,11 @@ final class LibraryCatalog
                 : app(EditorContentInspector::class)->inspect($document->content)->attachmentIds;
             foreach ($ids as $id) {
                 $add($id, $node);
+            }
+        }
+        foreach (BoardObject::query()->whereIn('board_node_id', $nodes->keys())->cursor() as $object) {
+            foreach ($object->content_format_version === 1 ? app(BoardBlockData::class)->attachmentIds($object->data ?? []) : app(MarkdownDocumentInspector::class)->inspect($object->markdown ?? '')->derived->attachmentIds as $id) {
+                $add($id, $nodes[$object->board_node_id]);
             }
         }
         foreach (DatabaseValue::query()->whereIn('document_node_id', $nodes->keys())->whereIn('property_id', DatabaseProperty::query()->where('type', 'files')->select('id'))->cursor() as $value) {

@@ -6,6 +6,7 @@
         .floating-menu,
         .floating-context-menu,
         .floating-item,
+        .board-object[data-surface='content'],
         .explorer-view-switcher,
         .explorer-gallery-settings,
         .floating-folder-header .node-media-title-row,

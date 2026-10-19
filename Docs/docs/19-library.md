@@ -21,7 +21,7 @@ Page media menus retain Change cover/icon for uploading and cropping, and add Ch
 
 ## Deletion and persistence
 
-Usage includes canonical Markdown, legacy editor content, page covers/icons, and database Files property values. Trashed nodes and descendants of trashed containers still count. Upload provenance alone does not count as usage. Unsaved editor drafts are not usage; wait for Saved before managing files.
+Usage includes canonical Document Markdown, native Board image/file attachment IDs, preserved legacy Board Markdown rows, legacy editor content, page covers/icons, and database Files property values. Trashed nodes and descendants of trashed containers still count. Native Board `legacy_source` is an opaque recovery copy and does not count as an active reference; conversion promotes its attachment references into independent image/file objects. Live Board resource cards add no copied attachment usage: files in the hosted original Document remain usages of that Document, using its ordinary upload/validation/save routes. Removing a card or deleting its Board does not delete that Document or its files. Upload provenance alone does not count as usage. Unsaved editor drafts are not usage; wait for Saved before managing files.
 
 Library deletion rechecks all selected IDs and saved usage on the server. Any used, missing, or foreign-workspace selection rejects the whole request. Workspace mutation requests share a row lock so saving references and deleting unused files cannot race. Filesystem cleanup runs after commit; failures are logged for administrator cleanup.
 

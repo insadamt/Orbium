@@ -1,0 +1,261 @@
+.orbium-main.floating-workspace:has(.board-page) {
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    min-height: 560px;
+    padding-inline: 16px;
+    padding-bottom: 16px;
+}
+.orbium-main:has(.board-page) > .retained-document-workspace {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
+}
+.board-page {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    width: 100%;
+    min-height: 0;
+    margin-top: var(--page-surface-top-gap);
+}
+.board-page-heading {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 10px;
+    min-height: 42px;
+    margin-bottom: 8px;
+    padding-inline: 8px;
+}
+.board-page-heading > svg {
+    color: var(--muted-foreground);
+}
+.board-page-heading h1 {
+    min-width: 0;
+    flex: 1;
+    overflow: hidden;
+    font-size: 14px;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.board-page-details {
+    flex: 0 0 auto;
+    max-height: 45dvh;
+    overflow: auto;
+    margin-bottom: 12px;
+    padding: 16px 24px;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: var(--background);
+}
+.board-workspace {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+}
+.board-stage {
+    position: relative;
+    flex: 1;
+    min-height: 360px;
+    isolation: isolate;
+}
+.board-canvas {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    border: 1px solid color-mix(in srgb, var(--border) 75%, transparent);
+    border-radius: 20px;
+    background-color: color-mix(in srgb, var(--background) 75%, transparent);
+    touch-action: none;
+    overscroll-behavior: contain;
+    user-select: none;
+}
+.board-canvas:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: -2px;
+}
+.board-canvas[data-grid='true'] {
+    background-image: radial-gradient(
+        circle,
+        color-mix(in srgb, var(--muted-foreground) 22%, transparent) 0.8px,
+        transparent 0.8px
+    );
+}
+.board-canvas[data-space='true'] {
+    cursor: grab;
+}
+.board-canvas[data-gesture='pan'],
+.board-canvas[data-gesture='move'] {
+    cursor: grabbing;
+}
+.board-world {
+    position: absolute;
+    z-index: 0;
+    left: 0;
+    top: 0;
+    width: 0;
+    height: 0;
+}
+.board-object {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    background: transparent;
+    cursor: move;
+}
+.board-object[data-surface='content'] {
+    border-radius: 12px;
+    background: var(--background);
+    box-shadow: 0 2px 8px rgb(0 0 0 / 0.04);
+}
+.board-object:hover:not([data-selected='true']) {
+    outline: 1px solid color-mix(in srgb, var(--foreground) 25%, transparent);
+    outline-offset: 1px;
+}
+.board-object[data-selected='true'] {
+    outline: calc(1.5px * var(--board-inverse-zoom, 1)) solid var(--foreground);
+    outline-offset: calc(1px * var(--board-inverse-zoom, 1));
+}
+.board-object[data-editing='true'] {
+    cursor: text;
+    outline-style: dashed;
+}
+.board-object-body {
+    min-width: 0;
+    min-height: 0;
+    flex: 1;
+    overflow: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+}
+.board-object-preview {
+    padding: 8px;
+    overflow-wrap: anywhere;
+    white-space: normal;
+}
+.board-object-preview p {
+    margin-block: 0 0.65em;
+}
+.board-resize {
+    position: absolute;
+    z-index: 2;
+    touch-action: none;
+}
+.board-resize::after {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: calc(8px * var(--board-inverse-zoom, 1));
+    height: calc(8px * var(--board-inverse-zoom, 1));
+    border: calc(1.5px * var(--board-inverse-zoom, 1)) solid var(--foreground);
+    border-radius: 2px;
+    background: var(--background);
+    content: '';
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+}
+.board-resize-e,
+.board-resize-w {
+    top: 0;
+    bottom: 0;
+    width: calc(12px * var(--board-inverse-zoom, 1));
+    cursor: ew-resize;
+}
+.board-resize-n,
+.board-resize-s {
+    left: 0;
+    right: 0;
+    height: calc(12px * var(--board-inverse-zoom, 1));
+    cursor: ns-resize;
+}
+.board-resize:is(
+    .board-resize-nw,
+    .board-resize-ne,
+    .board-resize-sw,
+    .board-resize-se
+) {
+    z-index: 3;
+    width: calc(16px * var(--board-inverse-zoom, 1));
+    height: calc(16px * var(--board-inverse-zoom, 1));
+}
+.board-resize-e {
+    right: calc(-6px * var(--board-inverse-zoom, 1));
+}
+.board-resize-w {
+    left: calc(-6px * var(--board-inverse-zoom, 1));
+}
+.board-resize-n {
+    top: calc(-6px * var(--board-inverse-zoom, 1));
+}
+.board-resize-s {
+    bottom: calc(-6px * var(--board-inverse-zoom, 1));
+}
+.board-resize-nw,
+.board-resize-ne {
+    top: calc(-8px * var(--board-inverse-zoom, 1));
+}
+.board-resize-sw,
+.board-resize-se {
+    bottom: calc(-8px * var(--board-inverse-zoom, 1));
+}
+.board-resize-nw,
+.board-resize-sw {
+    left: calc(-8px * var(--board-inverse-zoom, 1));
+}
+.board-resize-ne,
+.board-resize-se {
+    right: calc(-8px * var(--board-inverse-zoom, 1));
+}
+.board-resize-nw,
+.board-resize-se {
+    cursor: nwse-resize;
+}
+.board-resize-ne,
+.board-resize-sw {
+    cursor: nesw-resize;
+}
+.board-selection-box {
+    position: absolute;
+    z-index: 1000005;
+    pointer-events: none;
+    border: 1px solid var(--foreground);
+    background: color-mix(in srgb, var(--foreground) 7%, transparent);
+}
+.board-empty-state {
+    position: absolute;
+    left: 50%;
+    top: 45%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    width: min(420px, calc(100% - 180px));
+    text-align: center;
+    color: var(--muted-foreground);
+    font-size: 13px;
+    line-height: 1.7;
+    pointer-events: none;
+}
+@media (max-width: 640px) {
+    .orbium-main.floating-workspace:has(.board-page) {
+        padding-inline: 8px;
+        padding-bottom: 8px;
+    }
+    .board-page-heading {
+        gap: 8px;
+        padding-inline: 4px;
+    }
+    .board-canvas {
+        border-radius: 14px;
+    }
+    .board-empty-state {
+        width: calc(100% - 64px);
+    }
+}

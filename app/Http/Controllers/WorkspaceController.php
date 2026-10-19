@@ -59,6 +59,9 @@ class WorkspaceController extends Controller
         if ($nodeModel->type === 'database') {
             return to_route('databases.show', [$workspace, $node, ...$request->only(['view', 'focus'])]);
         }
+        if ($nodeModel->type === 'board') {
+            return to_route('boards.show', [$workspace, $node]);
+        }
 
         return $this->renderWorkspace($request, $workspace, $node);
     }
@@ -176,7 +179,7 @@ class WorkspaceController extends Controller
     private function explorerNode(Node $node): array
     {
         return [
-            ...$node->only(['id', 'parent_id', 'type', 'title', 'position', 'icon']),
+            ...$node->only(['id', 'parent_id', 'type', 'title', 'position', 'icon', 'is_favorite']),
             'cover_attachment_id' => $node->type === 'document'
                 ? $node->document?->cover_attachment_id : $node->cover_attachment_id,
             'cover_aspect_ratio' => $node->type === 'document'

@@ -9,6 +9,7 @@ graph TD
     N --> F[Folder]
     N --> D[Document]
     N --> DB[Database]
+    N --> B[Board]
 ```
 
 A user can own multiple workspaces. A workspace owns one independent node hierarchy.
@@ -20,6 +21,7 @@ A Node is the shared hierarchical identity for:
 - Folder
 - Document
 - Database
+- Board
 
 Shared behavior:
 
@@ -45,12 +47,13 @@ node.parent_id
 
 Rules:
 
-| Parent | Folder child | Document child | Database child |
-|---|---:|---:|---:|
-| Workspace root | yes | yes | yes |
-| Folder | yes | yes | yes |
-| Database | no | yes | no |
-| Document | no | no | no |
+| Parent | Folder child | Document child | Database child | Board child |
+|---|---:|---:|---:|---:|
+| Workspace root | yes | yes | yes | yes |
+| Folder | yes | yes | yes | yes |
+| Database | no | yes | no | no |
+| Document | no | no | no | no |
+| Board | no | no | no | no |
 
 Additional invariants:
 
@@ -96,6 +99,12 @@ It can contain documents only.
 Mental model:
 
 > Database = organize documents by shared structure.
+
+## Board (requested 2026-10-18)
+
+A Board is a native leaf Node at workspace root or inside a folder. Board-owned spatial blocks have stable object identities, not Document Node identities. References to Documents, Databases, or other Boards retain the original resource's hierarchy and ownership; neither a card nor a visual connection creates a parent-child relation or an automatic mention.
+
+Approved phases 1–3 provide Node metadata and revisioned typed native Board blocks, independent of Document content. Phase 4 adds resource objects containing only an original target Node ID. A referenced Document retains its own parent, revision, attachments and mentions; editing its active card edits that original Document. Creating a Document from a Board creates a sibling under the Board’s current parent folder or workspace root and adds its card atomically. Removing a card or deleting a Board never deletes the referenced resource. Database/other Board cards open their ordinary pages. Mind Maps remain gated. See `24-boards.md`.
 
 ## 7. Database document
 

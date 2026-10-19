@@ -2,6 +2,26 @@
 
 This package is the authoritative implementation brief for **Orbium v0.1.0**.
 
+Current feature task (2026-10-18): the user approved the native Board correction and authorized phase 4 with “okey go ahead”. Follow `phases/12-boards-resource-cards.md` and `docs/24-boards.md`: live resource cards, original Document persistence and sibling Document creation, while preserving independent native Board blocks. Phase-4 implementation and manual acceptance are recorded in `reports/12-boards-resource-cards.md`. Boards remain full-screen by default with a visible guarded Back button and no Focus toggle. Presentation, smart guides, arrangement and properties are documented in `reports/12-boards-spatial-refinement.md`. The latest investigation, navigation correction, indexed-field editor fix and unresolved block interaction problems are recorded in `reports/12-boards-investigation.md`. The user subsequently approved all UX-audit corrections with “okey fix all that”; the native editing, history, gesture, overlay, responsive and performance-work refinements are recorded in `reports/12-boards-ux-correction.md`. The subsequent approved block-presentation pass is recorded in `reports/12-boards-block-presentation.md`, with a standalone visual gallery and representative-board checklist. Stop for manual review before any Mind Map/later phase.
+
+Latest Board review correction (2026-10-18): the user approved redesign work and requested the same styling as Document blocks without six-dot handles. Follow the Document-style presentation correction in `docs/24-boards.md` and `reports/12-boards-document-style.md`; this supersedes the spatial-notebook proposal. Remain in phase-4 manual review.
+
+The follow-up request also adopts Document-like editing ergonomics: native click-to-edit, nearby selection formatting, writing commands/shortcuts and focused source editing. See `reports/12-boards-document-editing.md`. Independent native blocks and the phase-4 stop gate remain in force.
+
+Stabilization review (2026-10-19): the user reported widespread glitches and authorized repairs. A reproduced code-editor unmount crash, portal/canvas event interference, delayed edit focus and native editor synchronization were repaired. Read `reports/12-boards-editing-stabilization.md` for the browser-observed results and remaining manual acceptance gaps. Do not treat earlier static checks as full Board acceptance.
+
+Selection/resizing review (2026-10-19): the user approved the proposed block correction with “okey go ahead”. Single-click selects; double-click/Enter edits. All eight resize handles, text corner scaling, tight content sizing, image natural proportions and nondestructive cropping are described in `docs/24-boards.md` and `reports/12-boards-selection-resizing.md`. This supersedes the earlier click-to-edit ergonomics. Remain in phase-4 manual review.
+
+Whole-block sizing clarification (2026-10-19): the user reported that corners still expanded frames and requested automatic growth for added rows/content. Corners now scale complete block surfaces, including tables/technical/resource blocks; manually sized content can grow rather than hide additions. See `reports/12-boards-scale-auto-growth.md`. This supersedes writing-only corner scaling and fixed-height clipping. Remain in phase-4 manual review.
+
+Zoom clarity repair (2026-10-19): the user reported poor block resolution during zoom. Camera rendering now uses native layout zoom rather than scaling a cached world layer; PDF page rendering follows effective camera/block density within its pixel budget. See `reports/12-boards-zoom-clarity.md` and `docs/24-boards.md`. Remain in phase-4 manual review.
+
+Automatic height review (2026-10-19): the user approved removing manual expansion from content blocks. Content determines height in both directions; side handles control width and corners scale the whole surface. Vertical content handles and Fit height are removed; image crop frames remain. Legacy manual heights no longer prevent shrinking. See `reports/12-boards-automatic-height.md` and `docs/24-boards.md`. Remain in phase-4 manual review.
+
+Live height border repair (2026-10-19): content-driven height is measured during the resize pointer preview so the selection border tracks wrapping before release. See `reports/12-boards-live-height-border.md`. Remain in phase-4 manual review.
+
+Board interface simplification (2026-10-19): the user approved a smaller toolbar, quieter header and contextual selection controls. Images and linked pages are under Add; Board details/favorites are under the header menu; duplication, arrangement, layers and properties are under selection More. History remains visible during editing. See `reports/12-boards-interface-simplification.md` for actual checks and manual acceptance. Remain in phase-4 manual review.
+
 Orbium is a self-hosted spatial knowledge workspace combining:
 
 - hierarchical knowledge organization;
@@ -70,9 +90,10 @@ See `phases/README.md`.
 ## Absolute product rules
 
 - A node has exactly one parent, except workspace-root nodes whose parent is `null`.
-- A folder can contain folders, documents, and databases.
+- A folder can contain folders, documents, databases, and Boards.
 - A database can contain documents only.
 - A document cannot contain children.
+- A Board cannot contain hierarchical children; see the current feature-phase scope above.
 - Mentions never alter hierarchy.
 - Mentions are not rendered as lines in the 3D Orbit.
 - The initial database views are only **Table, Gallery, Orbit**.

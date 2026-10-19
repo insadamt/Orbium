@@ -9,6 +9,7 @@ import {
     type MarkdownBlockMotionSnapshot,
 } from './markdown-block-motion';
 import { linkedMarkdownMoveEffect } from './markdown-linked-move-history';
+import { markdownBlockMotionEffect } from './markdown-block-history-motion';
 
 export type MarkdownDropTarget = NonNullable<
     ReturnType<typeof markdownBlockDropTarget>
@@ -57,7 +58,15 @@ export function insertTransferredMarkdownBlock(
     const snapshot = motion?.capture();
     view.dispatch({
         changes,
-        effects: linkedMarkdownMoveEffect(moveId),
+        effects: [
+            ...linkedMarkdownMoveEffect(moveId),
+            markdownBlockMotionEffect.of({
+                after: {
+                    from: insertedFrom,
+                    to: insertedFrom + block.source.length,
+                },
+            }),
+        ],
         annotations: isolateHistory.of('full'),
         userEvent: 'input.block-transfer',
     });
@@ -99,7 +108,12 @@ export function removeTransferredMarkdownBlock(
     const snapshot = options.snapshot ?? motion?.capture(block);
     view.dispatch({
         changes,
-        effects: linkedMarkdownMoveEffect(options.moveId),
+        effects: [
+            ...linkedMarkdownMoveEffect(options.moveId),
+            markdownBlockMotionEffect.of({
+                before: { from: block.from, to: block.to },
+            }),
+        ],
         annotations: isolateHistory.of('full'),
         userEvent: 'delete.block-transfer',
     });

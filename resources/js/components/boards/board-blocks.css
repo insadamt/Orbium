@@ -1,0 +1,147 @@
+.board-field-actions :is(button, select),
+.board-field-action {
+    min-height: 30px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 12px;
+}
+.board-field-actions button:hover,
+.board-field-action:hover {
+    background: var(--accent);
+}
+.board-list > select {
+    background: var(--background);
+    color: var(--foreground);
+}
+.board-inline-toolbar,
+.board-field-actions,
+.board-field-action {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.board-inline-toolbar button {
+    color: var(--foreground);
+}
+.board-inline-toolbar button[aria-pressed='true'] {
+    background: var(--accent);
+}
+.board-writing {
+    min-height: 30px;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+.board-inline-input {
+    min-height: 1.5em;
+    outline: none;
+    user-select: text;
+    cursor: text;
+}
+.board-inline-input p {
+    margin: 0;
+}
+.board-inline-input a,
+.board-writing a {
+    color: var(--foreground);
+    text-decoration: underline;
+}
+.board-text-placeholder {
+    color: var(--muted-foreground);
+    font-weight: 400;
+    font-size: 14px;
+}
+.board-list-item {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    min-height: 28px;
+    white-space: pre-wrap;
+}
+.board-list-item input[type='checkbox'] {
+    align-self: center;
+}
+.board-table {
+    overflow-x: auto;
+}
+.board-table table {
+    border-collapse: collapse;
+    width: 100%;
+}
+.board-table td:empty::after {
+    content: '\00a0';
+}
+.board-field-actions {
+    flex-wrap: wrap;
+    margin-top: 8px;
+}
+.board-field-actions :disabled,
+.board-field-action:disabled {
+    opacity: 0.4;
+}
+.board-source-block {
+    min-width: 0;
+}
+.board-source-input {
+    width: 100%;
+    min-height: 120px;
+    margin-top: 10px;
+    padding: 10px;
+    resize: none;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-family: var(--font-mono, monospace);
+    font-size: 13px;
+    background: transparent;
+    user-select: text;
+}
+.board-source-preview {
+    position: relative;
+}
+.board-source-preview svg {
+    max-width: 100%;
+    height: auto;
+}
+.board-media-image img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 4px;
+}
+/*
+ * The image owns its saved frame; editing controls live in the toolbar and cannot steal image height.
+ */
+.board-object[data-board-kind='image'] .board-media-image {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+}
+.board-media-image > div:first-child:not([hidden]) {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+}
+.board-object[data-board-kind='image'] .board-media-image img {
+    height: 100%;
+    width: 100%;
+    object-fit: cover;
+}
+.board-media-image .board-media-caption {
+    flex-shrink: 0;
+}
+.board-media-settings input {
+    margin-top: 8px;
+    width: 100%;
+    background: transparent;
+    font-size: 13px;
+}
+.board-media-caption {
+    margin-top: 8px;
+    font-size: 13px;
+    color: var(--muted-foreground);
+}
+.board-divider {
+    margin-block: 7px;
+    border-top: 2px solid var(--foreground);
+    opacity: 0.35;
+}

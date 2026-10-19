@@ -25,6 +25,7 @@ import {
 
 type Pointer = { clientX: number; clientY: number };
 type SplitBlockTarget = {
+    localOnly: boolean;
     view: EditorView;
     workspaceId: number;
     nodeId: number;
@@ -108,6 +109,8 @@ export function resolveMarkdownSplitBlockTarget(
     const hostPointer = markdownHostPointer(source, pointer);
     for (const endpoint of endpoints) {
         if (
+            ((sourceEndpoint.localOnly || endpoint.localOnly) &&
+                endpoint !== sourceEndpoint) ||
             endpoint.workspaceId !== sourceEndpoint.workspaceId ||
             (endpoint !== sourceEndpoint &&
                 endpoint.nodeId === sourceEndpoint.nodeId)
@@ -129,6 +132,7 @@ export function collectMarkdownSplitTransferPreviews(
 }
 
 export function registerMarkdownSplitBlockTarget(options: {
+    localOnly?: boolean;
     view: EditorView;
     workspaceId: number;
     nodeId: number;
@@ -163,6 +167,7 @@ export function registerMarkdownSplitBlockTarget(options: {
             !view.compositionStarted,
     });
     const endpoint: SplitBlockTarget = {
+        localOnly: options.localOnly ?? false,
         view,
         workspaceId: options.workspaceId,
         nodeId: options.nodeId,

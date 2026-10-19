@@ -5,13 +5,13 @@ export function referenceAvailabilityRequest(
     const url = new URL(href, origin);
     if (url.origin !== origin) return null;
     const page =
-        /^\/workspaces\/([1-9]\d*)\/(?:nodes|documents|databases)\/([1-9]\d*)$/.exec(
+        /^\/workspaces\/([1-9]\d*)\/(?:nodes|documents|databases|boards)\/([1-9]\d*)$/.exec(
             url.pathname,
         );
     if (page)
         return `/workspaces/${page[1]}/references/availability?kind=node&id=${page[2]}`;
     const asset =
-        /^\/workspaces\/([1-9]\d*)\/documents\/([1-9]\d*)\/attachments\/([1-9]\d*)$/.exec(
+        /^\/workspaces\/([1-9]\d*)\/(?:documents|boards)\/([1-9]\d*)\/attachments\/([1-9]\d*)$/.exec(
             url.pathname,
         );
     return asset
