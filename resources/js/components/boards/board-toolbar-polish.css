@@ -45,31 +45,24 @@
     border-color: color-mix(in srgb, var(--border) 75%, transparent);
     box-shadow: 0 4px 16px rgb(0 0 0 / 0.06);
 }
-/*
- * Reserve the same rail height while editing so history and pointer targets do not jump.
- */
 .board-toolbar-slot {
-    height: min(320px, 100%);
     border-radius: 14px;
 }
 .board-page .board-creation-dock {
-    min-height: 100%;
     gap: 4px;
 }
 .board-page .board-history-controls {
-    width: 100%;
     align-items: center;
     gap: 4px;
-    margin-top: auto;
-    padding-top: 8px;
-    border-top: 1px solid var(--border);
+    margin-inline-start: 4px;
+    padding-inline-start: 8px;
+    border-inline-start: 1px solid var(--border);
 }
 .board-creation-dock > .board-tool-button[aria-pressed='true']::before {
     position: absolute;
-    inset-inline-start: 1px;
-    top: 10px;
-    bottom: 10px;
-    width: 3px;
+    inset-inline: 10px;
+    bottom: 1px;
+    height: 3px;
     border-radius: 2px;
     background: currentColor;
     content: '';

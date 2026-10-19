@@ -200,6 +200,7 @@ export function BoardWritingMenu({
     if (!open) return null;
     return (
         <BoardWritingMenuSurface
+            boardId={props.boardId}
             editor={editor}
             menuId={menuId}
             commands={commands}
@@ -210,19 +211,21 @@ export function BoardWritingMenu({
 }
 
 function BoardWritingMenuSurface({
+    boardId,
     editor,
     menuId,
     commands,
     activeIndex,
     onChoose,
 }: {
+    boardId: number;
     editor: Editor;
     menuId: string;
     commands: BoardWritingCommand[];
     activeIndex: number;
     onChoose: (command: BoardWritingCommand) => boolean;
 }) {
-    const surface = useBoardEditorAnchor(editor, 'caret');
+    const surface = useBoardEditorAnchor(editor, 'caret', boardId);
     useLayoutEffect(() => {
         const menu = surface.current;
         const option = menu?.querySelector<HTMLElement>(

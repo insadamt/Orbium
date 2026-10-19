@@ -1,0 +1,135 @@
+.board-selection-tools,
+.board-selection-formatting {
+    --board-floating-control-size: 34px;
+    align-items: center;
+    gap: 5px;
+    padding: 6px;
+    border: 1px solid color-mix(in srgb, var(--border) 85%, transparent);
+    border-radius: 12px;
+    box-shadow:
+        0 8px 28px rgb(0 0 0 / 0.1),
+        0 1px 3px rgb(0 0 0 / 0.06);
+}
+.board-selection-tools[data-text-formatting-active='true'] {
+    visibility: hidden;
+    pointer-events: none;
+}
+.board-selection-tools .board-tool-button,
+.board-selection-formatting .board-inline-toolbar .board-tool-button {
+    min-width: var(--board-floating-control-size);
+    min-height: var(--board-floating-control-size);
+    height: var(--board-floating-control-size);
+    padding: 7px 9px;
+    border: 1px solid transparent;
+    border-radius: 7px;
+    color: var(--foreground);
+    font-weight: 500;
+}
+.board-selection-formatting .board-inline-toolbar .board-tool-button {
+    width: var(--board-floating-control-size);
+    padding: 7px;
+}
+.board-selection-tools .board-tool-button > svg,
+.board-selection-formatting .board-tool-button > svg {
+    width: 16px;
+    height: 16px;
+    stroke-width: 1.8;
+}
+.board-selection-tools .board-tool-button > svg:not(:first-child) {
+    width: 12px;
+    height: 12px;
+}
+.board-selection-tools .board-toolbar-select {
+    min-height: var(--board-floating-control-size);
+    border-radius: 7px;
+}
+.board-selection-tools > [id^='board-formatting-']:empty {
+    display: none;
+}
+.board-selection-tools .board-selection-label {
+    padding-inline: 9px;
+    color: var(--muted-foreground);
+    font-size: 12px;
+}
+.board-selection-tools > .board-selection-actions {
+    margin-inline-start: 2px;
+    padding-inline-start: 7px;
+}
+.board-selection-formatting .board-inline-toolbar {
+    flex-wrap: wrap;
+    gap: 5px;
+}
+.board-toolbar-group {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 2px;
+}
+.board-toolbar-group + .board-toolbar-group {
+    padding-inline-start: 5px;
+    border-inline-start: 1px solid var(--border);
+}
+.board-selection-tools .board-tool-button[data-done='true'],
+.board-selection-formatting .board-tool-button[data-done='true'] {
+    background: var(--accent);
+    color: var(--foreground);
+}
+.board-selection-tools .app-menu-highlight,
+.board-selection-formatting .app-menu-highlight {
+    border-radius: 7px;
+}
+@media (pointer: coarse) {
+    .board-selection-tools,
+    .board-selection-formatting {
+        --board-floating-control-size: 42px;
+    }
+}
+.board-animated-toolbar {
+    /*
+     * Independent scale preserves the anchor's layout measurements during the pop.
+     */
+    opacity: 1;
+    scale: 1;
+    transform-origin: center;
+    transition:
+        opacity 180ms ease-out,
+        scale 180ms cubic-bezier(0.16, 1, 0.3, 1),
+        display 180ms allow-discrete;
+}
+.board-animated-toolbar[hidden] {
+    opacity: 0;
+    scale: 0.92;
+    pointer-events: none;
+    transition:
+        opacity 120ms ease-in,
+        scale 120ms ease-in,
+        display 120ms allow-discrete;
+}
+.board-animated-toolbar[data-text-formatting-active='true'] {
+    /*
+     * Selection priority hides block controls immediately, then pops them back when text formatting closes.
+     */
+    opacity: 0;
+    scale: 0.92;
+    transition: none;
+}
+.board-animated-toolbar[data-toolbar-positioned='false'] {
+    /*
+     * Positioning must finish before the entrance starts, otherwise an invisible pop can precede the visible reveal.
+     */
+    opacity: 0;
+    scale: 0.92;
+    transition: none;
+}
+@starting-style {
+    .board-animated-toolbar {
+        opacity: 0;
+        scale: 0.92;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .board-animated-toolbar,
+    .board-animated-toolbar[hidden] {
+        transition: none;
+    }
+}

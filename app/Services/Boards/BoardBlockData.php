@@ -115,7 +115,13 @@ final class BoardBlockData
         foreach ($content as $inline) {
             Validator::make(['inline' => $inline], ['inline' => ['required', 'array:type,text,marks'], 'inline.type' => ['required', 'in:text,hardBreak'], 'inline.text' => ['required_if:inline.type,text', 'string'], 'inline.marks' => ['sometimes', 'array', 'list', 'max:8']])->validate();
             foreach ($inline['marks'] ?? [] as $mark) {
-                Validator::make(['mark' => $mark], ['mark' => ['required', 'array:type,attrs'], 'mark.type' => ['required', 'in:bold,italic,underline,strike,code,link'], 'mark.attrs' => ['sometimes', 'array:href'], 'mark.attrs.href' => ['required_if:mark.type,link', 'string', 'max:2048']])->validate();
+                Validator::make(['mark' => $mark], [
+                    'mark' => ['required', 'array:type,attrs'],
+                    'mark.type' => ['required', 'in:bold,italic,underline,strike,code,link,textColor'],
+                    'mark.attrs' => ['sometimes', ($mark['type'] ?? '') === 'textColor' ? 'array:color' : 'array:href'],
+                    'mark.attrs.href' => ['required_if:mark.type,link', 'string', 'max:2048'],
+                    'mark.attrs.color' => ['required_if:mark.type,textColor', 'string', 'regex:/\A(?:#[0-9a-fA-F]{6}|preset:(?:charcoal|gray|red|orange|amber|green|teal|blue|purple|pink))\z/'],
+                ])->validate();
                 if (($mark['type'] ?? '') === 'link') {
                     $url = $mark['attrs']['href'];
                     if (preg_match('/[\x00-\x20\x7f]/', $url) || str_starts_with($url, '//') || (preg_match('/^[a-z][a-z0-9+.-]*:/i', $url) && ! preg_match('/^(https?:\/\/|mailto:)/i', $url))) {

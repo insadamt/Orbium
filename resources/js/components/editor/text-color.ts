@@ -13,7 +13,7 @@ const PRESET_LIGHT_COLORS: Record<string, string> = {
     pink: '#eb24e4',
 };
 
-function isValidTextColor(color: string): boolean {
+export function isValidTextColor(color: string): boolean {
     return (
         /^#[0-9a-fA-F]{6}$/.test(color) ||
         (color.startsWith('preset:') &&

@@ -1,3 +1,4 @@
+import { isValidTextColor } from '@/components/editor/text-color';
 import {
     boardBlockKinds,
     type BoardBlockData,
@@ -119,10 +120,14 @@ export function validBoardInline(value: unknown): value is BoardInline[] {
                                     'strike',
                                     'code',
                                     'link',
+                                    'textColor',
                                 ].includes(mark.type) &&
                                 (mark.type !== 'link' ||
                                     (typeof mark.attrs?.href === 'string' &&
-                                        safeBoardLink(mark.attrs.href))),
+                                        safeBoardLink(mark.attrs.href))) &&
+                                (mark.type !== 'textColor' ||
+                                    (typeof mark.attrs?.color === 'string' &&
+                                        isValidTextColor(mark.attrs.color))),
                         ))),
         )
     );

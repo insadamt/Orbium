@@ -111,7 +111,7 @@ export function BoardBlockPicker({
                 <BoardToolButton
                     label="Add block"
                     icon={Plus}
-                    tooltipSide="right"
+                    tooltipSide="bottom"
                     disabled={disabled}
                     disabledReason={disabledReason}
                     aria-pressed={active}
@@ -119,8 +119,8 @@ export function BoardBlockPicker({
             </Menu.Trigger>
             <Menu.Content
                 className="board-block-picker"
-                side="right"
-                align="start"
+                side="bottom"
+                align="end"
                 sideOffset={10}
                 collisionPadding={12}
                 aria-label="Add a block"

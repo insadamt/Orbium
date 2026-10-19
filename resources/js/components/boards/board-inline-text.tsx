@@ -1,4 +1,5 @@
 import { Fragment } from 'react';
+import { isValidTextColor } from '@/components/editor/text-color';
 import { safeBoardLink } from './board-block-data';
 import type { BoardInline } from './board-types';
 
@@ -18,6 +19,7 @@ export function BoardInlinePreview({ content }: { content: BoardInline[] }) {
                     if (
                         mark.type === 'link' &&
                         mark.attrs &&
+                        typeof mark.attrs.href === 'string' &&
                         safeBoardLink(mark.attrs.href)
                     )
                         output = (
@@ -30,6 +32,25 @@ export function BoardInlinePreview({ content }: { content: BoardInline[] }) {
                                 {output}
                             </a>
                         );
+                    if (
+                        mark.type === 'textColor' &&
+                        typeof mark.attrs?.color === 'string' &&
+                        isValidTextColor(mark.attrs.color)
+                    ) {
+                        const color = mark.attrs.color;
+                        output = (
+                            <span
+                                data-text-color={color}
+                                style={{
+                                    color: color.startsWith('preset:')
+                                        ? `var(--editor-text-color-${color.slice(7)})`
+                                        : color,
+                                }}
+                            >
+                                {output}
+                            </span>
+                        );
+                    }
                 }
                 return <Fragment key={index}>{output}</Fragment>;
             })}

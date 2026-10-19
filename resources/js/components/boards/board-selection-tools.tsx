@@ -1,7 +1,9 @@
-import { useRef, useState } from 'react';
-import { BoardPropertiesPanel } from './board-properties-panel';
+import { useState } from 'react';
+import { ToolbarHighlight } from '@/components/editor/ui/toolbar-motion';
+import { mountBoardToolbarMotion } from './board-toolbar-motion';
 import type { BoardObject } from './board-types';
 import { BoardTextStyleMenu } from './board-text-style-menu';
+import { BoardTextLayoutControls } from './board-text-layout-controls';
 import { Check, Pencil } from 'lucide-react';
 import { BoardToolButton } from './board-tool-button';
 import { BoardSelectionActions } from './board-selection-actions';
@@ -30,18 +32,41 @@ export function BoardSelectionTools({
     onFinish: () => void;
     onChange: (object: BoardObject) => void;
 }) {
-    const [propertiesOpen, setPropertiesOpen] = useState(false);
-    const selectionActionsButton = useRef<HTMLButtonElement>(null);
     const toolbarRef = useBoardSelectionAnchor(
         camera,
         model.selectedIds,
         editing,
-        propertiesOpen,
     );
-    const object =
+    const selectedObject =
         model.selectedIds.length === 1
             ? model.objects.find((item) => item.id === model.selectedIds[0])
             : undefined;
+    const [lastSelection, setLastSelection] = useState({
+        selectedIds: model.selectedIds,
+        object: selectedObject,
+        editing,
+    });
+    const hasSelection = model.selectedIds.length > 0;
+    if (
+        hasSelection &&
+        (lastSelection.selectedIds !== model.selectedIds ||
+            lastSelection.object !== selectedObject ||
+            lastSelection.editing !== editing)
+    ) {
+        //
+        // Retain the actual controls through dismissal; preserving only the shell dimensions still leaves a visible More-only strip.
+        //
+        setLastSelection({
+            selectedIds: model.selectedIds,
+            object: selectedObject,
+            editing,
+        });
+    }
+    const object = hasSelection ? selectedObject : lastSelection.object;
+    const selectionCount = hasSelection
+        ? model.selectedIds.length
+        : lastSelection.selectedIds.length;
+    const toolbarEditing = hasSelection ? editing : lastSelection.editing;
     const writing =
         object &&
         ['text', 'heading', 'quote', 'callout'].includes(object.block_type);
@@ -49,23 +74,39 @@ export function BoardSelectionTools({
         <>
             <div
                 ref={toolbarRef}
-                className="board-selection-tools board-panel glass-surface"
+                className="board-selection-tools board-panel orbium-editor-toolbar editor-animated-toolbar glass-surface"
+                data-editing={toolbarEditing}
+                role="toolbar"
+                aria-orientation="horizontal"
+                aria-label="Selected block actions"
+                data-toolbar-positioned="false"
                 data-board-editor
-                hidden={!model.selectedIds.length}
+                hidden={!hasSelection}
+                inert={!hasSelection}
             >
-                {model.selectedIds.length > 1 && (
+                <ToolbarHighlight mountReveal={mountBoardToolbarMotion} />
+                {selectionCount > 1 && (
                     <span className="board-selection-label">
-                        {model.selectedIds.length} selected
+                        {selectionCount} selected
                     </span>
                 )}
                 {object && (
                     <>
                         {writing ? (
-                            <BoardTextStyleMenu
-                                object={object}
-                                disabled={disabled}
-                                onChange={onChange}
-                            />
+                            <>
+                                <BoardTextStyleMenu
+                                    object={object}
+                                    disabled={disabled}
+                                    onChange={onChange}
+                                />
+                                <BoardTextLayoutControls
+                                    data={object.data}
+                                    disabled={disabled}
+                                    onChange={(data) =>
+                                        onChange({ ...object, data })
+                                    }
+                                />
+                            </>
                         ) : (
                             <span className="board-selection-label">
                                 {boardBlockLabels[object.block_type]}
@@ -74,52 +115,31 @@ export function BoardSelectionTools({
                         {object.block_type !== 'divider' && (
                             <BoardToolButton
                                 label={
-                                    editing ? 'Finish editing' : 'Edit block'
+                                    toolbarEditing
+                                        ? 'Finish editing'
+                                        : 'Edit block'
                                 }
-                                icon={editing ? Check : Pencil}
+                                icon={toolbarEditing ? Check : Pencil}
                                 data-board-edit-toggle
-                                data-done={editing}
-                                shortcut={editing ? 'Ctrl/Cmd+Enter' : 'Enter'}
+                                data-done={toolbarEditing}
+                                shortcut={
+                                    toolbarEditing ? 'Ctrl/Cmd+Enter' : 'Enter'
+                                }
                                 disabled={busy || (disabled && !editing)}
                                 onClick={() =>
                                     editing ? onFinish() : onEdit(object.id)
                                 }
                             >
-                                {editing ? 'Done' : 'Edit'}
+                                {toolbarEditing ? 'Done' : 'Edit'}
                             </BoardToolButton>
                         )}
                     </>
                 )}
                 <div id={`board-formatting-${boardId}`} />
-                <BoardSelectionActions
-                    model={model}
-                    disabled={disabled}
-                    editing={editing}
-                    propertiesOpen={propertiesOpen}
-                    onToggleProperties={() =>
-                        setPropertiesOpen((value) => !value)
-                    }
-                    triggerRef={selectionActionsButton}
-                />
+                {!toolbarEditing && (
+                    <BoardSelectionActions model={model} disabled={disabled} />
+                )}
             </div>
-            {object && propertiesOpen && (
-                <BoardPropertiesPanel
-                    key={object.id}
-                    object={object}
-                    disabled={disabled}
-                    onChange={onChange}
-                    onClose={() => {
-                        setPropertiesOpen(false);
-                        requestAnimationFrame(() => {
-                            const target = selectionActionsButton.current
-                                ?.offsetParent
-                                ? selectionActionsButton.current
-                                : camera.viewportRef.current;
-                            target?.focus({ preventScroll: true });
-                        });
-                    }}
-                />
-            )}
         </>
     );
 }

@@ -9,7 +9,7 @@ type MenuHighlightOptions = {
 export function mountMenuHighlight(
     surface: HTMLElement,
     {
-        keepHighlightBetweenItems = false,
+        keepHighlightBetweenItems = true,
         itemSelector = '[role^="menuitem"]',
         selectedSelector = '[data-highlighted], [role="menuitem"][data-state="open"]',
     }: MenuHighlightOptions = {},
@@ -146,7 +146,13 @@ export function mountMenuHighlight(
         schedulePosition();
     }
     function focusChanged(event: FocusEvent) {
-        hoveredItem = findItem(event.target);
+        const item = findItem(event.target);
+        //
+        // Radix focuses the menu surface when the pointer crosses a separator; retain the last row so the next row can animate from it.
+        //
+        if (!item && keepHighlightBetweenItems && event.target === surface)
+            return;
+        hoveredItem = item;
         schedulePosition();
     }
     function keyboardUsed() {

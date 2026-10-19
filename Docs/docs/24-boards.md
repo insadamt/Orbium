@@ -260,3 +260,58 @@ The user approved polishing all Board toolbars after the vertical-rail review.
 - The normal Orbium app bar/tabs/title, contained canvas, content data, selection/resize behavior and persistent formats remain unchanged.
 
 Actual static checks, verification refinements and exact manual acceptance are recorded in `../reports/12-boards-toolbar-polish.md`. Remain in phase-4 review.
+
+## Contextual toolbar anchoring review (2026-10-19)
+
+The user approved anchoring floating controls above the selected block and matching Document toolbar presentation.
+
+- Selection controls remain centered above the selected block or multi-selection bounds during selection and editing, with a 14px gap. If there is insufficient room above, they move below and stay bounded by the canvas/inspector space. This supersedes bottom docking during editing.
+- Selected object resize observations keep the anchor current when content grows or shrinks. Controls remain outside the zoomed world at readable screen size.
+- Block and native text-selection toolbars reuse Document toolbar surfaces, compact controls, shared reveal and moving hover highlight, including reduced-motion behavior. Existing contextual list/table/media controls and More actions remain available.
+- Native selection formatting stays within the visible canvas and temporarily hides overlapping block controls without removing their layout dimensions. Collapsing the text selection restores the block controls; a focused block toolbar retains keyboard focus.
+
+Actual checks and manual acceptance are recorded in `../reports/12-boards-contextual-toolbars.md`. Remain in phase-4 review.
+
+## Selection menu simplification and divider motion (2026-10-19)
+
+The user requested removal of Properties and correction of hover animation across dividers. Selection More no longer offers Properties or mounts its inspector. During editing, More is hidden because its remaining actions apply to inactive selections; Done and contextual editing controls remain available. The shared menu highlight retains its previous row while crossing separators/gaps, including when Radix focuses the menu surface, then animates to the next enabled option. Keyboard navigation and reduced-motion behavior remain supported. See `../reports/12-boards-properties-removal-divider-motion.md` for checks and manual acceptance. Remain in phase-4 review.
+
+## Text toolbar priority clarification (2026-10-19)
+
+The user clarified that selecting text must hide the block toolbar regardless of overlap. Native text selection now owns the contextual controls until the selection collapses or editing finishes. The block toolbar also stays hidden while caret-based link formatting is visible. Panning the text toolbar offscreen does not restore block controls while text remains selected. This supersedes overlap-only hiding and its focused-control exception. The hidden block toolbar retains its geometry so restoring it does not change its anchor. See `../reports/12-boards-text-toolbar-priority.md`; remain in phase-4 review.
+
+## Floating toolbar motion and shared Select (2026-10-19)
+
+The user requested improved toolbar entrance/closing and app-consistent selects. Board block and native text-formatting toolbars now use a 180ms eased fade with a small rise/scale on entrance, followed by a 120ms fade/downward settle on dismissal. Closing uses an inert, aria-hidden visual snapshot because the actual controls must hide/unmount immediately; snapshots strip IDs/editor markers and remove themselves after finishing or cancellation. Rapid reopening cancels the same toolbar's previous exit. Reduced motion skips entrance/exit travel and stops active effects. The existing shared Document toolbar motion remains the default outside Boards.
+
+Native list-style controls now use `AppSelect` with the shared menu surface, current-value check, pointer/keyboard behavior and animated highlight. Toolbar-specific sizing retains compact controls and coarse-pointer hit targets. Code-language controls already use the shared Select. See `../reports/12-boards-toolbar-motion-select.md`; remain in phase-4 review.
+
+## Text toolbar lifecycle stabilization (2026-10-19)
+
+The user reported glitching and block controls staying visible during text selection. Priority and camera-overlay ownership now resolve through the mounted Board formatting slot, rather than querying Tiptap's editor ancestors during child layout effects before the editor DOM is attached. Selection subscriptions are installed independently of whether that editor DOM has reached the canvas. Text selection/caret link controls immediately suppress block controls until deselection or editor teardown.
+
+Board toolbar motion now uses opacity transitions on the live surface, including discrete display transitions for hide/show where supported. The previous cloned exit snapshots and scale/translation animations are removed, so no outgoing toolbar copy can remain alongside text formatting. Ending editing unmounts its toolbar immediately. Priority hides remain immediate; reduced motion removes fades. This supersedes the snapshot motion approach. See `../reports/12-boards-text-toolbar-stability.md`; remain in phase-4 review.
+
+### Floating toolbar pop refinement (2026-10-19)
+
+The user requested pop-out opening and pop-in closing. Live Board block/text toolbars now grow from 92% to full size with an eased 180ms fade on opening and shrink/fade over 120ms on hidden-state dismissal. Independent CSS scale preserves layout measurements and camera anchoring. Text-priority suppression and editor unmount remain immediate to prevent overlapping controls; priority restoration uses the pop entrance. Reduced motion removes both transitions. Closing transitions require discrete-display support and a mounted surface. See `../reports/12-boards-toolbar-pop.md`; remain in phase-4 review.
+
+Collapse correction: the first dimension-caching approach did not resolve the user's More-only strip. The block toolbar now retains the last nonempty selection's presentation (object, count and editing mode) when selection clears, preserving its actual controls during the exit. It becomes inert immediately and switches to the current selection's presentation before reopening. The dimension observer/custom properties were removed. Unpositioned and text-priority-hidden states still reset scale/opacity immediately before the next entrance. No duplicated DOM or editor lifetime extension is introduced.
+
+### Toolbar text layout controls (2026-10-19)
+
+Text, heading, quote and callout blocks expose dedicated Text alignment and Text direction buttons in both the block toolbar and native text-selection toolbar. Menus offer Left/Center/Right alignment and Automatic/Left to right/Right to left direction, with current-choice checks and corresponding trigger icons. These replace the nested layout options in Text style. Layout applies to the whole block through existing `align`/`dir` data and action history, preserving inline content and marks. See `../reports/12-boards-toolbar-text-layout.md`; remain in phase-4 manual review.
+
+Selection-toolbar correction (2026-10-19): alignment/direction now appear only in the block toolbar. Native selection formatting instead includes the shared Document text-color picker, with theme-aware presets, custom hex colors and Default reset. A selection bookmark preserves the target while using color inputs. Native inline serialization, previews and client/server validation support an additive `textColor` mark with `attrs.color` restricted to supported preset tokens or six-digit hex. Existing content/spatial versions stay 1/4; old Boards remain readable, but previous servers reject the new mark, requiring client/server deployment together. Text colors apply to selected inline text, including list items/table cells, and participate in Board action history. See `../reports/12-boards-selection-text-colors.md`; remain in phase-4 review.
+
+### Tools beside the title (2026-10-19)
+
+The user requested moving the left rail above the canvas, to the right of the Board title. The page heading now hosts a horizontal Select/Hand/Text/Add/history toolbar before Board options, superseding the vertical rail placement. Add opens downward and tooltips prefer below. The canvas uses the full working width; placement tools retain editing locks and history stays visible. Below 640px, the title occupies its own row and the tools/options wrap beneath it to the right, with existing coarse-pointer targets. The page owns the host while the existing Board controller renders tools through its portal. See `../reports/12-boards-title-toolbar.md`; remain in phase-4 review.
+
+## Floating toolbar usability refinement (2026-10-19)
+
+The user requested a broader enhancement after the lifecycle repairs. Floating controls now use consistent 34px desktop/42px coarse-pointer sizes, softer control corners, balanced surface padding/shadows and grouped text emphasis/decoration/link/editing controls. Text formatting includes a selection-preserving Finish editing action so hiding block controls does not remove the visible way to finish editing. Empty block-formatting slots no longer reserve space.
+
+During a pointer selection drag, text controls stay hidden until release/cancellation; keyboard selection remains immediate. Placement uses the browser range bounds when the selection belongs to the active editor, with editor-coordinate fallback, so wrapped selections center on their actual extent. Camera/viewport clamping and exclusive text-selection priority remain.
+
+Four table structural buttons are consolidated under one Table menu with live dimensions and the existing row/column limits. Choosing an action restores table focus; dismissing without an action returns to the trigger. The shared list Select, no Properties option, pointer-free tooltips and live-surface fades remain. See `../reports/12-boards-floating-toolbar-refinement.md`. Remain in phase-4 review.

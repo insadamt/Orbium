@@ -16,7 +16,7 @@
 .board-page-heading {
     display: flex;
     flex: 0 0 auto;
-    align-items: flex-start;
+    align-items: center;
     gap: 16px;
     padding: 4px 8px 12px;
 }
@@ -31,18 +31,14 @@
     letter-spacing: -0.025em;
 }
 /*
- * Give the tool rail its own space so canvas placement and selection coordinates stay unobstructed.
+ * Keep tools in the title row so the canvas uses the full working width.
  */
 .board-page .board-workspace {
-    flex-direction: row;
-    gap: 10px;
+    flex-direction: column;
 }
 .board-toolbar-slot {
-    flex: 0 0 46px;
-    align-self: flex-start;
-    max-height: 100%;
-    overflow-y: auto;
-    scrollbar-width: thin;
+    flex: 0 0 auto;
+    max-width: 100%;
     padding: 4px;
     border-radius: 12px;
 }
@@ -52,7 +48,8 @@
 }
 .board-page .board-creation-dock {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
+    flex-wrap: wrap;
     align-items: center;
     gap: 2px;
 }
@@ -64,12 +61,12 @@
 }
 .board-creation-dock > .board-tool-separator {
     align-self: center;
-    width: 22px;
-    height: 1px;
-    margin: 5px 0;
+    width: 1px;
+    height: 22px;
+    margin: 0 5px;
 }
 .board-page .board-history-controls {
-    flex-direction: column;
+    flex-direction: row;
 }
 .board-page .board-creation-dock .board-tool-button[aria-pressed='true'] {
     background: var(--accent);
@@ -187,8 +184,15 @@
         border-radius: 20px;
     }
     .board-page-heading {
+        flex-wrap: wrap;
         gap: 8px;
         padding-inline: 4px;
+    }
+    .board-page-heading .node-media-header[data-layout='toolbar'] {
+        flex-basis: 100%;
+    }
+    .board-toolbar-slot {
+        margin-inline-start: auto;
     }
     .board-placement-hint {
         bottom: 68px;
@@ -198,9 +202,6 @@
 }
 
 @media (pointer: coarse) {
-    .board-toolbar-slot {
-        flex-basis: 54px;
-    }
     .board-page .board-creation-dock .board-tool-button {
         width: 42px;
         min-width: 42px;

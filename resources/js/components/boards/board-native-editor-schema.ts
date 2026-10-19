@@ -77,7 +77,15 @@ function readInline(content: JSONContent[] = []): BoardInline[] {
                                               ),
                                           },
                                       }
-                                    : {}),
+                                    : mark.type === 'textColor'
+                                      ? {
+                                            attrs: {
+                                                color: String(
+                                                    mark.attrs?.color ?? '',
+                                                ),
+                                            },
+                                        }
+                                      : {}),
                             })),
                         }
                       : {}),

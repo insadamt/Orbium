@@ -6,7 +6,6 @@ export function useBoardSelectionAnchor(
     camera: BoardCameraController,
     selectedIds: string[],
     editing: boolean,
-    propertiesOpen: boolean,
 ) {
     const toolbarRef = useRef<HTMLDivElement>(null);
     const { viewportRef, worldRef } = camera;
@@ -24,7 +23,6 @@ export function useBoardSelectionAnchor(
         const selectedSet = new Set(selectedIds);
         const positionToolbar = () => {
             frame = undefined;
-            const compact = viewport.clientWidth < 900;
             const bounds = viewport.getBoundingClientRect();
             const objects = selectedElements.map((element) =>
                 element.getBoundingClientRect(),
@@ -48,26 +46,21 @@ export function useBoardSelectionAnchor(
                 left > viewport.clientWidth ||
                 bottom < 0 ||
                 top > viewport.clientHeight;
-            toolbar.hidden =
-                (!editing && offscreen) || (compact && propertiesOpen);
+            toolbar.hidden = !editing && offscreen;
             toolbar.dataset.offscreen = String(offscreen);
             if (toolbar.hidden) return;
-            const inspector =
-                viewport.parentElement?.querySelector<HTMLElement>(
-                    '[data-board-properties]',
-                );
-            const rightInset =
-                inspector && !compact ? inspector.offsetWidth + 40 : 12;
+            const rightInset = 12;
             const availableWidth = viewport.clientWidth - rightInset - 12;
             toolbar.style.maxWidth = `${Math.min(640, availableWidth)}px`;
-            const minimumTop = 56;
+            const minimumTop = 12;
             const maximumTop = Math.max(
                 minimumTop,
                 viewport.clientHeight - toolbar.offsetHeight - 72,
             );
             const preferredTop = top - toolbar.offsetHeight - 14;
-            toolbar.style.left = `${clamp((editing ? availableWidth : left + right) / 2 - toolbar.offsetWidth / 2, 12, Math.max(12, viewport.clientWidth - rightInset - toolbar.offsetWidth))}px`;
-            toolbar.style.top = `${editing ? maximumTop : clamp(preferredTop >= minimumTop ? preferredTop : bottom + 14, minimumTop, maximumTop)}px`;
+            toolbar.style.left = `${clamp((left + right) / 2 - toolbar.offsetWidth / 2, 12, Math.max(12, viewport.clientWidth - rightInset - toolbar.offsetWidth))}px`;
+            toolbar.dataset.toolbarPositioned = 'true';
+            toolbar.style.top = `${clamp(preferredTop >= minimumTop ? preferredTop : bottom + 14, minimumTop, maximumTop)}px`;
         };
         const schedulePosition = () => {
             if (frame === undefined)
@@ -81,7 +74,11 @@ export function useBoardSelectionAnchor(
                 observeSelection();
             schedulePosition();
         });
+        const sizes = new ResizeObserver(schedulePosition);
         const observeSelection = () => {
+            sizes.disconnect();
+            sizes.observe(viewport);
+            sizes.observe(toolbar);
             mutations.disconnect();
             mutations.observe(world, {
                 attributes: true,
@@ -95,22 +92,21 @@ export function useBoardSelectionAnchor(
             ].filter((element) =>
                 selectedSet.has(element.dataset.boardObjectId ?? ''),
             );
-            for (const element of selectedElements)
+            for (const element of selectedElements) {
+                sizes.observe(element);
                 mutations.observe(element, {
                     attributes: true,
                     attributeFilter: ['style'],
                 });
+            }
         };
         observeSelection();
-        const sizes = new ResizeObserver(schedulePosition);
-        sizes.observe(viewport);
-        sizes.observe(toolbar);
         positionToolbar();
         return () => {
             mutations.disconnect();
             sizes.disconnect();
             if (frame !== undefined) cancelAnimationFrame(frame);
         };
-    }, [viewportRef, worldRef, selectedIds, editing, propertiesOpen]);
+    }, [viewportRef, worldRef, selectedIds, editing]);
     return toolbarRef;
 }

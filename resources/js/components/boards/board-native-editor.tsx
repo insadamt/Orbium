@@ -1,6 +1,9 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { EditorContent, useEditor } from '@tiptap/react';
+import { AppSelect } from '@/components/ui/app-select';
+import { TextColor } from '@/components/editor/text-color';
+import { BoardTableTools } from './board-table-tools';
 import StarterKit from '@tiptap/starter-kit';
 import { Selection, TextSelection } from '@tiptap/pm/state';
 import { AddMarkStep, RemoveMarkStep } from '@tiptap/pm/transform';
@@ -23,6 +26,7 @@ export function BoardNativeEditor(props: BoardContentProps) {
     const [, refresh] = useState(0);
     const appliedResetVersion = useRef(props.editorResetVersion);
     const [extensions] = useState(() => [
+        TextColor,
         ...nativeEditorExtensions(props.object.block_type, () =>
             callbacks.current.onFinish(),
         ),
@@ -227,6 +231,8 @@ export function BoardNativeEditor(props: BoardContentProps) {
             {editor && (
                 <BoardSelectionFormatting
                     editor={editor}
+                    boardId={props.boardId}
+                    onFinish={props.onFinish}
                     disabled={props.readOnly}
                 />
             )}
@@ -236,15 +242,21 @@ export function BoardNativeEditor(props: BoardContentProps) {
                 createPortal(
                     <>
                         {props.object.block_type === 'list' && (
-                            <select
-                                aria-label="List style"
+                            <AppSelect
+                                label="List style"
                                 disabled={props.readOnly}
-                                value={props.object.data.list_style}
-                                onChange={(event) => {
+                                value={props.object.data.list_style ?? 'bullet'}
+                                className="board-toolbar-select editor-toolbar-button min-h-8 w-auto px-2 py-1 text-xs shadow-none"
+                                options={[
+                                    { value: 'bullet', label: 'Bullets' },
+                                    { value: 'ordered', label: 'Numbers' },
+                                    { value: 'check', label: 'Checklist' },
+                                ]}
+                                onValueChange={(value) => {
                                     props.onChange(
                                         {
                                             ...props.object.data,
-                                            list_style: event.target.value as
+                                            list_style: value as
                                                 | 'bullet'
                                                 | 'ordered'
                                                 | 'check',
@@ -252,99 +264,15 @@ export function BoardNativeEditor(props: BoardContentProps) {
                                         'action',
                                     );
                                 }}
-                            >
-                                <option value="bullet">Bullets</option>
-                                <option value="ordered">Numbers</option>
-                                <option value="check">Checklist</option>
-                            </select>
+                            />
                         )}
                         {props.object.block_type === 'table' && (
-                            <div className="board-table-actions">
-                                <button
-                                    type="button"
-                                    disabled={
-                                        props.readOnly ||
-                                        props.object.data.rows!.length >= 100
-                                    }
-                                    onMouseDown={(event) =>
-                                        event.preventDefault()
-                                    }
-                                    onClick={() =>
-                                        editor
-                                            .chain()
-                                            .focus(undefined, {
-                                                scrollIntoView: false,
-                                            })
-                                            .addRowAfter()
-                                            .run()
-                                    }
-                                >
-                                    + Row
-                                </button>
-                                <button
-                                    type="button"
-                                    disabled={
-                                        props.readOnly ||
-                                        props.object.data.rows![0].length >= 30
-                                    }
-                                    onMouseDown={(event) =>
-                                        event.preventDefault()
-                                    }
-                                    onClick={() =>
-                                        editor
-                                            .chain()
-                                            .focus(undefined, {
-                                                scrollIntoView: false,
-                                            })
-                                            .addColumnAfter()
-                                            .run()
-                                    }
-                                >
-                                    + Column
-                                </button>
-                                <button
-                                    type="button"
-                                    disabled={
-                                        props.readOnly ||
-                                        props.object.data.rows!.length <= 1
-                                    }
-                                    onMouseDown={(event) =>
-                                        event.preventDefault()
-                                    }
-                                    onClick={() =>
-                                        editor
-                                            .chain()
-                                            .focus(undefined, {
-                                                scrollIntoView: false,
-                                            })
-                                            .deleteRow()
-                                            .run()
-                                    }
-                                >
-                                    Remove row
-                                </button>
-                                <button
-                                    type="button"
-                                    disabled={
-                                        props.readOnly ||
-                                        props.object.data.rows![0].length <= 1
-                                    }
-                                    onMouseDown={(event) =>
-                                        event.preventDefault()
-                                    }
-                                    onClick={() =>
-                                        editor
-                                            .chain()
-                                            .focus(undefined, {
-                                                scrollIntoView: false,
-                                            })
-                                            .deleteColumn()
-                                            .run()
-                                    }
-                                >
-                                    Remove column
-                                </button>
-                            </div>
+                            <BoardTableTools
+                                editor={editor}
+                                disabled={props.readOnly}
+                                rowCount={props.object.data.rows!.length}
+                                columnCount={props.object.data.rows![0].length}
+                            />
                         )}
                     </>,
                     toolbar,

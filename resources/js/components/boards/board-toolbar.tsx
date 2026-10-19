@@ -62,7 +62,7 @@ export function BoardToolbar({
                     >
                         <BoardToolButton
                             label="Select objects"
-                            tooltipSide="right"
+                            tooltipSide="bottom"
                             disabledReason={
                                 editing
                                     ? 'Finish editing to switch tools.'
@@ -75,7 +75,7 @@ export function BoardToolbar({
                         />
                         <BoardToolButton
                             label="Hand — pan the canvas"
-                            tooltipSide="right"
+                            tooltipSide="bottom"
                             disabledReason={
                                 editing
                                     ? 'Finish editing to switch tools.'
@@ -89,7 +89,7 @@ export function BoardToolbar({
                         <span className="board-tool-separator" />
                         <BoardToolButton
                             label="Place text"
-                            tooltipSide="right"
+                            tooltipSide="bottom"
                             disabledReason={
                                 editing
                                     ? 'Finish editing to switch tools.'
@@ -122,7 +122,7 @@ export function BoardToolbar({
                             <BoardToolButton
                                 label="Undo"
                                 shortcut="Ctrl/Cmd+Z"
-                                tooltipSide="right"
+                                tooltipSide="bottom"
                                 icon={Undo2}
                                 disabled={!model.canUndo || blocked}
                                 onClick={onUndo}
@@ -130,7 +130,7 @@ export function BoardToolbar({
                             <BoardToolButton
                                 label="Redo"
                                 shortcut="Ctrl/Cmd+Shift+Z"
-                                tooltipSide="right"
+                                tooltipSide="bottom"
                                 icon={Redo2}
                                 disabled={!model.canRedo || blocked}
                                 onClick={onRedo}

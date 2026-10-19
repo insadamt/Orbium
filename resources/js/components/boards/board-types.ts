@@ -19,8 +19,15 @@ export type BoardInline = {
     type: 'text' | 'hardBreak';
     text?: string;
     marks?: {
-        type: 'bold' | 'italic' | 'underline' | 'strike' | 'code' | 'link';
-        attrs?: { href: string };
+        type:
+            | 'bold'
+            | 'italic'
+            | 'underline'
+            | 'strike'
+            | 'code'
+            | 'link'
+            | 'textColor';
+        attrs?: { href?: string; color?: string };
     }[];
 };
 export type BoardBlockData = {

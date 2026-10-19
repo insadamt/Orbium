@@ -26,7 +26,7 @@ export function BoardToolButton({
             <TooltipTrigger asChild>
                 <button
                     type="button"
-                    className="board-tool-button"
+                    className="board-tool-button editor-toolbar-button"
                     aria-label={label}
                     {...props}
                 >

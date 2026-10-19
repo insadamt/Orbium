@@ -94,64 +94,6 @@ export function BoardTextStyleMenu({
                         </Menu.RadioGroup>
                     </>
                 )}
-                <Menu.Separator />
-                <Menu.Sub>
-                    <Menu.SubTrigger>Alignment</Menu.SubTrigger>
-                    <Menu.SubContent>
-                        <Menu.RadioGroup
-                            value={object.data.align ?? 'left'}
-                            onValueChange={(value) =>
-                                onChange({
-                                    ...object,
-                                    data: {
-                                        ...object.data,
-                                        align: value as
-                                            | 'left'
-                                            | 'center'
-                                            | 'right',
-                                    },
-                                })
-                            }
-                        >
-                            <Menu.RadioItem value="left" disabled={disabled}>
-                                Left
-                            </Menu.RadioItem>
-                            <Menu.RadioItem value="center" disabled={disabled}>
-                                Center
-                            </Menu.RadioItem>
-                            <Menu.RadioItem value="right" disabled={disabled}>
-                                Right
-                            </Menu.RadioItem>
-                        </Menu.RadioGroup>
-                    </Menu.SubContent>
-                </Menu.Sub>
-                <Menu.Sub>
-                    <Menu.SubTrigger>Text direction</Menu.SubTrigger>
-                    <Menu.SubContent>
-                        <Menu.RadioGroup
-                            value={object.data.dir ?? 'auto'}
-                            onValueChange={(value) =>
-                                onChange({
-                                    ...object,
-                                    data: {
-                                        ...object.data,
-                                        dir: value as 'auto' | 'ltr' | 'rtl',
-                                    },
-                                })
-                            }
-                        >
-                            <Menu.RadioItem value="auto" disabled={disabled}>
-                                Automatic
-                            </Menu.RadioItem>
-                            <Menu.RadioItem value="ltr" disabled={disabled}>
-                                Left to right
-                            </Menu.RadioItem>
-                            <Menu.RadioItem value="rtl" disabled={disabled}>
-                                Right to left
-                            </Menu.RadioItem>
-                        </Menu.RadioGroup>
-                    </Menu.SubContent>
-                </Menu.Sub>
             </Menu.Content>
         </Menu.Root>
     );

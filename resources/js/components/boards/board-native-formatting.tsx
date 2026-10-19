@@ -8,7 +8,9 @@ import {
     Strikethrough,
     Code,
     Link2,
+    Check,
 } from 'lucide-react';
+import { BoardTextColorPicker } from './board-text-color-picker';
 import { BoardToolButton } from './board-tool-button';
 import { safeBoardLink } from './board-block-data';
 import type { SelectionBookmark } from '@tiptap/pm/state';
@@ -18,10 +20,12 @@ export function BoardNativeFormatting({
     editor,
     disabled,
     onLinkOpenChange,
+    onFinish,
 }: {
     editor: Editor;
     disabled: boolean;
     onLinkOpenChange?: (open: boolean) => void;
+    onFinish: () => void;
 }) {
     const [linkOpen, setLinkOpen] = useState(false);
     const [address, setAddress] = useState('');
@@ -79,7 +83,7 @@ export function BoardNativeFormatting({
     return (
         <div
             className="board-inline-toolbar"
-            role="toolbar"
+            role="group"
             aria-label="Text formatting"
             onPointerDown={(event) => {
                 if ((event.target as Element).closest('button'))
@@ -88,105 +92,143 @@ export function BoardNativeFormatting({
         >
             {(
                 [
-                    ['bold', Bold, 'Bold', 'Ctrl/Cmd+B'],
-                    ['italic', Italic, 'Italic', 'Ctrl/Cmd+I'],
-                    ['underline', Underline, 'Underline', 'Ctrl/Cmd+U'],
-                    ['strike', Strikethrough, 'Strikethrough', undefined],
-                    ['code', Code, 'Inline code', undefined],
+                    [
+                        ['bold', Bold, 'Bold', 'Ctrl/Cmd+B'],
+                        ['italic', Italic, 'Italic', 'Ctrl/Cmd+I'],
+                        ['underline', Underline, 'Underline', 'Ctrl/Cmd+U'],
+                    ],
+                    [
+                        ['strike', Strikethrough, 'Strikethrough', undefined],
+                        ['code', Code, 'Inline code', undefined],
+                    ],
                 ] as const
-            ).map(([mark, Icon, label, shortcut]) => (
-                <BoardToolButton
-                    key={mark}
-                    label={label}
-                    icon={Icon}
-                    shortcut={shortcut}
-                    aria-pressed={editor.isActive(mark)}
-                    disabled={disabled}
-                    onMouseDown={(event) => event.preventDefault()}
-                    onClick={() =>
-                        editor
-                            .chain()
-                            .focus(undefined, { scrollIntoView: false })
-                            .command(({ tr }) => {
-                                tr.setMeta('boardAction', true);
-                                return true;
-                            })
-                            .toggleMark(mark)
-                            .run()
+            ).map((group, index) => (
+                <div
+                    className="board-toolbar-group"
+                    role="group"
+                    aria-label={
+                        index === 0 ? 'Text emphasis' : 'Text decoration'
                     }
-                />
+                    key={index}
+                >
+                    {group.map(([mark, Icon, label, shortcut]) => (
+                        <BoardToolButton
+                            key={mark}
+                            label={label}
+                            icon={Icon}
+                            shortcut={shortcut}
+                            aria-pressed={editor.isActive(mark)}
+                            disabled={disabled}
+                            onMouseDown={(event) => event.preventDefault()}
+                            onClick={() =>
+                                editor
+                                    .chain()
+                                    .focus(undefined, { scrollIntoView: false })
+                                    .command(({ tr }) => {
+                                        tr.setMeta('boardAction', true);
+                                        return true;
+                                    })
+                                    .toggleMark(mark)
+                                    .run()
+                            }
+                        />
+                    ))}
+                </div>
             ))}
-            <Popover.Root
-                open={linkOpen}
-                onOpenChange={(open) => {
-                    if (open) openLink();
-                    else setLinkOpen(false);
-                }}
-            >
-                <Popover.Trigger asChild>
-                    <BoardToolButton
-                        label="Edit link"
-                        icon={Link2}
-                        shortcut="Ctrl/Cmd+K"
-                        aria-pressed={editor.isActive('link')}
-                        disabled={disabled}
-                        onMouseDown={(event) => event.preventDefault()}
-                    />
-                </Popover.Trigger>
-                <Popover.Portal>
-                    <Popover.Content
-                        data-board-editor
-                        className="board-link-popover glass-surface"
-                        sideOffset={10}
-                        collisionPadding={12}
-                        onCloseAutoFocus={(event) => {
-                            event.preventDefault();
-                            if (!editor.isDestroyed)
-                                editor.commands.focus(undefined, {
-                                    scrollIntoView: false,
-                                });
-                        }}
-                    >
-                        <form
-                            onSubmit={(event) => {
+            <div className="board-toolbar-group" role="group" aria-label="Link">
+                <Popover.Root
+                    open={linkOpen}
+                    onOpenChange={(open) => {
+                        if (open) openLink();
+                        else setLinkOpen(false);
+                    }}
+                >
+                    <Popover.Trigger asChild>
+                        <BoardToolButton
+                            label="Edit link"
+                            icon={Link2}
+                            shortcut="Ctrl/Cmd+K"
+                            aria-pressed={editor.isActive('link')}
+                            disabled={disabled}
+                            onMouseDown={(event) => event.preventDefault()}
+                        />
+                    </Popover.Trigger>
+                    <Popover.Portal>
+                        <Popover.Content
+                            data-board-editor
+                            className="board-link-popover glass-surface"
+                            sideOffset={10}
+                            collisionPadding={12}
+                            onCloseAutoFocus={(event) => {
                                 event.preventDefault();
-                                if (!disabled) applyLink();
+                                if (!editor.isDestroyed)
+                                    editor.commands.focus(undefined, {
+                                        scrollIntoView: false,
+                                    });
                             }}
                         >
-                            <label>
-                                Link address
-                                <input
-                                    aria-label="Link address"
-                                    value={address}
-                                    disabled={disabled}
-                                    onChange={(event) => {
-                                        setAddress(event.target.value);
-                                        setError('');
-                                    }}
-                                    placeholder="https://example.com"
-                                    autoComplete="off"
-                                    spellCheck={false}
-                                />
-                            </label>
-                            {error && <p role="alert">{error}</p>}
-                            <div>
-                                <button type="submit" disabled={disabled}>
-                                    Apply
-                                </button>
-                                <button
-                                    type="button"
-                                    disabled={
-                                        disabled || !editor.isActive('link')
-                                    }
-                                    onClick={() => applyLink(true)}
-                                >
-                                    Remove link
-                                </button>
-                            </div>
-                        </form>
-                    </Popover.Content>
-                </Popover.Portal>
-            </Popover.Root>
+                            <form
+                                onSubmit={(event) => {
+                                    event.preventDefault();
+                                    if (!disabled) applyLink();
+                                }}
+                            >
+                                <label>
+                                    Link address
+                                    <input
+                                        aria-label="Link address"
+                                        value={address}
+                                        disabled={disabled}
+                                        onChange={(event) => {
+                                            setAddress(event.target.value);
+                                            setError('');
+                                        }}
+                                        placeholder="https://example.com"
+                                        autoComplete="off"
+                                        spellCheck={false}
+                                    />
+                                </label>
+                                {error && <p role="alert">{error}</p>}
+                                <div>
+                                    <button type="submit" disabled={disabled}>
+                                        Apply
+                                    </button>
+                                    <button
+                                        type="button"
+                                        disabled={
+                                            disabled || !editor.isActive('link')
+                                        }
+                                        onClick={() => applyLink(true)}
+                                    >
+                                        Remove link
+                                    </button>
+                                </div>
+                            </form>
+                        </Popover.Content>
+                    </Popover.Portal>
+                </Popover.Root>
+            </div>
+            <div
+                className="board-toolbar-group"
+                role="group"
+                aria-label="Text color"
+            >
+                <BoardTextColorPicker editor={editor} disabled={disabled} />
+            </div>
+            <div
+                className="board-toolbar-group"
+                role="group"
+                aria-label="Editing"
+            >
+                <BoardToolButton
+                    label="Finish editing"
+                    shortcut="Ctrl/Cmd+Enter"
+                    icon={Check}
+                    disabled={disabled}
+                    data-done="true"
+                    onClick={onFinish}
+                />
+            </div>
         </div>
     );
 }

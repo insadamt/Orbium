@@ -2,8 +2,11 @@ import { useLayoutEffect, useRef } from 'react';
 import { mountMenuHighlight } from '@/lib/menu-highlight';
 import { mountToolbarReveal } from './toolbar-reveal';
 
-export function mountToolbarHighlight(surface: HTMLElement) {
-    const destroyReveal = mountToolbarReveal(surface);
+export function mountToolbarHighlight(
+    surface: HTMLElement,
+    mountReveal = mountToolbarReveal,
+) {
+    const destroyReveal = mountReveal(surface);
     const destroyHighlight = mountMenuHighlight(surface, {
         itemSelector: '.editor-toolbar-button',
         keepHighlightBetweenItems: true,
@@ -45,11 +48,15 @@ export function mountToolbarHighlight(surface: HTMLElement) {
     };
 }
 
-export function ToolbarHighlight() {
+export function ToolbarHighlight({
+    mountReveal = mountToolbarReveal,
+}: {
+    mountReveal?: typeof mountToolbarReveal;
+}) {
     const marker = useRef<HTMLSpanElement>(null);
     useLayoutEffect(() => {
         const surface = marker.current?.parentElement;
-        if (surface) return mountToolbarHighlight(surface);
-    }, []);
+        if (surface) return mountToolbarHighlight(surface, mountReveal);
+    }, [mountReveal]);
     return <span ref={marker} hidden aria-hidden="true" />;
 }

@@ -512,3 +512,5 @@ actions and Alt+arrow reordering require Manual order, explained by a toolbar
 hint. Review follow-up: sort and filter triggers show icons only; their menus
 retain option text, accessible names announce the current choice, and active
 choices highlight the trigger. See [the report and manual checklist](../reports/01-workspace-sort-filter.md).
+
+Tooltip pointer correction (2026-10-19): the user requested removal of the diamond-shaped tooltip pointer. Shared `TooltipContent` now renders only its content surface; Board tooltips and other consumers inherit this appearance. Labels, shortcuts, placement and opening/closing behavior remain. See `../reports/12-boards-tooltip-pointer.md` for actual checks and manual acceptance.

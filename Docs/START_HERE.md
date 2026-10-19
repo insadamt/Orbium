@@ -107,3 +107,17 @@ See `phases/README.md`.
 - The editor uses Notion-like block interaction plus Markdown typing shortcuts.
 - The visual identity is monochrome/minimalist 3D with frosted glass UI surfaces; semantic colors are informational only.
 - Orbium portability is a versioned protocol, not a raw database dump.
+
+Contextual toolbar review (2026-10-19): the user approved keeping floating controls above selected blocks during editing and matching Document toolbar styling/motion. Native text formatting takes priority over overlapping block controls. See `reports/12-boards-contextual-toolbars.md` and `docs/24-boards.md`. Remain in phase-4 manual review.
+
+Selection-menu correction (2026-10-19): the user requested removing Properties and repairing hover highlight travel across dividers. Properties/inspector wiring is removed from Board selection controls; More is hidden while editing. Shared menus preserve hover highlight continuity through separators. See `reports/12-boards-properties-removal-divider-motion.md`. Remain in phase-4 review.
+
+Text-toolbar priority clarification (2026-10-19): native text selection hides the block toolbar until deselection or editing ends, regardless of toolbar overlap. See `reports/12-boards-text-toolbar-priority.md`. This supersedes overlap-only hiding; remain in phase-4 review.
+
+Toolbar motion/Select review (2026-10-19): Board floating toolbars gain eased entrance and short noninteractive exits; the list-style dropdown now uses the app's shared `AppSelect`. See `reports/12-boards-toolbar-motion-select.md`. Remain in phase-4 manual review.
+
+Text toolbar lifecycle repair (2026-10-19): selection priority/camera ownership use the mounted Board formatting slot rather than editor ancestors queried before attachment. Live opacity transitions replace cloned closing toolbars and scaled movement. See `reports/12-boards-text-toolbar-stability.md`. Remain in phase-4 manual review.
+
+Floating toolbar usability review (2026-10-19): the user requested a broader enhancement. Text controls are grouped and include Finish editing; pointer selection waits for release before showing the toolbar; selection bounds improve wrapped-text placement; table actions use one compact menu. See `reports/12-boards-floating-toolbar-refinement.md`. Remain in phase-4 manual review.
+
+Title-toolbar placement (2026-10-19): the user requested moving the left tools beside the title and committing the toolbar work. Tools/history now form a horizontal heading group to the right of the title, with downward Add and responsive wrapping, superseding vertical-rail placement. See `reports/12-boards-title-toolbar.md`. Contextual toolbar motion/layout controls and selection text colors are recorded in their review reports. Remain in phase-4 review.

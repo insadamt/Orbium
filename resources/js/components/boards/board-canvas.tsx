@@ -29,6 +29,7 @@ import './board-interaction-polish.css';
 import './board-block-presentation.css';
 import './board-editing.css';
 import './board-toolbar-polish.css';
+import './board-contextual-toolbars.css';
 import { useBoardClipboard } from './use-board-clipboard';
 import { readBoardSnapshot } from './board-api';
 import { downloadBoardDraft } from './board-recovery';
@@ -37,7 +38,11 @@ import { BoardSelectionBounds } from './board-selection-bounds';
 import { BoardSelectionTools } from './board-selection-tools';
 
 export function BoardCanvas(
-    props: BoardLocation & { tabId: string; snapshot: BoardSnapshot },
+    props: BoardLocation & {
+        tabId: string;
+        snapshot: BoardSnapshot;
+        toolbarHost: HTMLDivElement | null;
+    },
 ) {
     const result = useMemo(() => {
         try {
@@ -79,7 +84,12 @@ function BoardWorkspace({
     boardId,
     tabId,
     snapshot,
-}: BoardLocation & { tabId: string; snapshot: BoardSnapshot }) {
+    toolbarHost,
+}: BoardLocation & {
+    tabId: string;
+    snapshot: BoardSnapshot;
+    toolbarHost: HTMLDivElement | null;
+}) {
     const location = useMemo(
         () => ({ workspaceId, boardId }),
         [workspaceId, boardId],
@@ -134,7 +144,6 @@ function BoardWorkspace({
         save.blocked || uploading || resourceLocked,
     );
     const [helpOpen, setHelpOpen] = useState(false);
-    const [toolbarHost, setToolbarHost] = useState<HTMLDivElement | null>(null);
     const activeModel = useRef(model);
     activeModel.current = model;
     const viewportRef = camera.viewportRef;
@@ -231,10 +240,6 @@ function BoardWorkspace({
                 });
             }}
         >
-            <div
-                ref={setToolbarHost}
-                className="board-toolbar-slot floating-surface"
-            />
             <div
                 className="board-stage"
                 data-editing={Boolean(model.editingId)}
