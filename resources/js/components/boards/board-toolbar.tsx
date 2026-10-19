@@ -28,6 +28,7 @@ export function BoardToolbar({
     model,
     camera,
     blocked,
+    editing,
     tool,
     onChooseTool,
     onResource,
@@ -39,6 +40,7 @@ export function BoardToolbar({
     model: BoardObjectsController;
     camera: BoardCameraController;
     blocked: boolean;
+    editing: boolean;
     tool: BoardTool;
     onChooseTool: (tool: BoardTool) => void;
     onResource: () => void;
@@ -60,35 +62,57 @@ export function BoardToolbar({
                     >
                         <BoardToolButton
                             label="Select objects"
+                            tooltipSide="right"
+                            disabledReason={
+                                editing
+                                    ? 'Finish editing to switch tools.'
+                                    : undefined
+                            }
                             icon={MousePointer2}
-                            disabled={blocked}
+                            disabled={blocked || editing}
                             aria-pressed={tool === 'select'}
                             onClick={() => onChooseTool('select')}
                         />
                         <BoardToolButton
                             label="Hand — pan the canvas"
+                            tooltipSide="right"
+                            disabledReason={
+                                editing
+                                    ? 'Finish editing to switch tools.'
+                                    : undefined
+                            }
                             icon={Hand}
-                            disabled={blocked}
+                            disabled={blocked || editing}
                             aria-pressed={tool === 'hand'}
                             onClick={() => onChooseTool('hand')}
                         />
                         <span className="board-tool-separator" />
                         <BoardToolButton
                             label="Place text"
+                            tooltipSide="right"
+                            disabledReason={
+                                editing
+                                    ? 'Finish editing to switch tools.'
+                                    : undefined
+                            }
                             icon={Type}
-                            disabled={blocked}
+                            disabled={blocked || editing}
                             aria-pressed={tool === 'text'}
                             onClick={() => onChooseTool('text')}
                         />
                         <BoardBlockPicker
-                            disabled={blocked}
+                            disabled={blocked || editing}
+                            disabledReason={
+                                editing
+                                    ? 'Finish editing to add blocks.'
+                                    : undefined
+                            }
                             active={!['select', 'hand', 'text'].includes(tool)}
                             onResource={onResource}
                             onAdd={(kind) => {
                                 if (kind !== 'resource') onChooseTool(kind);
                             }}
                         />
-                        <span className="board-tool-separator" />
                         <div
                             className="board-history-controls"
                             role="group"
@@ -96,13 +120,17 @@ export function BoardToolbar({
                             onMouseDown={(event) => event.preventDefault()}
                         >
                             <BoardToolButton
-                                label="Undo (Ctrl/Cmd+Z)"
+                                label="Undo"
+                                shortcut="Ctrl/Cmd+Z"
+                                tooltipSide="right"
                                 icon={Undo2}
                                 disabled={!model.canUndo || blocked}
                                 onClick={onUndo}
                             />
                             <BoardToolButton
-                                label="Redo (Ctrl/Cmd+Shift+Z)"
+                                label="Redo"
+                                shortcut="Ctrl/Cmd+Shift+Z"
+                                tooltipSide="right"
                                 icon={Redo2}
                                 disabled={!model.canRedo || blocked}
                                 onClick={onRedo}
@@ -121,34 +149,30 @@ export function BoardToolbar({
                     icon={Minus}
                     onClick={() => camera.zoomBy(0.8)}
                 />
-                <span
-                    ref={camera.zoomLabelRef}
-                    className="board-zoom-label"
-                    aria-label="Zoom"
+                <BoardToolButton
+                    label="Reset view to 100%"
+                    data-zoom-reset
+                    onClick={camera.reset}
                 >
-                    100%
-                </span>
+                    <span
+                        ref={camera.zoomLabelRef}
+                        className="board-zoom-label"
+                    >
+                        100%
+                    </span>
+                </BoardToolButton>
                 <BoardToolButton
                     label="Zoom in"
                     icon={Plus}
                     onClick={() => camera.zoomBy(1.25)}
                 />
                 <span className="board-tool-separator" />
-                <BoardToolButton
-                    label="Fit all blocks"
-                    icon={Scan}
-                    onClick={() => camera.fit(model.objects)}
-                />
                 <Menu.Root modal={false}>
                     <Menu.Trigger asChild>
-                        <button
-                            type="button"
-                            className="board-tool-button"
-                            aria-label="View options"
-                            title="View options"
-                        >
-                            <SlidersHorizontal size={17} aria-hidden="true" />
-                        </button>
+                        <BoardToolButton
+                            label="View options"
+                            icon={SlidersHorizontal}
+                        />
                     </Menu.Trigger>
                     <Menu.Content
                         side="top"
@@ -157,6 +181,9 @@ export function BoardToolbar({
                         collisionPadding={12}
                     >
                         <Menu.Label>Canvas view</Menu.Label>
+                        <Menu.Item onSelect={() => camera.fit(model.objects)}>
+                            <Scan /> Fit all blocks
+                        </Menu.Item>
                         <Menu.Item
                             disabled={!selected.length}
                             onSelect={() => camera.fit(selected)}

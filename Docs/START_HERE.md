@@ -26,6 +26,8 @@ Native app-shell correction (2026-10-19): the user approved integrating Boards w
 
 Vertical Board toolbar (2026-10-19): the user requested a left-side icon-only bar inside the Board. The tools/history now form a vertical rail beside the canvas with accessible names and hover titles; Add opens to the right. This supersedes the horizontal toolbar placement, while retaining the native app shell. See `reports/12-boards-vertical-toolbar.md`; remain in phase-4 review.
 
+Board toolbar polish (2026-10-19): the user approved consistent control styling, explicit active/focus states, proper tooltips, stable editing controls and compact zoom. The rail now keeps placement controls visible but disabled while editing, with history at the bottom; this supersedes the earlier hide-on-edit rule. See `reports/12-boards-toolbar-polish.md`; remain in phase-4 review.
+
 Orbium is a self-hosted spatial knowledge workspace combining:
 
 - hierarchical knowledge organization;

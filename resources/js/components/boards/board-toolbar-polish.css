@@ -1,0 +1,151 @@
+.board-page {
+    --board-control-size: 36px;
+    --board-control-radius: 9px;
+}
+.board-tool-button,
+.board-inline-toolbar .board-tool-button {
+    position: relative;
+    min-width: var(--board-control-size, 36px);
+    height: var(--board-control-size, 36px);
+    padding-inline: 9px;
+    gap: 6px;
+    border: 1px solid transparent;
+    border-radius: var(--board-control-radius, 9px);
+    font-size: 12px;
+    line-height: 1;
+    font-weight: 500;
+    transition:
+        background-color 140ms ease,
+        border-color 140ms ease,
+        color 140ms ease;
+}
+.board-tool-button > svg {
+    flex: 0 0 auto;
+    width: 17px;
+    height: 17px;
+    stroke-width: 1.7;
+}
+.board-tool-button:hover:not(:disabled),
+.board-tool-button[data-state='open']:not(:disabled) {
+    background: var(--accent);
+    color: var(--foreground);
+}
+.board-tool-button:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+}
+.board-tool-button:disabled {
+    opacity: 0.35;
+    cursor: default;
+}
+.board-panel {
+    gap: 3px;
+    padding: 5px;
+    border-radius: 14px;
+    border-color: color-mix(in srgb, var(--border) 75%, transparent);
+    box-shadow: 0 4px 16px rgb(0 0 0 / 0.06);
+}
+/*
+ * Reserve the same rail height while editing so history and pointer targets do not jump.
+ */
+.board-toolbar-slot {
+    height: min(320px, 100%);
+    border-radius: 14px;
+}
+.board-page .board-creation-dock {
+    min-height: 100%;
+    gap: 4px;
+}
+.board-page .board-history-controls {
+    width: 100%;
+    align-items: center;
+    gap: 4px;
+    margin-top: auto;
+    padding-top: 8px;
+    border-top: 1px solid var(--border);
+}
+.board-creation-dock > .board-tool-button[aria-pressed='true']::before {
+    position: absolute;
+    inset-inline-start: 1px;
+    top: 10px;
+    bottom: 10px;
+    width: 3px;
+    border-radius: 2px;
+    background: currentColor;
+    content: '';
+}
+.board-creation-dock > .board-tool-button[aria-pressed='true'] {
+    border-color: color-mix(in srgb, var(--foreground) 12%, transparent);
+}
+.board-selection-tools {
+    align-items: center;
+    gap: 4px;
+    padding: 5px;
+}
+.board-selection-tools > [id^='board-formatting-'] {
+    order: 2;
+    gap: 4px;
+}
+.board-selection-tools > [data-board-edit-toggle] {
+    order: 3;
+}
+.board-selection-tools > [data-done='true'] {
+    background: var(--accent);
+    color: var(--foreground);
+}
+.board-selection-tools > .board-selection-actions {
+    order: 4;
+    padding-inline-start: 5px;
+}
+.board-selection-label {
+    font-weight: 500;
+    white-space: nowrap;
+}
+.board-navigation-dock .board-tool-separator {
+    margin-inline: 2px;
+}
+.board-navigation-dock [data-zoom-reset] {
+    padding-inline: 6px;
+}
+.board-zoom-label {
+    min-width: 38px;
+    font-size: 11px;
+    font-weight: 500;
+    color: inherit;
+}
+.board-tool-tooltip {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 10px;
+    max-width: min(280px, calc(100vw - 24px));
+    padding: 8px 10px;
+    border-radius: 8px;
+    font-size: 11px;
+}
+.board-tool-tooltip kbd {
+    font-family: inherit;
+    font-size: 10px;
+    opacity: 0.65;
+}
+.board-tool-tooltip small {
+    flex-basis: 100%;
+    font-size: 10px;
+    opacity: 0.8;
+}
+@media (pointer: coarse) {
+    .board-page {
+        --board-control-size: 42px;
+    }
+    .board-tool-button,
+    .board-inline-toolbar .board-tool-button {
+        min-height: 42px;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .board-tool-button,
+    .board-tool-tooltip[data-slot='tooltip-content'] {
+        transition: none;
+        animation: none;
+    }
+}

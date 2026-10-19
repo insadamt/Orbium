@@ -9,6 +9,7 @@ import {
     Code,
     Link2,
 } from 'lucide-react';
+import { BoardToolButton } from './board-tool-button';
 import { safeBoardLink } from './board-block-data';
 import type { SelectionBookmark } from '@tiptap/pm/state';
 import { useRef } from 'react';
@@ -87,18 +88,18 @@ export function BoardNativeFormatting({
         >
             {(
                 [
-                    ['bold', Bold],
-                    ['italic', Italic],
-                    ['underline', Underline],
-                    ['strike', Strikethrough],
-                    ['code', Code],
+                    ['bold', Bold, 'Bold', 'Ctrl/Cmd+B'],
+                    ['italic', Italic, 'Italic', 'Ctrl/Cmd+I'],
+                    ['underline', Underline, 'Underline', 'Ctrl/Cmd+U'],
+                    ['strike', Strikethrough, 'Strikethrough', undefined],
+                    ['code', Code, 'Inline code', undefined],
                 ] as const
-            ).map(([mark, Icon]) => (
-                <button
-                    type="button"
+            ).map(([mark, Icon, label, shortcut]) => (
+                <BoardToolButton
                     key={mark}
-                    title={mark}
-                    aria-label={mark}
+                    label={label}
+                    icon={Icon}
+                    shortcut={shortcut}
                     aria-pressed={editor.isActive(mark)}
                     disabled={disabled}
                     onMouseDown={(event) => event.preventDefault()}
@@ -113,9 +114,7 @@ export function BoardNativeFormatting({
                             .toggleMark(mark)
                             .run()
                     }
-                >
-                    <Icon size={15} />
-                </button>
+                />
             ))}
             <Popover.Root
                 open={linkOpen}
@@ -125,15 +124,14 @@ export function BoardNativeFormatting({
                 }}
             >
                 <Popover.Trigger asChild>
-                    <button
-                        type="button"
-                        aria-label="Edit link"
+                    <BoardToolButton
+                        label="Edit link"
+                        icon={Link2}
+                        shortcut="Ctrl/Cmd+K"
                         aria-pressed={editor.isActive('link')}
                         disabled={disabled}
                         onMouseDown={(event) => event.preventDefault()}
-                    >
-                        <Link2 size={15} />
-                    </button>
+                    />
                 </Popover.Trigger>
                 <Popover.Portal>
                     <Popover.Content

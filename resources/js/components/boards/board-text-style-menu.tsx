@@ -1,4 +1,5 @@
 import { Type, ChevronDown } from 'lucide-react';
+import { BoardToolButton } from './board-tool-button';
 import * as Menu from '@/components/ui/dropdown-menu';
 import { boardBlockLabels } from './board-block-data';
 import type { BoardBlockKind, BoardObject } from './board-types';
@@ -30,16 +31,14 @@ export function BoardTextStyleMenu({
     return (
         <Menu.Root modal={false}>
             <Menu.Trigger asChild>
-                <button
-                    type="button"
-                    className="board-tool-button"
-                    aria-label="Text style"
+                <BoardToolButton
+                    label="Text style"
+                    icon={Type}
                     disabled={disabled}
                 >
-                    <Type size={16} aria-hidden="true" />
                     {boardBlockLabels[object.block_type]}
                     <ChevronDown size={12} aria-hidden="true" />
-                </button>
+                </BoardToolButton>
             </Menu.Trigger>
             <Menu.Content
                 side="bottom"

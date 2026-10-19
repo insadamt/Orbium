@@ -7,6 +7,7 @@ import {
     Ellipsis,
     SlidersHorizontal,
 } from 'lucide-react';
+import { BoardToolButton } from './board-tool-button';
 import * as Menu from '@/components/ui/dropdown-menu';
 import type { BoardObjectsController } from './use-board-objects';
 import { BoardArrangeMenu } from './board-arrange-menu';
@@ -41,16 +42,12 @@ export function BoardSelectionActions({
                 }}
             >
                 <Menu.Trigger asChild>
-                    <button
+                    <BoardToolButton
                         ref={triggerRef}
-                        type="button"
-                        className="board-tool-button"
-                        aria-label="More selection actions"
-                        title="More selection actions"
+                        label="More selection actions"
+                        icon={Ellipsis}
                         disabled={disabled}
-                    >
-                        <Ellipsis size={17} aria-hidden="true" />
-                    </button>
+                    />
                 </Menu.Trigger>
                 <Menu.Content
                     side="bottom"

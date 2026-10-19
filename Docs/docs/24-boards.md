@@ -246,3 +246,17 @@ The user requested a vertical, icon-only toolbar at the left inside the Board. T
 - Camera coordinates, fit/selection calculations and automatic sizing continue to use the actual remaining canvas viewport; the toolbar does not introduce a camera offset or content migration.
 
 See `../reports/12-boards-vertical-toolbar.md` for actual checks and manual validation. Remain in phase-4 review.
+
+
+## Toolbar consistency review (2026-10-19)
+
+The user approved polishing all Board toolbars after the vertical-rail review.
+
+- Board actions, text-style/More triggers and native inline formatting reuse one `BoardToolButton` with consistent icon size, spacing, hover/open/focus/disabled treatment and a shared tooltip. Tooltips show supported shortcuts when applicable, prefer the right for the rail, and respect viewport collisions. Reduced motion disables toolbar/tooltip transitions.
+- The rail reserves a bounded 320px height (scrolling in shorter available space) and keeps undo/redo at its bottom. Select/Hand and Text/Add retain visual grouping. Selected placement tools have an accent background, subtle border and small side indicator.
+- Placement tools remain visible but disabled while editing; their hints explain that editing must finish first. This supersedes hide-on-edit behavior, preventing the rail and history positions from jumping. Existing upload/save locks and native history behavior remain.
+- Contextual controls share the same button styling. Block style/identity precedes block-specific formatting, then Edit/Done and More. Done uses accent emphasis. Native text formatting retains selection-preserving pointer handling and existing commands; the link popover retains its bookmark/focus behavior.
+- The quiet corner group contains minus, a clickable live zoom percentage, plus and View options. The percentage calls the existing Reset view action (camera origin and 100% zoom); Fit all moves into View options alongside Fit selection, reset, grid/snap/guides and help.
+- The normal Orbium app bar/tabs/title, contained canvas, content data, selection/resize behavior and persistent formats remain unchanged.
+
+Actual static checks, verification refinements and exact manual acceptance are recorded in `../reports/12-boards-toolbar-polish.md`. Remain in phase-4 review.

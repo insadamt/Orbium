@@ -28,6 +28,7 @@ import './board-object-design.css';
 import './board-interaction-polish.css';
 import './board-block-presentation.css';
 import './board-editing.css';
+import './board-toolbar-polish.css';
 import { useBoardClipboard } from './use-board-clipboard';
 import { readBoardSnapshot } from './board-api';
 import { downloadBoardDraft } from './board-recovery';
@@ -378,6 +379,7 @@ function BoardWorkspace({
                 )}
                 <BoardToolbar
                     toolbarHost={toolbarHost}
+                    editing={Boolean(model.editingId)}
                     model={model}
                     camera={camera}
                     blocked={save.blocked || uploading || resourceLocked}

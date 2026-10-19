@@ -1,12 +1,3 @@
-/*
- * Keep history available while editing; placement tools would interrupt the active editor.
- */
-.board-workspace[data-editing='true'] .board-creation-dock > .board-tool-button,
-.board-workspace[data-editing='true']
-    .board-creation-dock
-    > .board-tool-separator {
-    display: none;
-}
 .board-selection-tools > [id^='board-formatting-'] {
     display: flex;
     flex-wrap: wrap;

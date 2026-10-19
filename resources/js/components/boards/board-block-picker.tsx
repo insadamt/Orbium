@@ -16,6 +16,7 @@ import {
     Minus,
 } from 'lucide-react';
 import * as Menu from '@/components/ui/dropdown-menu';
+import { BoardToolButton } from './board-tool-button';
 import { boardBlockLabels } from './board-block-data';
 import type { BoardBlockKind } from './board-types';
 
@@ -84,11 +85,13 @@ const blockChoices = [
 
 export function BoardBlockPicker({
     disabled,
+    disabledReason,
     active,
     onAdd,
     onResource,
 }: {
     disabled: boolean;
+    disabledReason?: string;
     active: boolean;
     onAdd: (kind: BoardBlockKind) => void;
     onResource: () => void;
@@ -105,16 +108,14 @@ export function BoardBlockPicker({
             modal={false}
         >
             <Menu.Trigger asChild>
-                <button
-                    type="button"
-                    className="board-tool-button"
+                <BoardToolButton
+                    label="Add block"
+                    icon={Plus}
+                    tooltipSide="right"
                     disabled={disabled}
-                    aria-label="Add block"
+                    disabledReason={disabledReason}
                     aria-pressed={active}
-                    title="Add block"
-                >
-                    <Plus size={19} aria-hidden="true" />
-                </button>
+                />
             </Menu.Trigger>
             <Menu.Content
                 className="board-block-picker"

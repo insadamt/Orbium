@@ -77,6 +77,9 @@ export function BoardSelectionTools({
                                     editing ? 'Finish editing' : 'Edit block'
                                 }
                                 icon={editing ? Check : Pencil}
+                                data-board-edit-toggle
+                                data-done={editing}
+                                shortcut={editing ? 'Ctrl/Cmd+Enter' : 'Enter'}
                                 disabled={busy || (disabled && !editing)}
                                 onClick={() =>
                                     editing ? onFinish() : onEdit(object.id)
