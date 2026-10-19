@@ -114,14 +114,13 @@ export function BoardBlockPicker({
                     title="Add block"
                 >
                     <Plus size={19} aria-hidden="true" />
-                    <span className="board-dock-label">Add</span>
                 </button>
             </Menu.Trigger>
             <Menu.Content
                 className="board-block-picker"
-                side="bottom"
-                align="center"
-                sideOffset={14}
+                side="right"
+                align="start"
+                sideOffset={10}
                 collisionPadding={12}
                 aria-label="Add a block"
                 onCloseAutoFocus={(event) => {

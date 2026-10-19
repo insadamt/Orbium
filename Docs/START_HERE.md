@@ -24,6 +24,8 @@ Board interface simplification (2026-10-19): the user approved a smaller toolbar
 
 Native app-shell correction (2026-10-19): the user approved integrating Boards with the normal app bar, tabs and app styling. Board viewport takeover and inert/hidden navigation are removed. The shared Node title editor supports a compact toolbar layout, Board tools sit above the canvas, and height follows the actual responsive app bar. This supersedes the separate Board header/Back and full-screen presentation rules. See `reports/12-boards-native-app-shell.md`; remain in phase-4 manual review.
 
+Vertical Board toolbar (2026-10-19): the user requested a left-side icon-only bar inside the Board. The tools/history now form a vertical rail beside the canvas with accessible names and hover titles; Add opens to the right. This supersedes the horizontal toolbar placement, while retaining the native app shell. See `reports/12-boards-vertical-toolbar.md`; remain in phase-4 review.
+
 Orbium is a self-hosted spatial knowledge workspace combining:
 
 - hierarchical knowledge organization;

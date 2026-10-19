@@ -230,7 +230,10 @@ function BoardWorkspace({
                 });
             }}
         >
-            <div ref={setToolbarHost} className="board-toolbar-slot" />
+            <div
+                ref={setToolbarHost}
+                className="board-toolbar-slot floating-surface"
+            />
             <div
                 className="board-stage"
                 data-editing={Boolean(model.editingId)}

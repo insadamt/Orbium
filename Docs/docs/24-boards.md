@@ -234,3 +234,15 @@ The user approved integrating Boards into the normal Orbium interface. This supe
 - No Node hierarchy, block content, persistence version, endpoint, archive or feature-phase change is introduced.
 
 Actual checks and exact manual acceptance: `../reports/12-boards-native-app-shell.md`. Remain in phase-4 review.
+
+
+## Vertical toolbar review (2026-10-19)
+
+The user requested a vertical, icon-only toolbar at the left inside the Board. This supersedes the horizontal row above the canvas from the native app-shell correction.
+
+- Select, Hand, Text and Add form a vertical icon rail with vertically grouped undo/redo. All controls retain accessible names and native hover titles; selected tools retain the shared accent treatment. Existing editing/upload/save locks remain.
+- The rail sits inside the Board page alongside the canvas in normal flow, reserving its own width so it does not cover content, save feedback or selection controls. It is 46px wide on fine pointers and 54px on coarse pointers, with 42px touch buttons. On short working areas the rail scrolls vertically.
+- Add opens to the right, aligned with its trigger, using existing viewport collision handling. The picker contents retain labels and descriptions. Zoom remains in the bottom corner and the normal Orbium app bar/tabs/title remain visible.
+- Camera coordinates, fit/selection calculations and automatic sizing continue to use the actual remaining canvas viewport; the toolbar does not introduce a camera offset or content migration.
+
+See `../reports/12-boards-vertical-toolbar.md` for actual checks and manual validation. Remain in phase-4 review.

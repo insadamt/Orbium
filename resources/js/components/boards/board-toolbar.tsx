@@ -64,18 +64,14 @@ export function BoardToolbar({
                             disabled={blocked}
                             aria-pressed={tool === 'select'}
                             onClick={() => onChooseTool('select')}
-                        >
-                            <span className="board-dock-label">Select</span>
-                        </BoardToolButton>
+                        />
                         <BoardToolButton
                             label="Hand — pan the canvas"
                             icon={Hand}
                             disabled={blocked}
                             aria-pressed={tool === 'hand'}
                             onClick={() => onChooseTool('hand')}
-                        >
-                            <span className="board-dock-label">Hand</span>
-                        </BoardToolButton>
+                        />
                         <span className="board-tool-separator" />
                         <BoardToolButton
                             label="Place text"
@@ -83,9 +79,7 @@ export function BoardToolbar({
                             disabled={blocked}
                             aria-pressed={tool === 'text'}
                             onClick={() => onChooseTool('text')}
-                        >
-                            <span className="board-dock-label">Text</span>
-                        </BoardToolButton>
+                        />
                         <BoardBlockPicker
                             disabled={blocked}
                             active={!['select', 'hand', 'text'].includes(tool)}
