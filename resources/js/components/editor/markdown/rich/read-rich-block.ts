@@ -144,7 +144,8 @@ export function readRichBlock(
                 metadata.align &&
                 !/^(?:Paragraph|(?:ATX|Setext)Heading[1-6])$/.test(
                     children[0].name,
-                )
+                ) &&
+                inner?.kind !== 'callout'
             )
                 return null;
             if (metadata.listType && children[0].name !== 'OrderedList')

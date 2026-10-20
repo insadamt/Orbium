@@ -2,6 +2,7 @@
 
 namespace App\Services\Markdown;
 
+use League\CommonMark\Extension\CommonMark\Node\Block\BlockQuote;
 use League\CommonMark\Extension\CommonMark\Node\Block\FencedCode;
 use League\CommonMark\Extension\CommonMark\Node\Block\Heading;
 use League\CommonMark\Extension\CommonMark\Node\Block\ListBlock;
@@ -28,8 +29,9 @@ final class OrbiumStructureValidator
                     $this->invalid($block, 'Block metadata must wrap exactly one Markdown block.');
                 }
                 $child = $children[0];
-                if (isset($metadata['align']) && ! ($child instanceof Paragraph || $child instanceof Heading)) {
-                    $this->invalid($block, 'Block alignment requires a paragraph or heading.');
+                $isCallout = $child instanceof BlockQuote && $child->firstChild()?->firstChild() instanceof CalloutMarker;
+                if (isset($metadata['align']) && ! ($child instanceof Paragraph || $child instanceof Heading || $isCallout)) {
+                    $this->invalid($block, 'Block alignment requires a paragraph, heading or callout.');
                 }
                 if (isset($metadata['listType']) && ! ($child instanceof ListBlock && $child->getListData()->type === ListBlock::TYPE_ORDERED)) {
                     $this->invalid($block, 'listType requires an ordered list.');

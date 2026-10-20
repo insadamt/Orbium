@@ -537,3 +537,31 @@ surface tokens, bounded scrolling, keyboard focus/return, Escape dismissal and
 reduced-motion support. Done stays in the surrounding toolbar. No persistence,
 attachment ownership, player interaction or Board format changes. See
 `../reports/12-boards-media-toolbar.md`; remain in phase-4 manual review.
+
+## Board interaction performance correction (2026-10-20)
+
+The CPU investigation repair coalesces pointer samples before resolving gesture
+geometry. Each active pointer retains its latest sample; both touch positions are
+applied before pinch geometry is computed. Idle pointer movement performs no Board
+geometry reads. Release flushes the final sample before the single history/save
+commit, and cancellation restores canonical geometry.
+
+Drag previews translate existing block surfaces using gesture-cached DOM elements;
+release writes saved x/y and clears the temporary translation. Camera panning also
+uses translation while preserving native layout zoom for sharp text/PDF density.
+Resize previews retain live content-height measurement and skip unchanged style
+writes. Alignment-guide DOM is retained while guide geometry is unchanged.
+
+Measured automatic heights publish one derived snapshot per frame, with stale
+measurements discarded after intervening object changes. These updates still add
+no undo step. Full linked-Document preview requests begin during scheduled idle
+work with at most two active requests across mounted Boards; canceled queued cards
+never start a request. Math/diagram source fields defer their hidden previews until
+editing ends. Recovery keeps its 150ms debounce and schedules serialization through
+the shared bounded idle scheduler; save/exit/error paths still persist immediately.
+Unchanged immutable block content reuses client validation across saves; aggregate,
+geometry and server-side validation remain enforced.
+
+No Board format, API payload or database changes. See
+`../reports/12-boards-performance-correction.md` for checks and manual acceptance.
+Phase 4 remains in manual review; thermal improvement requires user measurement.

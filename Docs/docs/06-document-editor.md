@@ -195,7 +195,7 @@ Hover near a block shows minimal controls:
 
 Block menu:
 
-- turn into;
+- turn into (only for supported blocks, with the current type omitted from targets);
 - duplicate;
 - copy;
 - move up/down;
@@ -446,6 +446,18 @@ block's direction; typing a different language updates its automatic direction.
 Existing explicit direction choices remain stored in editor content. Direction
 and alignment survive autosave and reload. Alignment applies to
 paragraphs and headings, including those inside lists, quotes, and callouts.
+Markdown callouts also expose alignment for the whole callout through their
+block menu, covering the title and body in preview and while writing. The
+existing `kind: block` presentation wrapper stores that alignment; server
+validation accepts a callout in this wrapper. Deploy the editor and validator
+together. Ordinary quotes and other composite blocks retain their existing
+alignment restrictions.
+
+Markdown conversion menus appear only for text, headings, lists, quotes,
+callouts and supported code blocks. Media/attachments, tables, Mermaid, math,
+dividers and unsupported source constructs omit the conversion submenu.
+The command handler enforces the same supported conversion targets. Other
+block actions remain available.
 
 In CodeMirror live preview, explicit direction and alignment apply to the rendered
 text lines as well as their presentation wrapper. Empty paragraph inputs update

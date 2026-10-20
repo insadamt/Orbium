@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { serializeDocumentAsMarkdown } from '@/components/editor/markdown-export';
 import { MermaidPreviewSession } from '@/components/editor/mermaid-preview-session';
 import { renderRichBody } from '@/components/editor/markdown/rich/render-rich-body';
+import { scheduleBoardDocumentPreview } from './board-preview-queue';
 import { fetchResourceDocument } from './board-resource-api';
 import type { BoardLocation } from './board-types';
 import type { BoardResource, ResourceDocument } from './board-resource-types';
@@ -27,26 +28,31 @@ export function BoardDocumentPreview({
         const controller = new AbortController();
         setSnapshot(null);
         setError('');
-        void fetchResourceDocument(
-            { workspaceId, boardId },
-            targetId,
-            controller.signal,
-        )
-            .then((document) => {
-                if (!controller.signal.aborted) {
-                    setSnapshot(document);
-                    onLoaded(document);
-                }
-            })
-            .catch((failure) => {
-                if (!controller.signal.aborted)
-                    setError(
-                        failure instanceof Error
-                            ? failure.message
-                            : 'Could not render this Document.',
-                    );
-            });
-        return () => controller.abort();
+        const cancelQueuedPreview = scheduleBoardDocumentPreview(async () => {
+            await fetchResourceDocument(
+                { workspaceId, boardId },
+                targetId,
+                controller.signal,
+            )
+                .then((document) => {
+                    if (!controller.signal.aborted) {
+                        setSnapshot(document);
+                        onLoaded(document);
+                    }
+                })
+                .catch((failure) => {
+                    if (!controller.signal.aborted)
+                        setError(
+                            failure instanceof Error
+                                ? failure.message
+                                : 'Could not render this Document.',
+                        );
+                });
+        });
+        return () => {
+            cancelQueuedPreview();
+            controller.abort();
+        };
     }, [workspaceId, boardId, targetId, revision, refreshVersion, onLoaded]);
 
     useEffect(() => {

@@ -86,6 +86,7 @@ export function validBoardObjects(
 export function readBoardSnapshot(
     value: unknown,
     allowLegacyDraft = false,
+    validationCache?: BoardValidationCache,
 ): BoardSnapshot {
     const snapshot = value as {
         format_version?: number;
@@ -159,7 +160,7 @@ export function readBoardSnapshot(
             ];
         })
         .map((object, layer) => ({ ...object, layer }));
-    if (!validBoardObjects(objects))
+    if (!validBoardObjects(objects, validationCache))
         throw new BoardSaveError(
             'This Board exceeds the native block limits or has invalid data. Download the original snapshot for recovery.',
         );
@@ -198,8 +199,9 @@ export async function fetchBoard(
 export async function saveBoard(
     location: BoardLocation,
     snapshot: BoardSnapshot,
+    validationCache?: BoardValidationCache,
 ): Promise<number> {
-    readBoardSnapshot(snapshot);
+    readBoardSnapshot(snapshot, false, validationCache);
     const response = await fetch(contentUrl(location), {
         method: 'PUT',
         headers: {

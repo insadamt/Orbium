@@ -4,6 +4,7 @@ import type {
     BoardPoint,
     BoardPlacementKind,
 } from './board-types';
+import type { BoardPaintTargets } from './board-pointer-paint';
 import type { BoardGuide } from './board-alignment';
 
 export type BoardGesture =
@@ -33,6 +34,7 @@ export type BoardGesture =
           pointerId: number;
           start: BoardPoint;
           originals: BoardObject[];
+          paintTargets: BoardPaintTargets;
           screenStart: BoardPoint;
           activated: boolean;
           targets: BoardObject[];

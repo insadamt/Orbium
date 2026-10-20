@@ -11,6 +11,11 @@ import { EditorView } from '@codemirror/view';
 import type { SyntaxNode } from '@lezer/common';
 import { readRichBlock } from '../rich/read-rich-block';
 import { readCalloutSource } from '../dialect/callout-source';
+import {
+    canAlignMarkdownBlock,
+    markdownBlockConversionTargets,
+    markdownConversionPrefixes,
+} from './markdown-block-capabilities';
 import { fencedCodeSource } from '../rich/code-widget';
 import { markdownBlockMotion } from './markdown-block-motion';
 import { markdownBlockMotionEffect } from './markdown-block-history-motion';
@@ -289,12 +294,9 @@ export function setMarkdownBlockPresentation(
     options: MarkdownBlockEditOptions = {},
 ) {
     const current = markdownBlockPresentation(view, block);
-    if (
-        patch.align &&
-        !/^(?:Paragraph|(?:ATX|Setext)Heading[1-6])$/.test(current.name)
-    )
+    if (patch.align && !canAlignMarkdownBlock(current.name, current.body))
         throw new Error(
-            'Alignment applies to paragraphs and headings. Use cell or image alignment for those blocks.',
+            'Alignment applies to paragraphs, headings and callouts. Use cell or image alignment for those blocks.',
         );
     const metadata = { ...current.metadata, ...patch };
     if (!current.body.trim()) metadata.kind = 'empty';
@@ -354,9 +356,11 @@ export function turnMarkdownBlockInto(
     prefix: string,
 ) {
     const current = markdownBlockPresentation(view, block);
+    const node = syntaxTree(view.state).topNode.childAfter(block.from);
+    const rich = node ? readRichBlock(view.state, node) : null;
     if (
-        !/^(?:Paragraph|(?:ATX|Setext)Heading[1-6]|BulletList|OrderedList|Blockquote|FencedCode)$/.test(
-            current.name,
+        !markdownBlockConversionTargets(current.name, rich?.kind).some(
+            (label) => markdownConversionPrefixes[label] === prefix,
         )
     )
         throw new Error(

@@ -3,21 +3,25 @@ import { useCallback, useEffect, useRef, type PointerEvent } from 'react';
 import type { BoardObjectsController } from './use-board-objects';
 import type { BoardCameraController } from './use-board-camera';
 import { paintBoardObjects, paintBoardGuides } from './board-pointer-paint';
-import { resolveBoardMove } from './board-alignment';
+import { paintBoardGesturePreview } from './board-gesture-preview';
+import { collectBoardPaintTargets } from './board-pointer-paint';
 import {
     canvasPoint,
     clamp,
     intersects,
     pinchGeometry,
 } from './board-geometry';
-import { resizeBoardObject } from './board-resize-geometry';
-import { paintBoardResizePreview } from './board-resize-preview';
 import {
     boardLimits,
     type BoardPoint,
     type BoardPlacementKind,
     type BoardTool,
 } from './board-types';
+
+type BoardPointerSample = Pick<
+    PointerEvent<HTMLDivElement>,
+    'clientX' | 'clientY' | 'pointerId' | 'altKey' | 'shiftKey'
+>;
 
 export function useBoardPointer(
     model: BoardObjectsController,
@@ -36,12 +40,18 @@ export function useBoardPointer(
     const marqueeRef = useRef<HTMLDivElement>(null);
     const frame = useRef<number | undefined>(undefined);
     const viewportRef = camera.viewportRef;
+    const pendingPointer = useRef(new Map<number, BoardPointerSample>());
 
     const cancel = useCallback(() => {
         const current = gesture.current;
         if (current?.kind === 'move' || current?.kind === 'resize')
-            paintBoardObjects(viewportRef.current, current.originals);
+            paintBoardObjects(
+                viewportRef.current,
+                current.originals,
+                current.paintTargets,
+            );
         gesture.current = null;
+        pendingPointer.current.clear();
         paintBoardGuides(guidesRef.current, []);
         if (marqueeRef.current) marqueeRef.current.hidden = true;
         if (viewportRef.current) viewportRef.current.dataset.gesture = '';
@@ -218,6 +228,7 @@ export function useBoardPointer(
             targets: model.objectsRef.current.filter((object) =>
                 intersects(camera.visibleBounds, object),
             ),
+            paintTargets: collectBoardPaintTargets(viewportRef.current),
             originals,
             preview: originals,
             axis: resize ?? '',
@@ -226,11 +237,46 @@ export function useBoardPointer(
     }
 
     function onPointerMove(event: PointerEvent<HTMLDivElement>) {
-        const local = camera.localPoint({ x: event.clientX, y: event.clientY });
-        if (touches.current.has(event.pointerId))
-            touches.current.set(event.pointerId, local);
         const current = gesture.current;
-        if (!current) return;
+        if (
+            !current ||
+            (current.kind !== 'pinch' && current.pointerId !== event.pointerId)
+        )
+            return;
+        if (current.kind === 'pinch' && !touches.current.has(event.pointerId))
+            return;
+        pendingPointer.current.set(event.pointerId, {
+            clientX: event.clientX,
+            clientY: event.clientY,
+            pointerId: event.pointerId,
+            altKey: event.altKey,
+            shiftKey: event.shiftKey,
+        });
+        if (frame.current !== undefined) return;
+        //
+        // High-frequency input only replaces the sample; geometry and layout run once per displayed frame.
+        //
+        frame.current = requestAnimationFrame(flushPointerPreview);
+    }
+
+    function flushPointerPreview() {
+        if (frame.current !== undefined) cancelAnimationFrame(frame.current);
+        frame.current = undefined;
+        const samples = [...pendingPointer.current.values()];
+        pendingPointer.current.clear();
+        const event = samples.at(-1);
+        const current = gesture.current;
+        if (!event || !current) return;
+        const bounds = viewportRef.current?.getBoundingClientRect();
+        const localPoint = (sample: BoardPointerSample) => ({
+            x: sample.clientX - (bounds?.left ?? 0),
+            y: sample.clientY - (bounds?.top ?? 0),
+        });
+        for (const sample of samples) {
+            if (touches.current.has(sample.pointerId))
+                touches.current.set(sample.pointerId, localPoint(sample));
+        }
+        const local = localPoint(event);
         if (current.kind === 'pinch') {
             if (touches.current.size < 2) return;
             const pinch = pinchGeometry([...touches.current.values()]);
@@ -267,74 +313,40 @@ export function useBoardPointer(
         }
         if (current.kind === 'marquee') {
             current.end = local;
-        } else {
-            //
-            // Click jitter must not trigger snapping or add a move to history, regardless of canvas zoom.
-            //
-            if (
-                !current.activated &&
-                Math.hypot(
-                    local.x - current.screenStart.x,
-                    local.y - current.screenStart.y,
-                ) < 6
-            )
-                return;
-            current.activated = true;
-            event.currentTarget.dataset.gesture = current.kind;
-            const point = canvasPoint(local, camera.cameraRef.current);
-            const dx = point.x - current.start.x;
-            const dy = point.y - current.start.y;
-            if (current.kind === 'resize') {
-                current.preview = current.originals.map((object) =>
-                    resizeBoardObject({
-                        object,
-                        axis: current.axis,
-                        delta: { x: dx, y: dy },
-                        snap: camera.snap && !event.altKey,
-                        freeAspect: event.shiftKey,
-                    }),
-                );
-            } else {
-                const result = resolveBoardMove({
-                    originals: current.originals,
-                    objects: current.targets,
-                    delta: { x: dx, y: dy },
-                    zoom: camera.cameraRef.current.zoom,
-                    snapToGrid: camera.snap,
-                    smartGuides: camera.guides,
-                    bypassSnap: event.altKey,
-                });
-                current.preview = result.objects;
-                current.guides = result.guides;
-            }
-        }
-        if (frame.current !== undefined) return;
-        frame.current = requestAnimationFrame(() => {
-            frame.current = undefined;
-            const active = gesture.current;
-            if (active?.kind === 'move' || active?.kind === 'resize') {
-                if (active.kind === 'resize')
-                    active.preview = paintBoardResizePreview(
-                        viewportRef.current,
-                        active.preview,
-                        active.axis,
-                    );
-                else paintBoardObjects(viewportRef.current, active.preview);
-                paintBoardGuides(guidesRef.current, active.guides);
-            }
-            if (active?.kind === 'marquee' && marqueeRef.current) {
+            if (marqueeRef.current) {
                 marqueeRef.current.hidden = false;
                 Object.assign(marqueeRef.current.style, {
-                    left: `${Math.min(active.start.x, active.end.x)}px`,
-                    top: `${Math.min(active.start.y, active.end.y)}px`,
-                    width: `${Math.abs(active.start.x - active.end.x)}px`,
-                    height: `${Math.abs(active.start.y - active.end.y)}px`,
+                    left: `${Math.min(current.start.x, current.end.x)}px`,
+                    top: `${Math.min(current.start.y, current.end.y)}px`,
+                    width: `${Math.abs(current.start.x - current.end.x)}px`,
+                    height: `${Math.abs(current.start.y - current.end.y)}px`,
                 });
             }
-        });
+        } else {
+            paintBoardGesturePreview({
+                gesture: current,
+                local,
+                camera,
+                viewport: viewportRef.current,
+                guides: guidesRef.current,
+                altKey: event.altKey,
+                shiftKey: event.shiftKey,
+            });
+        }
     }
 
     function onPointerUp(event: PointerEvent<HTMLDivElement>) {
+        const active = gesture.current;
+        if (
+            active &&
+            (active.kind === 'pinch' || active.pointerId === event.pointerId)
+        ) {
+            //
+            // Release may arrive before the scheduled frame; commit the final pointer position synchronously.
+            //
+            onPointerMove(event);
+            flushPointerPreview();
+        }
         touches.current.delete(event.pointerId);
         const current = gesture.current;
         if (current?.kind === 'pinch') {
@@ -402,13 +414,12 @@ export function useBoardPointer(
                 model.select([...new Set([...current.previous, ...matched])]);
             }
             if (current.kind === 'move' || current.kind === 'resize') {
-                if (current.kind === 'resize')
-                    current.preview = paintBoardResizePreview(
+                if (current.kind === 'move')
+                    paintBoardObjects(
                         viewportRef.current,
                         current.preview,
-                        current.axis,
+                        current.paintTargets,
                     );
-                else paintBoardObjects(viewportRef.current, current.preview);
                 const changed = current.preview.some(
                     (object, index) =>
                         object.data !== current.originals[index].data ||

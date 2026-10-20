@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import {
     boardLimits,
@@ -28,6 +28,20 @@ export function useBoardObjects(
     const historyGroup = useRef<string | null>(null);
     const lastHistoryChange = useRef(0);
     const validationCache = useRef<BoardValidationCache>(new WeakMap());
+    const measuredHeights = useRef(
+        new Map<string, { object: BoardObject; height: number }>(),
+    );
+    const heightFrame = useRef<number | undefined>(undefined);
+
+    useEffect(
+        () => () => {
+            if (heightFrame.current !== undefined)
+                cancelAnimationFrame(heightFrame.current);
+            heightFrame.current = undefined;
+            measuredHeights.current.clear();
+        },
+        [],
+    );
 
     function select(ids: string[]) {
         selectedRef.current = ids;
@@ -70,24 +84,39 @@ export function useBoardObjects(
     function updateMeasuredHeight(id: string, height: number) {
         const current = objectsRef.current.find((object) => object.id === id);
         if (!current || Math.abs(current.height - height) <= 1) return;
-        const next = objectsRef.current.map((object) =>
-            object.id === id
-                ? {
-                      ...object,
-                      height: clamp(
-                          height,
-                          boardLimits.minHeight,
-                          boardLimits.maxSize,
-                      ),
-                  }
-                : object,
-        );
-
+        measuredHeights.current.set(id, {
+            object: current,
+            height: clamp(height, boardLimits.minHeight, boardLimits.maxSize),
+        });
+        if (heightFrame.current !== undefined) return;
         //
-        // Measured text height follows content/width; it must not create an extra undo step or erase redo history.
+        // Opening many cards must publish one derived layout, rather than map and save the whole Board once per measured card.
         //
-        apply(next);
+        heightFrame.current = requestAnimationFrame(() => {
+            heightFrame.current = undefined;
+            let changed = false;
+            const next = objectsRef.current.map((object) => {
+                const measured = measuredHeights.current.get(object.id);
+                //
+                // A newer edit, resize or history restore owns its geometry; discard stale observer measurements.
+                //
+                if (
+                    !measured ||
+                    measured.object !== object ||
+                    Math.abs(object.height - measured.height) <= 1
+                )
+                    return object;
+                changed = true;
+                return { ...object, height: measured.height };
+            });
+            measuredHeights.current.clear();
+            //
+            // Derived height must not create an undo step or erase redo history.
+            //
+            if (changed) apply(next);
+        });
     }
+
     function finishEditing() {
         historyGroup.current = null;
         editPoint.current = null;

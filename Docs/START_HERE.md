@@ -160,3 +160,12 @@ Media toolbar styling review (2026-10-20): Image, Video, Audio, PDF and File now
 use shared compact controls, an Add/Replace source menu, a caption panel and image
 framing panel. See `reports/12-boards-media-toolbar.md` and `docs/24-boards.md`.
 Remain in phase-4 manual review.
+
+Board CPU performance repair (2026-10-20): the user authorized fixes after the
+interaction audit. Pointer geometry is coalesced per frame; block movement and
+camera panning use translation; resize painting avoids repeated unchanged style
+writes. Opening batches automatic-height publication and bounds full Document
+preview requests. Hidden math/diagram previews wait until editing ends; recovery
+serialization yields to input and unchanged content validation is cached across
+saves. See `reports/12-boards-performance-correction.md` for actual checks,
+limitations and manual steps. Phase 4 remains in manual review.

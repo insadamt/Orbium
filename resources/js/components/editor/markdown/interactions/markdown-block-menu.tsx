@@ -8,6 +8,13 @@ import {
 import { Text } from '@codemirror/state';
 import { logicalMarkdownText } from './markdown-logical-text';
 import { readCalloutSource } from '../dialect/callout-source';
+import { syntaxTree } from '@codemirror/language';
+import { readRichBlock } from '../rich/read-rich-block';
+import {
+    canAlignMarkdownBlock,
+    markdownBlockConversionTargets,
+    markdownConversionPrefixes,
+} from './markdown-block-capabilities';
 import {
     adjacentMarkdownBlock,
     deleteMarkdownBlock,
@@ -18,18 +25,6 @@ import {
     turnMarkdownBlockInto,
     type MarkdownBlockRange,
 } from './markdown-block-actions';
-
-const conversionPrefixes: Record<string, string> = {
-    Text: '',
-    'Heading 1': '# ',
-    'Heading 2': '## ',
-    'Heading 3': '### ',
-    'Bullet list': '- ',
-    'Numbered list': '1. ',
-    Checklist: '- [ ] ',
-    Quote: '> ',
-    Code: '```',
-};
 
 function currentBlockType(name: string, source: string) {
     if (name === 'Blockquote' && readCalloutSource(source)) return 'Callout';
@@ -71,6 +66,13 @@ export function mountMarkdownBlockMenu({
     host.append(container);
     const root = createRoot(container);
     const presentation = markdownBlockPresentation(view, block);
+    const node = syntaxTree(view.state).topNode.childAfter(block.from);
+    const rich = node ? readRichBlock(view.state, node) : null;
+    const blockType = currentBlockType(presentation.name, presentation.body);
+    const conversionTargets = markdownBlockConversionTargets(
+        presentation.name,
+        rich?.kind,
+    ).filter((label) => label !== blockType);
     function perform(command: () => void) {
         try {
             onNotice('');
@@ -115,18 +117,17 @@ export function mountMarkdownBlockMenu({
     }
     root.render(
         <BlockMenuSurface
-            currentBlockType={currentBlockType(
-                presentation.name,
-                presentation.body,
-            )}
+            currentBlockType={blockType}
+            conversionTargets={conversionTargets}
             anchor={anchor}
             formatting={{
                 alignment:
                     presentation.metadata.align ??
                     (anchor.direction === 'rtl' ? 'right' : 'left'),
                 direction: presentation.metadata.dir ?? 'auto',
-                canAlign: /^(?:Paragraph|(?:ATX|Setext)Heading[1-6])$/.test(
+                canAlign: canAlignMarkdownBlock(
                     presentation.name,
+                    presentation.body,
                 ),
             }}
             canMoveUp={Boolean(adjacentMarkdownBlock(view, block, true))}
@@ -138,7 +139,7 @@ export function mountMarkdownBlockMenu({
                     turnMarkdownBlockInto(
                         view,
                         block,
-                        conversionPrefixes[label],
+                        markdownConversionPrefixes[label],
                     ),
                 )
             }

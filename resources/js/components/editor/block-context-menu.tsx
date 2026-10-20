@@ -8,6 +8,7 @@ import { changeBlockOrder } from './editor-controls';
 import { findBlockCommands } from './editor-commands';
 import {
     BlockMenuSurface,
+    blockConversions,
     type BlockMenuAnchor,
 } from './ui/block-menu-surface';
 type Props = {
@@ -37,8 +38,24 @@ export default function BlockContextMenu({
     anchor,
     onClose,
 }: Props) {
+    const block = editor.state.doc.child(index);
+    const blockTypeLabels: Record<string, string> = {
+        paragraph: 'Text',
+        heading: `Heading ${block.attrs.level}`,
+        bulletList: 'Bullet list',
+        orderedList: 'Numbered list',
+        taskList: 'Checklist',
+        blockquote: 'Quote',
+        codeBlock: 'Code',
+    };
+    const blockType = blockTypeLabels[block.type.name];
+    const conversionTargets = blockType
+        ? blockConversions.filter((label) => label !== blockType)
+        : [];
     return (
         <BlockMenuSurface
+            currentBlockType={blockType}
+            conversionTargets={conversionTargets}
             anchor={anchor}
             formatting={blockFormatting(editor, index)}
             canMoveUp={index > 0}

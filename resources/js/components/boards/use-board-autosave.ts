@@ -1,6 +1,12 @@
+import { scheduleEditorIdleWork } from '@/components/editor/schedule-editor-idle-work';
 import { router } from '@inertiajs/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { BoardSaveError, fetchBoard, saveBoard } from './board-api';
+import {
+    BoardSaveError,
+    fetchBoard,
+    saveBoard,
+    type BoardValidationCache,
+} from './board-api';
 import {
     downloadBoardDraft,
     readBoardDraft,
@@ -25,6 +31,7 @@ export function useBoardAutosave(
     const unsupportedDraft = useRef(recovery.unsupportedSource);
     const [startingSnapshot] = useState(recovered ?? initial);
     const revision = useRef(startingSnapshot.revision);
+    const validationCache = useRef<BoardValidationCache>(new WeakMap());
     const pending = useRef<BoardObject[] | null>(recovered?.objects ?? null);
     const latest = useRef(startingSnapshot.objects);
     const inFlight = useRef(false);
@@ -37,6 +44,7 @@ export function useBoardAutosave(
     );
     const timer = useRef<number | undefined>(undefined);
     const draftTimer = useRef<number | undefined>(undefined);
+    const cancelIdleDraft = useRef<(() => void) | undefined>(undefined);
     const dirtySince = useRef<number | null>(null);
     const [status, setStatus] = useState<
         'saved' | 'unsaved' | 'saving' | 'error' | 'loading'
@@ -54,6 +62,8 @@ export function useBoardAutosave(
     const [storageWarning, setStorageWarning] = useState('');
 
     const persistDraft = useCallback(() => {
+        cancelIdleDraft.current?.();
+        cancelIdleDraft.current = undefined;
         // Preserve unknown recovery bytes until the user explicitly chooses the saved Board.
 
         if (unsupportedDraft.current !== undefined) return;
@@ -91,17 +101,22 @@ export function useBoardAutosave(
         persistDraft();
         let saved = false;
         try {
-            revision.current = await saveBoard(location, {
-                format_version: 4,
-                revision: revision.current,
-                objects,
-            });
+            revision.current = await saveBoard(
+                location,
+                {
+                    format_version: 4,
+                    revision: revision.current,
+                    objects,
+                },
+                validationCache.current,
+            );
             saved = true;
             if (!stopped.current) {
                 setError('');
                 setStatus(pending.current === null ? 'saved' : 'unsaved');
                 if (pending.current === null) {
                     clearTimeout(draftTimer.current);
+                    cancelIdleDraft.current?.();
                     removeBoardDraft(location);
                     setNotice('');
                 } else persistDraft();
@@ -134,7 +149,13 @@ export function useBoardAutosave(
             if (!conflicted.current) setStatus('unsaved');
             setNotice('');
             clearTimeout(draftTimer.current);
-            draftTimer.current = window.setTimeout(persistDraft, 150);
+            cancelIdleDraft.current?.();
+            draftTimer.current = window.setTimeout(() => {
+                //
+                // Recovery serialization is synchronous; give input/layout priority while keeping a bounded idle timeout.
+                //
+                cancelIdleDraft.current = scheduleEditorIdleWork(persistDraft);
+            }, 150);
             clearTimeout(timer.current);
             if (!conflicted.current)
                 timer.current = window.setTimeout(
@@ -163,6 +184,7 @@ export function useBoardAutosave(
             unsupportedDraft.current = undefined;
             clearTimeout(timer.current);
             clearTimeout(draftTimer.current);
+            cancelIdleDraft.current?.();
             removeBoardDraft(location);
             setError('');
             setNotice('');
@@ -231,6 +253,7 @@ export function useBoardAutosave(
             stopped.current = true;
             clearTimeout(timer.current);
             clearTimeout(draftTimer.current);
+            cancelIdleDraft.current?.();
             removeGuard();
             window.removeEventListener('orbium:before-page-leave', guard);
             window.removeEventListener('orbium:before-tab-close', closeGuard);
@@ -259,6 +282,7 @@ export function useBoardAutosave(
             conflicted.current = false;
             clearTimeout(timer.current);
             clearTimeout(draftTimer.current);
+            cancelIdleDraft.current?.();
             removeBoardDraft(location);
             setStatus('saved');
             setError('');

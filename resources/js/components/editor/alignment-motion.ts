@@ -12,10 +12,22 @@ function visibleContentBounds(element: HTMLElement, measureText: boolean) {
     if (!measureText || element.matches('figure'))
         return element.getBoundingClientRect();
     const range = element.ownerDocument.createRange();
-    range.selectNodeContents(element);
-    const bounds = Array.from(range.getClientRects()).filter(
-        (rect) => rect.width > 0 && rect.height > 0,
+    const textNodes = element.ownerDocument.createTreeWalker(
+        element,
+        NodeFilter.SHOW_TEXT,
     );
+    const bounds: DOMRect[] = [];
+
+    // Container rectangles span the full row even when the aligned glyphs move.
+
+    for (let node = textNodes.nextNode(); node; node = textNodes.nextNode()) {
+        range.selectNodeContents(node);
+        bounds.push(
+            ...Array.from(range.getClientRects()).filter(
+                (rect) => rect.width > 0 && rect.height > 0,
+            ),
+        );
+    }
     if (!bounds.length) return element.getBoundingClientRect();
     return {
         left: Math.min(...bounds.map((rect) => rect.left)),

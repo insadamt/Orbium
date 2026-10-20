@@ -64,11 +64,13 @@ export function useBoardCamera(location: BoardLocation) {
             //
             // Layout zoom lets the browser rasterize text and vectors at their displayed size instead of stretching a cached world layer.
             //
-            Object.assign(worldRef.current.style, {
-                zoom: String(zoom),
-                left: `${x / zoom}px`,
-                top: `${y / zoom}px`,
-            });
+            const style = worldRef.current.style;
+            //
+            // Pan the existing surface without repositioning its layout; only real zoom changes should change layout density.
+            //
+            if (style.zoom !== String(zoom)) style.zoom = String(zoom);
+            const translation = `${x / zoom}px ${y / zoom}px`;
+            if (style.translate !== translation) style.translate = translation;
         }
         const viewport = viewportRef.current;
         if (viewport) {

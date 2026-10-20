@@ -32,6 +32,7 @@ export type BlockMenuAnchor = {
 };
 type Props = {
     currentBlockType?: string;
+    conversionTargets: readonly string[];
     anchor: BlockMenuAnchor;
     formatting: {
         alignment: string | null;
@@ -50,6 +51,7 @@ type Props = {
 
 export function BlockMenuSurface({
     currentBlockType,
+    conversionTargets,
     anchor,
     formatting,
     canMoveUp,
@@ -73,25 +75,27 @@ export function BlockMenuSurface({
             blockContextMenu
             onRestoreFocus={onFocusEditor}
         >
-            <Menu.Sub>
-                <Menu.SubTrigger>
-                    <Type size={16} /> {currentBlockType ?? 'Turn into…'}
-                </Menu.SubTrigger>
-                <Menu.SubContent
-                    className="block-context-select-content"
-                    data-block-context-menu
-                >
-                    <Menu.Label>Turn into</Menu.Label>
-                    {blockConversions.map((label) => (
-                        <Menu.Item
-                            key={label}
-                            onSelect={() => perform(() => onConvert(label))}
-                        >
-                            {label}
-                        </Menu.Item>
-                    ))}
-                </Menu.SubContent>
-            </Menu.Sub>
+            {conversionTargets.length > 0 && (
+                <Menu.Sub>
+                    <Menu.SubTrigger>
+                        <Type size={16} /> {currentBlockType ?? 'Turn into…'}
+                    </Menu.SubTrigger>
+                    <Menu.SubContent
+                        className="block-context-select-content"
+                        data-block-context-menu
+                    >
+                        <Menu.Label>Turn into</Menu.Label>
+                        {conversionTargets.map((label) => (
+                            <Menu.Item
+                                key={label}
+                                onSelect={() => perform(() => onConvert(label))}
+                            >
+                                {label}
+                            </Menu.Item>
+                        ))}
+                    </Menu.SubContent>
+                </Menu.Sub>
+            )}
             <Menu.Sub>
                 <Menu.SubTrigger disabled={!formatting.canAlign}>
                     <AlignLeft size={16} /> Text alignment

@@ -115,7 +115,10 @@ export function BoardSourceBlock(props: BoardContentProps) {
         }
     }, [source, language, readOnly, editing, object.block_type]);
     useEffect(() => {
-        if (object.block_type === 'code' || !host.current) return;
+        //
+        // The source field replaces this preview while editing; rendering hidden math/diagrams wastes interaction time.
+        //
+        if (editing || object.block_type === 'code' || !host.current) return;
         const output = host.current;
         output.replaceChildren();
         const mermaid = new MermaidPreviewSession(
@@ -159,7 +162,7 @@ export function BoardSourceBlock(props: BoardContentProps) {
             controls?.destroy();
             mermaid.destroy();
         };
-    }, [source, object.block_type, props.workspaceId, props.boardId]);
+    }, [source, editing, object.block_type, props.workspaceId, props.boardId]);
     const SourceIcon =
         object.block_type === 'code'
             ? Code2
