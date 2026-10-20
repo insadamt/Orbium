@@ -1,5 +1,29 @@
 .board-resource-card {
-    min-height: 160px;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+}
+.board-resource-header {
+    flex-shrink: 0;
+}
+.board-resource-body {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    overscroll-behavior: contain;
+    touch-action: pan-x pan-y;
+    cursor: auto;
+}
+.board-resource-body:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: -2px;
+}
+.board-document-preview {
+    white-space: normal;
+}
+.board-document-preview > div > * + * {
+    margin-top: 12px;
 }
 .board-resource-header {
     display: flex;

@@ -15,6 +15,7 @@ import {
 } from './table-structure';
 
 type TableAxisMenuOptions = {
+    onHistory?: (direction: 'undo' | 'redo') => void;
     grid: HTMLTableElement;
     view: EditorView;
     table: () => RichTable;
@@ -68,7 +69,7 @@ export function mountTableAxisMenu(options: TableAxisMenuOptions) {
     menu.setAttribute('aria-label', 'Column options');
     menu.hidden = true;
     grid.ownerDocument.body.append(menu);
-    bindRichBlockHistory(menu, view);
+    bindRichBlockHistory(menu, view, options.onHistory);
     function close(restoreFocus = false) {
         menu.hidden = true;
         menuSurface.close();

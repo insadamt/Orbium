@@ -21,6 +21,7 @@ import type { BoardTool } from './board-types';
 import type { BoardObjectsController } from './use-board-objects';
 import type { BoardCameraController } from './use-board-camera';
 import { BoardBlockPicker } from './board-block-picker';
+import { BoardToolbarHighlight } from './board-toolbar-highlight';
 import { BoardToolButton } from './board-tool-button';
 
 export function BoardToolbar({
@@ -56,10 +57,11 @@ export function BoardToolbar({
             {toolbarHost &&
                 createPortal(
                     <div
-                        className="board-creation-dock"
+                        className="board-creation-dock editor-animated-toolbar"
                         role="group"
                         aria-label="Create on board"
                     >
+                        <BoardToolbarHighlight />
                         <BoardToolButton
                             label="Select objects"
                             tooltipSide="bottom"
@@ -107,11 +109,9 @@ export function BoardToolbar({
                                     ? 'Finish editing to add blocks.'
                                     : undefined
                             }
-                            active={!['select', 'hand', 'text'].includes(tool)}
+                            tool={tool}
                             onResource={onResource}
-                            onAdd={(kind) => {
-                                if (kind !== 'resource') onChooseTool(kind);
-                            }}
+                            onAdd={onChooseTool}
                         />
                         <div
                             className="board-history-controls"

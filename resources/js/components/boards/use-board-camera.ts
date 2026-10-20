@@ -203,7 +203,7 @@ export function useBoardCamera(location: BoardLocation) {
         const wheel = (event: WheelEvent) => {
             if (event.target instanceof Element) {
                 const body = event.target.closest<HTMLElement>(
-                    '.board-object[data-editing="true"] [data-board-scroll], [data-board-player], video, audio, [role="slider"]',
+                    '[data-board-resource-scroll], .board-object[data-editing="true"] [data-board-scroll], [data-board-player], video, audio, [role="slider"]',
                 );
                 if (body && !event.ctrlKey && !event.metaKey) return;
             }

@@ -10,9 +10,7 @@ export function isBoardWriting(object: BoardObject) {
 export function supportsBoardContentHeight(object: BoardObject) {
     return (
         isBoardWriting(object) ||
-        ['table', 'code', 'math', 'mermaid', 'file', 'resource'].includes(
-            object.block_type,
-        )
+        ['table', 'code', 'math', 'mermaid', 'file'].includes(object.block_type)
     );
 }
 

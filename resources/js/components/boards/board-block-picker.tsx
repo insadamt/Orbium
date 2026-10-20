@@ -1,6 +1,8 @@
-import { useRef, useState } from 'react';
+import { Fragment, useRef, useState } from 'react';
 import {
     Plus,
+    Check,
+    ChevronDown,
     Link2,
     Type,
     Heading1,
@@ -11,6 +13,9 @@ import {
     Table2,
     Image,
     Paperclip,
+    FileText,
+    Video,
+    AudioLines,
     Sigma,
     Workflow,
     Minus,
@@ -18,86 +23,60 @@ import {
 import * as Menu from '@/components/ui/dropdown-menu';
 import { BoardToolButton } from './board-tool-button';
 import { boardBlockLabels } from './board-block-data';
-import type { BoardBlockKind } from './board-types';
+import type { BoardPlacementKind, BoardTool } from './board-types';
 
-const blockChoices = [
+const blockGroups = [
     {
-        kind: 'text',
-        icon: Type,
-        description: 'Write freely on the canvas',
+        label: 'Writing',
+        choices: [
+            { kind: 'text', icon: Type },
+            { kind: 'heading', icon: Heading1 },
+            { kind: 'list', icon: List },
+            { kind: 'quote', icon: Quote },
+            { kind: 'callout', icon: MessageSquare },
+            { kind: 'divider', icon: Minus },
+        ],
     },
     {
-        kind: 'heading',
-        icon: Heading1,
-        description: 'Give an idea a title',
+        label: 'Media',
+        choices: [
+            { kind: 'image', icon: Image },
+            { kind: 'video', icon: Video },
+            { kind: 'audio', icon: AudioLines },
+            { kind: 'pdf', icon: FileText },
+            { kind: 'file', icon: Paperclip },
+        ],
     },
     {
-        kind: 'list',
-        icon: List,
-        description: 'Bullets, numbers or a checklist',
-    },
-    {
-        kind: 'quote',
-        icon: Quote,
-        description: 'Highlight a thought',
-    },
-    {
-        kind: 'callout',
-        icon: MessageSquare,
-        description: 'Set an important note apart',
-    },
-    {
-        kind: 'image',
-        icon: Image,
-        description: 'Upload or choose from Library',
-    },
-    {
-        kind: 'table',
-        icon: Table2,
-        description: 'Compare ideas side by side',
-    },
-    {
-        kind: 'file',
-        icon: Paperclip,
-        description: 'Files, audio, video and PDFs',
-    },
-    {
-        kind: 'code',
-        icon: Code2,
-        description: 'Code with syntax highlighting',
-    },
-    {
-        kind: 'math',
-        icon: Sigma,
-        description: 'Typeset a formula',
-    },
-    {
-        kind: 'mermaid',
-        icon: Workflow,
-        description: 'Build a diagram with Mermaid',
-    },
-    {
-        kind: 'divider',
-        icon: Minus,
-        description: 'Separate areas of your board',
+        label: 'Technical',
+        choices: [
+            { kind: 'table', icon: Table2 },
+            { kind: 'code', icon: Code2 },
+            { kind: 'math', icon: Sigma },
+            { kind: 'mermaid', icon: Workflow },
+        ],
     },
 ] as const;
 
 export function BoardBlockPicker({
     disabled,
     disabledReason,
-    active,
+    tool,
     onAdd,
     onResource,
 }: {
     disabled: boolean;
     disabledReason?: string;
-    active: boolean;
-    onAdd: (kind: BoardBlockKind) => void;
+    tool: BoardTool;
+    onAdd: (kind: BoardPlacementKind) => void;
     onResource: () => void;
 }) {
     const [open, setOpen] = useState(false);
     const insertedBlock = useRef(false);
+    const activeChoice = blockGroups
+        .flatMap((group) => [...group.choices])
+        .find((choice) => choice.kind === tool);
+    const active = !['select', 'hand', 'text'].includes(tool);
     return (
         <Menu.Root
             open={open && !disabled}
@@ -110,12 +89,20 @@ export function BoardBlockPicker({
             <Menu.Trigger asChild>
                 <BoardToolButton
                     label="Add block"
-                    icon={Plus}
+                    icon={active ? (activeChoice?.icon ?? Plus) : Plus}
+                    data-board-add-trigger
                     tooltipSide="bottom"
                     disabled={disabled}
                     disabledReason={disabledReason}
                     aria-pressed={active}
-                />
+                >
+                    <span>
+                        {active && activeChoice
+                            ? boardBlockLabels[activeChoice.kind]
+                            : 'Add'}
+                    </span>
+                    <ChevronDown size={12} aria-hidden="true" />
+                </BoardToolButton>
             </Menu.Trigger>
             <Menu.Content
                 className="board-block-picker"
@@ -134,30 +121,44 @@ export function BoardBlockPicker({
                 <Menu.Label className="board-picker-heading">
                     Add to board
                 </Menu.Label>
-                <div className="board-picker-grid">
-                    {blockChoices.map(({ kind, icon: Icon, description }) => (
-                        <Menu.Item
-                            key={kind}
-                            className="board-picker-item"
-                            disabled={disabled}
-                            textValue={boardBlockLabels[kind]}
-                            onSelect={() => {
-                                insertedBlock.current = true;
-                                onAdd(kind);
-                            }}
-                        >
-                            <span className="board-picker-label">
-                                <Icon size={15} aria-hidden="true" />
-                                {boardBlockLabels[kind]}
-                            </span>
-                            <span className="board-picker-description">
-                                {description}
-                            </span>
-                        </Menu.Item>
-                    ))}
-                </div>
+                {blockGroups.map(({ label, choices }, groupIndex) => (
+                    <Fragment key={label}>
+                        {groupIndex > 0 && <Menu.Separator />}
+                        <Menu.Group aria-label={label}>
+                            <Menu.Label className="board-picker-category">
+                                {label}
+                            </Menu.Label>
+                            {choices.map(({ kind, icon: Icon }) => (
+                                <Menu.Item
+                                    key={kind}
+                                    className="board-picker-item"
+                                    disabled={disabled}
+                                    textValue={boardBlockLabels[kind]}
+                                    aria-current={
+                                        tool === kind ? 'true' : undefined
+                                    }
+                                    onSelect={() => {
+                                        insertedBlock.current = true;
+                                        onAdd(kind);
+                                    }}
+                                >
+                                    <Icon size={16} aria-hidden="true" />
+                                    <span>{boardBlockLabels[kind]}</span>
+                                    {tool === kind && (
+                                        <Check
+                                            size={14}
+                                            className="board-picker-check"
+                                            aria-hidden="true"
+                                        />
+                                    )}
+                                </Menu.Item>
+                            ))}
+                        </Menu.Group>
+                    </Fragment>
+                ))}
                 <Menu.Separator />
                 <Menu.Item
+                    className="board-picker-item"
                     onSelect={() => {
                         //
                         // Let the page picker own focus instead of restoring it to the dock.

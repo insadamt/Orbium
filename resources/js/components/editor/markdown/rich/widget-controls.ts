@@ -193,7 +193,11 @@ export function sourceControls(
     };
 }
 
-export function bindRichBlockHistory(root: HTMLElement, view: EditorView) {
+export function bindRichBlockHistory(
+    root: HTMLElement,
+    view: EditorView,
+    onHistory?: (direction: 'undo' | 'redo') => void,
+) {
     root.addEventListener(
         'keydown',
         (event) => {
@@ -205,7 +209,12 @@ export function bindRichBlockHistory(root: HTMLElement, view: EditorView) {
                 return;
             event.preventDefault();
             event.stopPropagation();
-            if (event.key.toLowerCase() === 'y' || event.shiftKey) redo(view);
+            const direction =
+                event.key.toLowerCase() === 'y' || event.shiftKey
+                    ? 'redo'
+                    : 'undo';
+            if (onHistory) onHistory(direction);
+            else if (direction === 'redo') redo(view);
             else undo(view);
         },
         true,

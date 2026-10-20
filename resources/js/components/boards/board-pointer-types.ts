@@ -2,7 +2,7 @@ import type {
     BoardCamera,
     BoardObject,
     BoardPoint,
-    BoardBlockKind,
+    BoardPlacementKind,
 } from './board-types';
 import type { BoardGuide } from './board-alignment';
 
@@ -11,7 +11,7 @@ export type BoardGesture =
           kind: 'place';
           pointerId: number;
           start: BoardPoint;
-          blockKind: BoardBlockKind;
+          blockKind: BoardPlacementKind;
           moved: boolean;
       }
     | { kind: 'pan'; pointerId: number; start: BoardPoint; camera: BoardCamera }

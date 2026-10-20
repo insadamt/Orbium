@@ -51,6 +51,27 @@
 .board-page .board-creation-dock {
     gap: 4px;
 }
+.board-page .board-creation-dock .board-tool-button[data-board-add-trigger] {
+    width: auto;
+    padding-inline: 10px;
+}
+.board-tool-button[data-board-add-trigger] > svg:last-child {
+    transition: rotate 200ms ease;
+}
+.board-tool-button[data-board-add-trigger][data-state='open'] > svg:last-child {
+    rotate: 180deg;
+}
+.board-creation-dock .app-menu-highlight {
+    border-radius: var(--board-control-radius);
+}
+.board-page
+    .board-creation-dock.app-menu-highlight-surface
+    .board-tool-button:not([aria-pressed='true']):is(
+        :hover,
+        [data-state='open']
+    ) {
+    background: transparent;
+}
 .board-page .board-history-controls {
     align-items: center;
     gap: 4px;
@@ -127,6 +148,9 @@
     opacity: 0.8;
 }
 @media (pointer: coarse) {
+    .board-block-picker .board-picker-item {
+        min-height: 42px;
+    }
     .board-page {
         --board-control-size: 42px;
     }
@@ -136,6 +160,9 @@
     }
 }
 @media (prefers-reduced-motion: reduce) {
+    .board-tool-button[data-board-add-trigger] > svg:last-child {
+        transition: none;
+    }
     .board-tool-button,
     .board-tool-tooltip[data-slot='tooltip-content'] {
         transition: none;

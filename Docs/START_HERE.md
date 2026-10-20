@@ -121,3 +121,42 @@ Text toolbar lifecycle repair (2026-10-19): selection priority/camera ownership 
 Floating toolbar usability review (2026-10-19): the user requested a broader enhancement. Text controls are grouped and include Finish editing; pointer selection waits for release before showing the toolbar; selection bounds improve wrapped-text placement; table actions use one compact menu. See `reports/12-boards-floating-toolbar-refinement.md`. Remain in phase-4 manual review.
 
 Title-toolbar placement (2026-10-19): the user requested moving the left tools beside the title and committing the toolbar work. Tools/history now form a horizontal heading group to the right of the title, with downward Add and responsive wrapping, superseding vertical-rail placement. See `reports/12-boards-title-toolbar.md`. Contextual toolbar motion/layout controls and selection text colors are recorded in their review reports. Remain in phase-4 review.
+
+Document-table parity (2026-10-19): the user requested Board tables literally
+match Documents. Native Board tables now reuse the Document Live Preview table
+component, cell editor, menus, drag controls and fullscreen preview. Existing
+row data remains readable; edited tables additionally persist validated Document
+table source. See `reports/12-boards-document-tables.md`; remain in phase-4 review.
+
+Linked-page interaction refinement (2026-10-20): following user approval, linked
+Markdown cards retain the visible source block when entering/leaving editing, reuse
+already-loaded preview source where revisions match, and keep previews visible
+through pending source loading. Header chrome is reduced to title/icon, Open and
+one menu, with transient save status and a compact shared gutter. See
+`reports/12-boards-linked-page-interaction-refinement.md`; remain in phase-4 review.
+
+Optional Board fullscreen (2026-10-20): the user requested fullscreen with animation.
+Boards retain their normal default layout and gain a heading toggle that animates
+the live page to/from the app viewport, preserving mounted editors and camera.
+Escape respects existing interaction dismissal and reduced motion skips animation.
+See `reports/12-boards-fullscreen.md`; remain in phase-4 manual review.
+
+Fullscreen Board correction (2026-10-20): the title/tools now float inside the
+fullscreen canvas. Heading space/padding animate back into the normal row on exit,
+and the page arrival fade no longer replays after fullscreen. See the correction
+entry in `reports/12-boards-fullscreen.md`; phase-4 manual review continues.
+
+Floating fullscreen controls (2026-10-20): title, toolbar and heading buttons now
+use separate floating surfaces with canvas interaction through the gaps. See
+`reports/12-boards-fullscreen.md`; remain in phase-4 manual review.
+
+Board media insertion (2026-10-20): the user requested PDF, video and audio blocks.
+Add now includes dedicated placement tools with type-filtered uploads/Library reuse,
+using the shared Document/Library players. They persist as existing file objects
+with optional validated `media_kind`; deploy client/server together. See
+`reports/12-boards-media-blocks.md` and `docs/24-boards.md`. Remain in phase-4 review.
+
+Media toolbar styling review (2026-10-20): Image, Video, Audio, PDF and File now
+use shared compact controls, an Add/Replace source menu, a caption panel and image
+framing panel. See `reports/12-boards-media-toolbar.md` and `docs/24-boards.md`.
+Remain in phase-4 manual review.

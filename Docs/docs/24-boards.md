@@ -308,6 +308,8 @@ Selection-toolbar correction (2026-10-19): alignment/direction now appear only i
 
 The user requested moving the left rail above the canvas, to the right of the Board title. The page heading now hosts a horizontal Select/Hand/Text/Add/history toolbar before Board options, superseding the vertical rail placement. Add opens downward and tooltips prefer below. The canvas uses the full working width; placement tools retain editing locks and history stays visible. Below 640px, the title occupies its own row and the tools/options wrap beneath it to the right, with existing coarse-pointer targets. The page owns the host while the existing Board controller renders tools through its portal. See `../reports/12-boards-title-toolbar.md`; remain in phase-4 review.
 
+Select-style refinement (2026-10-19): the title toolbar uses the shared Select hover/focus highlight across enabled tools/history. Add now has a labeled trigger with a rotating chevron and current non-text placement icon/name; its menu is a compact single-column Writing/Media/Technical list with current-tool checks, replacing the two-column descriptive grid. Shared menu entrance/exit/highlight, viewport scrolling, keyboard/typeahead navigation, coarse-pointer rows and reduced motion remain supported. Placement/resource-picker focus rules stay in effect. See `../reports/12-boards-toolbar-select-polish.md`; remain in phase-4 review.
+
 ## Floating toolbar usability refinement (2026-10-19)
 
 The user requested a broader enhancement after the lifecycle repairs. Floating controls now use consistent 34px desktop/42px coarse-pointer sizes, softer control corners, balanced surface padding/shadows and grouped text emphasis/decoration/link/editing controls. Text formatting includes a selection-preserving Finish editing action so hiding block controls does not remove the visible way to finish editing. Empty block-formatting slots no longer reserve space.
@@ -315,3 +317,223 @@ The user requested a broader enhancement after the lifecycle repairs. Floating c
 During a pointer selection drag, text controls stay hidden until release/cancellation; keyboard selection remains immediate. Placement uses the browser range bounds when the selection belongs to the active editor, with editor-coordinate fallback, so wrapped selections center on their actual extent. Camera/viewport clamping and exclusive text-selection priority remain.
 
 Four table structural buttons are consolidated under one Table menu with live dimensions and the existing row/column limits. Choosing an action restores table focus; dismissing without an action returns to the trigger. The shared list Select, no Properties option, pointer-free tooltips and live-surface fades remain. See `../reports/12-boards-floating-toolbar-refinement.md`. Remain in phase-4 review.
+
+### Document table parity (2026-10-19)
+
+Native Board tables now mount the same `mountTable` component used by Document
+Live Preview. Cell Markdown editing, selection formatting, row/column handles,
+axis menus, sorting, drag reordering, edge insertion and fullscreen preview share
+Document code and CSS. Single-click still selects a Board object; double-click
+or Enter starts editing. Table actions return focus to the visible Board table,
+and undo/redo uses Board history, including inside portaled axis menus.
+
+Existing `rows` tables render through a lossless inline-to-Markdown adapter
+without a migration or an automatic save. The first accepted table edit adds
+optional `data.table_source` containing one Document table; `rows` remains a
+rectangular source-text projection for existing Board consumers. The server
+validates the Document table contract and matching dimensions, and includes
+nested table attachment IDs in existing workspace ownership checks. The limits
+remain 100 rows, 30 columns and the existing Board byte budgets. Source-backed
+tables require this app version to preserve the complete rich editing behavior.
+See `../reports/12-boards-document-tables.md`. Remain in phase-4 manual review.
+
+Board table insertion controls (2026-10-19): Add row and Add column remain hidden
+outside table edit mode, including on hover or keyboard focus. During editing,
+they follow the Document table's normal hover/focus visibility. Fullscreen
+preview remains available outside edit mode.
+
+## Linked-page scrolling review (2026-10-20)
+
+Linked resource cards keep their saved frame height rather than automatically growing
+with their target content. New cards start at 600 × 420 Board units; resize handles
+can adjust that viewport. The title and resource actions stay above the internally
+scrolling body. Wheel scrolling over the body works immediately, including before
+selection/editing, with contained overscroll; Ctrl/Cmd-wheel still zooms the canvas.
+
+Document cards fetch the original source through the existing scoped endpoint and
+render it immediately with the shared rich-body renderer, without mounting an editor.
+Target revision changes and explicit Refresh reload the rendered content. Legacy
+Documents use the existing Markdown serializer. Double-click/Enter still opens the
+original Document editor inside the same scrolling frame. Database/Board links retain
+navigation cards. No persisted schema or hierarchy changes are introduced. This
+supersedes automatic resource-card height and plain-text Document excerpts only;
+other native content retains automatic height. See
+`../reports/12-boards-linked-page-preview.md`; remain in phase-4 manual review.
+
+## Linked-page editing controls and container review (2026-10-20)
+
+The linked-page editor restores the normal Document block gutter for both Markdown
+and legacy Documents. While editing, users can drag internal blocks to reorder
+content in the original Document. A reserved inner gutter keeps controls visible
+inside the clipped card. Markdown hosted sessions remain local-only drag targets;
+reordering never transfers blocks to other editors or creates Board objects.
+Markdown drag edge/wheel scrolling stops at the resource viewport boundary.
+
+The resource container has a bordered, rounded inner surface, a muted header with
+an icon tile, title and Linked/Editing original subtitle, accessible action focus
+states, a thin scrollbar and consistent reading/editor padding. Clipping stays on
+the inner card so Board selection outlines and resize handles remain accessible.
+This supersedes the earlier hosted-document gutter suppression; native Board blocks
+retain their existing interaction model. See
+`../reports/12-boards-linked-page-editing.md`; phase 4 remains in manual review.
+
+## Linked-page scroll continuity (2026-10-20)
+
+Switching between rendered preview and original-Document editing preserves the
+resource viewport's horizontal and vertical scroll offsets. A temporary minimum
+content height retains the scroll range through source-fetch/lazy-editor loading;
+restoration waits for the replacement surface and its initial layout. Refresh,
+revision updates and confirmed editor reloads use the same continuity mechanism.
+The temporary height and observer are removed once the replacement is ready or
+when the transition is canceled. Positions are transient per mounted card, and
+shorter replacement content clamps to its available scroll range. See
+`../reports/12-boards-linked-page-scroll-continuity.md`; remain in phase-4 review.
+
+## Linked-page preview/edit style continuity (2026-10-20)
+
+Resource preview and editing now share 18px/20px/24px outer padding and the same
+52px inner block-control gutter, base typography and writing width. The gutter is
+reserved in preview as well as editing so text does not move sideways on activation.
+Rendered previews opt into the existing saved Document stylesheet scope; the general
+resource-placeholder paragraph reset no longer overrides paragraphs within them.
+
+The Markdown editor's save status and existing actions menu render in the card
+header through an optional hosted-controls context, removing the toolbar's extra
+vertical space from the writing surface while keeping all actions accessible.
+Reorder guidance is screen-reader-only, header background stays the same between
+modes, and resource selection uses a solid outline during editing. Ordinary
+standalone Document controls keep their original placement. See
+`../reports/12-boards-linked-page-style-continuity.md`; remain in phase-4 review.
+
+## Linked-page interaction refinement (2026-10-20)
+
+The approved refinement prioritizes anchored in-card editing and quieter chrome.
+Markdown previews optionally annotate rendered top-level blocks with their canonical
+source ranges. The resource viewport records the first visible block and its offset
+inside the card; preview/editor switches restore that block after layout, with a
+second correction for CodeMirror's estimated offscreen heights. Pointer activation
+focuses near the original double-click without browser focus scrolling; Enter/menu
+activation focuses the anchored block. Legacy/unsupported preview content retains
+the pixel-offset fallback. Source-range metadata is transient DOM data only.
+
+The preview remains visible while an editor source request is pending. If the
+preview already loaded the target's current advertised revision, editing reuses
+that source; normal original-Document revision checks remain authoritative. No
+inactive card mounts a full editor.
+
+The card now has a 46px single-line header, a plain icon, title, Open action and one
+menu. Refresh moves into the menu; while editing, it also contains Finish editing
+and the existing Document actions. Saved status is screen-reader-only; saving,
+unsaved and error status remain visible. Resource cards use a subtle border without
+an extra shadow, with a shared 40px gutter and compact hover controls. This
+supersedes the earlier 64px header/icon tile and 52px gutter. See
+`../reports/12-boards-linked-page-interaction-refinement.md`; remain in phase-4 review.
+
+## Optional animated fullscreen (2026-10-20)
+
+Boards still open in the normal app layout. The heading now offers Enter fullscreen
+and Exit fullscreen. Fullscreen expands the existing Board across the browser content
+viewport with a 320ms eased geometry transition; exit returns it to its normal page
+position over 260ms. Browser tabs/address bars remain visible. The title, tools,
+options, canvas controls and save/recovery UI remain available.
+
+The page and editors stay mounted, preserving drafts, selection, camera and history.
+The covered app shell becomes inert and body scrolling is locked until exit or
+unmount. Menus/dialogs remain available through their existing portals. Escape exits
+fullscreen when focus is within the Board and no editor, placement, gesture, input,
+menu, dialog, composition or native media fullscreen owns dismissal. An active
+editor/tool finishes first through existing Board handlers. The explicit exit control
+remains available during editing. Reduced motion skips geometry animation, including
+when enabled during a transition; viewport resizing updates the fullscreen bounds.
+
+Fullscreen is transient UI state and introduces no persistence or schema change.
+See `../reports/12-boards-fullscreen.md`; remain in phase-4 manual review.
+
+### Fullscreen canvas header and exit correction (2026-10-20)
+
+The fullscreen title and Board toolbar now float together inside the working
+canvas. The canvas reaches the viewport edges underneath them. The existing
+heading remains mounted; animated padding and measured heading space restore
+its ordinary row when leaving fullscreen. Expanded save/error notices move below
+the floating heading. Narrow layouts retain the existing heading wrapping.
+
+After fullscreen has been used, the page's arrival animation remains disabled so
+restoring its normal styles cannot replay the initial opacity fade. Scrollbar
+space is retained while body scrolling is locked, reducing layout shifts on exit.
+This supersedes the initial fullscreen layout with a separate heading above the
+canvas. See the correction entry in `../reports/12-boards-fullscreen.md`.
+
+### Separate floating fullscreen controls (2026-10-20)
+
+The user clarified that fullscreen controls should look like floating panels.
+The full-width heading backdrop is removed. The title, Board toolbar and individual
+fullscreen/options buttons now have separate rounded surfaces, subtle borders,
+shadows and backdrop blur. The title has a bounded width, while tools align right
+and retain the narrow-screen wrap. Empty space between panels passes pointer
+input to the canvas. Surface opacity, depth and title padding follow the existing
+fullscreen animation progress; editor mounting and exit-blink prevention remain.
+
+## PDF, video and audio insertion (2026-10-20)
+
+Board Add now exposes Video, Audio and PDF alongside Image and File. Choosing a
+media tool arms normal click/Enter placement and returns to Select after insertion.
+Empty blocks show the media-specific icon and prompt; their Upload and Library
+controls are available during editing. Library search, sorting and pagination keep
+the requested media filter. Replacement uses the same filter.
+
+These choices persist as native `file` objects with optional
+`data.media_kind: 'video' | 'audio' | 'pdf'`. The attachment ID, name and caption
+contract remains unchanged. Existing generic file blocks continue to preview
+supported media according to MIME. New typed blocks validate matching MIME on
+Library selection, upload completion, metadata loading and server save. MIME is
+server-detected; a mismatched upload remains in Library but is not attached.
+
+The shared Document/Library player supplies playback, download, PDF pagination and
+zoom, PDF modal preview and native video fullscreen. Audio has no fullscreen.
+Content-driven height, Board resizing/scaling, undo/redo and attachment usage
+protection remain in effect. Removing a block keeps its file in Library.
+
+No migration, new block kind, dependency or format-version change is introduced.
+Native content remains version 1 and the Board envelope remains version 4. Older
+servers reject the optional field, so deploy client and server together. Existing
+saved blocks need no rewrite. Browser codec support and the existing upload limits
+still apply. See `../reports/12-boards-media-blocks.md` for actual checks and manual
+acceptance. This remains phase-4 review.
+
+### Media movement correction (2026-10-20)
+
+Media players reserve their filename/type header for Board selection, dragging and
+double-click editing. Download/fullscreen buttons, video stages, playback controls
+and PDF reader surfaces retain interaction ownership. The whole player must not be
+marked `data-board-interactive`, because that prevents pointer selection/movement
+from every visible part of loaded media. Finish editing before dragging as with
+other native blocks. Reader wheel ownership remains on `data-board-player`.
+
+Media movement follow-up (2026-10-20): dragging is also available from inline PDF
+pages and video pixels after finishing editing. Only the PDF/playback control strips
+retain the Board interaction marker. Inline video pixels pass pointer targeting to
+their stage outside editing; Play and the playback bar remain operable. Videos with
+native fullscreen controls keep pointer targeting. PDF wheel scrolling remains
+unchanged. This supersedes the header-only movement restriction above.
+
+## Media editing toolbar refinement (2026-10-20)
+
+Image, Video, Audio, PDF and File editing share compact Board toolbar controls.
+Add file/Replace opens the shared animated menu for Upload file and Choose from
+Library, retaining existing type filters and upload locking. Caption is an icon
+control opening a small labeled text panel with live preview, Clear and Done.
+Caption edits still use Board history/autosave; Escape closes the panel rather
+than reverting already-applied changes.
+
+Attached images additionally offer Image framing: Fit/Fill, horizontal/vertical
+crop positions with percentage labels in Fill mode, Reset proportions and concise
+crop-frame guidance. Fit shows the whole image in its existing frame; Reset
+proportions restores the natural frame. The former always-visible caption field,
+plain source buttons and inline crop controls are removed from the toolbar.
+
+Buttons reuse BoardToolButton/tooltips, grouped separators, current-state cues,
+coarse-pointer targets and existing floating-toolbar motion. Popovers use shared
+surface tokens, bounded scrolling, keyboard focus/return, Escape dismissal and
+reduced-motion support. Done stays in the surrounding toolbar. No persistence,
+attachment ownership, player interaction or Board format changes. See
+`../reports/12-boards-media-toolbar.md`; remain in phase-4 manual review.

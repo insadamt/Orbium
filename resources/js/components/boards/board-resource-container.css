@@ -1,0 +1,125 @@
+/*
+ * Keep the frame and clipping on the inner surface so selection outlines and resize handles remain visible.
+ */
+.board-object[data-board-kind='resource'] {
+    border-color: var(--border);
+    border-radius: 10px;
+    box-shadow: none;
+}
+.board-resource-card {
+    overflow: hidden;
+    border-radius: 9px;
+}
+.board-resource-card .board-resource-header {
+    min-height: 46px;
+    gap: 8px;
+    padding: 7px 12px;
+    background: var(--background);
+}
+.board-resource-card .board-resource-icon {
+    display: flex;
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+}
+.board-resource-identity {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+.board-resource-card .board-resource-identity strong {
+    display: block;
+    font-size: 14px;
+    line-height: 1.4;
+}
+.board-resource-subtitle {
+    font-size: 11px;
+    line-height: 1.4;
+    color: var(--muted-foreground);
+}
+.board-resource-header button {
+    display: inline-flex;
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted-foreground);
+}
+.board-resource-header button:hover {
+    color: var(--foreground);
+}
+.board-resource-header button:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+}
+.board-resource-body {
+    scrollbar-width: thin;
+    scrollbar-gutter: stable;
+}
+.board-resource-card .board-resource-preview,
+.board-resource-card .board-document-editor {
+    padding: 16px 16px 24px;
+}
+.board-document-preview {
+    padding-left: 40px;
+    font-size: 1.03rem;
+    line-height: 1.75;
+}
+.board-document-editor .orbium-markdown-live-preview.cm-editor {
+    font-size: 1.03rem;
+    line-height: 1.75;
+}
+.board-resource-editor-controls:empty {
+    display: none;
+}
+.board-resource-editor-controls {
+    flex-shrink: 0;
+}
+/*
+ * Document handles normally sit outside the writing column; reserve an inner gutter to avoid clipping them in the card.
+ */
+.board-document-editor [data-live-preview='true'] {
+    padding-left: 40px;
+}
+.board-document-editor .orbium-markdown-gutter {
+    left: -38px;
+}
+.board-document-editor [data-editor-block-surface] {
+    padding-left: 40px;
+}
+.board-document-editor [data-editor-block-surface] > [data-block-controls] {
+    left: 0;
+}
+.board-object[data-board-kind='resource'][data-editing='true'] {
+    outline-style: solid;
+}
+.board-resource-editor-controls [role='status'] {
+    white-space: nowrap;
+}
+
+/*
+ * Compact controls fit the shared gutter without widening the writing column when editing starts.
+ */
+.board-document-editor .orbium-markdown-gutter > button,
+.board-document-editor
+    [data-editor-block-surface]
+    > [data-block-controls]
+    > button {
+    padding: 2px;
+}
+.board-document-editor .orbium-markdown-gutter svg,
+.board-document-editor [data-editor-block-surface] > [data-block-controls] svg {
+    width: 14px;
+    height: 14px;
+}
+.board-resource-card .board-resource-icon img {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+}

@@ -10,6 +10,7 @@ import { isolateHistory } from '@codemirror/commands';
 import { EditorView } from '@codemirror/view';
 import type { SyntaxNode } from '@lezer/common';
 import { readRichBlock } from '../rich/read-rich-block';
+import { readCalloutSource } from '../dialect/callout-source';
 import { fencedCodeSource } from '../rich/code-widget';
 import { markdownBlockMotion } from './markdown-block-motion';
 import { markdownBlockMotionEffect } from './markdown-block-history-motion';
@@ -381,9 +382,13 @@ export function turnMarkdownBlockInto(
             )
             .join('\n');
     if (current.name === 'Blockquote') {
-        if (/^\s*>\s*\[!/.test(body))
-            throw new Error('Callouts keep their callout source.');
-        body = body.replace(/^\s*>[ \t]?/gm, '');
+        const callout = readCalloutSource(current.body);
+
+        // Custom titles are authored content; type and folding markers are only callout structure.
+
+        body = callout
+            ? [callout.title, callout.content].filter(Boolean).join('\n\n')
+            : body.replace(/^\s*>[ \t]?/gm, '');
     }
     let source = body;
     if (prefix === '```') source = fencedCodeSource(body, 'text');

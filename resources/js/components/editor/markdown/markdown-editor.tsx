@@ -136,9 +136,9 @@ export default function MarkdownEditor(props: MarkdownEditorProps) {
         markdownSelectionToolbar(setNotice),
         markdownDividerToolbar(setNotice),
         //
-        // A hosted Board document uses canvas selection instead of document drag handles.
+        // Hosted Documents need their own block controls; canvas selection only moves the outer card.
         //
-        ...(hosted ? [] : [markdownBlockGutter(setNotice)]),
+        markdownBlockGutter(setNotice),
     ]);
 
     useEffect(() => {

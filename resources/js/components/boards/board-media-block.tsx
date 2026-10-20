@@ -1,4 +1,4 @@
-import { Image, Paperclip, Upload } from 'lucide-react';
+import { AudioLines, FileText, Image, Paperclip, Video } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { BoardMediaSettings } from './board-media-settings';
 import { clamp } from './board-geometry';
@@ -8,6 +8,10 @@ import {
     uploadAttachment,
     type UploadedAttachment,
 } from '@/components/editor/editor-api';
+import {
+    acceptsUploadKind,
+    uploadAccept,
+} from '@/components/media/attachment-media';
 import { createAttachmentPlayer } from '@/components/media/attachment-player';
 import type { BoardContentProps } from './board-text-block';
 
@@ -24,6 +28,22 @@ export function BoardMediaBlock(props: BoardContentProps) {
     callbacks.current = props;
     const pendingImage = useRef<number | null>(null);
     const image = object.block_type === 'image';
+    const uploadKind = image ? 'image' : (data.media_kind ?? 'file');
+    const mediaLabel = data.media_kind === 'pdf' ? 'PDF' : uploadKind;
+    const EmptyIcon = {
+        image: Image,
+        file: Paperclip,
+        pdf: FileText,
+        video: Video,
+        audio: AudioLines,
+    }[uploadKind];
+    const emptyHeading = {
+        image: 'Add an image',
+        file: 'Keep a file here',
+        pdf: 'Add a PDF',
+        video: 'Add a video',
+        audio: 'Add audio',
+    }[uploadKind];
     useEffect(() => {
         const output = host.current;
         if (!output) return;
@@ -44,6 +64,8 @@ export function BoardMediaBlock(props: BoardContentProps) {
                     );
                 const file = (await response.json()) as UploadedAttachment;
                 if (abort.signal.aborted) return;
+                if (!acceptsUploadKind(uploadKind, file.mime_type))
+                    throw new Error(`Choose a supported ${mediaLabel} file.`);
                 const url = `/workspaces/${props.workspaceId}/library/files/${data.attachment_id}`;
                 if (image) {
                     const element = document.createElement('img');
@@ -80,7 +102,14 @@ export function BoardMediaBlock(props: BoardContentProps) {
                         isVisible: () => true,
                     });
                     if (player) {
-                        player.root.dataset.boardInteractive = '';
+                        //
+                        // Keep page/video surfaces draggable; only control strips should bypass Board gestures.
+                        //
+                        for (const surface of player.root.querySelectorAll<HTMLElement>(
+                            '.attachment-pdf-controls, .attachment-playback-controls',
+                        )) {
+                            surface.dataset.boardInteractive = '';
+                        }
                         player.root.dataset.boardPlayer = '';
                         output.append(player.root);
                     } else {
@@ -112,7 +141,14 @@ export function BoardMediaBlock(props: BoardContentProps) {
             abort.abort();
             player?.destroy();
         };
-    }, [data.attachment_id, props.workspaceId, props.boardId, image]);
+    }, [
+        data.attachment_id,
+        props.workspaceId,
+        props.boardId,
+        image,
+        uploadKind,
+        mediaLabel,
+    ]);
     useEffect(() => {
         const element = host.current?.querySelector('img');
         if (!element) return;
@@ -166,6 +202,12 @@ export function BoardMediaBlock(props: BoardContentProps) {
         });
     }
     function choose(file: UploadedAttachment) {
+        if (readOnly || uploadingNow.current) return;
+        if (!acceptsUploadKind(uploadKind, file.mime_type)) {
+            setError(`Choose a supported ${mediaLabel} file.`);
+            return;
+        }
+        setError('');
         setLibraryOpen(false);
         if (image) pendingImage.current = file.id;
         props.onChange({ ...data, attachment_id: file.id, name: file.name });
@@ -183,17 +225,12 @@ export function BoardMediaBlock(props: BoardContentProps) {
                 file,
                 'board',
             );
-            if (
-                image &&
-                ![
-                    'image/png',
-                    'image/jpeg',
-                    'image/gif',
-                    'image/webp',
-                ].includes(uploaded.mime_type)
-            )
+            //
+            // Validate the server-detected type because file extensions and browser MIME values can be wrong.
+            //
+            if (!acceptsUploadKind(uploadKind, uploaded.mime_type))
                 throw new Error(
-                    'Choose a supported image. The upload remains in Library.',
+                    `Choose a supported ${mediaLabel} file. The upload remains in Library.`,
                 );
             if (image) pendingImage.current = uploaded.id;
             callbacks.current.onChange({
@@ -211,28 +248,6 @@ export function BoardMediaBlock(props: BoardContentProps) {
             callbacks.current.onUploading(false);
         }
     }
-    const mediaActions = (
-        <div className="board-field-actions">
-            <button
-                type="button"
-                className="board-media-upload"
-                disabled={readOnly || uploading}
-                onClick={() => input.current?.click()}
-            >
-                <Upload size={14} />{' '}
-                {data.attachment_id ? 'Replace file' : 'Upload'}
-            </button>
-            <button
-                type="button"
-                disabled={readOnly || uploading}
-                onClick={() => setLibraryOpen(true)}
-            >
-                {data.attachment_id
-                    ? 'Replace from Library'
-                    : 'Choose from Library'}
-            </button>
-        </div>
-    );
     return (
         <div
             className={`board-media-block ${image ? 'board-media-image' : ''}`}
@@ -257,14 +272,8 @@ export function BoardMediaBlock(props: BoardContentProps) {
                         if (file) void upload(file);
                     }}
                 >
-                    {image ? (
-                        <Image size={28} strokeWidth={1.3} />
-                    ) : (
-                        <Paperclip size={28} strokeWidth={1.3} />
-                    )}
-                    <strong>
-                        {image ? 'Add an image' : 'Keep a file here'}
-                    </strong>
+                    <EmptyIcon size={28} strokeWidth={1.3} />
+                    <strong>{emptyHeading}</strong>
                     <span>
                         {editing
                             ? 'Drop a file, upload, or choose from your Library.'
@@ -277,7 +286,8 @@ export function BoardMediaBlock(props: BoardContentProps) {
             )}
             <BoardMediaSettings
                 props={props}
-                actions={mediaActions}
+                onUpload={() => input.current?.click()}
+                onChooseLibrary={() => setLibraryOpen(true)}
                 uploading={uploading}
                 onResetProportions={() => resetImageProportions()}
             />
@@ -291,11 +301,7 @@ export function BoardMediaBlock(props: BoardContentProps) {
                 ref={input}
                 type="file"
                 hidden
-                accept={
-                    image
-                        ? 'image/png,image/jpeg,image/gif,image/webp'
-                        : undefined
-                }
+                accept={uploadAccept(uploadKind) || undefined}
                 onChange={(event) => {
                     const file = event.target.files?.[0];
                     if (file) void upload(file);
@@ -307,6 +313,7 @@ export function BoardMediaBlock(props: BoardContentProps) {
                     workspaceId={props.workspaceId}
                     imagesOnly={image}
                     filesOnly={!image}
+                    mediaKind={data.media_kind}
                     onChoose={choose}
                     onClose={() => setLibraryOpen(false)}
                     onUpload={() => {

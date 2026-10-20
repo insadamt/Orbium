@@ -110,7 +110,15 @@ export function scrollMarkdownDragBy(view: EditorView, delta: number) {
         element.scrollTo({ top: previous + remaining, behavior: 'instant' });
         remaining -= element.scrollTop - previous;
         if (Math.abs(remaining) < 0.01) break;
-        if (element.matches('[data-split-pane-id]')) break;
+        //
+        // A hosted Document owns only its card viewport, even when a drag reaches the scroll boundary.
+        //
+        if (
+            element.matches(
+                '[data-split-pane-id], [data-board-resource-scroll]',
+            )
+        )
+            break;
     }
     return remaining !== delta;
 }

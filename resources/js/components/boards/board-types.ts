@@ -1,3 +1,5 @@
+import type { AttachmentMediaKind } from '@/components/media/attachment-media';
+
 export const boardBlockKinds = [
     'text',
     'heading',
@@ -14,7 +16,10 @@ export const boardBlockKinds = [
     'resource',
 ] as const;
 export type BoardBlockKind = (typeof boardBlockKinds)[number];
-export type BoardTool = 'select' | 'hand' | Exclude<BoardBlockKind, 'resource'>;
+export type BoardPlacementKind =
+    | Exclude<BoardBlockKind, 'resource'>
+    | AttachmentMediaKind;
+export type BoardTool = 'select' | 'hand' | BoardPlacementKind;
 export type BoardInline = {
     type: 'text' | 'hardBreak';
     text?: string;
@@ -41,9 +46,11 @@ export type BoardBlockData = {
     list_style?: 'bullet' | 'ordered' | 'check';
     items?: { content: BoardInline[]; checked: boolean; indent: number }[];
     rows?: BoardInline[][][];
+    table_source?: string;
     source?: string;
     language?: string;
     attachment_id?: number | null;
+    media_kind?: AttachmentMediaKind;
     name?: string;
     caption?: string;
     align?: 'left' | 'center' | 'right';

@@ -264,6 +264,7 @@ export default function EditorBlockGutter({
     return (
         <div
             ref={surfaceRef}
+            data-editor-block-surface
             className="relative pl-10 sm:pl-0"
             onMouseLeave={() => {
                 if (draggedBlock.current === null) setHoveredBlock(null);

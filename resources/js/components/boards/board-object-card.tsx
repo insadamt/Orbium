@@ -148,7 +148,7 @@ export const BoardObjectCard = memo(function BoardObjectCard({
             data-board-drag={!editing || undefined}
             role="group"
             tabIndex={0}
-            aria-label={`${boardBlockLabels[object.block_type]}: ${boardBlockText(object).slice(0, 80) || 'Empty'}`}
+            aria-label={`${boardBlockLabels[object.data.media_kind ?? object.block_type]}: ${boardBlockText(object).slice(0, 80) || 'Empty'}`}
             style={
                 {
                     left: object.x,

@@ -1,3 +1,4 @@
+import { readBoardTable } from './board-table-data';
 import { isValidTextColor } from '@/components/editor/text-color';
 import {
     boardBlockKinds,
@@ -6,7 +7,10 @@ import {
     type BoardInline,
     type BoardObject,
 } from './board-types';
-export const boardBlockLabels: Record<BoardBlockKind, string> = {
+export const boardBlockLabels: Record<
+    BoardBlockKind | 'pdf' | 'video' | 'audio',
+    string
+> = {
     text: 'Text',
     heading: 'Heading',
     list: 'List',
@@ -15,7 +19,10 @@ export const boardBlockLabels: Record<BoardBlockKind, string> = {
     code: 'Code',
     table: 'Table',
     image: 'Image',
-    file: 'File / media',
+    file: 'File',
+    pdf: 'PDF',
+    video: 'Video',
+    audio: 'Audio',
     math: 'Math',
     mermaid: 'Diagram',
     divider: 'Divider',
@@ -171,6 +178,12 @@ export function validBoardBlockData(
             }))
     )
         return false;
+    if (
+        data.media_kind !== undefined &&
+        (kind !== 'file' ||
+            !['pdf', 'video', 'audio'].includes(data.media_kind))
+    )
+        return false;
     if (data.align && !['left', 'center', 'right'].includes(data.align))
         return false;
     if (data.dir && !['auto', 'ltr', 'rtl'].includes(data.dir)) return false;
@@ -209,6 +222,9 @@ export function validBoardBlockData(
         );
     if (kind === 'table')
         return (
+            (data.table_source === undefined ||
+                (typeof data.table_source === 'string' &&
+                    Boolean(readBoardTable(data.table_source)))) &&
             Array.isArray(data.rows) &&
             data.rows.length > 0 &&
             data.rows.length <= 100 &&

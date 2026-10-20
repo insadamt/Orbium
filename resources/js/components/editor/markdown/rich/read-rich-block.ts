@@ -2,6 +2,7 @@ import { missingReferenceKind } from '../preview/missing-reference-dialog';
 import type { EditorState } from '@codemirror/state';
 import type { SyntaxNode } from '@lezer/common';
 import { readOrbiumMetadata } from '../dialect/metadata';
+import { readCalloutSource } from '../dialect/callout-source';
 import type { RichBlock, RichTable } from './rich-model';
 import { readRichTable } from './rich-table-source';
 
@@ -199,22 +200,13 @@ export function readRichBlock(
     }
     if (node.name === 'Blockquote') {
         const source = state.sliceDoc(node.from, node.to);
-        const first = state.doc.lineAt(node.from);
-        const callout =
-            /^\s*>\s*\[!([A-Za-z][A-Za-z0-9_-]*)\]([+-])?(?:[ \t]+(.*))?$/.exec(
-                first.text,
-            );
+        const callout = readCalloutSource(source);
         if (!callout) return null;
-        const content = source
-            .split('\n')
-            .slice(1)
-            .map((line) => line.replace(/^\s*>[ \t]?/, ''))
-            .join('\n');
         return {
             ...model(state, node, 'callout'),
-            content,
-            label: callout[3] || callout[1].toUpperCase(),
-            metadata: { type: callout[1], folding: callout[2] ?? '' },
+            content: callout.content,
+            label: callout.title || callout.type.toUpperCase(),
+            metadata: { type: callout.type, folding: callout.folding },
         };
     }
     if (node.name === 'Paragraph') {

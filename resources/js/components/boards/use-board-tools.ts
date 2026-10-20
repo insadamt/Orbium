@@ -1,7 +1,7 @@
 import { useState, type KeyboardEvent } from 'react';
 import type { BoardObjectsController } from './use-board-objects';
 import type { BoardCameraController } from './use-board-camera';
-import type { BoardBlockKind, BoardPoint, BoardTool } from './board-types';
+import type { BoardPlacementKind, BoardPoint, BoardTool } from './board-types';
 
 export function useBoardTools({
     model,
@@ -23,7 +23,7 @@ export function useBoardTools({
         setTool(nextTool);
         camera.viewportRef.current?.focus({ preventScroll: true });
     }
-    function placeBlock(kind: BoardBlockKind, point: BoardPoint) {
+    function placeBlock(kind: BoardPlacementKind, point: BoardPoint) {
         if (isLocked()) return;
         const previousCount = model.objectsRef.current.length;
         model.addBlock(point, kind);

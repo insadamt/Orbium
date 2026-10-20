@@ -1,5 +1,5 @@
 import { Head, usePage } from '@inertiajs/react';
-import { Ellipsis, Star, Settings2 } from 'lucide-react';
+import { Ellipsis, Star, Settings2, Maximize, Minimize } from 'lucide-react';
 import { useRef, useState } from 'react';
 import * as Menu from '@/components/ui/dropdown-menu';
 import {
@@ -10,6 +10,8 @@ import type { TreeNode } from '@/components/navigation/navigation-types';
 import { useNodeFavorite } from '@/components/navigation/use-node-favorite';
 import { useNavigation } from '@/components/navigation/navigation-store';
 import { useBoardWorkspace } from '@/components/boards/use-board-workspace';
+import { useBoardFullscreen } from '@/components/boards/use-board-fullscreen';
+import { BoardToolButton } from '@/components/boards/board-tool-button';
 import {
     Dialog,
     DialogContent,
@@ -33,6 +35,7 @@ export default function BoardPage() {
     const openingDetails = useRef(false);
     const boardOptionsButton = useRef<HTMLButtonElement>(null);
     const pageRef = useBoardWorkspace();
+    const { fullscreen, toggleFullscreen } = useBoardFullscreen(pageRef);
     const tabId = useNavigation((state) => state.activeId);
     const { savingFavorite, toggleFavorite } = useNodeFavorite(
         workspace.id,
@@ -53,6 +56,15 @@ export default function BoardPage() {
                     <div
                         ref={setToolbarHost}
                         className="board-toolbar-slot floating-surface"
+                    />
+                    <BoardToolButton
+                        label={
+                            fullscreen ? 'Exit fullscreen' : 'Enter fullscreen'
+                        }
+                        icon={fullscreen ? Minimize : Maximize}
+                        aria-pressed={fullscreen}
+                        tooltipSide="bottom"
+                        onClick={toggleFullscreen}
                     />
                     <Menu.Root
                         modal={false}

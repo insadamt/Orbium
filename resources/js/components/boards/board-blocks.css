@@ -61,10 +61,9 @@
     align-self: center;
 }
 .board-table {
-    overflow-x: auto;
+    overflow: visible;
 }
 .board-table table {
-    border-collapse: collapse;
     width: 100%;
 }
 .board-table td:empty::after {
@@ -144,4 +143,14 @@
     margin-block: 7px;
     border-top: 2px solid var(--foreground);
     opacity: 0.35;
+}
+
+/*
+ * Inline video pixels must hit the Board surface so dragging can start there;
+ * native fullscreen controls and active editing still receive video input.
+ */
+.board-object[data-editing='false']
+    .attachment-video-stage
+    video:not([controls]) {
+    pointer-events: none;
 }

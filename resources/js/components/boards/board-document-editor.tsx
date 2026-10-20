@@ -33,9 +33,9 @@ export function BoardDocumentEditor({
     const document = session.document;
     return (
         <div className="board-document-editor" data-board-editor>
-            <p className="board-document-hint">
-                Editing the original Document. Its content is shared with every
-                reference.
+            <p className="sr-only">
+                Drag a block handle to reorder. Changes save to the original
+                Document.
             </p>
             {(session.runtime.error ||
                 session.storageWarning ||

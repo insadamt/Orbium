@@ -27,6 +27,7 @@ import './board-workspace.css';
 import './board-object-design.css';
 import './board-interaction-polish.css';
 import './board-block-presentation.css';
+import './board-resource-container.css';
 import './board-editing.css';
 import './board-toolbar-polish.css';
 import './board-contextual-toolbars.css';

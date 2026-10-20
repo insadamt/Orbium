@@ -8,6 +8,7 @@ export function useBoardWorkspace() {
         let pendingFrame: number | undefined;
         const updateAvailableHeight = () => {
             pendingFrame = undefined;
+            if (page.dataset.fullscreen === 'true') return;
             const viewportHeight =
                 window.visualViewport?.height ?? window.innerHeight;
             const pageTop = page.getBoundingClientRect().top;
@@ -30,10 +31,15 @@ export function useBoardWorkspace() {
         ) ?? [])
             observer.observe(element);
         updateAvailableHeight();
+        page.addEventListener('board-viewport-restored', updateAvailableHeight);
         window.visualViewport?.addEventListener('resize', scheduleHeightUpdate);
         window.addEventListener('resize', scheduleHeightUpdate);
         return () => {
             observer.disconnect();
+            page.removeEventListener(
+                'board-viewport-restored',
+                updateAvailableHeight,
+            );
             window.visualViewport?.removeEventListener(
                 'resize',
                 scheduleHeightUpdate,

@@ -109,7 +109,12 @@ export function BoardSelectionTools({
                             </>
                         ) : (
                             <span className="board-selection-label">
-                                {boardBlockLabels[object.block_type]}
+                                {
+                                    boardBlockLabels[
+                                        object.data.media_kind ??
+                                            object.block_type
+                                    ]
+                                }
                             </span>
                         )}
                         {object.block_type !== 'divider' && (

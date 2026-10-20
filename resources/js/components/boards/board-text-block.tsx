@@ -1,6 +1,7 @@
 import type { RefObject } from 'react';
 import { BoardInlinePreview } from './board-inline-text';
 import { BoardNativeEditor } from './board-native-editor';
+import { BoardTableBlock } from './board-table-block';
 import type {
     BoardBlockData,
     BoardObject,
@@ -87,30 +88,7 @@ export function BoardTextBlock(props: BoardContentProps) {
                 )}
             </div>
         );
-    if (kind === 'table')
-        return (
-            <div className="board-table">
-                {editing ? (
-                    <BoardNativeEditor key={kind} {...props} />
-                ) : (
-                    <table className="orbium-rich-table">
-                        <tbody>
-                            {data.rows!.map((row, rowIndex) => (
-                                <tr key={rowIndex}>
-                                    {row.map((cell, columnIndex) => (
-                                        <td key={columnIndex}>
-                                            <BoardInlinePreview
-                                                content={cell}
-                                            />
-                                        </td>
-                                    ))}
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                )}
-            </div>
-        );
+    if (kind === 'table') return <BoardTableBlock {...props} />;
     return (
         <div
             className={`board-writing board-writing-${kind}${kind === 'heading' ? ` cm-md-heading-${data.level}` : kind === 'quote' ? ' cm-md-quote' : kind === 'callout' ? ' editor-callout' : ''}`}

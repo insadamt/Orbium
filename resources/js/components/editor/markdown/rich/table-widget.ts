@@ -104,6 +104,7 @@ export function mountTable(mount: RichWidgetMount): RichController {
         return write(next, rich);
     }
     const axisMenu = mountTableAxisMenu({
+        onHistory: mount.onHistory,
         grid,
         view: mount.view,
         table: () => table,
@@ -337,6 +338,10 @@ export function mountTable(mount: RichWidgetMount): RichController {
             rebuild();
         }
         const disabled = !mount.view.state.facet(EditorView.editable);
+        if (disabled) {
+            closeCell();
+            axisMenu.close();
+        }
         for (const control of edges.querySelectorAll<HTMLButtonElement>(
             'button:not(.orbium-table-fullscreen-trigger)',
         )) {

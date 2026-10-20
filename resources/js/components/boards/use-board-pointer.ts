@@ -15,7 +15,7 @@ import { paintBoardResizePreview } from './board-resize-preview';
 import {
     boardLimits,
     type BoardPoint,
-    type BoardBlockKind,
+    type BoardPlacementKind,
     type BoardTool,
 } from './board-types';
 
@@ -26,7 +26,7 @@ export function useBoardPointer(
     editingLocked: () => boolean,
     interaction: {
         tool: BoardTool;
-        onPlace: (kind: BoardBlockKind, point: BoardPoint) => void;
+        onPlace: (kind: BoardPlacementKind, point: BoardPoint) => void;
     },
 ) {
     const gesture = useRef<BoardGesture | null>(null);

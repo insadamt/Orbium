@@ -60,6 +60,7 @@ export type RichContext = {
     mermaid: MermaidPreviewSession;
     metadata: Map<string, AttachmentMetadata>;
     diagramWidth?: number;
+    documentSourceRanges?: boolean;
     isVisible: () => boolean;
     onUpload: (request: MarkdownUploadRequest) => void;
 };
@@ -68,6 +69,7 @@ export type RichController = {
     destroy: () => void;
 };
 export type RichWidgetMount = {
+    onHistory?: (direction: 'undo' | 'redo') => void;
     view: EditorView;
     block: RichBlock;
     context: RichContext;

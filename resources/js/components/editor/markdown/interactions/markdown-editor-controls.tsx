@@ -1,6 +1,18 @@
-import { MoreHorizontal, Upload, Download, Code2 } from 'lucide-react';
+import {
+    MoreHorizontal,
+    Upload,
+    Download,
+    Code2,
+    RotateCw,
+    Check,
+} from 'lucide-react';
 import * as DropdownMenu from '@/components/ui/dropdown-menu';
-import type { ReactNode } from 'react';
+import { useContext, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
+import {
+    HostedDocumentControlsHostContext,
+    HostedDocumentActionsContext,
+} from '../../hosted-document-session';
 
 type MarkdownEditorControlsProps = {
     status: 'saved' | 'saving' | 'error' | 'unsaved';
@@ -15,7 +27,28 @@ type MarkdownEditorControlsProps = {
 };
 
 export function MarkdownEditorControls(props: MarkdownEditorControlsProps) {
+    const controlsHost = useContext(HostedDocumentControlsHostContext);
+    const hostedActions = useContext(HostedDocumentActionsContext);
     const actions = [
+        ...(hostedActions
+            ? [
+                  {
+                      icon: Check,
+                      label: 'Finish editing',
+                      run: hostedActions.finish,
+                      disabled:
+                          props.status === 'saving' ||
+                          props.status === 'unsaved' ||
+                          props.importing,
+                  },
+                  {
+                      icon: RotateCw,
+                      label: 'Refresh linked page',
+                      run: hostedActions.refresh,
+                      disabled: props.importing,
+                  },
+              ]
+            : []),
         {
             icon: Upload,
             label: 'Import document…',
@@ -35,9 +68,17 @@ export function MarkdownEditorControls(props: MarkdownEditorControlsProps) {
             disabled: false,
         },
     ];
-    return (
-        <div className="mb-7 flex items-center justify-between gap-3 text-xs text-muted-foreground">
-            <div className="flex items-center gap-2">
+    const controls = (
+        <div
+            className={`${controlsHost ? '' : 'mb-7 '}flex items-center justify-between gap-3 text-xs text-muted-foreground`}
+        >
+            <div
+                className={
+                    controlsHost && props.status === 'saved'
+                        ? 'sr-only'
+                        : 'flex items-center gap-2'
+                }
+            >
                 <span role="status">
                     {props.status === 'saved'
                         ? 'Saved'
@@ -83,4 +124,5 @@ export function MarkdownEditorControls(props: MarkdownEditorControlsProps) {
             </DropdownMenu.Root>
         </div>
     );
+    return controlsHost ? createPortal(controls, controlsHost) : controls;
 }

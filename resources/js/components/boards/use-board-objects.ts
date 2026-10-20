@@ -5,6 +5,7 @@ import {
     type BoardObject,
     type BoardPoint,
     type BoardBlockKind,
+    type BoardPlacementKind,
 } from './board-types';
 import { boardDataBytes, createBoardBlockData } from './board-block-data';
 import { validBoardObjects, type BoardValidationCache } from './board-api';
@@ -94,18 +95,30 @@ export function useBoardObjects(
     }
     function addBlock(
         point: BoardPoint,
-        kind: BoardBlockKind = 'text',
+        placementKind: BoardBlockKind | BoardPlacementKind = 'text',
         text = '',
     ) {
         if (objectsRef.current.length >= boardLimits.objects) {
             toast.error('This Board has reached its 1,000 object limit.');
             return;
         }
+        const mediaKind = ['pdf', 'video', 'audio'].includes(placementKind)
+            ? (placementKind as 'pdf' | 'video' | 'audio')
+            : undefined;
+        //
+        // Media choices remain file objects so existing attachment usage and Board formats still apply.
+        //
+        const kind: BoardBlockKind = mediaKind
+            ? 'file'
+            : (placementKind as BoardBlockKind);
         const object: BoardObject = {
             id: crypto.randomUUID(),
             block_type: kind,
             content_format_version: 1,
-            data: createBoardBlockData(kind, text),
+            data: {
+                ...createBoardBlockData(kind, text),
+                ...(mediaKind ? { media_kind: mediaKind } : {}),
+            },
             x: clamp(point.x, -boardLimits.coordinate, boardLimits.coordinate),
             y: clamp(point.y, -boardLimits.coordinate, boardLimits.coordinate),
             width:

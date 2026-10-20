@@ -4,6 +4,7 @@ namespace App\Services\Boards;
 
 use App\Models\Attachment;
 use App\Models\Node;
+use App\Services\Library\AttachmentMediaTypes;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 
@@ -17,10 +18,11 @@ final class BoardBlockData
             'text', 'quote', 'callout' => ['content'],
             'heading' => ['content', 'level'],
             'list' => ['items', 'list_style'],
-            'table' => ['rows'],
+            'table' => ['rows', 'table_source'],
             'code' => ['source', 'language'],
             'math', 'mermaid' => ['source'],
-            'image', 'file' => ['attachment_id', 'name', 'caption'],
+            'image' => ['attachment_id', 'name', 'caption'],
+            'file' => ['attachment_id', 'name', 'caption', 'media_kind'],
             'divider' => [],
             'resource' => ['target_node_id'],
             default => $this->invalid('Unsupported Board block type.'),
@@ -36,6 +38,8 @@ final class BoardBlockData
             'data.legacy_source' => ['sometimes', 'string', 'max:131072']];
         foreach ($fields as $field) {
             $rules['data.'.$field] = match ($field) {
+                'media_kind' => ['sometimes', 'in:pdf,video,audio'],
+                'table_source' => ['sometimes', 'string', 'max:262144'],
                 'content', 'items', 'rows' => ['present', 'array', 'list'],
                 'target_node_id' => ['required', 'integer', 'min:1', 'max:9007199254740991'],
                 'attachment_id' => ['present', 'nullable', 'integer', 'min:1', 'max:9007199254740991'],
@@ -100,6 +104,9 @@ final class BoardBlockData
                 }
             }
         }
+        if ($kind === 'table' && isset($data['table_source'])) {
+            (new BoardTableSource)->validate($data['table_source'], $data['rows']);
+        }
         if ($kind === 'mermaid' && strlen($data['source']) > 50000) {
             $this->invalid('Mermaid source exceeds 50,000 bytes.');
         }
@@ -134,7 +141,12 @@ final class BoardBlockData
 
     public function attachmentIds(array $data): array
     {
-        return isset($data['attachment_id']) ? [(int) $data['attachment_id']] : [];
+        $ids = isset($data['attachment_id']) ? [(int) $data['attachment_id']] : [];
+        if (isset($data['table_source'])) {
+            $ids = [...$ids, ...(new BoardTableSource)->attachmentIds($data['table_source'])];
+        }
+
+        return array_values(array_unique($ids));
     }
 
     public function validateAttachments(Node $node, array $objects): void
@@ -150,6 +162,16 @@ final class BoardBlockData
             }
         }
         foreach ($objects as $object) {
+            if (isset($object['data']['attachment_id'], $object['data']['media_kind'])) {
+                $allowedTypes = match ($object['data']['media_kind']) {
+                    'pdf' => ['application/pdf'],
+                    'video' => AttachmentMediaTypes::VIDEO,
+                    'audio' => AttachmentMediaTypes::AUDIO,
+                };
+                if (! in_array($files[$object['data']['attachment_id']]->mime_type, $allowedTypes, true)) {
+                    $this->invalid('Choose a file matching the Board media type.');
+                }
+            }
             if ($object['block_type'] === 'image' && isset($object['data']['attachment_id']) && ! in_array($files[$object['data']['attachment_id']]->mime_type, ['image/png', 'image/jpeg', 'image/gif', 'image/webp'], true)) {
                 $this->invalid('An image block requires an owned PNG, JPEG, GIF or WebP.');
             }

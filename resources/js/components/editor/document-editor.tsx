@@ -450,7 +450,7 @@ export default function DocumentEditor({
             )}
 
             {!editor && <DocumentOpeningPreview content={content} />}
-            {editor && !hosted && (
+            {editor && (
                 <EditorBlockGutter
                     editor={editor}
                     activityController={activityController}

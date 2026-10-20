@@ -7,6 +7,7 @@ import {
 } from '../../ui/block-menu-surface';
 import { Text } from '@codemirror/state';
 import { logicalMarkdownText } from './markdown-logical-text';
+import { readCalloutSource } from '../dialect/callout-source';
 import {
     adjacentMarkdownBlock,
     deleteMarkdownBlock,
@@ -31,6 +32,7 @@ const conversionPrefixes: Record<string, string> = {
 };
 
 function currentBlockType(name: string, source: string) {
+    if (name === 'Blockquote' && readCalloutSource(source)) return 'Callout';
     const heading = /^(?:ATX|Setext)Heading([1-6])$/.exec(name);
     if (heading) return `Heading ${heading[1]}`;
     if (name === 'BulletList')

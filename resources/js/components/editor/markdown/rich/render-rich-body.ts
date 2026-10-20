@@ -97,7 +97,28 @@ export function renderRichBody(
                 parent.append(
                     document.createTextNode(source.slice(position, child.from)),
                 );
+            const previousChild = parent.lastElementChild;
             renderNode(parent, child);
+            //
+            // Linked-page previews expose source positions so editing can anchor the same block despite different layout heights.
+            //
+            if (
+                context.documentSourceRanges &&
+                depth === 0 &&
+                parent === output
+            ) {
+                let rendered = previousChild
+                    ? previousChild.nextElementSibling
+                    : parent.firstElementChild;
+                while (rendered) {
+                    rendered.setAttribute(
+                        'data-document-from',
+                        String(child.from),
+                    );
+                    rendered.setAttribute('data-document-to', String(child.to));
+                    rendered = rendered.nextElementSibling;
+                }
+            }
             position = child.to;
         }
         if (includeGaps && position < to)

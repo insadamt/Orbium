@@ -69,6 +69,10 @@
     font-size: inherit;
     line-height: inherit;
 }
+.board-table:not([data-board-editor])
+    :is(.orbium-table-add-row, .orbium-table-add-column) {
+    display: none;
+}
 .board-object .board-table table {
     width: 100%;
 }
@@ -76,7 +80,7 @@
     width: 100%;
     max-width: 100%;
     margin: 0;
-    padding: 0;
+    padding: 10px;
 }
 .board-table tr td.selectedCell {
     background: var(--accent);
@@ -217,7 +221,7 @@
     font-size: 11px;
     color: var(--muted-foreground);
 }
-.board-resource-preview p {
+.board-resource-preview > p {
     margin: 0;
 }
 .board-document-hint {
@@ -252,29 +256,6 @@
 }
 .board-object .board-text-placeholder {
     font-size: inherit;
-}
-
-.board-media-controls {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    align-items: center;
-    max-height: 32dvh;
-    overflow: auto;
-}
-.board-media-controls .board-field-actions {
-    margin: 0;
-}
-.board-media-controls label {
-    display: flex;
-    gap: 6px;
-    align-items: center;
-}
-.board-media-controls > input {
-    min-width: 140px;
-    padding: 6px 8px;
-    border: 1px solid var(--border);
-    border-radius: 6px;
 }
 
 @media (pointer: coarse) {
