@@ -4,6 +4,7 @@ import type {
     BoardPoint,
     BoardPlacementKind,
 } from './board-types';
+import type { BoardAlignmentIndex } from './board-alignment-index';
 import type { BoardPaintTargets } from './board-pointer-paint';
 import type { BoardGuide } from './board-alignment';
 
@@ -38,6 +39,7 @@ export type BoardGesture =
           screenStart: BoardPoint;
           activated: boolean;
           targets: BoardObject[];
+          alignmentIndex?: BoardAlignmentIndex;
           preview: BoardObject[];
           axis: string;
           guides: BoardGuide[];

@@ -169,3 +169,17 @@ preview requests. Hidden math/diagram previews wait until editing ends; recovery
 serialization yields to input and unchanged content validation is cached across
 saves. See `reports/12-boards-performance-correction.md` for actual checks,
 limitations and manual steps. Phase 4 remains in manual review.
+
+Board movement CPU follow-up (2026-10-20): the user reported continued spikes after
+the first pass. Pointer origin and toolbar geometry no longer require repeated
+movement-frame DOM measurements; guide targets are indexed per gesture, PDF
+observers ignore translation and compositor hints last only during movement.
+See `reports/12-boards-movement-performance-followup.md`. Thermal improvement remains
+pending manual measurement; phase-4 review continues.
+
+Board pan re-rendering repair (2026-10-20): the user reported delayed reappearance and
+continued spikes. The Board retains a bounded recent set of rich surfaces, caches
+revision-matched linked Document source and prioritizes visible fetches without the
+previous idle wait. Camera culling uses stable coverage/guard bounds and the grid
+moves in a separate layer. See `reports/12-boards-pan-rendering-lifecycle.md` for
+checks and manual steps. Thermal resolution remains unverified; stay in phase 4.

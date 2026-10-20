@@ -8,7 +8,7 @@ export function useBoardSelectionAnchor(
     editing: boolean,
 ) {
     const toolbarRef = useRef<HTMLDivElement>(null);
-    const { viewportRef, worldRef } = camera;
+    const { viewportRef, worldRef, cameraRef } = camera;
     useLayoutEffect(() => {
         const viewport = viewportRef.current;
         const world = worldRef.current;
@@ -21,46 +21,71 @@ export function useBoardSelectionAnchor(
         let frame: number | undefined;
         let selectedElements: HTMLElement[] = [];
         const selectedSet = new Set(selectedIds);
+        let viewportWidth = 0;
+        let viewportHeight = 0;
+        let toolbarWidth = 0;
+        let toolbarHeight = 0;
+        let viewportBorderLeft = 0;
+        let viewportBorderTop = 0;
         const positionToolbar = () => {
             frame = undefined;
-            const bounds = viewport.getBoundingClientRect();
-            const objects = selectedElements.map((element) =>
-                element.getBoundingClientRect(),
-            );
+            const { x, y, zoom } = cameraRef.current;
+            //
+            // These inline values already contain the preview geometry; measuring rich DOM after every translation forces layout.
+            //
+            const objects = selectedElements.map((element) => {
+                const [translateX = '0', translateY = '0'] =
+                    element.style.translate.split(' ');
+                const left =
+                    (parseFloat(element.style.left) +
+                        (parseFloat(translateX) || 0)) *
+                        zoom +
+                    x +
+                    viewportBorderLeft;
+                const top =
+                    (parseFloat(element.style.top) +
+                        (parseFloat(translateY) || 0)) *
+                        zoom +
+                    y +
+                    viewportBorderTop;
+                return {
+                    left,
+                    top,
+                    right: left + parseFloat(element.style.width) * zoom,
+                    bottom: top + parseFloat(element.style.height) * zoom,
+                };
+            });
             if (!objects.length) {
                 toolbar.hidden = true;
                 return;
             }
-            const left =
-                Math.min(...objects.map((object) => object.left)) - bounds.left;
-            const right =
-                Math.max(...objects.map((object) => object.right)) -
-                bounds.left;
-            const top =
-                Math.min(...objects.map((object) => object.top)) - bounds.top;
-            const bottom =
-                Math.max(...objects.map((object) => object.bottom)) -
-                bounds.top;
+            const left = Math.min(...objects.map((object) => object.left));
+            const right = Math.max(...objects.map((object) => object.right));
+            const top = Math.min(...objects.map((object) => object.top));
+            const bottom = Math.max(...objects.map((object) => object.bottom));
             const offscreen =
                 right < 0 ||
-                left > viewport.clientWidth ||
+                left > viewportWidth ||
                 bottom < 0 ||
-                top > viewport.clientHeight;
-            toolbar.hidden = !editing && offscreen;
-            toolbar.dataset.offscreen = String(offscreen);
+                top > viewportHeight;
+            const hidden = !editing && offscreen;
+            if (toolbar.hidden !== hidden) toolbar.hidden = hidden;
+            if (toolbar.dataset.offscreen !== String(offscreen))
+                toolbar.dataset.offscreen = String(offscreen);
             if (toolbar.hidden) return;
             const rightInset = 12;
-            const availableWidth = viewport.clientWidth - rightInset - 12;
-            toolbar.style.maxWidth = `${Math.min(640, availableWidth)}px`;
             const minimumTop = 12;
             const maximumTop = Math.max(
                 minimumTop,
-                viewport.clientHeight - toolbar.offsetHeight - 72,
+                viewportHeight - toolbarHeight - 72,
             );
-            const preferredTop = top - toolbar.offsetHeight - 14;
-            toolbar.style.left = `${clamp((left + right) / 2 - toolbar.offsetWidth / 2, 12, Math.max(12, viewport.clientWidth - rightInset - toolbar.offsetWidth))}px`;
-            toolbar.dataset.toolbarPositioned = 'true';
-            toolbar.style.top = `${clamp(preferredTop >= minimumTop ? preferredTop : bottom + 14, minimumTop, maximumTop)}px`;
+            const preferredTop = top - toolbarHeight - 14;
+            const nextLeft = `${clamp((left + right) / 2 - toolbarWidth / 2, 12, Math.max(12, viewportWidth - rightInset - toolbarWidth))}px`;
+            const nextTop = `${clamp(preferredTop >= minimumTop ? preferredTop : bottom + 14, minimumTop, maximumTop)}px`;
+            if (toolbar.style.left !== nextLeft) toolbar.style.left = nextLeft;
+            if (toolbar.style.top !== nextTop) toolbar.style.top = nextTop;
+            if (toolbar.dataset.toolbarPositioned !== 'true')
+                toolbar.dataset.toolbarPositioned = 'true';
         };
         const schedulePosition = () => {
             if (frame === undefined)
@@ -74,7 +99,22 @@ export function useBoardSelectionAnchor(
                 observeSelection();
             schedulePosition();
         });
-        const sizes = new ResizeObserver(schedulePosition);
+        const measureSurfaces = () => {
+            //
+            // Cache dimensions when the surfaces actually resize, rather than alternating reads and writes every drag frame.
+            //
+            viewportWidth = viewport.clientWidth;
+            viewportHeight = viewport.clientHeight;
+            viewportBorderLeft = viewport.clientLeft;
+            viewportBorderTop = viewport.clientTop;
+            toolbarWidth = toolbar.offsetWidth;
+            toolbarHeight = toolbar.offsetHeight;
+            const maximumWidth = `${Math.min(640, Math.max(0, viewportWidth - 24))}px`;
+            if (toolbar.style.maxWidth !== maximumWidth)
+                toolbar.style.maxWidth = maximumWidth;
+            schedulePosition();
+        };
+        const sizes = new ResizeObserver(measureSurfaces);
         const observeSelection = () => {
             sizes.disconnect();
             sizes.observe(viewport);
@@ -101,12 +141,12 @@ export function useBoardSelectionAnchor(
             }
         };
         observeSelection();
-        positionToolbar();
+        measureSurfaces();
         return () => {
             mutations.disconnect();
             sizes.disconnect();
             if (frame !== undefined) cancelAnimationFrame(frame);
         };
-    }, [viewportRef, worldRef, selectedIds, editing]);
+    }, [viewportRef, worldRef, cameraRef, selectedIds, editing]);
     return toolbarRef;
 }

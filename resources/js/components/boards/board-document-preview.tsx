@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { serializeDocumentAsMarkdown } from '@/components/editor/markdown-export';
 import { MermaidPreviewSession } from '@/components/editor/mermaid-preview-session';
 import { renderRichBody } from '@/components/editor/markdown/rich/render-rich-body';
+import { useBoardDocumentSnapshots } from './board-resource-previews';
 import { scheduleBoardDocumentPreview } from './board-preview-queue';
 import { fetchResourceDocument } from './board-resource-api';
 import type { BoardLocation } from './board-types';
@@ -19,41 +20,82 @@ export function BoardDocumentPreview({
     onLoaded: (snapshot: ResourceDocument) => void;
 }) {
     const host = useRef<HTMLDivElement>(null);
-    const [snapshot, setSnapshot] = useState<ResourceDocument | null>(null);
+    const documents = useBoardDocumentSnapshots();
+    const appliedRefreshVersion = useRef(refreshVersion);
+    const [snapshot, setSnapshot] = useState<ResourceDocument | null>(() =>
+        documents.read(resource.id, resource.revision),
+    );
     const [error, setError] = useState('');
     const { workspaceId, boardId } = location;
     const { id: targetId, revision } = resource;
 
     useEffect(() => {
         const controller = new AbortController();
-        setSnapshot(null);
         setError('');
-        const cancelQueuedPreview = scheduleBoardDocumentPreview(async () => {
-            await fetchResourceDocument(
-                { workspaceId, boardId },
-                targetId,
-                controller.signal,
-            )
-                .then((document) => {
-                    if (!controller.signal.aborted) {
-                        setSnapshot(document);
-                        onLoaded(document);
-                    }
-                })
-                .catch((failure) => {
-                    if (!controller.signal.aborted)
-                        setError(
-                            failure instanceof Error
-                                ? failure.message
-                                : 'Could not render this Document.',
-                        );
-                });
-        });
+        const forcedRefresh = appliedRefreshVersion.current !== refreshVersion;
+        appliedRefreshVersion.current = refreshVersion;
+        const cached = forcedRefresh
+            ? null
+            : documents.read(targetId, revision);
+        if (cached) {
+            setSnapshot(cached);
+            onLoaded(cached);
+            return;
+        }
+        setSnapshot(null);
+        let visible = typeof IntersectionObserver === 'undefined';
+        const observer =
+            typeof IntersectionObserver === 'undefined'
+                ? null
+                : new IntersectionObserver(
+                      (entries) => {
+                          visible = entries.some(
+                              (entry) => entry.isIntersecting,
+                          );
+                      },
+                      { root: host.current?.closest('.board-canvas') ?? null },
+                  );
+        const card = host.current?.closest('[data-board-object-id]');
+        if (card) observer?.observe(card);
+        const cancelQueuedPreview = scheduleBoardDocumentPreview(
+            async () => {
+                await fetchResourceDocument(
+                    { workspaceId, boardId },
+                    targetId,
+                    controller.signal,
+                )
+                    .then((document) => {
+                        if (!controller.signal.aborted) {
+                            documents.remember(document);
+                            setSnapshot(document);
+                            onLoaded(document);
+                        }
+                    })
+                    .catch((failure) => {
+                        if (!controller.signal.aborted)
+                            setError(
+                                failure instanceof Error
+                                    ? failure.message
+                                    : 'Could not render this Document.',
+                            );
+                    });
+            },
+            () => visible,
+        );
         return () => {
+            observer?.disconnect();
             cancelQueuedPreview();
             controller.abort();
         };
-    }, [workspaceId, boardId, targetId, revision, refreshVersion, onLoaded]);
+    }, [
+        workspaceId,
+        boardId,
+        targetId,
+        revision,
+        refreshVersion,
+        onLoaded,
+        documents,
+    ]);
 
     useEffect(() => {
         const output = host.current;

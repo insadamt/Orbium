@@ -18,7 +18,7 @@ import { useBoardCamera } from './use-board-camera';
 import { useBoardPointer } from './use-board-pointer';
 import { type BoardLocation, type BoardSnapshot } from './board-types';
 import { boardKeyboardHandler } from './board-keyboard';
-import { intersects } from './board-geometry';
+import { useBoardRenderedObjects } from './use-board-rendered-objects';
 import './board.css';
 import './board-chrome.css';
 import './board-blocks.css';
@@ -207,10 +207,10 @@ function BoardWorkspace({
         resourceLocks.setCreationLocked,
         () => uploadingRef.current || resourceLockedRef.current,
     );
-    const visibleObjects = model.objects.filter(
-        (object) =>
-            object.id === model.editingId ||
-            intersects(camera.visibleBounds, object),
+    const renderedObjects = useBoardRenderedObjects(
+        model.objects,
+        camera.visibleBounds,
+        model.editingId,
     );
     return (
         <section
@@ -301,6 +301,11 @@ function BoardWorkspace({
                         {...clipboard}
                     >
                         <div
+                            ref={camera.gridLayerRef}
+                            className="board-grid"
+                            aria-hidden="true"
+                        />
+                        <div
                             ref={camera.worldRef}
                             className="board-world"
                             data-multi-selection={model.selectedIds.length > 1}
@@ -314,7 +319,7 @@ function BoardWorkspace({
                                 className="board-alignment-guides"
                                 aria-hidden="true"
                             />
-                            {visibleObjects.map((object) => (
+                            {renderedObjects.map((object) => (
                                 <BoardObjectCard
                                     key={object.id}
                                     object={object}

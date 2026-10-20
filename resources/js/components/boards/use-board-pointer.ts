@@ -1,3 +1,5 @@
+import { useBoardPointerGeometry } from './use-board-pointer-geometry';
+import { indexBoardAlignmentTargets } from './board-alignment-index';
 import type { BoardGesture } from './board-pointer-types';
 import { useCallback, useEffect, useRef, type PointerEvent } from 'react';
 import type { BoardObjectsController } from './use-board-objects';
@@ -40,6 +42,7 @@ export function useBoardPointer(
     const marqueeRef = useRef<HTMLDivElement>(null);
     const frame = useRef<number | undefined>(undefined);
     const viewportRef = camera.viewportRef;
+    const pointerLocalPoint = useBoardPointerGeometry(viewportRef);
     const pendingPointer = useRef(new Map<number, BoardPointerSample>());
 
     const cancel = useCallback(() => {
@@ -133,7 +136,10 @@ export function useBoardPointer(
             target.closest<HTMLElement>('[data-board-object-id]') ??
             event.currentTarget
         ).setPointerCapture(event.pointerId);
-        const local = camera.localPoint({ x: event.clientX, y: event.clientY });
+        const local = pointerLocalPoint(
+            { x: event.clientX, y: event.clientY },
+            true,
+        );
         if (event.pointerType === 'touch')
             touches.current.set(event.pointerId, local);
         if (touches.current.size >= 2) {
@@ -219,15 +225,19 @@ export function useBoardPointer(
         const originals = model.objectsRef.current.filter((object) =>
             resize ? object.id === objectId : nextIds.includes(object.id),
         );
+        const targets = model.objectsRef.current.filter((object) =>
+            intersects(camera.visibleBounds, object),
+        );
         gesture.current = {
             kind: resize ? 'resize' : 'move',
             pointerId: event.pointerId,
             start: canvasPoint(local, camera.cameraRef.current),
             screenStart: local,
             activated: false,
-            targets: model.objectsRef.current.filter((object) =>
-                intersects(camera.visibleBounds, object),
-            ),
+            targets,
+            alignmentIndex: resize
+                ? undefined
+                : indexBoardAlignmentTargets(targets, originals),
             paintTargets: collectBoardPaintTargets(viewportRef.current),
             originals,
             preview: originals,
@@ -267,11 +277,11 @@ export function useBoardPointer(
         const event = samples.at(-1);
         const current = gesture.current;
         if (!event || !current) return;
-        const bounds = viewportRef.current?.getBoundingClientRect();
-        const localPoint = (sample: BoardPointerSample) => ({
-            x: sample.clientX - (bounds?.left ?? 0),
-            y: sample.clientY - (bounds?.top ?? 0),
-        });
+        const localPoint = (sample: BoardPointerSample) =>
+            pointerLocalPoint({
+                x: sample.clientX,
+                y: sample.clientY,
+            });
         for (const sample of samples) {
             if (touches.current.has(sample.pointerId))
                 touches.current.set(sample.pointerId, localPoint(sample));

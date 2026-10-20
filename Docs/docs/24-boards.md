@@ -565,3 +565,37 @@ geometry and server-side validation remain enforced.
 No Board format, API payload or database changes. See
 `../reports/12-boards-performance-correction.md` for checks and manual acceptance.
 Phase 4 remains in manual review; thermal improvement requires user measurement.
+
+### Movement CPU follow-up (2026-10-20)
+
+After the user reported continuing spikes, Board movement now caches pointer
+viewport origin until scroll/resize, derives toolbar bounds from inline preview
+geometry and camera state, and caches toolbar dimensions on actual resize. Guide
+anchors are indexed once per drag and queried by binary search while retaining
+nearest-match/tie order. PDF density observation ignores translation-only changes.
+Active dragged blocks and the moving camera world receive temporary compositor
+hints, cleared on release/cancel or camera settling. Idle blocks retain no permanent
+promotion hint. Styling, native zoom clarity, persistence and phase-4 review remain.
+See `../reports/12-boards-movement-performance-followup.md` for actual checks,
+limitations and manual comparison; temperature improvement is not yet measured.
+
+### Pan re-rendering lifecycle correction (2026-10-20)
+
+The user reported slow block reappearance and continued CPU spikes after the earlier
+performance passes. Recently viewed offscreen blocks now remain mounted within a
+weighted 48-unit budget (text 1, table/Mermaid 3, linked resource 6, file/media 12),
+in addition to the mounting region and independently pinned active editor. Old
+surfaces are evicted during longer traversal. The camera publishes a 640px overscan
+region when the viewport approaches within 160px of its edge, rather than repeating
+visibility updates on a 120ms timer; zoom/resize refresh coverage immediately.
+
+Linked Document source is revision-cached within the Board provider, capped at
+24 entries/8 MiB estimated serialized payload. Explicit Refresh/save invalidates it.
+The two-request preview queue starts ordinary tasks with visible-card priority,
+superseding idle-delayed source fetching. Returning to retained cards reuses their
+live renderers; cached source avoids downloads when a surface has been evicted.
+
+The grid is a separate clipped translated layer beneath the world, replacing
+canvas-background position updates during pan. Native layout zoom and PDF density
+remain. See `../reports/12-boards-pan-rendering-lifecycle.md` for actual checks and
+manual acceptance. CPU/thermal resolution remains unverified; phase-4 review continues.

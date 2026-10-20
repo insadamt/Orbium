@@ -29,7 +29,18 @@ export function observePdfDisplayDensity(
         previousScale = nextScale;
         onChange();
     };
+    let world: HTMLElement | null = null;
+    let object: HTMLElement | null = null;
+    const densitySignature = () =>
+        `${world?.style.zoom ?? ''}:${object?.style.getPropertyValue('--board-content-scale') ?? ''}`;
+    let previousSignature = '';
     const mutations = new MutationObserver(() => {
+        //
+        // Translation changes style too, but cannot change PDF pixel density; avoid per-frame timers and later layout reads.
+        //
+        const signature = densitySignature();
+        if (signature === previousSignature) return;
+        previousSignature = signature;
         //
         // Wait for zoom/resize gestures to settle; panning at the same scale must not keep cancelling a PDF render.
         //
@@ -39,8 +50,9 @@ export function observePdfDisplayDensity(
     return {
         refresh() {
             mutations.disconnect();
-            const world = element.closest('.board-world');
-            const object = element.closest('[data-board-object-id]');
+            world = element.closest<HTMLElement>('.board-world');
+            object = element.closest<HTMLElement>('[data-board-object-id]');
+            previousSignature = densitySignature();
             for (const ancestor of [world, object]) {
                 if (ancestor)
                     mutations.observe(ancestor, {

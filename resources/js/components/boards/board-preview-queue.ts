@@ -1,19 +1,23 @@
-import { scheduleEditorIdleWork } from '@/components/editor/schedule-editor-idle-work';
-
-type PreviewJob = { run: () => Promise<void> };
+type PreviewJob = { run: () => Promise<void>; visible: () => boolean };
 const pendingPreviews = new Set<PreviewJob>();
 let activePreviews = 0;
-let cancelScheduledPreview: (() => void) | undefined;
+let scheduledPreview: ReturnType<typeof setTimeout> | undefined;
 
 function scheduleNextPreview() {
-    if (cancelScheduledPreview || activePreviews >= 2 || !pendingPreviews.size)
+    if (
+        scheduledPreview !== undefined ||
+        activePreviews >= 2 ||
+        !pendingPreviews.size
+    )
         return;
     //
-    // Full linked Documents can contain many rich blocks; stagger initialization instead of starting every card in one turn.
+    // Keep bounded fetch concurrency without waiting for idle time that continuous panning can postpone.
     //
-    cancelScheduledPreview = scheduleEditorIdleWork(() => {
-        cancelScheduledPreview = undefined;
-        const job = pendingPreviews.values().next().value;
+    scheduledPreview = setTimeout(() => {
+        scheduledPreview = undefined;
+        const job =
+            [...pendingPreviews].find((preview) => preview.visible()) ??
+            pendingPreviews.values().next().value;
         if (!job) return;
         pendingPreviews.delete(job);
         activePreviews++;
@@ -22,18 +26,21 @@ function scheduleNextPreview() {
             scheduleNextPreview();
         });
         scheduleNextPreview();
-    });
+    }, 0);
 }
 
-export function scheduleBoardDocumentPreview(run: () => Promise<void>) {
-    const job = { run };
+export function scheduleBoardDocumentPreview(
+    run: () => Promise<void>,
+    visible: () => boolean,
+) {
+    const job = { run, visible };
     pendingPreviews.add(job);
     scheduleNextPreview();
     return () => {
         pendingPreviews.delete(job);
-        if (!pendingPreviews.size && cancelScheduledPreview) {
-            cancelScheduledPreview();
-            cancelScheduledPreview = undefined;
+        if (!pendingPreviews.size && scheduledPreview !== undefined) {
+            clearTimeout(scheduledPreview);
+            scheduledPreview = undefined;
         }
     };
 }

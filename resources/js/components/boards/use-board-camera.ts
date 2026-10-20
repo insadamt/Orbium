@@ -1,3 +1,4 @@
+import { useBoardVisibleBounds } from './use-board-visible-bounds';
 import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import {
     canvasPoint,
@@ -18,36 +19,22 @@ import {
 export function useBoardCamera(location: BoardLocation) {
     const viewportRef = useRef<HTMLDivElement>(null);
     const worldRef = useRef<HTMLDivElement>(null);
+    const gridLayerRef = useRef<HTMLDivElement>(null);
     const zoomLabelRef = useRef<HTMLSpanElement>(null);
     const cameraRef = useRef<BoardCamera>({ ...defaultBoardCamera });
     const frame = useRef<number | undefined>(undefined);
     const settleTimer = useRef<number | undefined>(undefined);
-    const boundsTimer = useRef<number | undefined>(undefined);
-    const [visibleBounds, setVisibleBounds] = useState<BoardBounds>({
-        x: -2000,
-        y: -2000,
-        width: 4000,
-        height: 4000,
-    });
+    const { visibleBounds, viewportSize, updateVisibleBounds } =
+        useBoardVisibleBounds();
     const [grid, setGrid] = useState(true);
     const [snap, setSnap] = useState(false);
     const [guides, setGuides] = useState(true);
     const gridRef = useRef(grid);
     const storageKey = boardStorageKey(location, 'view.v1');
 
-    const updateVisibleBounds = useCallback(() => {
-        const camera = cameraRef.current;
-        const host = viewportRef.current;
-        if (host)
-            setVisibleBounds({
-                x: (-camera.x - 500) / camera.zoom,
-                y: (-camera.y - 500) / camera.zoom,
-                width: (host.clientWidth + 1000) / camera.zoom,
-                height: (host.clientHeight + 1000) / camera.zoom,
-            });
-    }, []);
     const settle = useCallback(() => {
-        updateVisibleBounds();
+        if (worldRef.current) delete worldRef.current.dataset.cameraMoving;
+        updateVisibleBounds(cameraRef.current);
         const camera = cameraRef.current;
         try {
             localStorage.setItem(
@@ -74,20 +61,44 @@ export function useBoardCamera(location: BoardLocation) {
         }
         const viewport = viewportRef.current;
         if (viewport) {
-            viewport.style.backgroundSize = `${32 * zoom}px ${32 * zoom}px`;
-            viewport.style.backgroundPosition = `${x}px ${y}px`;
-            viewport.dataset.grid = String(gridRef.current);
-            viewport.style.setProperty(
-                '--board-inverse-zoom',
-                String(1 / zoom),
-            );
+            const inverseZoom = String(1 / zoom);
+            if (
+                viewport.style.getPropertyValue('--board-inverse-zoom') !==
+                inverseZoom
+            )
+                viewport.style.setProperty('--board-inverse-zoom', inverseZoom);
         }
-        if (zoomLabelRef.current)
-            zoomLabelRef.current.textContent = `${Math.round(zoom * 100)}%`;
-    }, []);
+        const gridLayer = gridLayerRef.current;
+        if (gridLayer) {
+            const size = 32 * zoom;
+            const patternSize = `${size}px ${size}px`;
+            //
+            // Compensate for the grid layer's negative inset so its dots retain the original world-space phase at fractional zoom.
+            //
+            const translation = `${(x + 128) % size}px ${(y + 128) % size}px`;
+            if (gridLayer.hidden === gridRef.current)
+                gridLayer.hidden = !gridRef.current;
+            if (gridLayer.style.backgroundSize !== patternSize)
+                gridLayer.style.backgroundSize = patternSize;
+            if (gridLayer.style.translate !== translation)
+                gridLayer.style.translate = translation;
+        }
+        const zoomLabel = `${Math.round(zoom * 100)}%`;
+        if (
+            zoomLabelRef.current &&
+            zoomLabelRef.current.textContent !== zoomLabel
+        )
+            zoomLabelRef.current.textContent = zoomLabel;
+        updateVisibleBounds(cameraRef.current);
+    }, [updateVisibleBounds]);
 
     const setCamera = useCallback(
         (camera: BoardCamera) => {
+            if (
+                worldRef.current &&
+                worldRef.current.dataset.cameraMoving !== 'true'
+            )
+                worldRef.current.dataset.cameraMoving = 'true';
             cameraRef.current = {
                 x: clamp(camera.x, -40_000_000, 40_000_000),
                 y: clamp(camera.y, -40_000_000, 40_000_000),
@@ -99,15 +110,10 @@ export function useBoardCamera(location: BoardLocation) {
             };
             if (frame.current === undefined)
                 frame.current = requestAnimationFrame(paint);
-            if (boundsTimer.current === undefined)
-                boundsTimer.current = window.setTimeout(() => {
-                    boundsTimer.current = undefined;
-                    updateVisibleBounds();
-                }, 120);
             clearTimeout(settleTimer.current);
             settleTimer.current = window.setTimeout(settle, 120);
         },
-        [paint, settle, updateVisibleBounds],
+        [paint, settle],
     );
 
     function localPoint(point: BoardPoint): BoardPoint {
@@ -199,8 +205,17 @@ export function useBoardCamera(location: BoardLocation) {
         } catch {}
         paint();
         const host = viewportRef.current;
-        const observer = new ResizeObserver(settle);
+        const measureViewport = () => {
+            if (!host) return;
+            viewportSize.current = {
+                width: host.clientWidth,
+                height: host.clientHeight,
+            };
+            settle();
+        };
+        const observer = new ResizeObserver(measureViewport);
         if (host) observer.observe(host);
+        measureViewport();
         settle();
         const wheel = (event: WheelEvent) => {
             if (event.target instanceof Element) {
@@ -256,15 +271,14 @@ export function useBoardCamera(location: BoardLocation) {
         });
         return () => {
             observer.disconnect();
+            if (worldRef.current) delete worldRef.current.dataset.cameraMoving;
             host?.removeEventListener('wheel', wheel, { capture: true });
             if (frame.current !== undefined)
                 cancelAnimationFrame(frame.current);
             clearTimeout(settleTimer.current);
-            clearTimeout(boundsTimer.current);
-            boundsTimer.current = undefined;
             frame.current = undefined;
         };
-    }, [storageKey, paint, setCamera, settle]);
+    }, [storageKey, paint, setCamera, settle, viewportSize]);
 
     function toggleGrid() {
         gridRef.current = !gridRef.current;
@@ -292,6 +306,7 @@ export function useBoardCamera(location: BoardLocation) {
         toggleGuides,
         viewportRef,
         worldRef,
+        gridLayerRef,
         zoomLabelRef,
         cameraRef,
         visibleBounds,

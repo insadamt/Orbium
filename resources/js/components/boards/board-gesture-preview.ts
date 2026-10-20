@@ -35,6 +35,12 @@ export function paintBoardGesturePreview({
         ) < 6
     )
         return;
+    if (!gesture.activated && gesture.kind === 'move') {
+        for (const object of gesture.originals) {
+            const element = gesture.paintTargets.get(object.id);
+            if (element) element.dataset.boardMoving = 'true';
+        }
+    }
     gesture.activated = true;
     if (viewport) viewport.dataset.gesture = gesture.kind;
     const point = canvasPoint(local, camera.cameraRef.current);
@@ -61,6 +67,7 @@ export function paintBoardGesturePreview({
     } else {
         const result = resolveBoardMove({
             originals: gesture.originals,
+            alignmentIndex: gesture.alignmentIndex,
             objects: gesture.targets,
             delta,
             zoom: camera.cameraRef.current.zoom,

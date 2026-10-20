@@ -1,3 +1,4 @@
+import { BoardDocumentSnapshotCache } from './board-document-snapshot-cache';
 import {
     createContext,
     useCallback,
@@ -17,6 +18,7 @@ import {
 
 type Preview = { resource?: BoardResource; error?: string; missing?: boolean };
 type PreviewContext = {
+    documents: BoardDocumentSnapshotCache;
     entries: Record<number, Preview>;
     register: (id: number) => () => void;
     refresh: (id: number) => void;
@@ -29,6 +31,7 @@ export function BoardResourcePreviews({
     location: BoardLocation;
     children: ReactNode;
 }) {
+    const [documents] = useState(() => new BoardDocumentSnapshotCache());
     const [entries, setEntries] = useState<Record<number, Preview>>({});
     const targets = useRef(new Map<number, number>());
     const checked = useRef(new Map<number, number>());
@@ -113,18 +116,19 @@ export function BoardResourcePreviews({
         }
     }, [location]);
     const refresh = useCallback(
-        (id: number) => {
+        (id: number, invalidateDocument = true) => {
+            if (invalidateDocument) documents.invalidate(id);
             queued.current.add(id);
             clearTimeout(timer.current);
             timer.current = window.setTimeout(() => void run(), 0);
         },
-        [run],
+        [run, documents],
     );
     const register = useCallback(
         (id: number) => {
             targets.current.set(id, (targets.current.get(id) ?? 0) + 1);
             if (Date.now() - (checked.current.get(id) ?? 0) > 10_000)
-                refresh(id);
+                refresh(id, false);
             return () => {
                 const count = targets.current.get(id) ?? 1;
                 if (count <= 1) {
@@ -169,7 +173,9 @@ export function BoardResourcePreviews({
         };
     }, [location.workspaceId, refresh, run]);
     return (
-        <ResourcePreviews.Provider value={{ entries, register, refresh }}>
+        <ResourcePreviews.Provider
+            value={{ entries, register, refresh, documents }}
+        >
             {children}
         </ResourcePreviews.Provider>
     );
@@ -182,4 +188,11 @@ export function useBoardResourcePreview(id: number) {
         preview: context?.entries[id],
         refresh: () => context?.refresh(id),
     };
+}
+
+export function useBoardDocumentSnapshots() {
+    const context = useContext(ResourcePreviews);
+    if (!context)
+        throw new Error('Board Document previews require a Board provider.');
+    return context.documents;
 }

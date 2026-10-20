@@ -51,6 +51,7 @@ export function paintBoardObjects(
         const target = targets.get(object.id);
         if (!target) continue;
         if (target.style.translate) target.style.removeProperty('translate');
+        if (target.dataset.boardMoving) delete target.dataset.boardMoving;
         writeStyle(
             target,
             '--board-content-scale',
@@ -80,6 +81,16 @@ function paintSelectionBounds(
         '[data-board-multi-selection]',
     );
     if (!selection) return;
+    if (objects.length > 1) {
+        const bounds = enclosingBounds(objects);
+        if (bounds) {
+            writeStyle(selection, 'left', `${bounds.x}px`);
+            writeStyle(selection, 'top', `${bounds.y}px`);
+            writeStyle(selection, 'width', `${bounds.width}px`);
+            writeStyle(selection, 'height', `${bounds.height}px`);
+        }
+        return;
+    }
     const selected = [...targets.values()]
         .filter((element) => element.dataset.selected === 'true')
         .map((element) => ({

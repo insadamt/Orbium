@@ -26,7 +26,14 @@
     outline: 2px solid var(--ring);
     outline-offset: -2px;
 }
-.board-canvas[data-grid='true'] {
+/*
+ * A translated grid layer avoids repainting the full canvas background for every camera position.
+ */
+.board-grid {
+    position: absolute;
+    inset: -128px;
+    pointer-events: none;
+    will-change: translate;
     background-image: radial-gradient(
         circle,
         color-mix(in srgb, var(--muted-foreground) 22%, transparent) 0.8px,
@@ -197,4 +204,15 @@
     .board-empty-state {
         width: calc(100% - 64px);
     }
+}
+
+/*
+ * Promote only actively translated blocks; retaining layers for every rich card can consume substantial graphics memory.
+ */
+.board-object[data-board-moving='true'] {
+    will-change: translate;
+}
+
+.board-world[data-camera-moving='true'] {
+    will-change: translate;
 }
