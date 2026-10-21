@@ -9,7 +9,7 @@ import { BoardContextMenu } from './board-context-menu';
 import { useBoardTools } from './use-board-tools';
 import { handleBoardEscape } from './board-escape';
 import { handleBoardHistoryKeyboard } from './board-history-keyboard';
-import { BoardObjectCard } from './board-object-card';
+import { BoardSubscribedObjectCard } from './board-subscribed-object-card';
 import { BoardToolbar } from './board-toolbar';
 import { BoardSaveStatus } from './board-save-status';
 import { useBoardAutosave } from './use-board-autosave';
@@ -19,6 +19,7 @@ import { useBoardPointer } from './use-board-pointer';
 import { type BoardLocation, type BoardSnapshot } from './board-types';
 import { boardKeyboardHandler } from './board-keyboard';
 import { useBoardRenderedObjects } from './use-board-rendered-objects';
+import { useBoardPerformanceDiagnostics } from './use-board-performance-diagnostics';
 import './board.css';
 import './board-chrome.css';
 import './board-blocks.css';
@@ -160,11 +161,7 @@ function BoardWorkspace({
         viewportRef.current?.focus({ preventScroll: true });
     }, [viewportRef]);
     const beginEditing = useCallback((id: string) => {
-        if (
-            activeModel.current.objectsRef.current.find(
-                (object) => object.id === id,
-            )?.block_type === 'divider'
-        )
+        if (activeModel.current.store.getObject(id)?.block_type === 'divider')
             return;
         if (
             composingRef.current ||
@@ -208,10 +205,16 @@ function BoardWorkspace({
         () => uploadingRef.current || resourceLockedRef.current,
     );
     const renderedObjects = useBoardRenderedObjects(
-        model.objects,
+        model.layoutObjects,
         camera.visibleBounds,
         model.editingId,
     );
+    useBoardPerformanceDiagnostics({
+        viewportRef,
+        objectsRef: model.objectsRef,
+        cameraRef: camera.cameraRef,
+        mountingBounds: camera.visibleBounds,
+    });
     return (
         <section
             className="board-workspace"
@@ -311,7 +314,7 @@ function BoardWorkspace({
                             data-multi-selection={model.selectedIds.length > 1}
                         >
                             <BoardSelectionBounds
-                                objects={model.objects}
+                                objects={model.layoutObjects}
                                 selectedIds={model.selectedIds}
                             />
                             <div
@@ -320,9 +323,10 @@ function BoardWorkspace({
                                 aria-hidden="true"
                             />
                             {renderedObjects.map((object) => (
-                                <BoardObjectCard
+                                <BoardSubscribedObjectCard
                                     key={object.id}
-                                    object={object}
+                                    store={model.store}
+                                    objectId={object.id}
                                     location={location}
                                     tabId={tabId}
                                     onResourceLock={resourceLocks.setCardLocked}
@@ -357,7 +361,7 @@ function BoardWorkspace({
                             className="board-selection-box"
                             hidden
                         />
-                        {!model.objects.length && (
+                        {!model.layoutObjects.length && (
                             <div className="board-empty-state">
                                 <span>
                                     Choose Text or Add, then click anywhere to
@@ -433,13 +437,7 @@ function BoardWorkspace({
                     busy={uploading || resourceLocked}
                     onEdit={beginEditing}
                     onFinish={finishEditing}
-                    onChange={(object) =>
-                        model.commit(
-                            model.objectsRef.current.map((item) =>
-                                item.id === object.id ? object : item,
-                            ),
-                        )
-                    }
+                    onChange={updateBlockObject}
                 />
             </div>
             <p id="board-canvas-help" className="sr-only">

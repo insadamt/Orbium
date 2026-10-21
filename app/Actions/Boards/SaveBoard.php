@@ -5,6 +5,7 @@ namespace App\Actions\Boards;
 use App\Models\Board;
 use App\Models\Node;
 use App\Services\Boards\BoardContent;
+use App\Services\Boards\BoardObjectRows;
 use App\Services\Boards\BoardSaveData;
 use Illuminate\Support\Facades\DB;
 
@@ -20,22 +21,8 @@ final class SaveBoard
             $objects = app(BoardContent::class)->validateObjects($node, $data->objects);
             $objectIds = array_column($objects, 'id');
             $board->objects()->whereNotIn('object_id', $objectIds)->delete();
-            $timestamp = now();
-            $rows = array_map(fn (array $object): array => [
-                'board_node_id' => $node->id,
-                'object_id' => $object['id'],
-                ...array_diff_key($object, ['id' => true, 'data' => true]),
-                'data' => json_encode((object) $object['data'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR),
-                'markdown' => null,
-                'created_at' => $timestamp,
-                'updated_at' => $timestamp,
-            ], $objects);
-            if ($rows !== []) {
-                DB::table('board_objects')->upsert($rows, ['board_node_id', 'object_id'], [
-                    'block_type', 'content_format_version', 'data', 'markdown', 'x', 'y', 'width', 'height', 'layer', 'updated_at',
-                ]);
-            }
-            $board->update(['revision' => $board->revision + 1]);
+            app(BoardObjectRows::class)->write($node->id, $objects);
+            $board->forceFill(['revision' => $board->revision + 1, 'last_mutation_id' => null, 'last_mutation_hash' => null])->save();
 
             return $board->revision;
         });

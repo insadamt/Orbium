@@ -1,6 +1,38 @@
 # Orbium — Codex implementation handoff
 
+Board CPU follow-up (2026-10-21): the user reports the preview correction did not
+improve rendering/CPU/temperature. Treat the thermal issue as unresolved. Plain
+native tables now avoid Markdown round-tripping; height observers avoid restarting
+after their own updates; the queue selects jobs in one pass and pauses pending work
+in hidden browser tabs; reusable SVG color adaptation is memoized. A temporary
+built-frontend comparison server is running on localhost:8001 without changing the
+existing development server. See `reports/12-boards-cpu-followup.md`. No foreground
+trace or temperature comparison has been obtained; do not claim resolution.
+
+Board repeat-loading correction (2026-10-21): the user reported frustration with
+rendering/loading. Prepared sanitized Mermaid SVGs and math markup now survive
+block eviction within bounded Board-local caches. Native diagrams use the Board
+queue directly, and Document refresh keeps the current readable revision visible.
+Read `reports/12-boards-preview-continuity.md`; browser acceptance remains manual
+within phase 4.
+
+Board stress scene (2026-10-21): `php artisan boards:stress <workspace>` creates
+disposable native-block scenes for manual profiling in the local environment.
+Read `reports/12-boards-stress-scene.md` for options, actual creation/checks and
+manual steps. This stays within Board phase-4 performance review.
+
 This package is the authoritative implementation brief for **Orbium v0.1.0**.
+
+Board optimization plan (2026-10-21): the user requested implementation of
+`plans/board-performance-engine.md`, then explicitly directed “look just enhance
+everything implement the new architecture”. That supersedes the earlier P0-only
+execution gate. The record/subscription/history, scoped renderer scheduling,
+read-only tables, memoized visibility and revisioned incremental-save architecture
+is implemented within the existing Board phase-4 review. Read
+`plans/board-performance-architecture.md` and `reports/12-boards-performance-architecture.md`
+for the protocol, additive migration and manual acceptance checklist. P0 diagnostics
+remain available; actual browser/thermal measurements are pending. Do not start
+another product phase or claim measured improvement from static checks.
 
 Current feature task (2026-10-18): the user approved the native Board correction and authorized phase 4 with “okey go ahead”. Follow `phases/12-boards-resource-cards.md` and `docs/24-boards.md`: live resource cards, original Document persistence and sibling Document creation, while preserving independent native Board blocks. Phase-4 implementation and manual acceptance are recorded in `reports/12-boards-resource-cards.md`. Boards now use the normal Orbium app bar/tabs and page surface, superseding the earlier full-screen default; see `reports/12-boards-native-app-shell.md`. Presentation, smart guides, arrangement and properties are documented in `reports/12-boards-spatial-refinement.md`. The latest investigation, navigation correction, indexed-field editor fix and unresolved block interaction problems are recorded in `reports/12-boards-investigation.md`. The user subsequently approved all UX-audit corrections with “okey fix all that”; the native editing, history, gesture, overlay, responsive and performance-work refinements are recorded in `reports/12-boards-ux-correction.md`. The subsequent approved block-presentation pass is recorded in `reports/12-boards-block-presentation.md`, with a standalone visual gallery and representative-board checklist. Stop for manual review before any Mind Map/later phase.
 

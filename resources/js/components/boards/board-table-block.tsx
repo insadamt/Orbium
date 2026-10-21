@@ -2,7 +2,6 @@ import { useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 import { Compartment, EditorState } from '@codemirror/state';
 import { EditorView } from '@codemirror/view';
-import { MermaidPreviewSession } from '@/components/editor/mermaid-preview-session';
 import { mountTable } from '@/components/editor/markdown/rich/table-widget';
 import type { RichController } from '@/components/editor/markdown/rich/rich-model';
 import {
@@ -11,15 +10,72 @@ import {
     readBoardTable,
 } from './board-table-data';
 import type { BoardContentProps } from './board-text-block';
+import { mountBoardTablePreview } from './board-table-preview';
+import {
+    useBoardPreparedPreviews,
+    useBoardWorkScheduler,
+} from './board-resource-previews';
+import { BoardMermaidPreviewSession } from './board-mermaid-preview-session';
 
 export function BoardTableBlock(props: BoardContentProps) {
+    const scheduler = useBoardWorkScheduler();
+    const prepared = useBoardPreparedPreviews();
     const host = useRef<HTMLDivElement>(null);
     const callbacks = useRef(props);
     callbacks.current = props;
     const session = useRef<{ sync: () => void } | null>(null);
+    const scrollPosition = useRef({ left: 0, top: 0 });
 
     useEffect(() => {
         const root = host.current!;
+        const rememberScroll = () => {
+            const scroller = root.querySelector('.tableWrapper');
+            if (scroller)
+                scrollPosition.current = {
+                    left: scroller.scrollLeft,
+                    top: scroller.scrollTop,
+                };
+        };
+        const restoreScroll = () => {
+            const scroller = root.querySelector('.tableWrapper');
+            if (scroller) {
+                scroller.scrollLeft = scrollPosition.current.left;
+                scroller.scrollTop = scrollPosition.current.top;
+            }
+        };
+        if (!props.editing) {
+            let data = callbacks.current.object.data;
+            let disposePreview = mountBoardTablePreview({
+                root,
+                data,
+                location: props,
+                scheduler,
+                prepared,
+            });
+            restoreScroll();
+            session.current = {
+                sync: () => {
+                    const next = callbacks.current.object.data;
+                    if (next === data) return;
+                    rememberScroll();
+                    disposePreview();
+                    data = next;
+                    disposePreview = mountBoardTablePreview({
+                        root,
+                        data,
+                        location: callbacks.current,
+                        scheduler,
+                        prepared,
+                    });
+                    restoreScroll();
+                },
+            };
+            return () => {
+                rememberScroll();
+                session.current = null;
+                disposePreview();
+            };
+        }
         const sourceHost = document.createElement('div');
         sourceHost.hidden = true;
         root.append(sourceHost);
@@ -29,10 +85,13 @@ export function BoardTableBlock(props: BoardContentProps) {
         let controller: RichController | undefined;
         let synchronizing = false;
         let destroyed = false;
-        const mermaid = new MermaidPreviewSession(
-            props.workspaceId,
-            props.boardId,
-            'board',
+        const mermaid = new BoardMermaidPreviewSession(
+            {
+                workspaceId: props.workspaceId,
+                nodeId: props.boardId,
+                ownerKind: 'board',
+            },
+            prepared,
         );
         const view = new EditorView({
             parent: sourceHost,
@@ -106,6 +165,7 @@ export function BoardTableBlock(props: BoardContentProps) {
                     nodeId: props.boardId,
                     ownerKind: 'board',
                     mermaid,
+                    mathPreviewScope: prepared.mathScope,
                     metadata: new Map(),
                     isVisible: () => root.isConnected,
                     onUpload: () => {},
@@ -144,7 +204,10 @@ export function BoardTableBlock(props: BoardContentProps) {
             }
         }
         session.current = { sync };
+        restoreScroll();
+        mermaid.start(root);
         return () => {
+            rememberScroll();
             destroyed = true;
             session.current = null;
             controller?.destroy();
@@ -153,7 +216,7 @@ export function BoardTableBlock(props: BoardContentProps) {
             root.replaceChildren();
             callbacks.current.onComposition(false);
         };
-    }, [props.boardId, props.workspaceId]);
+    }, [props.boardId, props.workspaceId, props.editing, scheduler, prepared]);
 
     useEffect(() => {
         session.current?.sync();

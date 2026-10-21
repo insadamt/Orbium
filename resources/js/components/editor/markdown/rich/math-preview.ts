@@ -10,29 +10,58 @@ type MathPreviewRequest = {
 
 export type MathPreview = { markup: string; failed: boolean };
 
-const editorPreviews = new WeakMap<RichContext, Map<string, MathPreview>>();
+type PreparedMathPreviews = {
+    entries: Map<string, MathPreview>;
+    bytes: number;
+};
+const editorPreviews = new WeakMap<object, PreparedMathPreviews>();
 const maximumPreviewsPerEditor = 128;
+const maximumPreparedBytes = 4 * 1024 * 1024;
 
 function mathPreviewKey(request: MathPreviewRequest) {
     return JSON.stringify([request.displayMode, request.latex]);
 }
 
 export function findPreparedMathPreview(request: MathPreviewRequest) {
-    return editorPreviews.get(request.context)?.get(mathPreviewKey(request));
+    const previews = editorPreviews.get(
+        request.context.mathPreviewScope ?? request.context,
+    );
+    return previews?.entries.get(mathPreviewKey(request));
 }
 
 export function cachePreparedMathPreview(
     request: MathPreviewRequest,
     preview: MathPreview,
 ) {
-    let previews = editorPreviews.get(request.context);
+    const scope = request.context.mathPreviewScope ?? request.context;
+    let previews = editorPreviews.get(scope);
     if (!previews) {
-        previews = new Map();
-        editorPreviews.set(request.context, previews);
+        previews = { entries: new Map(), bytes: 0 };
+        editorPreviews.set(scope, previews);
     }
-    if (previews.size >= maximumPreviewsPerEditor)
-        previews.delete(previews.keys().next().value!);
-    previews.set(mathPreviewKey(request), preview);
+    const key = mathPreviewKey(request);
+    const existing = previews.entries.get(key);
+    if (existing) {
+        previews.entries.delete(key);
+        previews.bytes -= (key.length + existing.markup.length) * 2;
+    }
+    const bytes = (key.length + preview.markup.length) * 2;
+    if (bytes > maximumPreparedBytes) return;
+    previews.entries.set(key, preview);
+    previews.bytes += bytes;
+    //
+    // Board remounts can share this scope; bound compiled markup as well as entry count.
+    //
+    while (
+        previews.entries.size > maximumPreviewsPerEditor ||
+        previews.bytes > maximumPreparedBytes
+    ) {
+        const oldestKey = previews.entries.keys().next().value;
+        if (oldestKey === undefined) break;
+        const oldest = previews.entries.get(oldestKey)!;
+        previews.entries.delete(oldestKey);
+        previews.bytes -= (oldestKey.length + oldest.markup.length) * 2;
+    }
 }
 
 function prepareMathPreview(request: MathPreviewRequest): MathPreview {

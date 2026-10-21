@@ -5,6 +5,7 @@ import {
     BoardSaveError,
     fetchBoard,
     saveBoard,
+    readBoardSnapshot,
     type BoardValidationCache,
 } from './board-api';
 import {
@@ -15,6 +16,15 @@ import {
     type BoardRecoveryLocation,
 } from './board-recovery';
 import type { BoardObject, BoardSnapshot } from './board-types';
+import {
+    prepareBoardMutation,
+    sendBoardMutation,
+    type PreparedBoardMutation,
+} from './board-mutation-api';
+import {
+    materializeBoardObjects,
+    type BoardObjectSource,
+} from './board-record-store';
 
 export function useBoardAutosave(
     location: BoardRecoveryLocation,
@@ -31,10 +41,16 @@ export function useBoardAutosave(
     const unsupportedDraft = useRef(recovery.unsupportedSource);
     const [startingSnapshot] = useState(recovered ?? initial);
     const revision = useRef(startingSnapshot.revision);
+    const baseline = useRef(initial.objects);
+    const mutationsEnabled = useRef(initial.mutation_version === 1);
+    const retryMutation = useRef<PreparedBoardMutation | null>(null);
     const validationCache = useRef<BoardValidationCache>(new WeakMap());
-    const pending = useRef<BoardObject[] | null>(recovered?.objects ?? null);
-    const latest = useRef(startingSnapshot.objects);
+    const pending = useRef<BoardObjectSource | null>(
+        recovered?.objects ?? null,
+    );
+    const latest = useRef<BoardObjectSource>(startingSnapshot.objects);
     const inFlight = useRef(false);
+    const loadingLatest = useRef(false);
     const stopped = useRef(false);
     const conflicted = useRef(
         Boolean(
@@ -60,30 +76,54 @@ export function useBoardAutosave(
         recovered ? 'Recovered your unsaved local draft.' : '',
     );
     const [storageWarning, setStorageWarning] = useState('');
+    const persistedDraft = useRef<{
+        revision: number;
+        objects: BoardObject[];
+    } | null>(null);
 
-    const persistDraft = useCallback(() => {
-        cancelIdleDraft.current?.();
-        cancelIdleDraft.current = undefined;
-        // Preserve unknown recovery bytes until the user explicitly chooses the saved Board.
+    const persistDraft = useCallback(
+        (force = true) => {
+            clearTimeout(draftTimer.current);
+            cancelIdleDraft.current?.();
+            cancelIdleDraft.current = undefined;
+            // Preserve unknown recovery bytes until the user explicitly chooses the saved Board.
 
-        if (unsupportedDraft.current !== undefined) return;
-        const saved = writeBoardDraft(location, {
-            format_version: 4,
-            revision: revision.current,
-            objects: latest.current,
-        });
-        if (!stopped.current)
-            setStorageWarning(
-                saved
-                    ? ''
-                    : 'Local recovery is unavailable. Keep this tab open until Saved.',
-            );
-    }, [location]);
+            if (unsupportedDraft.current !== undefined) return;
+            const objects = materializeBoardObjects(latest.current);
+            //
+            // Debounced work can follow a forced write; deduplicate only that optional work so save/error/exit paths still refresh storage.
+            //
+            if (
+                !force &&
+                persistedDraft.current?.revision === revision.current &&
+                persistedDraft.current.objects === objects
+            )
+                return;
+            const saved = writeBoardDraft(location, {
+                format_version: 4,
+                revision: revision.current,
+                objects,
+            });
+            if (saved)
+                persistedDraft.current = {
+                    revision: revision.current,
+                    objects,
+                };
+            if (!stopped.current)
+                setStorageWarning(
+                    saved
+                        ? ''
+                        : 'Local recovery is unavailable. Keep this tab open until Saved.',
+                );
+        },
+        [location],
+    );
 
     const flush = useCallback(async () => {
         clearTimeout(timer.current);
         if (
             stopped.current ||
+            loadingLatest.current ||
             inFlight.current ||
             conflicted.current ||
             pending.current === null
@@ -93,23 +133,41 @@ export function useBoardAutosave(
             timer.current = window.setTimeout(() => void flush(), 700);
             return;
         }
-        const objects = pending.current;
-        pending.current = null;
+        const retry = retryMutation.current;
+        const objects =
+            retry?.objects ?? materializeBoardObjects(pending.current);
+        if (!retry || materializeBoardObjects(pending.current) === objects)
+            pending.current = null;
         inFlight.current = true;
         dirtySince.current = null;
         setStatus('saving');
         persistDraft();
         let saved = false;
         try {
-            revision.current = await saveBoard(
-                location,
-                {
-                    format_version: 4,
-                    revision: revision.current,
-                    objects,
-                },
-                validationCache.current,
-            );
+            const snapshot: BoardSnapshot = {
+                format_version: 4,
+                revision: revision.current,
+                objects,
+            };
+            if (mutationsEnabled.current) {
+                readBoardSnapshot(snapshot, false, validationCache.current);
+                const mutation =
+                    retry ?? prepareBoardMutation(snapshot, baseline.current);
+                if (mutation) {
+                    retryMutation.current = mutation;
+                    revision.current = await sendBoardMutation(
+                        location,
+                        mutation,
+                    );
+                }
+            } else
+                revision.current = await saveBoard(
+                    location,
+                    snapshot,
+                    validationCache.current,
+                );
+            baseline.current = objects;
+            retryMutation.current = null;
             saved = true;
             if (!stopped.current) {
                 setError('');
@@ -118,11 +176,18 @@ export function useBoardAutosave(
                     clearTimeout(draftTimer.current);
                     cancelIdleDraft.current?.();
                     removeBoardDraft(location);
+                    persistedDraft.current = null;
                     setNotice('');
                 } else persistDraft();
             }
         } catch (failure) {
             pending.current ??= objects;
+            if (
+                failure instanceof BoardSaveError &&
+                failure.status >= 400 &&
+                failure.status < 500
+            )
+                retryMutation.current = null;
             conflicted.current =
                 failure instanceof BoardSaveError && failure.status === 409;
             if (!stopped.current) {
@@ -142,9 +207,9 @@ export function useBoardAutosave(
     }, [location, persistDraft]);
 
     const queueSave = useCallback(
-        (objects: BoardObject[]) => {
-            latest.current = objects;
-            pending.current = objects;
+        (source: BoardObjectSource) => {
+            latest.current = source;
+            pending.current = source;
             dirtySince.current ??= performance.now();
             if (!conflicted.current) setStatus('unsaved');
             setNotice('');
@@ -154,7 +219,9 @@ export function useBoardAutosave(
                 //
                 // Recovery serialization is synchronous; give input/layout priority while keeping a bounded idle timeout.
                 //
-                cancelIdleDraft.current = scheduleEditorIdleWork(persistDraft);
+                cancelIdleDraft.current = scheduleEditorIdleWork(() =>
+                    persistDraft(false),
+                );
             }, 150);
             clearTimeout(timer.current);
             if (!conflicted.current)
@@ -173,11 +240,20 @@ export function useBoardAutosave(
     );
 
     const loadLatest = useCallback(async (): Promise<BoardSnapshot | null> => {
-        if (inFlight.current) return null;
+        if (inFlight.current || loadingLatest.current) return null;
+        loadingLatest.current = true;
+        clearTimeout(timer.current);
+        //
+        // Confirmed reload must not race a pending autosave; preserve the old draft until the replacement snapshot has arrived.
+        //
+        persistDraft();
         setStatus('loading');
         try {
             const snapshot = await fetchBoard(location);
             revision.current = snapshot.revision;
+            baseline.current = snapshot.objects;
+            mutationsEnabled.current = snapshot.mutation_version === 1;
+            retryMutation.current = null;
             latest.current = snapshot.objects;
             pending.current = null;
             conflicted.current = false;
@@ -186,6 +262,7 @@ export function useBoardAutosave(
             clearTimeout(draftTimer.current);
             cancelIdleDraft.current?.();
             removeBoardDraft(location);
+            persistedDraft.current = null;
             setError('');
             setNotice('');
             setStatus('saved');
@@ -198,8 +275,10 @@ export function useBoardAutosave(
             );
             setStatus('error');
             return null;
+        } finally {
+            loadingLatest.current = false;
         }
-    }, [location]);
+    }, [location, persistDraft]);
 
     useEffect(() => {
         stopped.current = false;
@@ -210,6 +289,7 @@ export function useBoardAutosave(
         const dirty = () =>
             pending.current !== null ||
             inFlight.current ||
+            loadingLatest.current ||
             composing.current() ||
             navigationLocked.current();
         const guard = (event: Event) => {
@@ -273,10 +353,14 @@ export function useBoardAutosave(
         isClean: () =>
             pending.current === null &&
             !inFlight.current &&
+            !loadingLatest.current &&
             !conflicted.current,
         currentRevision: () => revision.current,
         adoptSavedSnapshot: (snapshot: BoardSnapshot) => {
             revision.current = snapshot.revision;
+            baseline.current = snapshot.objects;
+            mutationsEnabled.current = snapshot.mutation_version === 1;
+            retryMutation.current = null;
             latest.current = snapshot.objects;
             pending.current = null;
             conflicted.current = false;
@@ -284,6 +368,7 @@ export function useBoardAutosave(
             clearTimeout(draftTimer.current);
             cancelIdleDraft.current?.();
             removeBoardDraft(location);
+            persistedDraft.current = null;
             setStatus('saved');
             setError('');
             setNotice('');
@@ -302,7 +387,7 @@ export function useBoardAutosave(
                 unsupportedDraft.current ?? {
                     format_version: 4,
                     revision: revision.current,
-                    objects: latest.current,
+                    objects: materializeBoardObjects(latest.current),
                 },
             ),
     };

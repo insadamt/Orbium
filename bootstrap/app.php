@@ -17,9 +17,10 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
 
-        // Editor bodies contain spaces and empty strings that are part of the document.
+        // Document and Board bodies, including incremental changes, must retain significant spaces and empty strings.
         $preserveDocumentContent = static fn (Request $request): bool => $request->isJson()
-            && (($request->isMethod('PUT') && ($request->is('workspaces/*/documents/*') || $request->is('workspaces/*/boards/*/content')))
+            && (($request->isMethod('PUT') && $request->is('workspaces/*/documents/*'))
+                || (($request->isMethod('PUT') || $request->isMethod('PATCH')) && $request->is('workspaces/*/boards/*/content'))
                 || ($request->isMethod('POST') && $request->is('workspaces/*/boards/*/documents')));
         $middleware->trimStrings(except: [$preserveDocumentContent]);
         $middleware->convertEmptyStringsToNull(except: [$preserveDocumentContent]);

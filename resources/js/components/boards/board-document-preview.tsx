@@ -1,12 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
 import { serializeDocumentAsMarkdown } from '@/components/editor/markdown-export';
-import { MermaidPreviewSession } from '@/components/editor/mermaid-preview-session';
 import { renderRichBody } from '@/components/editor/markdown/rich/render-rich-body';
-import { useBoardDocumentSnapshots } from './board-resource-previews';
-import { scheduleBoardDocumentPreview } from './board-preview-queue';
+import {
+    useBoardDocumentSnapshots,
+    useBoardWorkScheduler,
+    useBoardPreparedPreviews,
+} from './board-resource-previews';
 import { fetchResourceDocument } from './board-resource-api';
 import type { BoardLocation } from './board-types';
 import type { BoardResource, ResourceDocument } from './board-resource-types';
+import { createBoardRichPreviewQueue } from './board-rich-preview-queue';
+import { BoardMermaidPreviewSession } from './board-mermaid-preview-session';
 
 export function BoardDocumentPreview({
     location,
@@ -21,6 +25,8 @@ export function BoardDocumentPreview({
 }) {
     const host = useRef<HTMLDivElement>(null);
     const documents = useBoardDocumentSnapshots();
+    const scheduler = useBoardWorkScheduler();
+    const prepared = useBoardPreparedPreviews();
     const appliedRefreshVersion = useRef(refreshVersion);
     const [snapshot, setSnapshot] = useState<ResourceDocument | null>(() =>
         documents.read(resource.id, resource.revision),
@@ -28,6 +34,7 @@ export function BoardDocumentPreview({
     const [error, setError] = useState('');
     const { workspaceId, boardId } = location;
     const { id: targetId, revision } = resource;
+    const currentSnapshot = snapshot?.id === targetId ? snapshot : null;
 
     useEffect(() => {
         const controller = new AbortController();
@@ -42,7 +49,10 @@ export function BoardDocumentPreview({
             onLoaded(cached);
             return;
         }
-        setSnapshot(null);
+        //
+        // Keep the last readable revision during refresh, but never carry content across a different resource target.
+        //
+        setSnapshot((current) => (current?.id === targetId ? current : null));
         let visible = typeof IntersectionObserver === 'undefined';
         const observer =
             typeof IntersectionObserver === 'undefined'
@@ -57,7 +67,8 @@ export function BoardDocumentPreview({
                   );
         const card = host.current?.closest('[data-board-object-id]');
         if (card) observer?.observe(card);
-        const cancelQueuedPreview = scheduleBoardDocumentPreview(
+        const cancelQueuedPreview = scheduler.enqueue(
+            'fetch',
             async () => {
                 await fetchResourceDocument(
                     { workspaceId, boardId },
@@ -80,7 +91,7 @@ export function BoardDocumentPreview({
                             );
                     });
             },
-            () => visible,
+            () => (visible ? 0 : 1),
         );
         return () => {
             observer?.disconnect();
@@ -95,25 +106,31 @@ export function BoardDocumentPreview({
         refreshVersion,
         onLoaded,
         documents,
+        scheduler,
     ]);
 
     useEffect(() => {
         const output = host.current;
-        if (!output || !snapshot) return;
+        if (!output) return;
         output.replaceChildren();
+        if (!currentSnapshot) return;
         //
         // Render against the original Document so attachments and mentions keep their existing ownership.
         //
-        const mermaid = new MermaidPreviewSession(workspaceId, snapshot.id);
+        const mermaid = new BoardMermaidPreviewSession(
+            { workspaceId, nodeId: currentSnapshot.id, ownerKind: 'document' },
+            prepared,
+        );
+        const richQueue = createBoardRichPreviewQueue(output, scheduler);
         const source =
-            snapshot.content_format_version === 2
-                ? snapshot.markdown
+            currentSnapshot.content_format_version === 2
+                ? currentSnapshot.markdown
                 : serializeDocumentAsMarkdown(
-                      snapshot.title,
-                      snapshot.content,
+                      currentSnapshot.title,
+                      currentSnapshot.content,
                       {
                           workspaceId,
-                          nodeId: snapshot.id,
+                          nodeId: currentSnapshot.id,
                           origin: window.location.origin,
                       },
                   );
@@ -122,10 +139,14 @@ export function BoardDocumentPreview({
             source,
             {
                 workspaceId,
-                nodeId: snapshot.id,
+                nodeId: currentSnapshot.id,
                 mermaid,
+                mathPreviewScope: prepared.mathScope,
                 metadata: new Map(),
-                documentSourceRanges: snapshot.content_format_version === 2,
+                documentSourceRanges:
+                    currentSnapshot.content_format_version === 2,
+                schedulePreview: (element, render) =>
+                    richQueue.enqueue(element, render),
                 isVisible: () => output.isConnected,
                 onUpload: () => {},
             },
@@ -135,21 +156,22 @@ export function BoardDocumentPreview({
             output.textContent = 'Empty Document · double-click to edit';
         mermaid.start(output);
         return () => {
+            richQueue.destroy();
             dispose();
             mermaid.destroy();
             output.replaceChildren();
         };
-    }, [snapshot, workspaceId]);
+    }, [currentSnapshot, workspaceId, scheduler, prepared]);
 
     return (
         <div
             className="board-document-preview orbium-editor orbium-markdown-content"
             data-document-styles
-            data-preview-ready={Boolean(snapshot)}
+            data-preview-ready={Boolean(currentSnapshot)}
         >
             {error ? (
                 <p role="alert">{error}</p>
-            ) : !snapshot ? (
+            ) : !currentSnapshot ? (
                 <p role="status">Rendering Document…</p>
             ) : null}
             <div ref={host} />

@@ -11,6 +11,7 @@ import type { BoardObjectsController } from './use-board-objects';
 import type { BoardCameraController } from './use-board-camera';
 import { useBoardSelectionAnchor } from './use-board-selection-anchor';
 import { boardBlockLabels } from './board-block-data';
+import { useBoardRecord } from './use-board-record';
 export function BoardSelectionTools({
     boardId,
     model,
@@ -37,10 +38,10 @@ export function BoardSelectionTools({
         model.selectedIds,
         editing,
     );
-    const selectedObject =
-        model.selectedIds.length === 1
-            ? model.objects.find((item) => item.id === model.selectedIds[0])
-            : undefined;
+    const selectedObject = useBoardRecord(
+        model.store,
+        model.selectedIds.length === 1 ? model.selectedIds[0] : undefined,
+    );
     const [lastSelection, setLastSelection] = useState({
         selectedIds: model.selectedIds,
         object: selectedObject,

@@ -90,6 +90,7 @@ export function readBoardSnapshot(
 ): BoardSnapshot {
     const snapshot = value as {
         format_version?: number;
+        mutation_version?: number;
         revision?: number;
         objects?: unknown[];
     } | null;
@@ -159,19 +160,31 @@ export function readBoardSnapshot(
                 },
             ];
         })
-        .map((object, layer) => ({ ...object, layer }));
+        .map((object, layer) => ({
+            ...object,
+            id:
+                typeof object.id === 'string'
+                    ? object.id.toLowerCase()
+                    : object.id,
+            layer,
+        }));
     if (!validBoardObjects(objects, validationCache))
         throw new BoardSaveError(
             'This Board exceeds the native block limits or has invalid data. Download the original snapshot for recovery.',
         );
-    return { format_version: 4, revision: snapshot.revision!, objects };
+    return {
+        format_version: 4,
+        revision: snapshot.revision!,
+        objects,
+        ...(snapshot.mutation_version === 1 ? { mutation_version: 1 } : {}),
+    };
 }
 
-function contentUrl(location: BoardLocation) {
+export function boardContentUrl(location: BoardLocation) {
     return `/workspaces/${location.workspaceId}/boards/${location.boardId}/content`;
 }
 
-async function responseData(response: Response): Promise<unknown> {
+export async function readBoardResponse(response: Response): Promise<unknown> {
     const result = (await response.json().catch(() => null)) as {
         message?: string;
         errors?: Record<string, string[]>;
@@ -189,11 +202,11 @@ async function responseData(response: Response): Promise<unknown> {
 export async function fetchBoard(
     location: BoardLocation,
 ): Promise<BoardSnapshot> {
-    const response = await fetch(contentUrl(location), {
+    const response = await fetch(boardContentUrl(location), {
         headers: { Accept: 'application/json' },
         cache: 'no-store',
     });
-    return readBoardSnapshot(await responseData(response));
+    return readBoardSnapshot(await readBoardResponse(response));
 }
 
 export async function saveBoard(
@@ -202,7 +215,7 @@ export async function saveBoard(
     validationCache?: BoardValidationCache,
 ): Promise<number> {
     readBoardSnapshot(snapshot, false, validationCache);
-    const response = await fetch(contentUrl(location), {
+    const response = await fetch(boardContentUrl(location), {
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json',
@@ -211,7 +224,7 @@ export async function saveBoard(
         },
         body: JSON.stringify(snapshot),
     });
-    const result = (await responseData(response)) as { revision?: number };
+    const result = (await readBoardResponse(response)) as { revision?: number };
     if (
         !Number.isSafeInteger(result.revision) ||
         result.revision !== snapshot.revision + 1

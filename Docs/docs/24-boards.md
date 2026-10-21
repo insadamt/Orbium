@@ -599,3 +599,76 @@ The grid is a separate clipped translated layer beneath the world, replacing
 canvas-background position updates during pan. Native layout zoom and PDF density
 remain. See `../reports/12-boards-pan-rendering-lifecycle.md` for actual checks and
 manual acceptance. CPU/thermal resolution remains unverified; phase-4 review continues.
+
+## Board performance architecture correction (2026-10-21)
+
+The user explicitly requested implementing the new architecture without waiting
+for P0 recordings. Each mounted Board now owns normalized immutable object records,
+per-object subscriptions, a geometry channel and grouped transactional history.
+Typing updates the affected record; full snapshot arrays materialize at command,
+save/recovery or geometry boundaries. Automatic heights remain batched and derived,
+and selection/camera state remains transient. Rendering no longer publishes
+retention state during render.
+
+Inactive tables use read-only Document-style surfaces/fullscreen with no hidden
+CodeMirror source editor. Editing mounts the existing shared table controller;
+scroll position survives mode changes. Rich table cells create Mermaid sessions
+only when needed. Native code/math/diagram previews and expensive linked Document
+embeds share one Board scheduler with two preview fetch slots, one render-initiation
+slot, visible priority, bounded yielding and cancellation. Original Document text,
+ownership, complete inline access and active-editor pinning remain. Ordinary
+Documents retain their existing default renderer behavior.
+
+Format-4 snapshots advertise optional `mutation_version: 1` only for native,
+contiguously ordered objects. Compatible Boards save explicit creates/updates/deletes
+through revision-checked PATCH batches; legacy/unknown-capability Boards keep PUT.
+Changed data/references/geometry and resulting aggregate bytes/count/order remain
+server-validated in one transaction. Changed rows are written individually after
+one-time budget initialization. Exact retry bodies/UUIDs and a bounded last-mutation
+receipt protect uncertain responses; 409 preserves full local recovery and stops
+writes. Full snapshot load/download/recovery and confirmed replacement remain.
+PATCH preserves significant whitespace and empty strings. Confirmed Load latest
+suspends autosave until the replacement arrives.
+
+The additive migration adds nullable byte/replay metadata, not a new content format.
+Run migrations with the matching server deployment. Source-cache/retention budgets,
+native zoom/PDF clarity and existing pointer painting stay as established. Actual
+CPU/thermal improvement is pending manual measurement. See
+`../plans/board-performance-architecture.md` and
+`../reports/12-boards-performance-architecture.md`; stay in phase-4 manual review.
+
+### Repeat-loading correction (2026-10-21)
+
+Prepared diagram/math results now survive culling within a mounted Board. Sanitized
+Mermaid SVGs have a 128-entry/4 MiB estimated-string budget; compiled math has its
+own 128-entry/4 MiB budget. Native hits attach before paint, with fresh SVG instance
+IDs/current colors and working fullscreen controls. Rich table and linked Document
+sessions reuse owner/source-matched sanitized diagrams. Native cold diagrams run
+directly through the shared Board queue, holding its render slot through async
+completion instead of adding Document idle scheduling. Hidden/obsolete callbacks
+cannot populate a replacement surface. Uninterruptible renders may complete into
+the bounded cache after their card is culled.
+
+Refreshing a linked Document keeps its current readable revision until the new
+source arrives. Target changes and unavailable-resource boundaries still discard
+the previous content. Cold loads, source changes, cache eviction and reopening a
+Board can still require rendering/fetching; this is no claim of zero loading or
+measured performance improvement. See `../reports/12-boards-preview-continuity.md`
+for checks/manual acceptance. Remain in phase 4.
+
+### CPU follow-up after unchanged user results (2026-10-21)
+
+The user reports unchanged rendering/CPU/temperature after preview reuse. Native
+unmarked tables without Document source now render their literal text/breaks
+directly into the existing table/fullscreen structure, avoiding a Markdown export
+and one table/per-cell parse on every mount. Rich/source-backed tables keep the
+shared rich renderer. Height observation no longer restarts on content/height
+updates; actual size notifications and explicit scale/width/edit-mode changes
+continue measuring automatic height. The Board queue selects the best runnable
+job in one pass, yields pending input for 16ms and pauses queued work in hidden
+browser documents. Cached SVG color adaptation is weakly memoized; instance IDs
+still change per mount and theme CSS variables remain live.
+
+Static checks pass; the CPU/thermal complaint is still unresolved pending manual
+foreground recording and built-asset comparison. See
+`../reports/12-boards-cpu-followup.md`. Remain in phase 4.

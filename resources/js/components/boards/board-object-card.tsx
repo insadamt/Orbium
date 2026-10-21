@@ -105,14 +105,13 @@ export const BoardObjectCard = memo(function BoardObjectCard({
         };
     }, [
         object.id,
-        object.data,
+        object.data.text_scale,
         object.width,
         object.block_type,
         editing,
         autoHeight,
         blocked,
         onHeightChange,
-        object.height,
     ]);
     const props = {
         object,

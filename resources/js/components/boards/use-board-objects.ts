@@ -1,4 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
+import {
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+    useSyncExternalStore,
+} from 'react';
 import { toast } from 'sonner';
 import {
     boardLimits,
@@ -8,26 +14,46 @@ import {
     type BoardPlacementKind,
 } from './board-types';
 import { boardDataBytes, createBoardBlockData } from './board-block-data';
-import { validBoardObjects, type BoardValidationCache } from './board-api';
+import { validBoardObjects } from './board-api';
+import { BoardRecordStore, type BoardObjectSource } from './board-record-store';
 import { createResourceObject } from './board-resource-layout';
 import { clamp } from './board-geometry';
 
 export function useBoardObjects(
     initial: BoardObject[],
-    queueSave: (objects: BoardObject[]) => void,
+    queueSave: (source: BoardObjectSource) => void,
 ) {
-    const [objects, setObjects] = useState(initial);
-    const objectsRef = useRef(objects);
+    const saveCallback = useRef(queueSave);
+    saveCallback.current = queueSave;
+    const [store] = useState(
+        () =>
+            new BoardRecordStore(initial, (source) =>
+                saveCallback.current(source),
+            ),
+    );
+    const layoutObjects = useSyncExternalStore(
+        store.subscribeLayout,
+        store.getLayoutSnapshot,
+        store.getLayoutSnapshot,
+    );
+    const historyState = useSyncExternalStore(
+        store.subscribeHistory,
+        store.getHistoryState,
+        store.getHistoryState,
+    );
+    const objectsRef = useMemo(
+        () => ({
+            get current() {
+                return store.getObjects();
+            },
+        }),
+        [store],
+    );
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const selectedRef = useRef(selectedIds);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editorResetVersion, setEditorResetVersion] = useState(0);
     const editPoint = useRef<BoardPoint | null>(null);
-    const past = useRef<BoardObject[][]>([]);
-    const future = useRef<BoardObject[][]>([]);
-    const historyGroup = useRef<string | null>(null);
-    const lastHistoryChange = useRef(0);
-    const validationCache = useRef<BoardValidationCache>(new WeakMap());
     const measuredHeights = useRef(
         new Map<string, { object: BoardObject; height: number }>(),
     );
@@ -47,42 +73,24 @@ export function useBoardObjects(
         selectedRef.current = ids;
         setSelectedIds(ids);
     }
-    function apply(next: BoardObject[]) {
-        objectsRef.current = next;
-        setObjects(next);
-        queueSave(next);
-    }
     function commit(next: BoardObject[], group: string | null = null) {
-        if (next === objectsRef.current) return true;
-        //
-        // Object data is immutable here; reuse validated content budgets while checking every layout and aggregate limit on each commit.
-        //
-        if (!validBoardObjects(next, validationCache.current)) {
+        const accepted = store.commitSnapshot(next, group);
+        if (!accepted) {
             toast.error('This change exceeds the Board block or data limits.');
-            return false;
         }
-        if (next.some((object, index) => object.layer !== index))
-            next = [...next]
-                .sort((first, second) => first.layer - second.layer)
-                .map((object, layer) =>
-                    object.layer === layer ? object : { ...object, layer },
-                );
-        const now = performance.now();
-        if (
-            !group ||
-            historyGroup.current !== group ||
-            now - lastHistoryChange.current > 700
-        ) {
-            past.current = [...past.current.slice(-39), objectsRef.current];
-        }
-        future.current = [];
-        historyGroup.current = group;
-        lastHistoryChange.current = now;
-        apply(next);
-        return true;
+        return accepted;
+    }
+    function changeObject(
+        replacement: BoardObject,
+        group: string | null = null,
+    ) {
+        const accepted = store.changeObject(replacement, group);
+        if (!accepted)
+            toast.error('This change exceeds the Board block or data limits.');
+        return accepted;
     }
     function updateMeasuredHeight(id: string, height: number) {
-        const current = objectsRef.current.find((object) => object.id === id);
+        const current = store.getObject(id);
         if (!current || Math.abs(current.height - height) <= 1) return;
         measuredHeights.current.set(id, {
             object: current,
@@ -94,31 +102,13 @@ export function useBoardObjects(
         //
         heightFrame.current = requestAnimationFrame(() => {
             heightFrame.current = undefined;
-            let changed = false;
-            const next = objectsRef.current.map((object) => {
-                const measured = measuredHeights.current.get(object.id);
-                //
-                // A newer edit, resize or history restore owns its geometry; discard stale observer measurements.
-                //
-                if (
-                    !measured ||
-                    measured.object !== object ||
-                    Math.abs(object.height - measured.height) <= 1
-                )
-                    return object;
-                changed = true;
-                return { ...object, height: measured.height };
-            });
+            store.applyMeasuredHeights(measuredHeights.current);
             measuredHeights.current.clear();
-            //
-            // Derived height must not create an undo step or erase redo history.
-            //
-            if (changed) apply(next);
         });
     }
 
     function finishEditing() {
-        historyGroup.current = null;
+        store.history.breakGroup();
         editPoint.current = null;
         setEditingId(null);
     }
@@ -192,12 +182,7 @@ export function useBoardObjects(
         return true;
     }
     function adoptSavedInsertion(next: BoardObject[], objectId: string) {
-        if (!objectsRef.current.some((object) => object.id === objectId))
-            past.current = [...past.current.slice(-39), objectsRef.current];
-        future.current = [];
-        historyGroup.current = null;
-        objectsRef.current = next;
-        setObjects(next);
+        store.replaceSnapshot(next, true);
         select([objectId]);
         setEditingId(objectId);
     }
@@ -266,44 +251,36 @@ export function useBoardObjects(
         if (!selected.length) return;
         commit(
             (front ? [...others, ...selected] : [...selected, ...others]).map(
-                (object, layer) => ({ ...object, layer }),
+                (object, layer) =>
+                    object.layer === layer ? object : { ...object, layer },
             ),
         );
     }
     function undo() {
-        const previous = past.current.pop();
-        if (!previous) return;
-        future.current.push(objectsRef.current);
-        restoreHistorySelection(previous);
-        apply(previous);
+        if (store.undo()) restoreHistorySelection();
     }
     function redo() {
-        const next = future.current.pop();
-        if (!next) return;
-        past.current.push(objectsRef.current);
-        restoreHistorySelection(next);
-        apply(next);
+        if (store.redo()) restoreHistorySelection();
     }
     function reset(next: BoardObject[]) {
         setEditorResetVersion((version) => version + 1);
-        past.current = [];
-        future.current = [];
-        objectsRef.current = next;
-        setObjects(next);
+        store.replaceSnapshot(next);
         select([]);
         finishEditing();
     }
-    function restoreHistorySelection(next: BoardObject[]) {
+    function restoreHistorySelection() {
         setEditorResetVersion((version) => version + 1);
-        historyGroup.current = null;
-        const remainingIds = new Set(next.map((object) => object.id));
-        select(selectedRef.current.filter((id) => remainingIds.has(id)));
+        select(selectedRef.current.filter((id) => store.getObject(id)));
         setEditingId((current) =>
-            current && remainingIds.has(current) ? current : null,
+            current && store.getObject(current) ? current : null,
         );
     }
     return {
-        objects,
+        store,
+        layoutObjects,
+        get objects() {
+            return store.getObjects();
+        },
         objectsRef,
         selectedIds,
         selectedRef,
@@ -315,8 +292,9 @@ export function useBoardObjects(
         setEditingId,
         finishEditing,
         breakHistoryGroup: () => {
-            historyGroup.current = null;
+            store.history.breakGroup();
         },
+        changeObject,
         updateMeasuredHeight,
         select,
         commit,
@@ -329,8 +307,8 @@ export function useBoardObjects(
         undo,
         redo,
         reset,
-        canUndo: past.current.length > 0,
-        canRedo: future.current.length > 0,
+        canUndo: Boolean(historyState & 1),
+        canRedo: Boolean(historyState & 2),
     };
 }
 

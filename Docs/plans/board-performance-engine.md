@@ -1,9 +1,19 @@
 # Orbium Performance Engine — architecture and execution contract
 
-Status: **proposal for the existing Boards phase-4 manual-review gate; not implemented**  
+Status: **Core Board architecture implemented after explicit user direction; manual acceptance and measured performance remain pending. Existing phase-4 review continues.**
 Prepared: 2026-10-20  
 Source: `insadamt/Orbium`, branch `codex/boards`  
 Scope: Boards first, reusable primitives for large Documents where evidence supports reuse.
+
+Implementation handoff (2026-10-21): the user's “look just enhance everything
+implement the new architecture” supersedes the earlier P0-only/measurement-first
+execution gate. Read the [architecture/protocol contract](board-performance-architecture.md)
+and [implementation report](../reports/12-boards-performance-architecture.md).
+P1 record isolation, P2 rich lifecycle/scheduling, the memoized/no-render-write part
+of P3, and P4 revisioned mutations are implemented. Conditional indexing, workers,
+media quality experiments, asynchronous recovery journals and broad P5 Document
+adaptation remain evidence-dependent. The [P0 protocol](board-performance-profiling.md)
+is available for measurement; no CPU/FPS or thermal resolution is claimed.
 
 ## Decision
 
@@ -13,7 +23,7 @@ The experience should be that content *appears ready when needed*. Do not interp
 
 ## Evidence and current constraints
 
-### Current Board code (inspected on 2026-10-20)
+### Baseline Board code (inspected on 2026-10-20; superseded by the implementation above)
 
 - `resources/js/components/boards/board-canvas.tsx`: BoardWorkspace owns the shared model; it computes rendered objects and maps them into BoardObjectCard children.
 - `use-board-objects.ts`: entire `BoardObject[]` is held in React state, immutable snapshots in undo/redo stacks, and `commit()` validates the collection; `apply()` publishes the collection and queues autosave.
@@ -46,7 +56,7 @@ Use historical Document figures as architectural evidence only. Re-measure actua
 6. Preserve zoom clarity including PDFs, reduced-motion support, accessibility and narrow-viewport controls. No blank content on fast return pans just to save CPU.
 7. No new frameworks, queue service, Redis or collaborators; don't expand product scope to groups, drawings, mind maps or unrelated features.
 8. Root `AGENTS.md` takes precedence: user performs manual acceptance; **do not write or run automated tests**. Run formatting/lint/type/build checks when implementing code and report their actual output.
-9. This work remains a **Boards phase-4 correction**. Stop after each approved logical task for review; don't silently begin a later product phase.
+9. This work remains a **Boards phase-4 correction**. The later explicit architecture instruction authorizes the combined correction; stop for manual review afterward and do not begin a later product phase.
 
 ## Target components (conceptual, not an instruction to create unnecessary abstraction)
 
@@ -133,7 +143,7 @@ Instrument/provide a reproducible **manual** browser profiling protocol with an 
 - Same **production assets** and machine/viewport/zoom for before/after, with controlled idle first.
 - Scene samples at 10, 100, 500 and 1,000 objects, separately plain text and rich mixed scenes. Use disposable data, never a user export containing private content.
 
-Deliver one report with attributable top three costs; **do not assert one cause for thermal spikes without traces**. Stop for manual results before irreversible refactoring.
+Deliver one report with attributable top three costs; **do not assert one cause for thermal spikes without traces**. The later user instruction authorizes implementation without waiting for these measurements; the attribution requirement remains pending measurement.
 
 ### P1 — Isolate Board updates
 
@@ -149,7 +159,7 @@ Address indexed viewport queries only if measurement warrants. Optimize heavy me
 
 ### P4 — Incremental persistence design and implementation
 
-Only after P1–P3 measurements, design/add atomic revisioned delta writes with safe idempotency, conflict and recovery handling. Backend validation remains authoritative. Never replace whole-Board archive/snapshot export behavior with a lossy patch log.
+The later user instruction authorizes designing/adding atomic revisioned delta writes before P1–P3 measurements. Preserve safe idempotency, conflict and recovery handling; backend validation remains authoritative. Never replace whole-Board archive/snapshot export behavior with a lossy patch log. The concrete protocol is in `board-performance-architecture.md`.
 
 ### P5 — Share proven primitives with Documents
 
@@ -196,6 +206,11 @@ Manual checks for every implementation task:
 
 These are architectural references, not dependencies or evidence that Orbium currently meets tldraw's performance.
 
-## Codex handoff — immediate next task
+## Codex handoff — architecture manual review
 
-> Work in Orbium on `codex/boards` **within the existing Phase-4 manual-review gate**. Read `AGENTS.md`, `Docs/START_HERE.md`, `Docs/AGENTS.md`, `Docs/docs/24-boards.md`, and all three 2026-10-20 Board performance reports. Follow this performance-engine proposal. Start **P0 only**: reproduce and measure the current Board performance pathways, produce a human-executable browser profiling checklist and a report identifying actual dominant costs, optionally adding minimal dev-only instrumentation that does not affect normal UI. Do not refactor state, rewrite persistence, add new dependencies or introduce later Board features yet. Respect the root rule: user tests manually; no automated tests written or run. If modifying code, run existing formatting, lint, type and build checks, report real results, make one commit per logical task, provide exact manual steps with expected outcomes, and STOP after P0 for review. No thermal or FPS improvement claim without browser evidence.
+> The user explicitly authorized the new architecture without P0 recordings.
+> Core implementation, protocol, migration and manual checklist are recorded above.
+> Remain on `codex/boards` in the existing phase-4 review. Address regressions using
+> the architecture contract, preserve recovery/compatibility, and run formatting,
+> lint, types and build checks. Do not write/run automated tests. No later product
+> features or unmeasured thermal/FPS claims. User performs manual acceptance.

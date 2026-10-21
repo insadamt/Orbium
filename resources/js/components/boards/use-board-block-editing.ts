@@ -14,10 +14,10 @@ export function useBoardBlockEditing(model: RefObject<BoardObjectsController>) {
             history: 'typing' | 'action' = 'action',
         ) => {
             const current = model.current;
-            return current.commit(
-                current.objectsRef.current.map((object) =>
-                    object.id === id ? { ...object, data } : object,
-                ),
+            const object = current.store.getObject(id);
+            if (!object) return false;
+            return current.changeObject(
+                { ...object, data },
                 history === 'typing' ? `content:${id}` : null,
             );
         },
@@ -29,17 +29,13 @@ export function useBoardBlockEditing(model: RefObject<BoardObjectsController>) {
             //
             // Conversion keeps the spatial identity and uses the same validated, undoable snapshot as ordinary edits.
             //
-            const accepted = current.commit(
-                current.objectsRef.current.map((object) =>
-                    object.id === id
-                        ? {
-                              ...object,
-                              block_type: replacement.kind,
-                              data: replacement.data,
-                          }
-                        : object,
-                ),
-            );
+            const object = current.store.getObject(id);
+            if (!object) return false;
+            const accepted = current.changeObject({
+                ...object,
+                block_type: replacement.kind,
+                data: replacement.data,
+            });
             if (accepted) current.resetEditorContent();
             return accepted;
         },
@@ -58,11 +54,7 @@ export function useBoardBlockEditing(model: RefObject<BoardObjectsController>) {
     const updateBlockObject = useCallback(
         (replacement: BoardObject) => {
             const current = model.current;
-            return current.commit(
-                current.objectsRef.current.map((object) =>
-                    object.id === replacement.id ? replacement : object,
-                ),
-            );
+            return current.changeObject(replacement);
         },
         [model],
     );

@@ -20,6 +20,7 @@ let dependenciesPromise:
     | undefined;
 let initializationPromise: Promise<boolean> | undefined;
 let renderChain: Promise<void> = Promise.resolve();
+const coloredPreviews = new WeakMap<CachedPreview, string>();
 
 function loadMermaidDependencies() {
     dependenciesPromise ??= importMermaidDependencies().catch((error) => {
@@ -78,7 +79,15 @@ export async function sanitizeMermaidPreview(
 }
 
 export function instantiateMermaidSvg(preview: CachedPreview): string {
-    return applyMermaidPreviewColors(preview.svg).replaceAll(
+    let colored = coloredPreviews.get(preview);
+    if (colored === undefined) {
+        //
+        // Theme colors are CSS variables; reusing a preview should only renew its instance IDs, not rewrite every SVG style again.
+        //
+        colored = applyMermaidPreviewColors(preview.svg);
+        coloredPreviews.set(preview, colored);
+    }
+    return colored.replaceAll(
         preview.renderId,
         `orbium-mermaid-${crypto.randomUUID()}`,
     );

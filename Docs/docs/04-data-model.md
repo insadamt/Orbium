@@ -86,6 +86,18 @@ Boards phase-3 review correction supersedes the envelope above: spatial format *
 
 Document source/format/revision/mention/attachment records remain owned by the original Document, using existing save actions. Board layout revision does not advance when Document source changes. Card removal, Undo and Board deletion retain original resources; only Board-owned rows/receipts cascade with the Board. See `../phases/12-boards-resource-cards.md`.
 
+## Board performance metadata (2026-10-21)
+
+`2026_10_21_000001_add_board_mutation_metadata.php` adds nullable
+`boards.last_mutation_id`, `boards.last_mutation_hash` and
+`board_objects.data_bytes`. Byte counts derive from server canonical JSON and
+initialize once under the Board lock for preexisting native rows. Full/incremental
+saves maintain them. The last mutation receipt supports bounded idempotent replay;
+older requests after another write fail revision checking. Metadata never enters
+Board object data or full snapshots/recovery/exports. Snapshot format stays 4;
+optional `mutation_version: 1` advertises the new PATCH protocol for native,
+contiguous Boards. See `../plans/board-performance-architecture.md`.
+
 ## documents
 
 

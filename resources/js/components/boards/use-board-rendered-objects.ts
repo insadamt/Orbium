@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useLayoutEffect, useMemo, useRef } from 'react';
 import { intersects } from './board-geometry';
 import type { BoardBounds, BoardObject } from './board-types';
 
@@ -20,35 +20,41 @@ export function useBoardRenderedObjects(
     visibleBounds: BoardBounds,
     editingId: string | null,
 ) {
-    const [recentIds, setRecentIds] = useState<string[]>([]);
-    const visibleIds = new Set(
-        visibleBounds.width > 0 && visibleBounds.height > 0
-            ? objects
-                  .filter((object) => intersects(visibleBounds, object))
-                  .map((object) => object.id)
-            : [],
-    );
-    const objectsById = new Map(objects.map((object) => [object.id, object]));
-    const retainedIds: string[] = [];
-    let remainingBudget = retainedOffscreenBudget;
-    for (const id of [...recentIds].reverse()) {
-        const object = objectsById.get(id);
-        if (!object || visibleIds.has(id)) continue;
-        const cost = retentionCost(object);
-        if (cost > remainingBudget) continue;
-        retainedIds.push(id);
-        remainingBudget -= cost;
-    }
-    const nextRecentIds = [...retainedIds.reverse(), ...visibleIds];
+    const recentIds = useRef<string[]>([]);
+    const result = useMemo(() => {
+        const visibleIds = new Set(
+            visibleBounds.width > 0 && visibleBounds.height > 0
+                ? objects
+                      .filter((object) => intersects(visibleBounds, object))
+                      .map((object) => object.id)
+                : [],
+        );
+        const objectsById = new Map(
+            objects.map((object) => [object.id, object]),
+        );
+        const retainedIds: string[] = [];
+        let remainingBudget = retainedOffscreenBudget;
+        for (const id of [...recentIds.current].reverse()) {
+            const object = objectsById.get(id);
+            if (!object || visibleIds.has(id)) continue;
+            const cost = retentionCost(object);
+            if (cost > remainingBudget) continue;
+            retainedIds.push(id);
+            remainingBudget -= cost;
+        }
+        const nextRecentIds = [...retainedIds.reverse(), ...visibleIds];
+        const renderedIds = new Set(nextRecentIds);
+        if (editingId) renderedIds.add(editingId);
+        return {
+            recentIds: nextRecentIds,
+            objects: objects.filter((object) => renderedIds.has(object.id)),
+        };
+    }, [objects, visibleBounds, editingId]);
     //
-    // Reversing a pan must reuse live rich surfaces instead of rebuilding editors, PDF canvases and diagram sessions at the culling edge.
+    // Commit recency after React accepts the render; speculative renders must never publish state or change surface lifetime.
     //
-    if (
-        nextRecentIds.length !== recentIds.length ||
-        nextRecentIds.some((id, index) => id !== recentIds[index])
-    )
-        setRecentIds(nextRecentIds);
-    const renderedIds = new Set(nextRecentIds);
-    if (editingId) renderedIds.add(editingId);
-    return objects.filter((object) => renderedIds.has(object.id));
+    useLayoutEffect(() => {
+        recentIds.current = result.recentIds;
+    }, [result]);
+    return result.objects;
 }

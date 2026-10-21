@@ -42,3 +42,11 @@ The subsequent user report of widespread glitches authorized stabilization, reco
 
 
 Native app integration correction (2026-10-19): the user approved the normal app bar/tabs, shared page styling, shared editable title and toolbar above the canvas. This supersedes the full-screen/separate-header presentation decisions in earlier review notes. Follow `../docs/24-boards.md` and `../reports/12-boards-native-app-shell.md`; this remains phase-4 review.
+
+Performance architecture correction (2026-10-21): the user explicitly requested the
+new architecture without waiting for the P0 recording gate. Scoped records/history,
+per-object subscriptions, staged rich previews/read-only tables and revisioned
+incremental saves are recorded in `../reports/12-boards-performance-architecture.md`
+and `../plans/board-performance-architecture.md`. This supersedes P0-only execution,
+preserves format 4/full recovery and remains this phase's manual review. Actual
+performance/thermal acceptance is unmeasured; no later product phase is authorized.

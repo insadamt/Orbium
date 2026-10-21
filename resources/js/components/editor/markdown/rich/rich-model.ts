@@ -61,6 +61,8 @@ export type RichContext = {
     metadata: Map<string, AttachmentMetadata>;
     diagramWidth?: number;
     documentSourceRanges?: boolean;
+    mathPreviewScope?: object;
+    schedulePreview?: (element: HTMLElement, render: () => void) => () => void;
     isVisible: () => boolean;
     onUpload: (request: MarkdownUploadRequest) => void;
 };

@@ -9,14 +9,28 @@ import {
     codeLanguageLabel,
     codeLanguageSearchKeywords,
 } from '@/components/editor/code-languages';
-import { MermaidPreviewSession } from '@/components/editor/mermaid-preview-session';
-import { instantiateMermaidSvg } from '@/components/editor/mermaid-preview-renderer';
+import {
+    instantiateMermaidSvg,
+    type CachedPreview,
+} from '@/components/editor/mermaid-preview-renderer';
 import { createMermaidPreviewControls } from '@/components/editor/mermaid-preview-controls';
-import { renderMath } from '@/components/editor/markdown/rich/math-preview';
+import {
+    displayMathPreview,
+    findPreparedMathPreview,
+    renderMath,
+} from '@/components/editor/markdown/rich/math-preview';
 import type { RichContext } from '@/components/editor/markdown/rich/rich-model';
 import type { BoardContentProps } from './board-text-block';
+import {
+    useBoardPreparedPreviews,
+    useBoardWorkScheduler,
+} from './board-resource-previews';
+import { createBoardRichPreviewQueue } from './board-rich-preview-queue';
+import { BoardMermaidPreviewSession } from './board-mermaid-preview-session';
 
 export function BoardSourceBlock(props: BoardContentProps) {
+    const scheduler = useBoardWorkScheduler();
+    const prepared = useBoardPreparedPreviews();
     const { object, editing, readOnly } = props;
     const callbacks = useRef(props);
     callbacks.current = props;
@@ -89,80 +103,143 @@ export function BoardSourceBlock(props: BoardContentProps) {
         };
     }, [object.block_type, editing]);
     useEffect(() => {
-        if (input.current) input.current.update(source, language, readOnly);
-        else if (object.block_type === 'code' && host.current && !editing) {
-            host.current.replaceChildren();
-            const destroyPreview = mountCodePreview(host.current, {
-                kind: 'code',
-                source: '',
-                content: source,
-                language,
-                from: 0,
-                to: 0,
-                contentFrom: 0,
-                contentTo: 0,
-                metadata: {},
-                presentation: {},
-            });
-            //
-            // The document-style heading stays mounted across editing, so the nested renderer must not add another header.
-            //
-            host.current.firstElementChild?.remove();
-            host.current
-                .querySelector('pre')
-                ?.setAttribute('class', 'board-code-preview-body');
-            return destroyPreview;
-        }
-    }, [source, language, readOnly, editing, object.block_type]);
+        input.current?.update(source, language, readOnly);
+    }, [source, language, readOnly, editing]);
     useEffect(() => {
+        if (object.block_type === 'code' && host.current && !editing) {
+            const output = host.current;
+            const queue = createBoardRichPreviewQueue(output, scheduler);
+            const fallback = document.createElement('pre');
+            fallback.className = 'board-code-preview-body';
+            fallback.textContent = source;
+            output.replaceChildren(fallback);
+            let destroyPreview: (() => void) | undefined;
+            queue.enqueue(output, () => {
+                destroyPreview = mountCodePreview(output, {
+                    kind: 'code',
+                    source: '',
+                    content: source,
+                    language,
+                    from: 0,
+                    to: 0,
+                    contentFrom: 0,
+                    contentTo: 0,
+                    metadata: {},
+                    presentation: {},
+                });
+                //
+                // The document-style heading stays mounted across editing, so the nested renderer must not add another header.
+                //
+                output.firstElementChild?.remove();
+                output
+                    .querySelector('pre')
+                    ?.setAttribute('class', 'board-code-preview-body');
+            });
+            return () => {
+                queue.destroy();
+                destroyPreview?.();
+            };
+        }
+    }, [source, language, editing, object.block_type, scheduler]);
+    useLayoutEffect(() => {
         //
         // The source field replaces this preview while editing; rendering hidden math/diagrams wastes interaction time.
         //
         if (editing || object.block_type === 'code' || !host.current) return;
         const output = host.current;
-        output.replaceChildren();
-        const mermaid = new MermaidPreviewSession(
-            props.workspaceId,
-            props.boardId,
-            'board',
+        output.removeAttribute('role');
+        const mermaid = new BoardMermaidPreviewSession(
+            {
+                workspaceId: props.workspaceId,
+                nodeId: props.boardId,
+                ownerKind: 'board',
+            },
+            prepared,
         );
         const context: RichContext = {
             workspaceId: props.workspaceId,
             nodeId: props.boardId,
             ownerKind: 'board',
             mermaid,
+            mathPreviewScope: prepared.mathScope,
             metadata: new Map(),
             isVisible: () => true,
             onUpload: () => {},
         };
-        if (object.block_type === 'math')
-            renderMath(output, { context, latex: source, displayMode: true });
-        let unregister: (() => void) | undefined;
+        let destroyed = false;
         let controls:
             | ReturnType<typeof createMermaidPreviewControls>
             | undefined;
-        if (object.block_type === 'mermaid') {
+        const mathRequest = { context, latex: source, displayMode: true };
+        const cachedMath =
+            object.block_type === 'math'
+                ? findPreparedMathPreview(mathRequest)
+                : undefined;
+        const cachedDiagram =
+            object.block_type === 'mermaid'
+                ? prepared.reuseDiagram('board', props.boardId, source)
+                : undefined;
+        const mountDiagram = (cached?: CachedPreview) => {
+            output.replaceChildren();
             const preview = document.createElement('div');
             preview.dataset.mermaidPreview = '';
             preview.textContent = 'Rendering diagram…';
             controls = createMermaidPreviewControls();
             output.append(controls.button, preview);
-            unregister = mermaid.register(source, preview, (result) => {
-                if (result.preview) {
-                    preview.innerHTML = instantiateMermaidSvg(result.preview);
-                    controls?.update(result.preview);
-                } else if (result.error)
-                    preview.textContent =
-                        'Diagram could not be rendered. Edit the source to fix it.';
+            if (cached) {
+                preview.innerHTML = instantiateMermaidSvg(cached);
+                controls.update(cached);
+                return preview;
+            }
+            return preview;
+        };
+        let queue: ReturnType<typeof createBoardRichPreviewQueue> | undefined;
+        //
+        // Reattach prepared markup before paint; returning to a culled block should not repeat its loading state.
+        //
+        if (cachedMath) displayMathPreview(output, cachedMath);
+        else if (cachedDiagram) mountDiagram(cachedDiagram);
+        else {
+            output.textContent = source;
+            queue = createBoardRichPreviewQueue(output, scheduler);
+            queue.enqueue(output, async () => {
+                if (object.block_type === 'math')
+                    renderMath(output, mathRequest);
+                if (object.block_type === 'mermaid') {
+                    const preview = mountDiagram();
+                    try {
+                        const result = await prepared.renderNativeDiagram(
+                            props.boardId,
+                            source,
+                            () => !destroyed,
+                        );
+                        if (!destroyed && result) {
+                            preview.innerHTML = instantiateMermaidSvg(result);
+                            controls?.update(result);
+                        }
+                    } catch {
+                        if (!destroyed)
+                            preview.textContent =
+                                'Diagram could not be rendered. Edit the source to fix it.';
+                    }
+                }
             });
-            mermaid.start(output);
         }
         return () => {
-            unregister?.();
+            destroyed = true;
+            queue?.destroy();
             controls?.destroy();
             mermaid.destroy();
         };
-    }, [source, editing, object.block_type, props.workspaceId, props.boardId]);
+    }, [
+        source,
+        editing,
+        object.block_type,
+        props.workspaceId,
+        props.boardId,
+        scheduler,
+        prepared,
+    ]);
     const SourceIcon =
         object.block_type === 'code'
             ? Code2

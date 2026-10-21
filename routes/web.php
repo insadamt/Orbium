@@ -67,6 +67,7 @@ Route::middleware(['auth', SerializeWorkspaceWrites::class])->group(function () 
     Route::get('workspaces/{workspace}/boards/{node}', [BoardController::class, 'show'])->name('boards.show');
     Route::get('workspaces/{workspace}/boards/{node}/content', [BoardContentController::class, 'show'])->name('boards.content.show');
     Route::put('workspaces/{workspace}/boards/{node}/content', [BoardContentController::class, 'update'])->name('boards.content.update');
+    Route::patch('workspaces/{workspace}/boards/{node}/content', [BoardContentController::class, 'mutate'])->name('boards.content.mutate');
     Route::get('workspaces/{workspace}/boards/{node}/resources', [BoardResourceController::class, 'index'])->name('boards.resources.index');
     Route::get('workspaces/{workspace}/boards/{node}/resources/previews', [BoardResourceController::class, 'previews'])->name('boards.resources.previews');
     Route::get('workspaces/{workspace}/boards/{node}/resources/{target}/document', [BoardResourceController::class, 'document'])->name('boards.resources.document');

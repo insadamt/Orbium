@@ -15,7 +15,7 @@ import {
 import { createMermaidPreviewControls } from '../../mermaid-preview-controls';
 import { instantiateMermaidSvg } from '../../mermaid-preview-renderer';
 import { applyMermaidPreviewDimensions } from '../../mermaid-preview-layout';
-import type { RichContext } from './rich-model';
+import type { RichBlock, RichContext } from './rich-model';
 import { readRichBlock } from './read-rich-block';
 import { renderMath } from './math-preview';
 import { element } from './widget-controls';
@@ -124,6 +124,129 @@ export function renderRichBody(
         if (includeGaps && position < to)
             parent.append(document.createTextNode(source.slice(position, to)));
     }
+    function renderBlockContents(
+        target: HTMLElement,
+        block: RichBlock,
+        node: SyntaxNode,
+    ) {
+        if (block.kind === 'inline-math' || block.kind === 'math') {
+            renderMath(target, {
+                context,
+                latex: block.content,
+                displayMode: block.kind === 'math',
+            });
+            return;
+        }
+        if (block.kind === 'mermaid') {
+            const controls = createMermaidPreviewControls();
+            target.before(controls.button);
+            disposals.push(() => controls.destroy());
+            target.dataset.mermaidPreview = '';
+            target.textContent = 'Rendering diagram…';
+            target.className = 'overflow-auto [&>svg]:w-full';
+            disposals.push(
+                context.mermaid.register(
+                    block.content,
+                    target,
+                    ({ preview, dimensions, error }) => {
+                        if (destroyed) return;
+                        if (preview) {
+                            controls.update(preview);
+                            target.innerHTML = instantiateMermaidSvg(preview);
+                        } else if (error) {
+                            controls.update();
+                            target.textContent =
+                                'Diagram could not be rendered. Edit this block to fix the source.';
+                        } else if (dimensions)
+                            applyMermaidPreviewDimensions(target, dimensions);
+                        measure();
+                    },
+                ),
+            );
+            return;
+        }
+        if (block.kind === 'code') {
+            if (context.ownerKind === 'board') {
+                disposals.push(mountCodePreview(target, block));
+                return;
+            }
+            const pre = element('pre');
+            const code = element('code', '', block.content);
+            pre.append(code);
+            target.append(pre);
+            return;
+        }
+        if (block.kind === 'empty') {
+            target.append(element('p', 'min-h-7'));
+            return;
+        }
+        if (block.kind === 'image' || block.kind === 'file') {
+            disposals.push(mountNestedMedia(target, block, context, measure));
+            return;
+        }
+        if (block.kind === 'table' && block.table) {
+            const table = element('table', 'orbium-table w-full');
+            const body = element('tbody');
+            table.append(body);
+            target.append(table);
+            for (const row of block.table.rows) {
+                const tr = element('tr');
+                body.append(tr);
+                for (const cell of row) {
+                    const td = element(cell.metadata.header ? 'th' : 'td');
+                    td.colSpan = Number(cell.metadata.colspan ?? 1);
+                    td.rowSpan = Number(cell.metadata.rowspan ?? 1);
+                    td.style.textAlign = String(cell.metadata.align ?? '');
+                    tr.append(td);
+                    disposals.push(
+                        renderRichBody(
+                            td,
+                            cell.source,
+                            context,
+                            measure,
+                            depth + 1,
+                        ),
+                    );
+                }
+            }
+            return;
+        }
+        if (block.kind === 'callout') {
+            target.className =
+                'orbium-callout rounded-xl border border-border p-4';
+            target.append(element('div', 'mb-2 font-medium', block.label));
+            const calloutBody = element('div');
+            target.append(calloutBody);
+            disposals.push(
+                renderRichBody(
+                    calloutBody,
+                    block.content,
+                    context,
+                    measure,
+                    depth + 1,
+                ),
+            );
+            return;
+        }
+        if (block.kind === 'metadata') {
+            const documentNode = node.getChild('Document');
+            if (documentNode) {
+                renderChildren(target, documentNode, false);
+                const divider =
+                    target.querySelector<HTMLElement>('.cm-md-divider');
+                if (divider)
+                    applyMarkdownDividerAppearance(divider, block.presentation);
+                if (block.presentation.listType)
+                    target
+                        .querySelector('ol')
+                        ?.setAttribute(
+                            'type',
+                            String(block.presentation.listType),
+                        );
+            }
+            return;
+        }
+    }
     function renderNode(parent: HTMLElement, node: SyntaxNode) {
         const block = readRichBlock(state, node);
         if (block) {
@@ -135,132 +258,28 @@ export function renderRichBody(
                 target.dir = String(block.presentation.dir);
             if (block.presentation.align)
                 target.style.textAlign = String(block.presentation.align);
-            if (block.kind === 'inline-math' || block.kind === 'math') {
-                renderMath(target, {
-                    context,
-                    latex: block.content,
-                    displayMode: block.kind === 'math',
-                });
-                return;
-            }
-            if (block.kind === 'mermaid') {
-                const controls = createMermaidPreviewControls();
-                target.before(controls.button);
-                disposals.push(() => controls.destroy());
-                target.dataset.mermaidPreview = '';
-                target.textContent = 'Rendering diagram…';
-                target.className = 'overflow-auto [&>svg]:w-full';
-                disposals.push(
-                    context.mermaid.register(
-                        block.content,
-                        target,
-                        ({ preview, dimensions, error }) => {
-                            if (destroyed) return;
-                            if (preview) {
-                                controls.update(preview);
-                                target.innerHTML =
-                                    instantiateMermaidSvg(preview);
-                            } else if (error) {
-                                controls.update();
-                                target.textContent =
-                                    'Diagram could not be rendered. Edit this block to fix the source.';
-                            } else if (dimensions)
-                                applyMermaidPreviewDimensions(
-                                    target,
-                                    dimensions,
-                                );
-                            measure();
-                        },
-                    ),
+            const deferred =
+                context.schedulePreview &&
+                ['image', 'file', 'table', 'math', 'mermaid'].includes(
+                    block.kind,
                 );
-                return;
-            }
-            if (block.kind === 'code') {
-                if (context.ownerKind === 'board') {
-                    disposals.push(mountCodePreview(target, block));
-                    return;
-                }
-                const pre = element('pre');
-                const code = element('code', '', block.content);
-                pre.append(code);
-                target.append(pre);
-                return;
-            }
-            if (block.kind === 'empty') {
-                target.append(element('p', 'min-h-7'));
-                return;
-            }
-            if (block.kind === 'image' || block.kind === 'file') {
+            if (deferred) {
+                //
+                // Keep readable text immediate while expensive embedded surfaces share the Board's bounded input-aware queue.
+                //
+                target.textContent =
+                    block.kind === 'math' || block.kind === 'mermaid'
+                        ? block.content
+                        : `Loading ${block.kind} preview…`;
                 disposals.push(
-                    mountNestedMedia(target, block, context, measure),
+                    context.schedulePreview!(target, () => {
+                        if (destroyed) return;
+                        renderBlockContents(target, block, node);
+                        measure();
+                    }),
                 );
-                return;
-            }
-            if (block.kind === 'table' && block.table) {
-                const table = element('table', 'orbium-table w-full');
-                const body = element('tbody');
-                table.append(body);
-                target.append(table);
-                for (const row of block.table.rows) {
-                    const tr = element('tr');
-                    body.append(tr);
-                    for (const cell of row) {
-                        const td = element(cell.metadata.header ? 'th' : 'td');
-                        td.colSpan = Number(cell.metadata.colspan ?? 1);
-                        td.rowSpan = Number(cell.metadata.rowspan ?? 1);
-                        td.style.textAlign = String(cell.metadata.align ?? '');
-                        tr.append(td);
-                        disposals.push(
-                            renderRichBody(
-                                td,
-                                cell.source,
-                                context,
-                                measure,
-                                depth + 1,
-                            ),
-                        );
-                    }
-                }
-                return;
-            }
-            if (block.kind === 'callout') {
-                target.className =
-                    'orbium-callout rounded-xl border border-border p-4';
-                target.append(element('div', 'mb-2 font-medium', block.label));
-                const calloutBody = element('div');
-                target.append(calloutBody);
-                disposals.push(
-                    renderRichBody(
-                        calloutBody,
-                        block.content,
-                        context,
-                        measure,
-                        depth + 1,
-                    ),
-                );
-                return;
-            }
-            if (block.kind === 'metadata') {
-                const documentNode = node.getChild('Document');
-                if (documentNode) {
-                    renderChildren(target, documentNode, false);
-                    const divider =
-                        target.querySelector<HTMLElement>('.cm-md-divider');
-                    if (divider)
-                        applyMarkdownDividerAppearance(
-                            divider,
-                            block.presentation,
-                        );
-                    if (block.presentation.listType)
-                        target
-                            .querySelector('ol')
-                            ?.setAttribute(
-                                'type',
-                                String(block.presentation.listType),
-                            );
-                }
-                return;
-            }
+            } else renderBlockContents(target, block, node);
+            return;
         }
         if (hiddenMarks.has(node.name)) return;
         if (node.name === 'Document') {

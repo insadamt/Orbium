@@ -1,4 +1,6 @@
 import { BoardDocumentSnapshotCache } from './board-document-snapshot-cache';
+import { BoardWorkScheduler } from './board-work-scheduler';
+import { BoardPreparedPreviews } from './board-prepared-previews';
 import {
     createContext,
     useCallback,
@@ -24,6 +26,8 @@ type PreviewContext = {
     refresh: (id: number) => void;
 };
 const ResourcePreviews = createContext<PreviewContext | null>(null);
+const BoardScheduler = createContext<BoardWorkScheduler | null>(null);
+const PreparedPreviews = createContext<BoardPreparedPreviews | null>(null);
 export function BoardResourcePreviews({
     location,
     children,
@@ -32,6 +36,8 @@ export function BoardResourcePreviews({
     children: ReactNode;
 }) {
     const [documents] = useState(() => new BoardDocumentSnapshotCache());
+    const [scheduler] = useState(() => new BoardWorkScheduler());
+    const [prepared] = useState(() => new BoardPreparedPreviews());
     const [entries, setEntries] = useState<Record<number, Preview>>({});
     const targets = useRef(new Map<number, number>());
     const checked = useRef(new Map<number, number>());
@@ -172,12 +178,26 @@ export function BoardResourcePreviews({
             window.removeEventListener('orbium:resource-document-saved', saved);
         };
     }, [location.workspaceId, refresh, run]);
+    useEffect(() => {
+        const updateVisibility = () =>
+            scheduler.setDocumentVisible(!document.hidden);
+        updateVisibility();
+        document.addEventListener('visibilitychange', updateVisibility);
+        return () => {
+            document.removeEventListener('visibilitychange', updateVisibility);
+            scheduler.cancelPending();
+        };
+    }, [scheduler]);
     return (
-        <ResourcePreviews.Provider
-            value={{ entries, register, refresh, documents }}
-        >
-            {children}
-        </ResourcePreviews.Provider>
+        <BoardScheduler.Provider value={scheduler}>
+            <PreparedPreviews.Provider value={prepared}>
+                <ResourcePreviews.Provider
+                    value={{ entries, register, refresh, documents }}
+                >
+                    {children}
+                </ResourcePreviews.Provider>
+            </PreparedPreviews.Provider>
+        </BoardScheduler.Provider>
     );
 }
 export function useBoardResourcePreview(id: number) {
@@ -195,4 +215,16 @@ export function useBoardDocumentSnapshots() {
     if (!context)
         throw new Error('Board Document previews require a Board provider.');
     return context.documents;
+}
+
+export function useBoardWorkScheduler() {
+    const scheduler = useContext(BoardScheduler);
+    if (!scheduler) throw new Error('Board work requires a Board provider.');
+    return scheduler;
+}
+
+export function useBoardPreparedPreviews() {
+    const prepared = useContext(PreparedPreviews);
+    if (!prepared) throw new Error('Board previews require a Board provider.');
+    return prepared;
 }

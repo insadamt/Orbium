@@ -74,6 +74,7 @@ export type BoardBlockReplacement = {
 };
 export type BoardSnapshot = {
     format_version: 4;
+    mutation_version?: 1;
     revision: number;
     objects: BoardObject[];
 };
