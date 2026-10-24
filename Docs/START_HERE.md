@@ -1,3 +1,9 @@
+Drawing palette toggle clarification (2026-10-24): clicking the active Draw
+button now hides/shows settings while preserving Pen/Highlighter/Eraser mode and
+brush settings. Select or idle Escape exits drawing. This supersedes the earlier
+click-Draw-to-Select behavior. See `reports/12-boards-canvas-dock.md`. Remain in
+Board phase-4 manual review.
+
 Board dock styling correction (2026-10-24): the user requested app-consistent
 styling, opaque backgrounds and less clutter. Board controls now use solid theme
 surfaces, rounded app-style buttons and subtle active states. Removed redundant

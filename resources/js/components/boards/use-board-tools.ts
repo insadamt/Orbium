@@ -14,6 +14,7 @@ export function useBoardTools({
     isLocked: () => boolean;
 }) {
     const [tool, setTool] = useState<BoardTool>('select');
+    const [drawingSettingsOpen, setDrawingSettingsOpen] = useState(false);
     const placementKind =
         tool === 'select' || tool === 'hand' || isBoardDrawingTool(tool)
             ? null
@@ -25,6 +26,19 @@ export function useBoardTools({
         model.finishEditing();
         model.select([]);
         setTool(nextTool);
+        setDrawingSettingsOpen(isBoardDrawingTool(nextTool));
+        camera.viewportRef.current?.focus({ preventScroll: true });
+    }
+    function toggleDrawingSettings() {
+        if (isLocked()) return;
+        if (!isBoardDrawingTool(tool)) {
+            chooseTool('pen');
+            return;
+        }
+        //
+        // Palette visibility is independent of the active brush so hiding settings preserves drawing mode.
+        //
+        setDrawingSettingsOpen((open) => !open);
         camera.viewportRef.current?.focus({ preventScroll: true });
     }
     function placeBlock(kind: BoardPlacementKind, point: BoardPoint) {
@@ -63,12 +77,15 @@ export function useBoardTools({
     function cancelTool() {
         if (tool === 'select') return false;
         setTool('select');
+        setDrawingSettingsOpen(false);
         camera.viewportRef.current?.focus({ preventScroll: true });
         return true;
     }
 
     return {
         tool,
+        drawingSettingsOpen,
+        toggleDrawingSettings,
         placing,
         placementKind,
         chooseTool,

@@ -160,3 +160,36 @@ active styling and Done/footer/preview descriptions in the original report above
 
 - `fix(boards): use opaque app-style toolbar surfaces`
 - `refactor(boards): simplify drawing controls and remove redundant chrome`
+
+## Drawing palette toggle clarification — 2026-10-24
+
+The user clarified that clicking the pen again should hide its settings while
+allowing drawing to continue. The earlier Draw-to-Select toggle is superseded.
+
+- Palette visibility is now separate transient state in `use-board-tools.ts`.
+- First Draw click enters Pen and opens settings. Further clicks hide/reopen the
+  palette, preserving the active Pen/Highlighter/Eraser, ink, width and smoothing.
+- Draw remains pressed while drawing, and exposes expanded state and Show/Hide
+  settings tooltips. Select and idle Escape still exit drawing. Active-gesture
+  Escape cancellation remains unchanged. Switching brushes keeps settings open.
+- No saved data, schema, dependency or drawing algorithm changes. No commit made.
+
+Checks: focused formatting, TypeScript, lint, build and `git diff --check` passed.
+Lint reported 714 formatted files and no warnings/errors in 601 analyzed files;
+build passed with existing chunk/dynamic-import/plugin-timing warnings. No tests
+or browser automation run. Browser behavior awaits manual acceptance.
+
+Manual checklist:
+
+1. Click Draw, then choose Blue and Bold. Draw a stroke; expect blue 6px ink.
+2. Click Draw again. Expect settings hidden, Draw still active, and new strokes
+   using the same blue width.
+3. Click Draw again. Expect settings reopened with the same selected options.
+4. Choose Highlighter, hide/reopen settings and draw. Expect Highlighter retained.
+   Repeat with Eraser; expect whole-stroke erasure to remain active while hidden.
+5. With settings hidden, click Select or press Escape while idle. Expect drawing
+   to end. Click Draw afterward: expect Pen and settings open again.
+6. While drawing, press Escape before release. Expect only the unfinished stroke
+   canceled. Verify Undo/Redo and save/reload still preserve completed drawings.
+
+Commit suggestion: `fix(boards): hide pen settings without leaving drawing mode`

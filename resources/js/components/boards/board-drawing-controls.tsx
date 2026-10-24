@@ -14,11 +14,13 @@ const drawingTools = [
 
 export function BoardDrawingControls({
     tool,
+    settingsOpen,
     drawing,
     disabled,
     onChooseTool,
 }: {
     tool: BoardTool;
+    settingsOpen: boolean;
     drawing: BoardDrawingController;
     disabled: boolean;
     onChooseTool: (tool: BoardTool) => void;
@@ -26,7 +28,7 @@ export function BoardDrawingControls({
     return (
         <div
             className="board-drawing-controls board-panel glass-surface"
-            hidden={!isBoardDrawingTool(tool)}
+            hidden={!isBoardDrawingTool(tool) || !settingsOpen}
             role="region"
             aria-label="Drawing tools"
             data-board-interactive

@@ -953,3 +953,16 @@ Select, or press Escape while idle to leave drawing. Escape during a gesture sti
 cancels only that unfinished gesture. Reset remains on the zoom percentage button;
 its duplicate View menu item is removed. No drawing or persistence behavior changes.
 See the correction checklist in `../reports/12-boards-canvas-dock.md`.
+
+
+### Drawing palette toggle clarification (2026-10-24)
+
+Clicking the active Draw dock button toggles only the palette. Drawing continues
+with the current Pen/Highlighter/Eraser and settings while the palette is hidden;
+click again to reopen it. The Draw button remains pressed to indicate drawing
+mode, exposes palette expansion to assistive technology and names its current
+Show/Hide settings action. Select or idle Escape exits drawing. Entering drawing
+from another tool opens settings. Choosing a brush in the palette keeps settings
+open. This supersedes the click-Draw-to-Select behavior above; no persistence or
+drawing algorithm changes. See the latest manual checklist in
+`../reports/12-boards-canvas-dock.md`.

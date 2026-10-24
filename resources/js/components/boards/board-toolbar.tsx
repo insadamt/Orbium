@@ -31,6 +31,8 @@ export function BoardToolbar({
     editing,
     tool,
     onChooseTool,
+    drawingSettingsOpen,
+    onToggleDrawingSettings,
     onResource,
     onHelp,
     onUndo,
@@ -41,6 +43,8 @@ export function BoardToolbar({
     blocked: boolean;
     editing: boolean;
     tool: BoardTool;
+    drawingSettingsOpen: boolean;
+    onToggleDrawingSettings: () => void;
     onChooseTool: (tool: BoardTool) => void;
     onResource: () => void;
     onHelp: () => void;
@@ -95,10 +99,11 @@ export function BoardToolbar({
                 <BoardToolButton
                     label={
                         isBoardDrawingTool(tool)
-                            ? 'Finish drawing'
+                            ? drawingSettingsOpen
+                                ? 'Hide drawing settings'
+                                : 'Show drawing settings'
                             : 'Draw on board'
                     }
-                    shortcut={isBoardDrawingTool(tool) ? 'Esc' : undefined}
                     tooltipSide="right"
                     icon={Pencil}
                     disabled={blocked || editing}
@@ -106,11 +111,10 @@ export function BoardToolbar({
                         editing ? 'Finish editing to draw.' : undefined
                     }
                     aria-pressed={isBoardDrawingTool(tool)}
-                    onClick={() =>
-                        onChooseTool(
-                            isBoardDrawingTool(tool) ? 'select' : 'pen',
-                        )
+                    aria-expanded={
+                        isBoardDrawingTool(tool) && drawingSettingsOpen
                     }
+                    onClick={onToggleDrawingSettings}
                 />
                 <BoardBlockPicker
                     disabled={blocked || editing}

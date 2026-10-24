@@ -25,11 +25,7 @@ import { useBoardAutosave } from './use-board-autosave';
 import { useBoardObjects } from './use-board-objects';
 import { useBoardCamera } from './use-board-camera';
 import { useBoardPointer } from './use-board-pointer';
-import {
-    type BoardLocation,
-    type BoardSnapshot,
-    type BoardTool,
-} from './board-types';
+import type { BoardLocation, BoardSnapshot, BoardTool } from './board-types';
 import { boardKeyboardHandler } from './board-keyboard';
 import { useBoardRenderedObjects } from './use-board-rendered-objects';
 import { useBoardPerformanceDiagnostics } from './use-board-performance-diagnostics';
@@ -417,12 +413,18 @@ export function BoardWorkspace({
                     </div>
                 )}
                 <BoardDrawingControls
+                    settingsOpen={tools.drawingSettingsOpen}
                     tool={tools.tool}
                     drawing={drawing}
                     disabled={save.blocked || uploading || resourceLocked}
                     onChooseTool={chooseTool}
                 />
                 <BoardToolbar
+                    drawingSettingsOpen={tools.drawingSettingsOpen}
+                    onToggleDrawingSettings={() => {
+                        pointer.cancel();
+                        tools.toggleDrawingSettings();
+                    }}
                     editing={Boolean(model.editingId)}
                     model={model}
                     camera={camera}
