@@ -14,12 +14,26 @@ export const boardBlockKinds = [
     'mermaid',
     'divider',
     'resource',
+    'drawing',
 ] as const;
 export type BoardBlockKind = (typeof boardBlockKinds)[number];
 export type BoardPlacementKind =
-    | Exclude<BoardBlockKind, 'resource'>
+    | Exclude<BoardBlockKind, 'resource' | 'drawing'>
     | AttachmentMediaKind;
-export type BoardTool = 'select' | 'hand' | BoardPlacementKind;
+export type BoardDrawingTool = 'pen' | 'highlighter' | 'eraser';
+export type BoardTool =
+    | 'select'
+    | 'hand'
+    | BoardPlacementKind
+    | BoardDrawingTool;
+export type BoardDrawing = {
+    points: [number, number][];
+    view_width: number;
+    view_height: number;
+    color: string;
+    stroke_width: number;
+    opacity: number;
+};
 export type BoardInline = {
     type: 'text' | 'hardBreak';
     text?: string;
@@ -36,6 +50,7 @@ export type BoardInline = {
     }[];
 };
 export type BoardBlockData = {
+    drawing?: BoardDrawing;
     text_scale?: number;
     manual_height?: boolean;
     image_fit?: 'contain' | 'cover';
@@ -73,7 +88,7 @@ export type BoardBlockReplacement = {
     data: BoardBlockData;
 };
 export type BoardSnapshot = {
-    format_version: 4;
+    format_version: 5;
     mutation_version?: 1;
     revision: number;
     objects: BoardObject[];
@@ -83,7 +98,6 @@ export type BoardPoint = { x: number; y: number };
 export type BoardBounds = BoardPoint & { width: number; height: number };
 export type BoardLocation = { workspaceId: number; boardId: number };
 export const boardLimits = {
-    objects: 1000,
     blockBytes: 262144,
     totalBytes: 4194304,
     coordinate: 10_000_000,

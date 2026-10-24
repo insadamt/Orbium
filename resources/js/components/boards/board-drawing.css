@@ -1,0 +1,252 @@
+/*
+ * Anchor brush controls beside the tool dock while leaving save feedback and the bottom zoom lane available.
+ */
+.board-page .board-drawing-controls {
+    position: absolute;
+    top: 50%;
+    right: auto;
+    bottom: auto;
+    left: calc(32px + var(--board-control-size));
+    z-index: 6;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    width: 216px;
+    max-width: calc(100% - 48px - var(--board-control-size));
+    max-height: calc(100% - 112px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 10px;
+    border-radius: 14px;
+    border-color: color-mix(in srgb, var(--border) 85%, transparent);
+    box-shadow: 0 4px 16px rgb(0 0 0 / 0.06);
+    transform-origin: left center;
+    opacity: 1;
+    translate: 0 -50%;
+    transition:
+        opacity 180ms ease-out,
+        translate 180ms cubic-bezier(0.16, 1, 0.3, 1),
+        display 180ms allow-discrete;
+}
+/*
+ * Retain the live panel for its short exit instead of cloning controls or delaying the tool change.
+ */
+.board-page .board-drawing-controls[hidden] {
+    display: none;
+    opacity: 0;
+    translate: -6px -50%;
+    pointer-events: none;
+    transition:
+        opacity 100ms ease-in,
+        translate 100ms ease-in,
+        display 100ms allow-discrete;
+}
+@starting-style {
+    .board-page .board-drawing-controls {
+        opacity: 0;
+        translate: -6px -50%;
+    }
+}
+.board-drawing-tools,
+.board-drawing-swatches,
+.board-drawing-widths,
+.board-drawing-style-row {
+    display: flex;
+    align-items: center;
+}
+.board-drawing-tools {
+    flex-direction: column;
+    gap: 3px;
+}
+.board-drawing-controls .board-drawing-tools .board-tool-button {
+    width: 100%;
+    height: 42px;
+    justify-content: flex-start;
+    gap: 14px;
+    overflow: hidden;
+    padding-inline: 0 10px;
+}
+.board-drawing-tools .board-tool-button > span {
+    margin-inline-start: auto;
+}
+.board-drawing-tools .board-tool-button > .board-brush-preview {
+    flex: 0 0 88px;
+    width: 88px;
+    height: 32px;
+    translate: -8px 0;
+    transition: translate 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.board-tool-button:is(:hover, [aria-pressed='true']) .board-brush-preview {
+    translate: 0 0;
+}
+.board-drawing-controls .board-tool-button {
+    min-width: 30px;
+    height: 34px;
+    padding-inline: 7px;
+    border-radius: 8px;
+    font-size: 11px;
+}
+.board-drawing-controls .board-tool-button[aria-pressed='true'] {
+    background: var(--accent);
+    color: var(--foreground);
+    border-color: color-mix(in srgb, var(--foreground) 12%, transparent);
+}
+.board-drawing-tools.app-menu-highlight-surface .board-tool-button {
+    position: relative;
+    z-index: 1;
+}
+.board-drawing-tools.app-menu-highlight-surface
+    .board-tool-button:not([aria-pressed='true']):hover {
+    background: transparent;
+}
+.board-drawing-tools .app-menu-highlight {
+    border-radius: 8px;
+}
+.board-drawing-style-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+}
+.board-drawing-field {
+    display: grid;
+    min-width: 0;
+    gap: 6px;
+}
+.board-drawing-field-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    padding-inline: 3px;
+    color: var(--muted-foreground);
+    font-size: 10px;
+    font-weight: 500;
+}
+.board-drawing-field-label > span {
+    color: var(--foreground);
+    font-variant-numeric: tabular-nums;
+}
+.board-drawing-swatches,
+.board-drawing-widths {
+    justify-content: space-between;
+    gap: 2px;
+}
+.board-drawing-controls .board-drawing-color {
+    color: var(--foreground);
+    width: 30px;
+    padding: 0;
+}
+.board-drawing-swatch {
+    display: grid;
+    place-items: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    transition: scale 140ms ease;
+}
+.board-drawing-color:hover:not(:disabled) .board-drawing-swatch {
+    scale: 1.1;
+}
+.board-drawing-swatch > svg {
+    color: white;
+    stroke-width: 3;
+}
+.board-drawing-swatch[data-theme='true'] > svg {
+    color: var(--background);
+}
+.board-drawing-width-sample {
+    display: block;
+    width: 16px;
+    border-radius: 8px;
+    background: currentColor;
+    transition: height 140ms ease;
+}
+.board-drawing-smoothing-row {
+    align-items: stretch;
+}
+.board-drawing-smoothing-row > .board-drawing-field {
+    flex: 1;
+}
+.board-drawing-controls .board-drawing-smoothing-select {
+    min-height: 34px;
+    border-radius: 8px;
+    padding: 7px 9px;
+    background: transparent;
+    box-shadow: none;
+    font-size: 11px;
+}
+.board-canvas:is(
+    [data-tool='pen'],
+    [data-tool='highlighter'],
+    [data-tool='eraser']
+) {
+    cursor: crosshair;
+}
+.board-canvas:is(
+        [data-tool='pen'],
+        [data-tool='highlighter'],
+        [data-tool='eraser']
+    )
+    :is(.board-world, .board-world *) {
+    pointer-events: none;
+}
+.board-drawing-preview {
+    position: absolute;
+    overflow: visible;
+    width: 1px;
+    height: 1px;
+    z-index: 1000002;
+    pointer-events: none;
+}
+/*
+ * SVG view boxes own stroke scaling; applying the text surface zoom would scale drawings a second time.
+ */
+.board-object[data-board-kind='drawing'] {
+    border: 0;
+}
+.board-object[data-board-kind='drawing'] .board-object-preview {
+    padding: 0;
+    zoom: 1;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+.board-drawing-stroke {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+.board-object[data-board-erasing='true'] {
+    opacity: 0.15;
+}
+@media (pointer: coarse) {
+    .board-drawing-controls .board-tool-button {
+        min-width: 42px;
+        min-height: 42px;
+    }
+    .board-drawing-swatches {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        justify-items: center;
+    }
+    .board-drawing-controls .board-drawing-smoothing-select {
+        min-height: 42px;
+    }
+}
+@media (max-width: 640px) {
+    .board-page .board-drawing-controls {
+        left: calc(28px + var(--board-control-size));
+        max-width: calc(100% - 36px - var(--board-control-size));
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .board-page .board-drawing-controls,
+    .board-page .board-drawing-controls[hidden],
+    .board-drawing-controls .board-tool-button,
+    .board-drawing-swatch,
+    .board-drawing-width-sample,
+    .board-drawing-tools .board-tool-button > .board-brush-preview {
+        transition: none;
+    }
+}

@@ -45,52 +45,6 @@
     border-color: color-mix(in srgb, var(--border) 75%, transparent);
     box-shadow: 0 4px 16px rgb(0 0 0 / 0.06);
 }
-.board-toolbar-slot {
-    border-radius: 14px;
-}
-.board-page .board-creation-dock {
-    gap: 4px;
-}
-.board-page .board-creation-dock .board-tool-button[data-board-add-trigger] {
-    width: auto;
-    padding-inline: 10px;
-}
-.board-tool-button[data-board-add-trigger] > svg:last-child {
-    transition: rotate 200ms ease;
-}
-.board-tool-button[data-board-add-trigger][data-state='open'] > svg:last-child {
-    rotate: 180deg;
-}
-.board-creation-dock .app-menu-highlight {
-    border-radius: var(--board-control-radius);
-}
-.board-page
-    .board-creation-dock.app-menu-highlight-surface
-    .board-tool-button:not([aria-pressed='true']):is(
-        :hover,
-        [data-state='open']
-    ) {
-    background: transparent;
-}
-.board-page .board-history-controls {
-    align-items: center;
-    gap: 4px;
-    margin-inline-start: 4px;
-    padding-inline-start: 8px;
-    border-inline-start: 1px solid var(--border);
-}
-.board-creation-dock > .board-tool-button[aria-pressed='true']::before {
-    position: absolute;
-    inset-inline: 10px;
-    bottom: 1px;
-    height: 3px;
-    border-radius: 2px;
-    background: currentColor;
-    content: '';
-}
-.board-creation-dock > .board-tool-button[aria-pressed='true'] {
-    border-color: color-mix(in srgb, var(--foreground) 12%, transparent);
-}
 .board-selection-tools {
     align-items: center;
     gap: 4px;

@@ -31,13 +31,13 @@ final class BoardContentController extends Controller
     {
         $board = $access->visibleBoard($request->user(), $workspace, $node);
         $data = $request->validate([
-            'format_version' => ['required', 'integer', 'in:4'],
+            'format_version' => ['required', 'integer', 'in:5'],
             'mutation_version' => ['required', 'integer', 'in:1'],
             'revision' => ['required', 'integer', 'min:0', 'max:9007199254740990'],
             'mutation_id' => ['required', 'uuid'],
             ...BoardSaveRules::objects('creates'),
             ...BoardSaveRules::objects('updates'),
-            'deletes' => ['present', 'array', 'list', 'max:'.BoardContent::MAX_OBJECTS],
+            'deletes' => ['present', 'array', 'list'],
             'deletes.*' => ['required', 'uuid', 'distinct:ignore_case'],
         ]);
         $mutation = new BoardMutationData((int) $data['revision'], strtolower($data['mutation_id']), $data['creates'], $data['updates'], $data['deletes']);

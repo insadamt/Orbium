@@ -4,14 +4,13 @@ namespace App\Services\Boards;
 
 use App\Models\Board;
 use App\Models\Node;
+use App\Services\References\SelfMentionGuard;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 final class BoardContent
 {
-    public const FORMAT_VERSION = 4;
-
-    public const MAX_OBJECTS = 1000;
+    public const FORMAT_VERSION = 5;
 
     /** @return array<string, mixed> */
     public function snapshot(Node $node): array
@@ -57,6 +56,7 @@ final class BoardContent
             if (strlen($encoded) > 262144 || $totalBytes > 4194304 || app(BoardBlockData::class)->containsNul($object['data'])) {
                 throw ValidationException::withMessages(['objects' => 'Use at most 256 KiB of data per block and 4 MiB per Board, without NUL characters.']);
             }
+            app(SelfMentionGuard::class)->validateBoardLinks($node, $object['data']);
             foreach (['x', 'y', 'width', 'height'] as $field) {
                 $object[$field] = (float) $object[$field];
                 if (! is_finite($object[$field])) {

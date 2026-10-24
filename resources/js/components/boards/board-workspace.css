@@ -13,64 +13,30 @@
     margin-top: 24px;
     padding: 16px;
 }
-.board-page-heading {
-    display: flex;
-    flex: 0 0 auto;
-    align-items: center;
-    gap: 16px;
-    padding: 4px 8px 12px;
-}
-.board-page-heading .node-media-header[data-layout='toolbar'] {
-    flex: 1;
-    min-width: 0;
-    max-width: none;
-    margin: 0;
-}
-.node-media-header[data-layout='toolbar'] .page-title-field {
-    font-size: clamp(1.25rem, 2vw, 1.75rem);
-    letter-spacing: -0.025em;
-}
 /*
- * Keep tools in the title row so the canvas uses the full working width.
+ * Floating actions leave the former title row available to the canvas; details still owns metadata editing.
  */
-.board-page .board-workspace {
-    flex-direction: column;
-}
-.board-toolbar-slot {
-    flex: 0 0 auto;
-    max-width: 100%;
+.board-page-heading {
+    position: absolute;
+    top: 28px;
+    right: 28px;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    gap: 2px;
     padding: 4px;
-    border-radius: 12px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--card) 94%, transparent);
+    backdrop-filter: blur(16px);
+    box-shadow: 0 4px 16px rgb(0 0 0 / 0.06);
+}
+.board-page.floating-body-island {
+    position: relative;
 }
 .board-page .board-stage {
     min-width: 0;
     min-height: 120px;
-}
-.board-page .board-creation-dock {
-    display: flex;
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 2px;
-}
-.board-page .board-creation-dock .board-tool-button {
-    width: 36px;
-    min-width: 36px;
-    height: 36px;
-    padding: 0;
-}
-.board-creation-dock > .board-tool-separator {
-    align-self: center;
-    width: 1px;
-    height: 22px;
-    margin: 0 5px;
-}
-.board-page .board-history-controls {
-    flex-direction: row;
-}
-.board-page .board-creation-dock .board-tool-button[aria-pressed='true'] {
-    background: var(--accent);
-    color: var(--foreground);
 }
 .board-details-dialog {
     max-height: 80dvh;
@@ -184,15 +150,8 @@
         border-radius: 20px;
     }
     .board-page-heading {
-        flex-wrap: wrap;
-        gap: 8px;
-        padding-inline: 4px;
-    }
-    .board-page-heading .node-media-header[data-layout='toolbar'] {
-        flex-basis: 100%;
-    }
-    .board-toolbar-slot {
-        margin-inline-start: auto;
+        top: 22px;
+        right: 22px;
     }
     .board-placement-hint {
         bottom: 68px;

@@ -3,6 +3,7 @@ import { intersects } from './board-geometry';
 import type { BoardBounds, BoardObject } from './board-types';
 
 const retainedOffscreenBudget = 48;
+const noPinnedIds: readonly string[] = [];
 
 function retentionCost(object: BoardObject) {
     //
@@ -19,6 +20,7 @@ export function useBoardRenderedObjects(
     objects: BoardObject[],
     visibleBounds: BoardBounds,
     editingId: string | null,
+    pinnedIds: readonly string[] = noPinnedIds,
 ) {
     const recentIds = useRef<string[]>([]);
     const result = useMemo(() => {
@@ -45,11 +47,12 @@ export function useBoardRenderedObjects(
         const nextRecentIds = [...retainedIds.reverse(), ...visibleIds];
         const renderedIds = new Set(nextRecentIds);
         if (editingId) renderedIds.add(editingId);
+        for (const id of pinnedIds) renderedIds.add(id);
         return {
             recentIds: nextRecentIds,
             objects: objects.filter((object) => renderedIds.has(object.id)),
         };
-    }, [objects, visibleBounds, editingId]);
+    }, [objects, visibleBounds, editingId, pinnedIds]);
     //
     // Commit recency after React accepts the render; speculative renders must never publish state or change surface lifetime.
     //

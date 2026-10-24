@@ -7,6 +7,7 @@ use App\Models\Document;
 use App\Models\Node;
 use App\Services\Editor\EditorContentInspector;
 use App\Services\Editor\MermaidPreviewCache;
+use App\Services\References\SelfMentionGuard;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -62,6 +63,9 @@ class SaveDocument
     {
         if ($targetIds === []) {
             return;
+        }
+        foreach ($targetIds as $targetId) {
+            app(SelfMentionGuard::class)->rejectSelfTarget($source, (int) $targetId, 'content');
         }
         $targets = Node::query()->where('workspace_id', $source->workspace_id)->whereIn('id', $targetIds)->get();
         if ($targets->count() !== count($targetIds)) {

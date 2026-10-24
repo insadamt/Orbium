@@ -76,6 +76,7 @@
         "motion": "^14.2.0",
         "ogl": "^1.0.11",
         "pdfjs-dist": "^6.4.299",
+        "perfect-freehand": "1.2.3",
         "postprocessing": "^6.39.5",
         "radix-ui": "^1.8.1",
         "react": "^19.2.0",

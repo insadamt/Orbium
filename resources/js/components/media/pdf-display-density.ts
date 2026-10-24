@@ -4,6 +4,48 @@ function displayedScale(element: HTMLElement) {
     return Math.max(0.01, element.getBoundingClientRect().width / logicalWidth);
 }
 
+export function observePdfReaderLayout(options: {
+    root: HTMLElement;
+    viewport: HTMLElement;
+    onVisible: () => void;
+    onResize: () => void;
+    onDensityChange: () => void;
+}) {
+    let lastWidth = 0;
+    const density = observePdfDisplayDensity(
+        options.viewport,
+        options.onDensityChange,
+    );
+    const intersection = new IntersectionObserver(
+        (entries) => {
+            if (entries.some((entry) => entry.isIntersecting)) {
+                intersection.disconnect();
+                options.onVisible();
+            }
+        },
+        { rootMargin: '200px' },
+    );
+    intersection.observe(options.root);
+    const widthChanged = () =>
+        Math.abs(options.viewport.clientWidth - lastWidth) >= 2;
+    const resize = new ResizeObserver(() => {
+        if (!widthChanged()) return;
+        lastWidth = options.viewport.clientWidth;
+        options.onResize();
+    });
+    resize.observe(options.viewport);
+    return {
+        widthChanged,
+        refreshDensity: () => density.refresh(),
+        stopObservingVisibility: () => intersection.disconnect(),
+        destroy() {
+            intersection.disconnect();
+            resize.disconnect();
+            density.destroy();
+        },
+    };
+}
+
 export function pdfOutputScale(
     element: HTMLElement,
     page: { width: number; height: number },

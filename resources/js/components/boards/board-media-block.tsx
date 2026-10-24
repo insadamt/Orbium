@@ -12,10 +12,13 @@ import {
     acceptsUploadKind,
     uploadAccept,
 } from '@/components/media/attachment-media';
-import { createAttachmentPlayer } from '@/components/media/attachment-player';
+import { useBoardMediaSurface } from './use-board-media-surface';
+import type { BoardPdfSceneStore } from './instant-scene/board-pdf-scene-store';
 import type { BoardContentProps } from './board-text-block';
 
-export function BoardMediaBlock(props: BoardContentProps) {
+export function BoardMediaBlock(
+    props: BoardContentProps & { pdfScene?: BoardPdfSceneStore },
+) {
     const { object, editing, readOnly } = props;
     const { data } = object;
     const [libraryOpen, setLibraryOpen] = useState(false);
@@ -44,111 +47,14 @@ export function BoardMediaBlock(props: BoardContentProps) {
         video: 'Add a video',
         audio: 'Add audio',
     }[uploadKind];
-    useEffect(() => {
-        const output = host.current;
-        if (!output) return;
-        output.replaceChildren();
-        output.className = '';
-        if (!data.attachment_id) return;
-        const abort = new AbortController();
-        let player: ReturnType<typeof createAttachmentPlayer> = null;
-        setError('');
-        void fetch(
-            `/workspaces/${props.workspaceId}/boards/${props.boardId}/attachments/${data.attachment_id}/metadata`,
-            { headers: { Accept: 'application/json' }, signal: abort.signal },
-        )
-            .then(async (response) => {
-                if (!response.ok)
-                    throw new Error(
-                        'File unavailable. Choose another Library file.',
-                    );
-                const file = (await response.json()) as UploadedAttachment;
-                if (abort.signal.aborted) return;
-                if (!acceptsUploadKind(uploadKind, file.mime_type))
-                    throw new Error(`Choose a supported ${mediaLabel} file.`);
-                const url = `/workspaces/${props.workspaceId}/library/files/${data.attachment_id}`;
-                if (image) {
-                    const element = document.createElement('img');
-                    element.onload = () => {
-                        if (
-                            !abort.signal.aborted &&
-                            pendingImage.current === data.attachment_id
-                        ) {
-                            pendingImage.current = null;
-                            resetImageProportions(element);
-                        }
-                    };
-                    element.style.objectFit =
-                        callbacks.current.object.data.image_fit ?? 'cover';
-                    const position =
-                        callbacks.current.object.data.image_position;
-                    element.style.objectPosition = `${position?.x ?? 50}% ${position?.y ?? 50}%`;
-                    element.src = url;
-                    element.alt = data.caption || data.name || '';
-                    element.draggable = false;
-                    element.onerror = () => {
-                        if (!abort.signal.aborted)
-                            setError(
-                                'Image unavailable. Choose another Library image.',
-                            );
-                    };
-                    output.append(element);
-                } else {
-                    player = createAttachmentPlayer({
-                        url,
-                        name: file.name,
-                        mime: file.mime_type,
-                        sizeBytes: file.size_bytes,
-                        isVisible: () => true,
-                    });
-                    if (player) {
-                        //
-                        // Keep page/video surfaces draggable; only control strips should bypass Board gestures.
-                        //
-                        for (const surface of player.root.querySelectorAll<HTMLElement>(
-                            '.attachment-pdf-controls, .attachment-playback-controls',
-                        )) {
-                            surface.dataset.boardInteractive = '';
-                        }
-                        player.root.dataset.boardPlayer = '';
-                        output.append(player.root);
-                    } else {
-                        output.className =
-                            'orbium-file rounded-xl border border-border p-4';
-                        const link = document.createElement('a');
-                        link.className = 'font-medium underline';
-                        link.href = `${url}?download=1`;
-                        link.textContent = file.name;
-                        link.dataset.boardInteractive = '';
-                        link.download = file.name;
-                        const details = document.createElement('span');
-                        details.className =
-                            'ms-3 text-xs text-muted-foreground';
-                        details.textContent = `${Math.ceil(file.size_bytes / 1024)} KB`;
-                        output.append(link, details);
-                    }
-                }
-            })
-            .catch((failure) => {
-                if (!abort.signal.aborted)
-                    setError(
-                        failure instanceof Error
-                            ? failure.message
-                            : 'File unavailable.',
-                    );
-            });
-        return () => {
-            abort.abort();
-            player?.destroy();
-        };
-    }, [
-        data.attachment_id,
-        props.workspaceId,
-        props.boardId,
-        image,
-        uploadKind,
-        mediaLabel,
-    ]);
+    useBoardMediaSurface({
+        host,
+        props,
+        pendingImage,
+        onImageLoaded: (element) => resetImageProportions(element),
+        onError: setError,
+        pdfScene: props.pdfScene,
+    });
     useEffect(() => {
         const element = host.current?.querySelector('img');
         if (!element) return;

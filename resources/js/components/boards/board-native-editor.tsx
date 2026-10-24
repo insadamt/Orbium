@@ -1,3 +1,4 @@
+import { BoardPageMentions } from './board-page-mentions';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { EditorContent, useEditor } from '@tiptap/react';
@@ -20,6 +21,9 @@ import { BoardWritingMenu } from './board-writing-menu';
 import type { BoardContentProps } from './board-text-block';
 
 export function BoardNativeEditor(props: BoardContentProps) {
+    const mentionKeyHandler = useRef<
+        ((event: KeyboardEvent) => boolean) | null
+    >(null);
     const callbacks = useRef(props);
     callbacks.current = props;
     const [toolbar, setToolbar] = useState<HTMLElement | null>(null);
@@ -69,6 +73,7 @@ export function BoardNativeEditor(props: BoardContentProps) {
             },
             handleKeyDown: (_view, event) => {
                 if (event.isComposing || _view.composing) return false;
+                if (mentionKeyHandler.current?.(event)) return true;
                 const current = callbacks.current;
                 if (event.key === 'Escape') {
                     event.preventDefault();
@@ -228,6 +233,13 @@ export function BoardNativeEditor(props: BoardContentProps) {
     }, [props.boardId]);
     return (
         <div data-board-editor data-board-native-editor>
+            {editor && (
+                <BoardPageMentions
+                    editor={editor}
+                    props={props}
+                    keyHandler={mentionKeyHandler}
+                />
+            )}
             {editor && (
                 <BoardSelectionFormatting
                     editor={editor}

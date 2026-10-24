@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\Validator;
 final class CreateBoardStressScene extends Command
 {
     protected $signature = 'boards:stress {workspace : Destination workspace ID}
-        {--count=500 : Number of blocks, from 1 to 1000}
+        {--count=500 : Number of blocks (at least 1)}
         {--kind=mixed : mixed or plain}
         {--layout=spread : spread grid or dense overlapping grid}';
 
@@ -41,7 +41,7 @@ final class CreateBoardStressScene extends Command
             'layout' => $this->option('layout'),
         ], [
             'workspace' => ['required', 'integer', 'min:1'],
-            'count' => ['required', 'integer', 'between:1,'.BoardContent::MAX_OBJECTS],
+            'count' => ['required', 'integer', 'min:1'],
             'kind' => ['required', 'in:mixed,plain'],
             'layout' => ['required', 'in:spread,dense'],
         ])->validate();
@@ -68,9 +68,6 @@ final class CreateBoardStressScene extends Command
         $this->line(route('boards.show', ['workspace' => $workspace->id, 'node' => $board->id]));
         $this->line('10 columns; '.($layout === 'spread' ? '640 × 600' : '180 × 140').' world-unit spacing. Start at the top left at 100% zoom.');
         $this->line('No media uploads or linked Documents are included. Trash this Board normally when finished.');
-        if ($count === BoardContent::MAX_OBJECTS) {
-            $this->line('This Board is at the 1,000-block limit. Delete a block before testing insertion or duplication.');
-        }
 
         return self::SUCCESS;
     }

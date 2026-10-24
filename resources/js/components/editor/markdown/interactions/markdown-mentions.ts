@@ -1,3 +1,4 @@
+import { fetchMentionCandidates } from '@/components/editor/mention-candidates';
 import type { CompletionSource } from '@codemirror/autocomplete';
 import { isolateHistory } from '@codemirror/commands';
 import { EditorView } from '@codemirror/view';
@@ -6,9 +7,10 @@ import {
     isMarkdownLiteralPosition,
 } from '../markdown-syntax';
 
-type MentionCandidate = { id: number; title: string; type: string };
-
-export function markdownMentionSource(workspaceId: number): CompletionSource {
+export function markdownMentionSource(
+    workspaceId: number,
+    sourceId: number,
+): CompletionSource {
     return async (context) => {
         const match = context.matchBefore(/@[^@\n]{0,100}/);
         if (
@@ -41,15 +43,13 @@ export function markdownMentionSource(workspaceId: number): CompletionSource {
         });
         if (controller.signal.aborted) return null;
         try {
-            const response = await fetch(
-                `/workspaces/${workspaceId}/mentions?q=${encodeURIComponent(match.text.slice(1))}`,
-                {
-                    headers: { Accept: 'application/json' },
-                    signal: controller.signal,
-                },
-            );
-            if (!response.ok || context.aborted) return null;
-            const candidates = (await response.json()) as MentionCandidate[];
+            const candidates = await fetchMentionCandidates({
+                workspaceId,
+                sourceId,
+                query: match.text.slice(1),
+                signal: controller.signal,
+            });
+            if (context.aborted) return null;
             return {
                 from: match.from,
                 filter: false,

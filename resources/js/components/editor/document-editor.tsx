@@ -190,6 +190,7 @@ export default function DocumentEditor({
             }),
             ...createSuggestionExtensions({
                 workspaceId,
+                nodeId,
                 activityController,
                 onMenuChange: setMenu,
                 onUpload: () => setLibraryOpen(true),

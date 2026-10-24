@@ -853,3 +853,15 @@ See `../reports/06-block-mode-motion-and-pdf-space.md` for manual acceptance.
 ## Editing original Documents from Board cards
 
 Boards phase 4 may mount this editor for the single active Document reference card. Its optional hosted session supplies autosave/recovery/guards while retaining the original Document identity, content format, revision, save endpoints, attachment ownership, mention indexing and Mermaid cache. Inactive cards show bounded previews without editor instances. Hosted sessions register local-only block transfer targets, hide the page outline and freeze on revision/content-format conflicts; normal Document pages keep their default editor session. Board-native text/code/table/media objects use their own schemas and controls. See `24-boards.md` and `../phases/12-boards-resource-cards.md`.
+
+
+## Self-mention exclusion (2026-10-23)
+
+Markdown and legacy JSON mention completion now supply the original source Node
+ID to the shared candidate endpoint. All visible workspace Node types may be
+mentioned, including folders and Boards, except the source page itself. The same
+rule applies while editing a Document on a Board; the source is that Document,
+not its host Board. Save validation rejects self-targets even when a reference was
+pasted or inserted outside completion. Existing self-mentions remain readable but
+must be removed before the next save. See
+`../reports/12-boards-inline-document-mention-rules.md` for manual checks.

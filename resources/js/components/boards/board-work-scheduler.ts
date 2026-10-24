@@ -9,6 +9,7 @@ type BoardWork = {
 export class BoardWorkScheduler {
     private jobs = new Set<BoardWork>();
     private active = { fetch: 0, render: 0 };
+    private started = { fetch: 0, render: 0 };
     private timer: ReturnType<typeof setTimeout> | undefined;
     private documentVisible =
         typeof document === 'undefined' || !document.hidden;
@@ -45,6 +46,16 @@ export class BoardWorkScheduler {
         }
     }
 
+    snapshot() {
+        return {
+            pending: this.jobs.size,
+            active: { ...this.active },
+            started: { ...this.started },
+            timerScheduled: this.timer !== undefined,
+            documentVisible: this.documentVisible,
+        };
+    }
+
     private schedule(delay = 0) {
         if (
             !this.documentVisible ||
@@ -76,6 +87,7 @@ export class BoardWorkScheduler {
             }
             this.jobs.delete(next);
             this.active[next.kind]++;
+            this.started[next.kind]++;
             void Promise.resolve()
                 .then(next.run)
                 .catch(() => {

@@ -31,7 +31,6 @@ export default function BoardPage() {
     const { workspace, currentNode, errors, boardContent } =
         usePage<BoardPageProps>().props;
     const [detailsOpen, setDetailsOpen] = useState(false);
-    const [toolbarHost, setToolbarHost] = useState<HTMLDivElement | null>(null);
     const openingDetails = useRef(false);
     const boardOptionsButton = useRef<HTMLButtonElement>(null);
     const pageRef = useBoardWorkspace();
@@ -47,16 +46,6 @@ export default function BoardPage() {
             <Head title={currentNode.title} />
             <div ref={pageRef} className="board-page floating-body-island">
                 <div className="board-page-heading">
-                    <NodeMediaHeader
-                        key={`${currentNode.id}:${currentNode.title}`}
-                        workspaceId={workspace.id}
-                        node={currentNode}
-                        layout="toolbar"
-                    />
-                    <div
-                        ref={setToolbarHost}
-                        className="board-toolbar-slot floating-surface"
-                    />
                     <BoardToolButton
                         label={
                             fullscreen ? 'Exit fullscreen' : 'Enter fullscreen'
@@ -157,7 +146,6 @@ export default function BoardPage() {
                         boardId={currentNode.id}
                         tabId={tabId}
                         snapshot={boardContent}
-                        toolbarHost={toolbarHost}
                     />
                 )}
             </div>

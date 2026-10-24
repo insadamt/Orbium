@@ -9,6 +9,7 @@ import type { BoardPaintTargets } from './board-pointer-paint';
 import type { BoardGuide } from './board-alignment';
 
 export type BoardGesture =
+    | { kind: 'draw'; pointerId: number }
     | {
           kind: 'place';
           pointerId: number;

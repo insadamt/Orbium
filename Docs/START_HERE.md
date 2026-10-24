@@ -1,4 +1,109 @@
+Board dock styling correction (2026-10-24): the user requested app-consistent
+styling, opaque backgrounds and less clutter. Board controls now use solid theme
+surfaces, rounded app-style buttons and subtle active states. Removed redundant
+drawing heading/Done/footer/sample/ink text and the duplicate view-reset menu
+item. Draw toggles back to Select; Escape and Select also finish drawing. Read
+the correction in `reports/12-boards-canvas-dock.md` and `docs/24-boards.md`.
+Remain in Board phase-4 manual review.
+
+Board canvas/dock review (2026-10-24): the user requested removing the visible
+title, expanding the canvas upward and moving tools to a centered left vertical
+dock. Board metadata remains in Options → Board details. A slim drawing palette
+beside the dock uses illustrated pen/highlighter/eraser controls with the existing
+ink, width and smoothing settings. Read `reports/12-boards-canvas-dock.md` and
+`docs/24-boards.md`. This supersedes title-row and lower-left drawing-palette
+placement below. Remain in Board phase-4 manual review.
+
+Drawing toolbar review (2026-10-23): the user reported poor recognition and
+requested its removal for now, plus app-style toolbar/motion and UX improvements.
+The recognizer, templates, timers and conversion UI are removed; Strong now only
+smooths freehand ink. Drawing uses a compact glass panel, labeled tools, visual
+width presets, checked ink swatches, a brush preview and shared animated smoothing
+select. perfect-freehand remains for smoothing. Saved objects and spatial format 5
+are unchanged. Read `reports/12-boards-drawing-toolbar.md` and `docs/24-boards.md`.
+This supersedes the local-smart section below; remain in Board phase-4 manual review.
+
+Local smart drawing (historical; removed by the toolbar review above): the user chose free local recognition with
+explicit templates. Strong pen now groups nearby strokes for one second and
+uses a BSD-licensed $P adaptation for 63 defined shapes/signs/digits/uppercase
+letter classes. Clear matches convert; ambiguous matches offer choices/Keep ink.
+Text becomes native editable text; shapes become canonical drawing vectors.
+One Undo restores source ink. perfect-freehand 1.2.3 replaces the homemade
+per-sample streamlining filter. Read `reports/12-boards-smart-templates.md`,
+`docs/24-boards.md` and `../THIRD_PARTY_NOTICES.md`. Format 5 stays unchanged;
+recognition accuracy/browser feel require manual review within Board phase 4.
+
+Drawing smoothing correction (2026-10-23): the user reports Off/Light/Strong
+feel the same. The first pass was too weak and retained dense input wobble.
+Cleanup now simplifies deviations at 1.5 px (Light) or 6 px (Strong) before forming
+curves, with stronger stabilization and a bounded comparison budget. Off remains
+direct. Read `reports/12-boards-drawing-smoothing-correction.md`. Format 5 remains
+unchanged; browser feel still requires manual acceptance within Board phase 4.
+
+Drawing smoothing review (2026-10-23): the user approved smooth curves, light
+stabilization and Off / Light / Strong controls. New strokes default to Light;
+curve geometry is baked into ordinary bounded point pairs, keeping spatial
+format 5 and existing drawings unchanged. Preview/save share the same sampled
+curve and raw endpoint. Read `reports/12-boards-drawing-smoothing.md` and the
+smoothing subsection in `docs/24-boards.md`. Remain in Board phase-4 manual review;
+browser feel and performance remain unmeasured.
+
+Board drawing review (2026-10-23): the user requested “add drawing system to
+the board”. Pen/highlighter ink, color/width controls and a whole-stroke eraser
+now use native drawing objects with selection, resize, clipboard, history and
+autosave. The additive drawing migration upgrades spatial format to 5; reload
+open clients after deploying client/server/migration together. Older local drafts
+adapt explicitly; downgrade refuses while drawings remain, including in Trash.
+Read `reports/12-boards-drawing.md` and the drawing section in `docs/24-boards.md`.
+This is an explicitly requested extension within Board phase-4 manual review;
+no later product phase is authorized. Browser/performance acceptance is pending.
+
+Inline/mention clarification (2026-10-23): inline canvas insertion now offers
+Documents only and activates editing. Mentions support all visible workspace Node
+types except the source page. Markdown/legacy/hosted Document editors, Board text
+and database mention properties share self-exclusion with server-side rejection.
+Read `reports/12-boards-inline-document-mention-rules.md`. Existing non-Document
+cards remain readable; phase-4 review continues.
+
+Board count review (2026-10-23): the user explicitly requested removing the
+1,000-block cap. Frontend validation/actions, full/incremental server saves,
+sibling Document creation and the local stress command now omit that count cap.
+Existing byte/geometry/content budgets and bounded renderer caches remain.
+Read `reports/12-boards-object-cap-removal.md`; this stays in phase-4 review.
+
+Board page insertion review (2026-10-23): the user requested easier page adding,
+`@` references in native text and inline Documents. The native completion menu
+supports safe-link mentions or adjacent live Document cards; Add has searchable
+page/Document filters and a collapsed sibling-creation form. Read
+`reports/12-boards-page-insertion.md` and the page-insertion section in
+`docs/24-boards.md`. This remains Board phase-4 manual review.
+
 # Orbium — Codex implementation handoff
+
+PDF preservation review milestone (2026-10-23): after reporting repeated rendering,
+the user explicitly approved the focused PDF slice with “okey go ahead”. Instant
+Scene now owns bounded prepared PDF pages and per-object view state independently
+of card lifetime, attaches warm pixels before metadata revalidation, pins one
+interacted reader and releases inactive document tasks after preparation. Read
+`reports/12-boards-instant-scene-pdf.md` and the PDF section in
+`plans/board-instant-scene-architecture.md` for exact budgets, diagnostics, actual
+checks and manual acceptance. Stop after this PDF milestone; other rich types,
+persistent caching, workers/tiling/adaptive fidelity and later product phases
+remain unapproved. Runtime performance and thermal improvement are unmeasured.
+
+Instant Scene prototype (2026-10-23): the user authorized the first working
+milestone on `codex/instant-scene-engine`, branched from freshly fetched
+`codex/boards` at `ca15212`. Following the user's direct-review request, Instant
+Scene is now the default on this experimental branch; `?boardRenderer=original`
+retains the reference renderer. The experimental
+adapter prepares native text/list templates and sanitized Mermaid independently
+of card mounts, and uses transient zoom scaling with sharp settled layout.
+Read `plans/board-instant-scene-architecture.md` and
+`reports/12-boards-instant-scene.md` for flags, budgets, actual checks and exact
+manual comparison steps. Production browser/CPU/thermal comparisons remain
+unmeasured. The later PDF milestone above supersedes the original stop boundary
+only for PDF preservation. This is Board phase 4, with no approval
+for persistent assets, workers, full rich coverage or a later product phase.
 
 Board CPU follow-up (2026-10-21): the user reports the preview correction did not
 improve rendering/CPU/temperature. Treat the thermal issue as unresolved. Plain

@@ -1,3 +1,4 @@
+import { fetchMentionCandidates } from './mention-candidates';
 import { Extension, type Editor } from '@tiptap/core';
 import Mention from '@tiptap/extension-mention';
 import Suggestion from '@tiptap/suggestion';
@@ -28,6 +29,7 @@ export type EditorMenu =
 
 type SuggestionContext = {
     workspaceId: number;
+    nodeId: number;
     activityController: EditorActivityController;
     onMenuChange: (menu: EditorMenu | null) => void;
     onUpload: () => void;
@@ -204,13 +206,16 @@ export function createSuggestionExtensions(context: SuggestionContext) {
             debounce: 180,
             items: async ({ query, signal }) => {
                 if (!isActive()) return [];
-                const response = await fetch(
-                    `/workspaces/${context.workspaceId}/mentions?q=${encodeURIComponent(query)}`,
-                    { headers: { Accept: 'application/json' }, signal },
-                );
-                return response.ok
-                    ? ((await response.json()) as MentionCandidate[])
-                    : [];
+                try {
+                    return await fetchMentionCandidates({
+                        workspaceId: context.workspaceId,
+                        sourceId: context.nodeId,
+                        query,
+                        signal,
+                    });
+                } catch {
+                    return [];
+                }
             },
             render: () => ({
                 onStart: (props) => {

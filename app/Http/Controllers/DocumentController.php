@@ -50,7 +50,7 @@ class DocumentController extends Controller
                 ? DatabaseProperty::query()->where('database_node_id', $documentNode->parent_id)->orderBy('position')->get(['id', 'name', 'type', 'position', 'config']) : [],
             'databaseValues' => $documentNode->parent?->type === 'database'
                 ? DatabaseValue::query()->where('document_node_id', $documentNode->id)->get(['property_id', 'value']) : [],
-            'mentionCandidates' => $documentNode->parent?->type === 'database' ? $workspaceModel->nodes()->get(['id', 'title', 'type']) : [],
+            'mentionCandidates' => $documentNode->parent?->type === 'database' ? $workspaceModel->nodes()->whereKeyNot($documentNode->id)->get(['id', 'title', 'type']) : [],
             'databaseFiles' => $documentNode->parent?->type === 'database' ? Attachment::query()->where('workspace_id', $workspaceModel->id)
                 ->get(['id', 'original_name']) : [],
             'breadcrumbs' => [...$breadcrumbs, ...$ancestors],

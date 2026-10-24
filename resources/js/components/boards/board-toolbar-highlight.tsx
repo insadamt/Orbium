@@ -7,7 +7,7 @@ export function BoardToolbarHighlight() {
         const toolbar = marker.current?.parentElement;
         if (!toolbar) return;
         //
-        // Reuse Select's highlight without replaying an entrance on this persistent title toolbar.
+        // Reuse Select's highlight without replaying an entrance on this persistent tool dock.
         //
         return mountMenuHighlight(toolbar, {
             itemSelector: '.board-tool-button',

@@ -1,12 +1,10 @@
-import {
-    observePdfDisplayDensity,
-    pdfOutputScale,
-} from './pdf-display-density';
-import type {
-    PDFDocumentLoadingTask,
-    PDFDocumentProxy,
-    RenderTask,
-} from 'pdfjs-dist';
+import { observePdfReaderLayout } from './pdf-display-density';
+import { createPdfPageSurface, pdfPageGeometry } from './pdf-page-surface';
+import type { PdfViewSession } from './pdf-view-session';
+import { createPdfDocumentResource } from './pdf-document-resource';
+import { mountPdfReaderKeyboard } from './pdf-reader-keyboard';
+import { rasterizePdfPage } from './pdf-page-raster';
+import type { PDFDocumentProxy, RenderTask } from 'pdfjs-dist';
 import { mediaIconButton } from './media-controls';
 import { mountPdfThumbnails } from './pdf-thumbnails';
 
@@ -15,6 +13,7 @@ export function mountPdfReader(
     name: string,
     reportError: (message?: string) => void,
     onResize?: () => void,
+    session?: PdfViewSession,
 ) {
     const root = document.createElement('div');
     root.className = 'attachment-pdf-reader';
@@ -22,28 +21,40 @@ export function mountPdfReader(
     viewport.className = 'attachment-pdf-viewport';
     viewport.tabIndex = 0;
     viewport.setAttribute('aria-label', `PDF pages: ${name}`);
-    const canvas = document.createElement('canvas');
-    canvas.hidden = true;
-    canvas.setAttribute('role', 'img');
-    const text = document.createElement('p');
-    text.className = 'sr-only';
-    const loading = document.createElement('span');
-    loading.className = 'attachment-pdf-loading';
-    loading.textContent = 'Loading document…';
-    loading.setAttribute('role', 'status');
-    viewport.append(canvas, text, loading);
-    let documentTask: PDFDocumentLoadingTask | undefined;
+    const surface = createPdfPageSurface(viewport, name);
+    const { canvas, loading } = surface;
+    const restoredView = session?.readViewState();
+    const preparedPage = session?.reusePreparedPage();
+    if (preparedPage) surface.display(preparedPage);
+    session?.record('readerShellCreations');
+    const documentResource = createPdfDocumentResource({
+        url,
+        session,
+        onPassword: () => {
+            reportError(
+                'This PDF is password protected. Download it to open it in your PDF app.',
+            );
+            loading.hidden = true;
+        },
+    });
+    let finishInitialPreparation: (() => void) | undefined;
+    let releaseInFlight: Promise<void> = Promise.resolve();
     let pdf: PDFDocumentProxy | undefined;
     let renderTask: RenderTask | undefined;
     let destroyed = false;
     let started = false;
     let rendering = false;
     let revision = 0;
-    let pageNumber = 1;
-    let zoom: number | undefined;
-    let renderedScale = 1;
-    let rotation = 0;
-    let sidebarVisible = true;
+    let renderAgain = false;
+    let pageNumber = restoredView?.pageNumber ?? 1;
+    let pageCount = restoredView?.pageCount ?? preparedPage?.pageCount ?? 0;
+    let zoom = restoredView?.zoom;
+    let renderedScale = preparedPage?.scale ?? 1;
+    let rotation = restoredView?.rotation ?? 0;
+    let sidebarVisible = restoredView?.sidebarVisible ?? true;
+    let restoreScrollPending = Boolean(restoredView);
+    let cancelQueuedLoad: (() => void) | undefined;
+    let cancelQueuedRender: (() => void) | undefined;
     const thumbnails = mountPdfThumbnails({ onSelectPage: changePage });
     const body = document.createElement('div');
     body.className = 'attachment-pdf-body';
@@ -95,9 +106,10 @@ export function mountPdfReader(
         changePage(1),
     );
     const last = mediaIconButton('Last page', 'lastPage', () =>
-        changePage(pdf?.numPages ?? 1),
+        changePage(pageCount || 1),
     );
     const rotate = mediaIconButton('Rotate clockwise', 'rotate', () => {
+        session?.activateReader();
         rotation = (rotation + 90) % 360;
         scheduleRender();
     });
@@ -107,6 +119,7 @@ export function mountPdfReader(
         const expanded = root.closest('[data-expanded="true"]') !== null;
         thumbnails.setVisible(expanded && sidebarVisible);
         sidebar.setAttribute('aria-pressed', String(sidebarVisible));
+        if (expanded && session) load();
         scheduleRender();
     }
     page.addEventListener('change', () => changePage(Number(page.value)));
@@ -117,18 +130,18 @@ export function mountPdfReader(
         }
     });
     function updateControls() {
-        previous.disabled = !pdf || pageNumber <= 1;
-        next.disabled = !pdf || pageNumber >= pdf.numPages;
-        page.disabled = !pdf;
+        previous.disabled = !pageCount || pageNumber <= 1;
+        next.disabled = !pageCount || pageNumber >= pageCount;
+        page.disabled = !pageCount;
         page.value = String(pageNumber);
-        page.max = String(pdf?.numPages ?? 1);
-        total.textContent = `/ ${pdf?.numPages ?? '—'}`;
+        page.max = String(pageCount || 1);
+        total.textContent = `/ ${pageCount || '—'}`;
         first.disabled = previous.disabled;
         last.disabled = next.disabled;
-        rotate.disabled = !pdf;
-        zoomOut.disabled = !pdf || (zoom ?? renderedScale) <= 0.5;
-        zoomIn.disabled = !pdf || (zoom ?? renderedScale) >= 3;
-        zoomLevel.disabled = !pdf;
+        rotate.disabled = !pageCount;
+        zoomOut.disabled = !pageCount || (zoom ?? renderedScale) <= 0.5;
+        zoomIn.disabled = !pageCount || (zoom ?? renderedScale) >= 3;
+        zoomLevel.disabled = !pageCount;
         const custom = zoomLevel.querySelector('[data-custom]');
         custom?.remove();
         if (
@@ -147,10 +160,12 @@ export function mountPdfReader(
         thumbnails.selectPage(pageNumber);
     }
     function changePage(value: number) {
+        session?.activateReader();
+        restoreScrollPending = false;
         pageNumber = Math.max(
             1,
             Math.min(
-                pdf?.numPages ?? 1,
+                pageCount || 1,
                 Number.isFinite(value) ? Math.round(value) || 1 : 1,
             ),
         );
@@ -158,80 +173,115 @@ export function mountPdfReader(
         scheduleRender();
     }
     function changeZoom(value: number) {
+        session?.activateReader();
         zoom = Math.max(0.5, Math.min(3, value));
         scheduleRender();
     }
-    function scheduleRender() {
-        revision++;
-        updateControls();
+    function rememberView() {
+        if (restoreScrollPending) return;
+        session?.rememberViewState({
+            pageNumber,
+            pageCount,
+            zoom,
+            rotation,
+            sidebarVisible,
+            scrollLeft: viewport.scrollLeft,
+            scrollTop: viewport.scrollTop,
+        });
+    }
+    function restoreScroll() {
+        if (!restoreScrollPending || !root.isConnected || canvas.hidden) return;
+        viewport.scrollLeft = restoredView?.scrollLeft ?? 0;
+        viewport.scrollTop = restoredView?.scrollTop ?? 0;
+        restoreScrollPending = false;
+    }
+    function matchesDisplayedPage() {
+        const displayed = surface.getDisplayed();
+        if (
+            !displayed ||
+            displayed.pageNumber !== pageNumber ||
+            displayed.rotation !== rotation ||
+            !root.isConnected
+        )
+            return false;
+        const geometry = pdfPageGeometry({
+            viewport,
+            pageNumber,
+            rotation,
+            naturalWidth: displayed.naturalWidth,
+            naturalHeight: displayed.naturalHeight,
+            zoom,
+        });
+        const matches = surface.matches(geometry);
+        if (!matches) surface.resizeDisplay(geometry);
+        return matches;
+    }
+    function queueRender() {
         clearTimeout(timer);
-        renderTask?.cancel();
-        timer = setTimeout(() => void renderPage(), 80);
+        cancelQueuedRender?.();
+        if (session)
+            cancelQueuedRender = session.schedulePageRender(async () => {
+                cancelQueuedRender = undefined;
+                await renderPage();
+            });
+        else timer = setTimeout(() => void renderPage(), 80);
+    }
+    function scheduleRender() {
+        if (destroyed) return;
+        updateControls();
+        rememberView();
+        if (!root.isConnected) return;
+        revision++;
+        clearTimeout(timer);
+        cancelQueuedRender?.();
+        cancelQueuedRender = undefined;
+        if (matchesDisplayedPage()) {
+            renderAgain = false;
+            renderTask?.cancel();
+            viewport.setAttribute('aria-busy', 'false');
+            session?.record('skippedRasters');
+            restoreScroll();
+            if (!rendering) completePreparation();
+            return;
+        }
+        if (rendering) {
+            renderAgain = true;
+            renderTask?.cancel();
+            return;
+        }
+        if (pdf) queueRender();
+        else if (session) load();
     }
     async function renderPage() {
         if (!pdf || destroyed) return;
         if (rendering) {
-            timer = setTimeout(() => void renderPage(), 50);
+            renderAgain = true;
             return;
         }
         const currentRevision = revision;
         rendering = true;
         loading.hidden = !canvas.hidden;
         viewport.setAttribute('aria-busy', 'true');
-        let pendingCanvas: HTMLCanvasElement | undefined;
         try {
-            const currentPage = await pdf.getPage(pageNumber);
+            await rasterizePdfPage({
+                pdf,
+                viewport,
+                pageNumber,
+                rotation,
+                zoom,
+                surface,
+                session,
+                isCurrent: () => !destroyed && currentRevision === revision,
+                setRenderTask: (task) => {
+                    renderTask = task;
+                },
+            });
             if (destroyed || currentRevision !== revision) return;
-            const pageRotation = (currentPage.rotate + rotation) % 360;
-            const natural = currentPage.getViewport({
-                scale: 1,
-                rotation: pageRotation,
-            });
-            const viewportStyle = getComputedStyle(viewport);
-            const width = Math.max(
-                1,
-                viewport.clientWidth -
-                    parseFloat(viewportStyle.paddingLeft) -
-                    parseFloat(viewportStyle.paddingRight),
-            );
-            const pageViewport = currentPage.getViewport({
-                scale: zoom ?? width / natural.width,
-                rotation: pageRotation,
-            });
-            renderedScale = pageViewport.scale;
+            renderedScale = surface.getDisplayed()?.scale ?? renderedScale;
             updateControls();
-            const outputScale = pdfOutputScale(viewport, pageViewport);
-            const nextCanvas = root.ownerDocument.createElement('canvas');
-            pendingCanvas = nextCanvas;
-            nextCanvas.width = Math.ceil(pageViewport.width * outputScale);
-            nextCanvas.height = Math.ceil(pageViewport.height * outputScale);
-            renderTask = currentPage.render({
-                canvas: nextCanvas,
-                viewport: pageViewport,
-                transform: [outputScale, 0, 0, outputScale, 0, 0],
-            });
-            await renderTask.promise;
-            if (destroyed || currentRevision !== revision) return;
-            // Keep the displayed page intact until its replacement raster is ready.
-
-            canvas.width = nextCanvas.width;
-            canvas.height = nextCanvas.height;
-            canvas.getContext('2d')?.drawImage(nextCanvas, 0, 0);
-            nextCanvas.width = nextCanvas.height = 0;
-            canvas.style.width = `${pageViewport.width}px`;
-            canvas.style.height = `${pageViewport.height}px`;
-            canvas.setAttribute(
-                'aria-label',
-                `${name}, page ${pageNumber} of ${pdf.numPages}`,
-            );
-            loading.hidden = true;
-            canvas.hidden = false;
             viewport.setAttribute('aria-busy', 'false');
-            const content = await currentPage.getTextContent();
-            if (!destroyed && currentRevision === revision)
-                text.textContent = content.items
-                    .map((item) => ('str' in item ? item.str : ''))
-                    .join(' ');
+            restoreScroll();
+            rememberView();
             onResize?.();
         } catch (error) {
             if (
@@ -249,76 +299,105 @@ export function mountPdfReader(
                 );
             }
         } finally {
-            if (pendingCanvas) pendingCanvas.width = pendingCanvas.height = 0;
             rendering = false;
+            renderTask = undefined;
+            if (renderAgain && !destroyed) {
+                renderAgain = false;
+                queueRender();
+            } else completePreparation();
         }
     }
-    async function load() {
+    function releaseInactiveDocument() {
+        if (
+            session &&
+            pdf &&
+            !rendering &&
+            !cancelQueuedRender &&
+            !finishInitialPreparation &&
+            !session.isReaderActive() &&
+            !root.closest('[data-expanded="true"]')
+        ) {
+            pdf = undefined;
+            started = false;
+            thumbnails.clearDocument();
+            releaseInFlight = documentResource.release();
+        }
+        return releaseInFlight;
+    }
+    function completePreparation() {
+        const finish = finishInitialPreparation;
+        finishInitialPreparation = undefined;
+        void releaseInactiveDocument().finally(() => {
+            finish?.();
+        });
+    }
+    const removeActivation = session?.subscribeActivation(() => {
+        void releaseInactiveDocument();
+    });
+    function load() {
         if (started || destroyed) return;
         started = true;
-        displayDensity.refresh();
-        try {
-            const { loadPdfDocument } = await import('./pdf-engine');
-            if (destroyed) return;
-            documentTask = loadPdfDocument(url);
-            documentTask.onPassword = () => {
-                reportError(
-                    'This PDF is password protected. Download it to open it in your PDF app.',
-                );
-                loading.hidden = true;
-                void documentTask?.destroy();
-            };
-            pdf = await documentTask.promise;
-            if (destroyed) return;
-            thumbnails.setDocument(pdf);
-            refreshLayout();
-        } catch {
-            if (!destroyed) {
-                loading.hidden = true;
-                reportError(
-                    'This PDF could not be opened. Download the file to open it in another app.',
-                );
+        layout.refreshDensity();
+        const run = async () => {
+            cancelQueuedLoad = undefined;
+            if (
+                session &&
+                matchesDisplayedPage() &&
+                !root.closest('[data-expanded="true"]')
+            ) {
+                started = false;
+                return;
             }
-        }
+            try {
+                await releaseInFlight;
+                if (destroyed) return;
+                pdf = await documentResource.load();
+                if (!pdf) return;
+                if (destroyed) return;
+                pageCount = pdf.numPages;
+                pageNumber = Math.min(pageNumber, pageCount);
+                const initialPrepared = session
+                    ? new Promise<void>((resolve) => {
+                          finishInitialPreparation = resolve;
+                      })
+                    : undefined;
+                thumbnails.setDocument(pdf);
+                refreshLayout();
+                await initialPrepared;
+            } catch {
+                if (!destroyed) {
+                    loading.hidden = true;
+                    reportError(
+                        'This PDF could not be opened. Download the file to open it in another app.',
+                    );
+                }
+            }
+        };
+        if (session) cancelQueuedLoad = session.scheduleDocumentLoad(run);
+        else void run();
     }
-    const intersection = new IntersectionObserver(
-        (entries) => {
-            if (entries.some((entry) => entry.isIntersecting)) {
-                intersection.disconnect();
-                void load();
-            }
+    const layout = observePdfReaderLayout({
+        root,
+        viewport,
+        onVisible: () => {
+            layout.refreshDensity();
+            restoreScroll();
+            if (session) scheduleRender();
+            else load();
         },
-        { rootMargin: '200px' },
-    );
-    intersection.observe(root);
-    const displayDensity = observePdfDisplayDensity(viewport, scheduleRender);
-    let lastWidth = 0;
-    const resize = new ResizeObserver(() => {
-        if (Math.abs(viewport.clientWidth - lastWidth) < 2) return;
-        lastWidth = viewport.clientWidth;
-        scheduleRender();
+        onResize: () => {
+            restoreScroll();
+            scheduleRender();
+        },
+        onDensityChange: scheduleRender,
     });
-    resize.observe(viewport);
-    viewport.addEventListener('keydown', (event) => {
-        if (
-            event.target !== viewport ||
-            event.ctrlKey ||
-            event.metaKey ||
-            event.altKey
-        )
-            return;
-        if (event.key === 'ArrowLeft' || event.key === 'PageUp')
-            changePage(pageNumber - 1);
-        else if (event.key === 'ArrowRight' || event.key === 'PageDown')
-            changePage(pageNumber + 1);
-        else if (event.key === 'Home') changePage(1);
-        else if (event.key === 'End') changePage(pdf?.numPages ?? 1);
-        else if (event.key === '+' || event.key === '=')
-            changeZoom((zoom ?? renderedScale) * 1.25);
-        else if (event.key === '-') changeZoom((zoom ?? renderedScale) / 1.25);
-        else return;
-        event.preventDefault();
-        event.stopPropagation();
+    viewport.addEventListener('scroll', rememberView, { passive: true });
+    const removeKeyboard = mountPdfReaderKeyboard(viewport, {
+        readPage: () => pageNumber,
+        readPageCount: () => pageCount,
+        readScale: () => zoom ?? renderedScale,
+        changePage,
+        changeZoom,
     });
     tools.append(
         sidebar,
@@ -335,33 +414,39 @@ export function mountPdfReader(
     );
     root.append(body, tools);
     refreshLayout();
-    updateControls();
     return {
         root,
         refresh: refreshLayout,
         relocate(nextOnResize?: () => void) {
             onResize = nextOnResize;
-            displayDensity.refresh();
+            layout.refreshDensity();
             if (!started) {
-                intersection.disconnect();
-                void load();
+                layout.stopObservingVisibility();
+                if (session) scheduleRender();
+                else load();
             }
 
             // Keep the loaded PDF and canvas; a different pane width alone can require a new raster size.
 
-            if (Math.abs(viewport.clientWidth - lastWidth) >= 2)
-                refreshLayout();
+            if (layout.widthChanged()) refreshLayout();
         },
         destroy() {
+            rememberView();
             destroyed = true;
             clearTimeout(timer);
-            intersection.disconnect();
-            resize.disconnect();
-            displayDensity.destroy();
+            cancelQueuedLoad?.();
+            cancelQueuedRender?.();
+            layout.destroy();
             thumbnails.destroy();
             renderTask?.cancel();
-            void documentTask?.destroy();
-            canvas.width = canvas.height = 0;
+            removeActivation?.();
+            removeKeyboard();
+            void documentResource
+                .destroy()
+                .finally(() => finishInitialPreparation?.());
+            viewport.removeEventListener('scroll', rememberView);
+            surface.clear();
+            session?.record('readerShellDestructions');
         },
     };
 }

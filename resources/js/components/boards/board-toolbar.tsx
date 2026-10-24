@@ -1,13 +1,13 @@
-import { createPortal } from 'react-dom';
+import { isBoardDrawingTool } from './board-drawing-data';
 import {
     Type,
+    Pencil,
     MousePointer2,
     Hand,
     Undo2,
     Redo2,
     Scan,
     Focus,
-    RotateCcw,
     Minus,
     Plus,
     Grid2X2,
@@ -25,7 +25,6 @@ import { BoardToolbarHighlight } from './board-toolbar-highlight';
 import { BoardToolButton } from './board-tool-button';
 
 export function BoardToolbar({
-    toolbarHost,
     model,
     camera,
     blocked,
@@ -37,7 +36,6 @@ export function BoardToolbar({
     onUndo,
     onRedo,
 }: {
-    toolbarHost: HTMLDivElement | null;
     model: BoardObjectsController;
     camera: BoardCameraController;
     blocked: boolean;
@@ -54,91 +52,99 @@ export function BoardToolbar({
     );
     return (
         <>
-            {toolbarHost &&
-                createPortal(
-                    <div
-                        className="board-creation-dock editor-animated-toolbar"
-                        role="group"
-                        aria-label="Create on board"
-                    >
-                        <BoardToolbarHighlight />
-                        <BoardToolButton
-                            label="Select objects"
-                            tooltipSide="bottom"
-                            disabledReason={
-                                editing
-                                    ? 'Finish editing to switch tools.'
-                                    : undefined
-                            }
-                            icon={MousePointer2}
-                            disabled={blocked || editing}
-                            aria-pressed={tool === 'select'}
-                            onClick={() => onChooseTool('select')}
-                        />
-                        <BoardToolButton
-                            label="Hand — pan the canvas"
-                            tooltipSide="bottom"
-                            disabledReason={
-                                editing
-                                    ? 'Finish editing to switch tools.'
-                                    : undefined
-                            }
-                            icon={Hand}
-                            disabled={blocked || editing}
-                            aria-pressed={tool === 'hand'}
-                            onClick={() => onChooseTool('hand')}
-                        />
-                        <span className="board-tool-separator" />
-                        <BoardToolButton
-                            label="Place text"
-                            tooltipSide="bottom"
-                            disabledReason={
-                                editing
-                                    ? 'Finish editing to switch tools.'
-                                    : undefined
-                            }
-                            icon={Type}
-                            disabled={blocked || editing}
-                            aria-pressed={tool === 'text'}
-                            onClick={() => onChooseTool('text')}
-                        />
-                        <BoardBlockPicker
-                            disabled={blocked || editing}
-                            disabledReason={
-                                editing
-                                    ? 'Finish editing to add blocks.'
-                                    : undefined
-                            }
-                            tool={tool}
-                            onResource={onResource}
-                            onAdd={onChooseTool}
-                        />
-                        <div
-                            className="board-history-controls"
-                            role="group"
-                            aria-label="Board history"
-                            onMouseDown={(event) => event.preventDefault()}
-                        >
-                            <BoardToolButton
-                                label="Undo"
-                                shortcut="Ctrl/Cmd+Z"
-                                tooltipSide="bottom"
-                                icon={Undo2}
-                                disabled={!model.canUndo || blocked}
-                                onClick={onUndo}
-                            />
-                            <BoardToolButton
-                                label="Redo"
-                                shortcut="Ctrl/Cmd+Shift+Z"
-                                tooltipSide="bottom"
-                                icon={Redo2}
-                                disabled={!model.canRedo || blocked}
-                                onClick={onRedo}
-                            />
-                        </div>
-                    </div>,
-                    toolbarHost,
-                )}
+            <div
+                className="board-creation-dock board-panel glass-surface"
+                role="group"
+                aria-label="Create on board"
+            >
+                <BoardToolbarHighlight />
+                <BoardToolButton
+                    label="Select objects"
+                    tooltipSide="right"
+                    disabledReason={
+                        editing ? 'Finish editing to switch tools.' : undefined
+                    }
+                    icon={MousePointer2}
+                    disabled={blocked || editing}
+                    aria-pressed={tool === 'select'}
+                    onClick={() => onChooseTool('select')}
+                />
+                <BoardToolButton
+                    label="Hand — pan the canvas"
+                    tooltipSide="right"
+                    disabledReason={
+                        editing ? 'Finish editing to switch tools.' : undefined
+                    }
+                    icon={Hand}
+                    disabled={blocked || editing}
+                    aria-pressed={tool === 'hand'}
+                    onClick={() => onChooseTool('hand')}
+                />
+                <span className="board-tool-separator" />
+                <BoardToolButton
+                    label="Place text"
+                    tooltipSide="right"
+                    disabledReason={
+                        editing ? 'Finish editing to switch tools.' : undefined
+                    }
+                    icon={Type}
+                    disabled={blocked || editing}
+                    aria-pressed={tool === 'text'}
+                    onClick={() => onChooseTool('text')}
+                />
+                <BoardToolButton
+                    label={
+                        isBoardDrawingTool(tool)
+                            ? 'Finish drawing'
+                            : 'Draw on board'
+                    }
+                    shortcut={isBoardDrawingTool(tool) ? 'Esc' : undefined}
+                    tooltipSide="right"
+                    icon={Pencil}
+                    disabled={blocked || editing}
+                    disabledReason={
+                        editing ? 'Finish editing to draw.' : undefined
+                    }
+                    aria-pressed={isBoardDrawingTool(tool)}
+                    onClick={() =>
+                        onChooseTool(
+                            isBoardDrawingTool(tool) ? 'select' : 'pen',
+                        )
+                    }
+                />
+                <BoardBlockPicker
+                    disabled={blocked || editing}
+                    disabledReason={
+                        editing ? 'Finish editing to add blocks.' : undefined
+                    }
+                    tool={tool}
+                    onResource={onResource}
+                    onAdd={onChooseTool}
+                />
+                <div
+                    className="board-history-controls"
+                    role="group"
+                    aria-label="Board history"
+                    onMouseDown={(event) => event.preventDefault()}
+                >
+                    <BoardToolButton
+                        label="Undo"
+                        shortcut="Ctrl/Cmd+Z"
+                        tooltipSide="right"
+                        icon={Undo2}
+                        disabled={!model.canUndo || blocked}
+                        onClick={onUndo}
+                    />
+                    <BoardToolButton
+                        label="Redo"
+                        shortcut="Ctrl/Cmd+Shift+Z"
+                        tooltipSide="right"
+                        icon={Redo2}
+                        disabled={!model.canRedo || blocked}
+                        onClick={onRedo}
+                    />
+                </div>
+            </div>
             <div
                 className="board-navigation-dock board-panel glass-surface"
                 role="group"
@@ -175,6 +181,7 @@ export function BoardToolbar({
                         />
                     </Menu.Trigger>
                     <Menu.Content
+                        className="board-view-menu"
                         side="top"
                         align="end"
                         sideOffset={12}
@@ -189,9 +196,6 @@ export function BoardToolbar({
                             onSelect={() => camera.fit(selected)}
                         >
                             <Focus /> Fit selection
-                        </Menu.Item>
-                        <Menu.Item onSelect={camera.reset}>
-                            <RotateCcw /> Reset to 100%
                         </Menu.Item>
                         <Menu.Separator />
                         <Menu.CheckboxItem

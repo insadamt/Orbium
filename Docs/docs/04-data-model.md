@@ -98,6 +98,16 @@ Board object data or full snapshots/recovery/exports. Snapshot format stays 4;
 optional `mutation_version: 1` advertises the new PATCH protocol for native,
 contiguous Boards. See `../plans/board-performance-architecture.md`.
 
+## Board drawings (requested 2026-10-23)
+
+`2026_10_23_000001_add_board_drawings.php` upgrades the Board envelope/default to
+**5**, retaining existing row UUIDs, revisions and native/legacy content versions.
+The native row constraint additionally permits `drawing`. Its JSON contains bounded
+local point pairs, view-box dimensions, safe ink color, stroke width and opacity;
+there is no raw SVG payload or attachment. Full/incremental saves require envelope 5.
+Recovery explicitly adapts older local drafts. Rollback refuses while drawing rows
+remain, including drawings on trashed Boards. See `24-boards.md`.
+
 ## documents
 
 

@@ -39,6 +39,7 @@ export class BoardRecordStore {
     private recordListeners = new Map<string, Set<Listener>>();
     private layoutListeners = new Set<Listener>();
     private historyListeners = new Set<Listener>();
+    private changeListeners = new Set<(ids: Iterable<string>) => void>();
     readonly history = new BoardRecordHistory();
 
     constructor(
@@ -57,6 +58,13 @@ export class BoardRecordStore {
         this.subscribe(this.layoutListeners, listener);
     readonly subscribeHistory = (listener: Listener) =>
         this.subscribe(this.historyListeners, listener);
+
+    subscribeChanges(listener: (ids: Iterable<string>) => void) {
+        this.changeListeners.add(listener);
+        return () => {
+            this.changeListeners.delete(listener);
+        };
+    }
 
     subscribeObject(id: string, listener: Listener) {
         let listeners = this.recordListeners.get(id);
@@ -233,6 +241,10 @@ export class BoardRecordStore {
         // Publish a completed transaction before notifying any subscriber so cards, selection and persistence observe one coherent version.
         //
         if (persist) this.onChanged(this.getObjects);
+        if (changes.size)
+            this.changeListeners.forEach((listener) =>
+                listener(changes.keys()),
+            );
         for (const id of changes.keys())
             this.recordListeners.get(id)?.forEach((listener) => listener());
         if (geometryChanged)

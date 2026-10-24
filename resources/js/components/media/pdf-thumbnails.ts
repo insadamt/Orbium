@@ -17,6 +17,7 @@ export function mountPdfThumbnails(options: PdfThumbnailOptions) {
     let rendering = false;
     let renderTask: RenderTask | undefined;
     let renderingPage: number | undefined;
+    let documentGeneration = 0;
     const observer = new IntersectionObserver(
         (entries) => {
             for (const entry of entries) {
@@ -46,9 +47,15 @@ export function mountPdfThumbnails(options: PdfThumbnailOptions) {
     async function renderVisiblePages() {
         if (rendering || !enabled || !pdf || destroyed) return;
         rendering = true;
+        const currentGeneration = documentGeneration;
         try {
             for (const pageNumber of visiblePages) {
-                if (!enabled || destroyed) break;
+                if (
+                    !enabled ||
+                    destroyed ||
+                    currentGeneration !== documentGeneration
+                )
+                    break;
                 const button = buttons[pageNumber - 1];
                 if (button.querySelector('canvas')) continue;
                 renderingPage = pageNumber;
@@ -56,7 +63,12 @@ export function mountPdfThumbnails(options: PdfThumbnailOptions) {
                 canvas.setAttribute('aria-hidden', 'true');
                 try {
                     const page = await pdf.getPage(pageNumber);
-                    if (!enabled || destroyed || !visiblePages.has(pageNumber))
+                    if (
+                        !enabled ||
+                        destroyed ||
+                        currentGeneration !== documentGeneration ||
+                        !visiblePages.has(pageNumber)
+                    )
                         continue;
                     const natural = page.getViewport({ scale: 1 });
                     const viewport = page.getViewport({
@@ -69,7 +81,12 @@ export function mountPdfThumbnails(options: PdfThumbnailOptions) {
                     canvas.height = Math.ceil(viewport.height);
                     renderTask = page.render({ canvas, viewport });
                     await renderTask.promise;
-                    if (enabled && !destroyed && visiblePages.has(pageNumber))
+                    if (
+                        enabled &&
+                        !destroyed &&
+                        currentGeneration === documentGeneration &&
+                        visiblePages.has(pageNumber)
+                    )
                         button.prepend(canvas);
                     else canvas.width = canvas.height = 0;
                 } catch {
@@ -81,6 +98,12 @@ export function mountPdfThumbnails(options: PdfThumbnailOptions) {
             rendering = false;
             renderTask = undefined;
             renderingPage = undefined;
+            if (
+                currentGeneration !== documentGeneration &&
+                enabled &&
+                !destroyed
+            )
+                void renderVisiblePages();
         }
     }
 
@@ -99,9 +122,24 @@ export function mountPdfThumbnails(options: PdfThumbnailOptions) {
         }
     }
 
+    function clearDocument() {
+        documentGeneration++;
+        renderTask?.cancel();
+        for (const button of buttons) {
+            observer.unobserve(button);
+            releaseCanvas(button);
+        }
+        buttons.length = 0;
+        visiblePages.clear();
+        root.replaceChildren();
+        pdf = undefined;
+    }
+
     return {
         root,
+        clearDocument,
         setDocument(document: PDFDocumentProxy) {
+            documentGeneration++;
             pdf = document;
             for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
                 const button = documentButton(pageNumber);

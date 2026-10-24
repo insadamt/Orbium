@@ -118,7 +118,9 @@ export function BoardSelectionTools({
                                 }
                             </span>
                         )}
-                        {object.block_type !== 'divider' && (
+                        {!['divider', 'drawing'].includes(
+                            object.block_type,
+                        ) && (
                             <BoardToolButton
                                 label={
                                     toolbarEditing

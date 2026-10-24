@@ -15,13 +15,22 @@ import {
     type BoardLocation,
     type BoardPoint,
 } from './board-types';
+import {
+    instantSceneBudgets,
+    type BoardRendererMode,
+} from './instant-scene/board-renderer-mode';
+import { paintBoardCameraSurface } from './instant-scene/paint-board-camera-surface';
 
-export function useBoardCamera(location: BoardLocation) {
+export function useBoardCamera(
+    location: BoardLocation,
+    rendererMode: BoardRendererMode = 'original',
+) {
     const viewportRef = useRef<HTMLDivElement>(null);
     const worldRef = useRef<HTMLDivElement>(null);
     const gridLayerRef = useRef<HTMLDivElement>(null);
     const zoomLabelRef = useRef<HTMLSpanElement>(null);
     const cameraRef = useRef<BoardCamera>({ ...defaultBoardCamera });
+    const diagnostics = useRef({ cameraPaints: 0, layoutDensityChanges: 0 });
     const frame = useRef<number | undefined>(undefined);
     const settleTimer = useRef<number | undefined>(undefined);
     const { visibleBounds, viewportSize, updateVisibleBounds } =
@@ -30,10 +39,41 @@ export function useBoardCamera(location: BoardLocation) {
     const [snap, setSnap] = useState(false);
     const [guides, setGuides] = useState(true);
     const gridRef = useRef(grid);
-    const storageKey = boardStorageKey(location, 'view.v1');
+    const storageKey = boardStorageKey(
+        location,
+        rendererMode === 'instant' ? 'instant.view.v1' : 'view.v1',
+    );
+    const minZoom =
+        rendererMode === 'instant'
+            ? instantSceneBudgets.minZoom
+            : boardLimits.minZoom;
+    const maxZoom =
+        rendererMode === 'instant'
+            ? instantSceneBudgets.maxZoom
+            : boardLimits.maxZoom;
+
+    const paintWorld = useCallback(
+        (settleDensity = false) => {
+            const world = worldRef.current;
+            if (!world) return;
+            const previousDensity = world.style.zoom;
+            paintBoardCameraSurface({
+                world,
+                camera: cameraRef.current,
+                mode: rendererMode,
+                settleDensity,
+            });
+            if (previousDensity !== world.style.zoom)
+                diagnostics.current.layoutDensityChanges++;
+        },
+        [rendererMode],
+    );
 
     const settle = useCallback(() => {
-        if (worldRef.current) delete worldRef.current.dataset.cameraMoving;
+        if (worldRef.current) {
+            if (rendererMode === 'instant') paintWorld(true);
+            delete worldRef.current.dataset.cameraMoving;
+        }
         updateVisibleBounds(cameraRef.current);
         const camera = cameraRef.current;
         try {
@@ -42,23 +82,13 @@ export function useBoardCamera(location: BoardLocation) {
                 JSON.stringify({ ...camera, grid: gridRef.current }),
             );
         } catch {}
-    }, [storageKey, updateVisibleBounds]);
+    }, [storageKey, updateVisibleBounds, rendererMode, paintWorld]);
 
     const paint = useCallback(() => {
         frame.current = undefined;
+        diagnostics.current.cameraPaints++;
         const { x, y, zoom } = cameraRef.current;
-        if (worldRef.current) {
-            //
-            // Layout zoom lets the browser rasterize text and vectors at their displayed size instead of stretching a cached world layer.
-            //
-            const style = worldRef.current.style;
-            //
-            // Pan the existing surface without repositioning its layout; only real zoom changes should change layout density.
-            //
-            if (style.zoom !== String(zoom)) style.zoom = String(zoom);
-            const translation = `${x / zoom}px ${y / zoom}px`;
-            if (style.translate !== translation) style.translate = translation;
-        }
+        paintWorld();
         const viewport = viewportRef.current;
         if (viewport) {
             const inverseZoom = String(1 / zoom);
@@ -90,7 +120,7 @@ export function useBoardCamera(location: BoardLocation) {
         )
             zoomLabelRef.current.textContent = zoomLabel;
         updateVisibleBounds(cameraRef.current);
-    }, [updateVisibleBounds]);
+    }, [updateVisibleBounds, paintWorld]);
 
     const setCamera = useCallback(
         (camera: BoardCamera) => {
@@ -102,18 +132,14 @@ export function useBoardCamera(location: BoardLocation) {
             cameraRef.current = {
                 x: clamp(camera.x, -40_000_000, 40_000_000),
                 y: clamp(camera.y, -40_000_000, 40_000_000),
-                zoom: clamp(
-                    camera.zoom,
-                    boardLimits.minZoom,
-                    boardLimits.maxZoom,
-                ),
+                zoom: clamp(camera.zoom, minZoom, maxZoom),
             };
             if (frame.current === undefined)
                 frame.current = requestAnimationFrame(paint);
             clearTimeout(settleTimer.current);
             settleTimer.current = window.setTimeout(settle, 120);
         },
-        [paint, settle],
+        [paint, settle, minZoom, maxZoom],
     );
 
     function localPoint(point: BoardPoint): BoardPoint {
@@ -145,7 +171,7 @@ export function useBoardCamera(location: BoardLocation) {
                     x: (host?.clientWidth ?? 640) / 2,
                     y: (host?.clientHeight ?? 480) / 2,
                 },
-                cameraRef.current.zoom * factor,
+                clamp(cameraRef.current.zoom * factor, minZoom, maxZoom),
             ),
         );
     }
@@ -171,8 +197,8 @@ export function useBoardCamera(location: BoardLocation) {
                 availableWidth / Math.max(bounds.width, 1),
                 availableHeight / Math.max(bounds.height, 1),
             ),
-            boardLimits.minZoom,
-            Math.min(1.5, boardLimits.maxZoom),
+            minZoom,
+            Math.min(1.5, maxZoom),
         );
         setCamera({
             zoom,
@@ -245,7 +271,12 @@ export function useBoardCamera(location: BoardLocation) {
                                 event.clientY -
                                 (host?.getBoundingClientRect().top ?? 0),
                         },
-                        camera.zoom * Math.exp(-event.deltaY * unit * 0.005),
+                        clamp(
+                            camera.zoom *
+                                Math.exp(-event.deltaY * unit * 0.005),
+                            minZoom,
+                            maxZoom,
+                        ),
                     ),
                 );
             else
@@ -278,7 +309,7 @@ export function useBoardCamera(location: BoardLocation) {
             clearTimeout(settleTimer.current);
             frame.current = undefined;
         };
-    }, [storageKey, paint, setCamera, settle, viewportSize]);
+    }, [storageKey, paint, setCamera, settle, viewportSize, minZoom, maxZoom]);
 
     function toggleGrid() {
         gridRef.current = !gridRef.current;
@@ -302,6 +333,9 @@ export function useBoardCamera(location: BoardLocation) {
         } catch {}
     }
     return {
+        readDiagnostics: () => ({ ...diagnostics.current }),
+        minZoom,
+        maxZoom,
         guides,
         toggleGuides,
         viewportRef,

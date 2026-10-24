@@ -5,6 +5,7 @@ namespace App\Services\Markdown;
 use App\Models\Attachment;
 use App\Models\Node;
 use App\Services\References\OwnedReferenceAvailability;
+use App\Services\References\SelfMentionGuard;
 
 final class MarkdownReferenceValidator
 {
@@ -15,6 +16,7 @@ final class MarkdownReferenceValidator
             ->whereIn('id', array_keys($inspection->derived->mentions))->get();
         $targetsById = $targets->keyBy('id');
         foreach (array_keys($inspection->derived->mentions) as $id) {
+            app(SelfMentionGuard::class)->rejectSelfTarget($source, (int) $id, 'markdown');
             $target = $targetsById->get($id);
             $available = $target !== null && app(OwnedReferenceAvailability::class)->hasVisibleAncestry($target);
             if (! $available && ! isset($previous?->derived->mentions[$id])) {

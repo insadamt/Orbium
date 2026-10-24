@@ -8,7 +8,7 @@ final class BoardSaveRules
     public static function rules(): array
     {
         return [
-            'format_version' => ['required', 'integer', 'in:4'],
+            'format_version' => ['required', 'integer', 'in:5'],
             'revision' => ['required', 'integer', 'min:0', 'max:9007199254740990'],
             ...self::objects('objects'),
         ];
@@ -17,8 +17,11 @@ final class BoardSaveRules
     /** @return array<string, list<string>> */
     public static function objects(string $field): array
     {
+        //
+        // Payload byte budgets bound Board data without imposing a block-count ceiling.
+        //
         return [
-            $field => ['present', 'array', 'list', 'max:'.BoardContent::MAX_OBJECTS],
+            $field => ['present', 'array', 'list'],
             "$field.*" => ['required', 'array:id,block_type,content_format_version,data,x,y,width,height,layer'],
             "$field.*.id" => ['required', 'uuid', 'distinct:ignore_case'],
             "$field.*.block_type" => ['required', 'in:'.implode(',', BoardBlockData::KINDS)],

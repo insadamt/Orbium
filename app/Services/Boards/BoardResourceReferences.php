@@ -25,9 +25,24 @@ final class BoardResourceReferences
         if ($ids === []) {
             return;
         }
-        $previous = BoardObject::query()->where('board_node_id', $board->id)->where('block_type', 'resource')->get(['data'])
-            ->map(fn ($object) => $object->data['target_node_id'])->all();
+        $existing = BoardObject::query()->where('board_node_id', $board->id)->where('block_type', 'resource')->get(['object_id', 'data']);
+        $previous = $existing->map(fn ($object) => $object->data['target_node_id'])->all();
+        $previousByObject = $existing->keyBy('object_id');
         $nodes = Node::withTrashed()->whereIn('id', $ids)->get()->keyBy('id');
+        //
+        // Retain older non-Document cards without allowing new ones through insertion, duplication or clipboard writes.
+        //
+        foreach ($objects as $object) {
+            if ($object['block_type'] !== 'resource') {
+                continue;
+            }
+            $id = $object['data']['target_node_id'];
+            $target = $nodes->get($id);
+            $previousTarget = $previousByObject->get(strtolower($object['id']))?->data['target_node_id'] ?? null;
+            if ($target !== null && $target->type !== 'document' && $previousTarget !== $id) {
+                throw ValidationException::withMessages(['objects' => 'Only Documents can be added as inline content. Use a mention for other pages.']);
+            }
+        }
         foreach ($ids as $id) {
             $target = $nodes->get($id);
             if ($id === $board->id || ($target !== null && ($target->workspace_id !== $board->workspace_id || ! in_array($target->type, self::TYPES, true)))) {

@@ -4,6 +4,7 @@ import { mediaIconButton, mountPlaybackControls } from './media-controls';
 import { openMediaFullPreview } from './media-full-preview';
 import { mountPdfReader } from './pdf-reader';
 import { mountVideoFullscreen } from './video-fullscreen';
+import type { PdfViewSession } from './pdf-view-session';
 
 export type AttachmentPlayerOptions = {
     url: string;
@@ -12,6 +13,7 @@ export type AttachmentPlayerOptions = {
     sizeBytes?: number;
     onResize?: () => void;
     isVisible?: () => boolean;
+    pdfSession?: PdfViewSession;
 };
 
 export function createAttachmentPlayer(options: AttachmentPlayerOptions) {
@@ -66,6 +68,7 @@ export function createAttachmentPlayer(options: AttachmentPlayerOptions) {
                 return;
             }
             if (kind !== 'pdf' || closePreview) return;
+            options.pdfSession?.activateReader();
             closePreview = openMediaFullPreview({
                 content: root,
                 trigger: fullscreen,
@@ -104,8 +107,13 @@ export function createAttachmentPlayer(options: AttachmentPlayerOptions) {
             options.name,
             showError,
             options.onResize,
+            options.pdfSession,
         );
         root.append(reader.root);
+        const activateReader = () => options.pdfSession?.activateReader();
+        root.addEventListener('pointerdown', activateReader);
+        root.addEventListener('focusin', activateReader);
+        root.addEventListener('wheel', activateReader, { passive: true });
     } else {
         media = document.createElement(kind);
         media.controls = false;
@@ -192,6 +200,9 @@ export function createAttachmentPlayer(options: AttachmentPlayerOptions) {
         root,
         actions,
         pause,
+        refreshPdfLayout() {
+            reader?.refresh();
+        },
         prepareRelocation() {
             closePreview?.();
             if (media)

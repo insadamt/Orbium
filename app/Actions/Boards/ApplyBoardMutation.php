@@ -49,9 +49,6 @@ final class ApplyBoardMutation
                 }
             }
             $count = $existing->count() + count($createIds) - count($deleteIds);
-            if ($count > BoardContent::MAX_OBJECTS) {
-                $this->invalid('Use at most 1,000 Board objects.');
-            }
             $objects = app(BoardContent::class)->validateObjects($node, [...$data->creates, ...$data->updates]);
             $layers = $existing->mapWithKeys(fn ($object) => [$object->object_id => $object->layer])->all();
             foreach ($deleteIds as $id) {

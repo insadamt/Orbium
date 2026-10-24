@@ -172,9 +172,13 @@ Targets may be:
 
 - document;
 - folder;
-- database.
+- database;
+- Board.
 
-A mention does not alter parentage.
+A page cannot mention itself. Candidate searches exclude the source page, and
+save validation rejects self-targets in Document bodies, native Board text and
+Document database mention properties. Hosted Document editing uses the original
+Document as the source. A mention does not alter parentage.
 
 Editor mention nodes should hold enough stable information to render immediately, but the target database ID must be remappable during portability restore.
 

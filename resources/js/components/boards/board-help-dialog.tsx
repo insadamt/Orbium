@@ -27,6 +27,18 @@ export function BoardHelpDialog({
                         Choose Text, Image or Add, then click to place. Enter
                         places it at the view center.
                     </dd>
+                    <dt>Draw / highlight</dt>
+                    <dd>
+                        Choose Draw, then Pen or Highlighter. Pick ink and
+                        width, then drag; taps draw dots. Smoothing offers Off,
+                        Light and Strong. The preview shows your brush before
+                        drawing. Done or Escape returns to Select.
+                    </dd>
+                    <dt>Erase drawings</dt>
+                    <dd>
+                        Choose Eraser and drag across strokes. Whole strokes are
+                        removed on release; undo restores them.
+                    </dd>
                     <dt>Select several</dt>
                     <dd>
                         Shift/Ctrl/Cmd + click, or drag empty space with Select

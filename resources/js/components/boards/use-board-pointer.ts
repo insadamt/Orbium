@@ -1,7 +1,10 @@
+import { useBoardPanShortcut } from './use-board-pan-shortcut';
+import { isBoardDrawingTool } from './board-drawing-data';
+import type { BoardDrawingController } from './use-board-drawing';
 import { useBoardPointerGeometry } from './use-board-pointer-geometry';
 import { indexBoardAlignmentTargets } from './board-alignment-index';
 import type { BoardGesture } from './board-pointer-types';
-import { useCallback, useEffect, useRef, type PointerEvent } from 'react';
+import { useCallback, useRef, type PointerEvent } from 'react';
 import type { BoardObjectsController } from './use-board-objects';
 import type { BoardCameraController } from './use-board-camera';
 import { paintBoardObjects, paintBoardGuides } from './board-pointer-paint';
@@ -14,7 +17,6 @@ import {
     pinchGeometry,
 } from './board-geometry';
 import {
-    boardLimits,
     type BoardPoint,
     type BoardPlacementKind,
     type BoardTool,
@@ -32,12 +34,14 @@ export function useBoardPointer(
     editingLocked: () => boolean,
     interaction: {
         tool: BoardTool;
+        drawing: BoardDrawingController;
         onPlace: (kind: BoardPlacementKind, point: BoardPoint) => void;
     },
 ) {
     const gesture = useRef<BoardGesture | null>(null);
+    const drawingRef = useRef(interaction.drawing);
+    drawingRef.current = interaction.drawing;
     const touches = useRef(new Map<number, BoardPoint>());
-    const space = useRef(false);
     const guidesRef = useRef<HTMLDivElement>(null);
     const marqueeRef = useRef<HTMLDivElement>(null);
     const frame = useRef<number | undefined>(undefined);
@@ -47,6 +51,7 @@ export function useBoardPointer(
 
     const cancel = useCallback(() => {
         const current = gesture.current;
+        drawingRef.current.cancel();
         if (current?.kind === 'move' || current?.kind === 'resize')
             paintBoardObjects(
                 viewportRef.current,
@@ -63,46 +68,8 @@ export function useBoardPointer(
         return current !== null;
     }, [viewportRef]);
 
-    useEffect(() => {
-        const keydown = (event: KeyboardEvent) => {
-            if (
-                event.key !== ' ' ||
-                event.ctrlKey ||
-                event.metaKey ||
-                (event.target instanceof Element &&
-                    event.target.closest(
-                        'input, textarea, [contenteditable="true"]',
-                    ))
-            )
-                return;
-            if (!viewportRef.current?.contains(document.activeElement)) return;
-            event.preventDefault();
-            space.current = true;
-            viewportRef.current.dataset.space = 'true';
-        };
-        const resetSpace = () => {
-            space.current = false;
-            if (viewportRef.current)
-                viewportRef.current.dataset.space = 'false';
-        };
-        const keyup = (event: KeyboardEvent) => {
-            if (event.key === ' ') resetSpace();
-        };
-        const blur = () => {
-            resetSpace();
-            cancel();
-            touches.current.clear();
-        };
-        window.addEventListener('keydown', keydown);
-        window.addEventListener('keyup', keyup);
-        window.addEventListener('blur', blur);
-        return () => {
-            blur();
-            window.removeEventListener('keydown', keydown);
-            window.removeEventListener('keyup', keyup);
-            window.removeEventListener('blur', blur);
-        };
-    }, [cancel, viewportRef]);
+    const clearTouches = useCallback(() => touches.current.clear(), []);
+    const space = useBoardPanShortcut(viewportRef, cancel, clearTouches);
 
     function onPointerDown(event: PointerEvent<HTMLDivElement>) {
         const target = event.target as Element;
@@ -175,6 +142,17 @@ export function useBoardPointer(
                 camera: { ...camera.cameraRef.current },
             };
             event.currentTarget.dataset.gesture = 'pan';
+            return;
+        }
+        if (isBoardDrawingTool(interaction.tool)) {
+            if (!blocked) {
+                interaction.drawing.start(
+                    interaction.tool,
+                    canvasPoint(local, camera.cameraRef.current),
+                );
+                gesture.current = { kind: 'draw', pointerId: event.pointerId };
+                event.currentTarget.dataset.gesture = 'draw';
+            }
             return;
         }
         if (interaction.tool !== 'select') {
@@ -253,6 +231,22 @@ export function useBoardPointer(
             (current.kind !== 'pinch' && current.pointerId !== event.pointerId)
         )
             return;
+        if (current.kind === 'draw') {
+            if (touches.current.has(event.pointerId))
+                touches.current.set(
+                    event.pointerId,
+                    pointerLocalPoint({ x: event.clientX, y: event.clientY }),
+                );
+            const samples = event.nativeEvent.getCoalescedEvents?.() ?? [];
+            const points = (samples.length ? samples : [event]).map((sample) =>
+                canvasPoint(
+                    pointerLocalPoint({ x: sample.clientX, y: sample.clientY }),
+                    camera.cameraRef.current,
+                ),
+            );
+            interaction.drawing.move(points);
+            return;
+        }
         if (current.kind === 'pinch' && !touches.current.has(event.pointerId))
             return;
         pendingPointer.current.set(event.pointerId, {
@@ -276,7 +270,7 @@ export function useBoardPointer(
         pendingPointer.current.clear();
         const event = samples.at(-1);
         const current = gesture.current;
-        if (!event || !current) return;
+        if (!event || !current || current.kind === 'draw') return;
         const localPoint = (sample: BoardPointerSample) =>
             pointerLocalPoint({
                 x: sample.clientX,
@@ -292,8 +286,8 @@ export function useBoardPointer(
             const pinch = pinchGeometry([...touches.current.values()]);
             const zoom = clamp(
                 (current.camera.zoom * pinch.distance) / current.distance,
-                boardLimits.minZoom,
-                boardLimits.maxZoom,
+                camera.minZoom,
+                camera.maxZoom,
             );
             camera.setCamera({
                 zoom,
@@ -383,6 +377,7 @@ export function useBoardPointer(
                   }
                 : null;
         } else if (current && current.pointerId === event.pointerId) {
+            if (current.kind === 'draw') interaction.drawing.finish();
             if (current.kind === 'place') {
                 const end = camera.localPoint({
                     x: event.clientX,

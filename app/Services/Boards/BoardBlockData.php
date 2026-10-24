@@ -10,10 +10,13 @@ use Illuminate\Validation\ValidationException;
 
 final class BoardBlockData
 {
-    public const KINDS = ['text', 'heading', 'list', 'quote', 'callout', 'code', 'table', 'image', 'file', 'math', 'mermaid', 'divider', 'resource'];
+    public const KINDS = ['text', 'heading', 'list', 'quote', 'callout', 'code', 'table', 'image', 'file', 'math', 'mermaid', 'divider', 'resource', 'drawing'];
 
     public function validate(string $kind, array $data): array
     {
+        if ($kind === 'drawing') {
+            return (new BoardDrawingData)->validate($data);
+        }
         $fields = match ($kind) {
             'text', 'quote', 'callout' => ['content'],
             'heading' => ['content', 'level'],

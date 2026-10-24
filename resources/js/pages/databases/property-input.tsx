@@ -130,11 +130,13 @@ export default function PropertyInput({
     const choices = !open
         ? []
         : property.type === 'mention'
-          ? candidates.map((candidate) => ({
-                id: candidate.id,
-                label: candidate.title,
-                kind: candidate.type,
-            }))
+          ? candidates
+                .filter((candidate) => candidate.id !== documentId)
+                .map((candidate) => ({
+                    id: candidate.id,
+                    label: candidate.title,
+                    kind: candidate.type,
+                }))
           : options.map((option) => ({
                 id: option,
                 label: option,

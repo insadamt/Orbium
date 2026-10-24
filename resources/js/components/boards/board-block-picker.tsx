@@ -2,7 +2,6 @@ import { Fragment, useRef, useState } from 'react';
 import {
     Plus,
     Check,
-    ChevronDown,
     Link2,
     Type,
     Heading1,
@@ -76,7 +75,7 @@ export function BoardBlockPicker({
     const activeChoice = blockGroups
         .flatMap((group) => [...group.choices])
         .find((choice) => choice.kind === tool);
-    const active = !['select', 'hand', 'text'].includes(tool);
+    const active = Boolean(activeChoice);
     return (
         <Menu.Root
             open={open && !disabled}
@@ -88,26 +87,23 @@ export function BoardBlockPicker({
         >
             <Menu.Trigger asChild>
                 <BoardToolButton
-                    label="Add block"
+                    label={
+                        active && activeChoice
+                            ? `Place ${boardBlockLabels[activeChoice.kind].toLowerCase()}`
+                            : 'Add block'
+                    }
                     icon={active ? (activeChoice?.icon ?? Plus) : Plus}
                     data-board-add-trigger
-                    tooltipSide="bottom"
+                    tooltipSide="right"
                     disabled={disabled}
                     disabledReason={disabledReason}
                     aria-pressed={active}
-                >
-                    <span>
-                        {active && activeChoice
-                            ? boardBlockLabels[activeChoice.kind]
-                            : 'Add'}
-                    </span>
-                    <ChevronDown size={12} aria-hidden="true" />
-                </BoardToolButton>
+                ></BoardToolButton>
             </Menu.Trigger>
             <Menu.Content
                 className="board-block-picker"
-                side="bottom"
-                align="end"
+                side="right"
+                align="center"
                 sideOffset={10}
                 collisionPadding={12}
                 aria-label="Add a block"
@@ -168,7 +164,7 @@ export function BoardBlockPicker({
                     }}
                     disabled={disabled}
                 >
-                    <Link2 /> Link page or create Document
+                    <Link2 /> Inline Document
                 </Menu.Item>
             </Menu.Content>
         </Menu.Root>

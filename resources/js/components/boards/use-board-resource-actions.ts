@@ -4,7 +4,10 @@ import type { BoardLocation } from './board-types';
 import type { BoardObjectsController } from './use-board-objects';
 import type { BoardCameraController } from './use-board-camera';
 import type { useBoardAutosave } from './use-board-autosave';
-import { resourceObjectGeometry } from './board-resource-layout';
+import {
+    resourceObjectGeometry,
+    resourcePlacementBeside,
+} from './board-resource-layout';
 import {
     createResourceDocument,
     type CreateResourceRequest,
@@ -70,7 +73,7 @@ export function useBoardResourceActions(
                     'Finish saving this Board before creating a Document.',
                 );
             const payload = pendingRef.current?.payload ?? {
-                format_version: 4,
+                format_version: 5,
                 revision: current.save.currentRevision(),
                 objects: current.model.objectsRef.current,
                 request_id: requestId,
@@ -124,6 +127,16 @@ export function useBoardResourceActions(
             if (!running.current) setOpen(false);
         },
         create,
+        insertDocument: (targetId: number, sourceObjectId: string) => {
+            if (isLocked() || save.blocked) return false;
+            const source = model.objectsRef.current.find(
+                (object) => object.id === sourceObjectId,
+            );
+            return model.addResource(
+                source ? resourcePlacementBeside(source) : camera.centerPoint(),
+                targetId,
+            );
+        },
         insert: (targetId: number) =>
             !isLocked() &&
             !save.blocked &&

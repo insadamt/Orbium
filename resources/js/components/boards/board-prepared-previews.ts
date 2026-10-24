@@ -15,11 +15,21 @@ export class BoardPreparedPreviews {
         { preview: CachedPreview; bytes: number }
     >();
     private bytes = 0;
+    private counters = {
+        hits: 0,
+        misses: 0,
+        nativeDiagramInitializations: 0,
+        evictions: 0,
+    };
 
     reuseDiagram(ownerKind: ContentOwnerKind, nodeId: number, source: string) {
         const key = this.diagramKey(ownerKind, nodeId, source);
         const entry = this.diagrams.get(key);
-        if (!entry) return;
+        if (!entry) {
+            this.counters.misses++;
+            return;
+        }
+        this.counters.hits++;
         this.diagrams.delete(key);
         this.diagrams.set(key, entry);
         return entry.preview;
@@ -32,6 +42,7 @@ export class BoardPreparedPreviews {
     ) {
         const cached = this.reuseDiagram('board', nodeId, source);
         if (cached) return cached;
+        this.counters.nativeDiagramInitializations++;
         const rendered = await renderMermaidPreview(source, shouldRender);
         if (!rendered) return null;
         //
@@ -67,7 +78,16 @@ export class BoardPreparedPreviews {
             const oldest = this.diagrams.keys().next().value;
             if (oldest === undefined) break;
             this.removeDiagram(oldest);
+            this.counters.evictions++;
         }
+    }
+
+    snapshot() {
+        return {
+            ...this.counters,
+            diagramEntries: this.diagrams.size,
+            estimatedDiagramBytes: this.bytes,
+        };
     }
 
     private diagramKey(

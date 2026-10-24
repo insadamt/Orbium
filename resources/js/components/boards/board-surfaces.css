@@ -1,0 +1,34 @@
+/*
+ * Canvas content must not show through controls; keep opaque app colors even when the shell uses frosted surfaces.
+ */
+:root .board-page .glass-surface,
+:root[data-surface-style] .board-page .glass-surface {
+    background: var(--card);
+    border-color: var(--border);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+}
+:root .board-page > .board-page-heading {
+    background: var(--card);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+}
+.board-page .board-canvas {
+    background-color: var(--background);
+}
+/*
+ * These menus render in portals outside the Board page, so their surfaces need explicit Board-scoped selectors.
+ */
+:root .app-menu-content.board-view-menu,
+:root[data-surface-style] .app-menu-content.board-view-menu,
+:root .app-menu-content.board-block-picker,
+:root[data-surface-style] .app-menu-content.board-block-picker,
+:root .app-menu-content.board-drawing-smoothing-menu,
+:root[data-surface-style] .app-menu-content.board-drawing-smoothing-menu,
+:root .board-context-menu.glass-surface,
+:root[data-surface-style] .board-context-menu.glass-surface {
+    background: var(--popover);
+    border-color: var(--border);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+}

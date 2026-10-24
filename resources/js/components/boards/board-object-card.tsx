@@ -1,3 +1,4 @@
+import { BoardDrawingStroke } from './board-drawing-stroke';
 import {
     supportsBoardContentHeight,
     measureBoardContentHeight,
@@ -15,6 +16,8 @@ import { BoardTextBlock } from './board-text-block';
 import { BoardSourceBlock } from './board-source-block';
 import { BoardMediaBlock } from './board-media-block';
 import { boardBlockLabels, boardBlockText } from './board-block-data';
+import type { BoardInstantScene } from './instant-scene/board-instant-scene';
+import { BoardPreparedSurface } from './instant-scene/board-prepared-surface';
 import type {
     BoardBlockData,
     BoardLocation,
@@ -42,6 +45,7 @@ export const BoardObjectCard = memo(function BoardObjectCard({
     editPoint,
     onTransform,
     editorResetVersion,
+    instantScene,
 }: {
     tabId: string;
     onResourceLock: (objectId: string, locked: boolean) => void;
@@ -66,6 +70,7 @@ export const BoardObjectCard = memo(function BoardObjectCard({
     editPoint: RefObject<BoardPoint | null>;
     onTransform: (id: string, replacement: BoardBlockReplacement) => boolean;
     editorResetVersion: number;
+    instantScene?: BoardInstantScene | null;
 }) {
     const updateResourceLock = useCallback(
         (locked: boolean) => onResourceLock(object.id, locked),
@@ -169,7 +174,7 @@ export const BoardObjectCard = memo(function BoardObjectCard({
                 if (
                     !blocked &&
                     !editing &&
-                    object.block_type !== 'divider' &&
+                    !['divider', 'drawing'].includes(object.block_type) &&
                     !(event.target as Element).closest(
                         '[data-board-resize], [data-board-interactive], button, a, input, textarea, select, video, audio',
                     )
@@ -184,7 +189,11 @@ export const BoardObjectCard = memo(function BoardObjectCard({
                 className={`board-object-body board-object-preview${object.block_type === 'resource' ? '' : ' orbium-editor orbium-markdown-content'}`}
                 data-board-scroll
             >
-                {object.block_type === 'resource' ? (
+                {object.block_type === 'drawing' && object.data.drawing ? (
+                    <BoardDrawingStroke drawing={object.data.drawing} />
+                ) : !editing && instantScene?.supports(object) ? (
+                    <BoardPreparedSurface {...props} scene={instantScene} />
+                ) : object.block_type === 'resource' ? (
                     <BoardResourceBlock
                         {...props}
                         tabId={tabId}
@@ -204,7 +213,7 @@ export const BoardObjectCard = memo(function BoardObjectCard({
                 ) : object.block_type === 'divider' ? (
                     <hr className="board-divider" />
                 ) : (
-                    <BoardMediaBlock {...props} />
+                    <BoardMediaBlock {...props} pdfScene={instantScene?.pdfs} />
                 )}
             </div>
             {selected && !blocked && !editing && (

@@ -80,7 +80,7 @@ The new migration adds nullable JSONB data, permits preserved legacy format-2 Ma
 
 Format-1/2 recovery drafts use the explicit compatibility reader. Unknown/malformed or over-budget conversions show an error and offer original snapshot download, never a partial save. Conflicts keep local data, require confirmed replacement, and retain the previous navigation/upload/IME guards. A first native save persists converted objects atomically using the original revision. Older clients reject the new envelope and their old PUT shape fails validation.
 
-Native data limits allow JSON/formatting/recovery overhead: 256 KiB per object, 4 MiB total, 1,000 objects, 1,000 list items, 100×30 table cells, 10,000 inline entries per field and 50,000 bytes of Mermaid source. Positions ±10,000,000; dimensions 80–4,000 by 32–4,000; zoom 10–400%. Preview culling and one active inline/code field avoid mounting document editors across the canvas. New shapes, live resource cards, Mind Maps, grouping and Board import/export remain outside this correction.
+Native data limits allow JSON/formatting/recovery overhead: 256 KiB per object, 4 MiB total, no fixed object-count ceiling, 1,000 list items, 100×30 table cells, 10,000 inline entries per field and 50,000 bytes of Mermaid source. Positions ±10,000,000; dimensions 80–4,000 by 32–4,000; zoom 10–400%. Preview culling and one active inline/code field avoid mounting document editors across the canvas. New shapes, live resource cards, Mind Maps, grouping and Board import/export remain outside this correction.
 
 Manual acceptance is in `../reports/11-boards-native-correction.md`. This correction remains phase 3; stop for user review.
 
@@ -672,3 +672,284 @@ still change per mount and theme CSS variables remain live.
 Static checks pass; the CPU/thermal complaint is still unresolved pending manual
 foreground recording and built-asset comparison. See
 `../reports/12-boards-cpu-followup.md`. Remain in phase 4.
+
+### Experimental Instant Scene prototype (2026-10-23)
+
+The user authorized a reversible first milestone on `codex/instant-scene-engine`
+from the latest `codex/boards`. Following the user's direct-review request,
+Instant Scene is the default on this experimental branch, using a prepared
+DOM/vector adapter with a separate local view key and experimental 50–200%
+camera range. `?boardRenderer=original` explicitly restores the reference adapter
+and its 10–400% range. `?boardRenderer=instant` explicitly selects Instant Scene.
+The optional session override is documented in
+`../plans/board-instant-scene-architecture.md`.
+
+Native text, heading, list, quote and callout templates and sanitized Mermaid SVG
+are prepared independently of card visibility, with bounded Board-local caches
+and the existing shared scheduler. Warm presentation copies prepared content;
+active editing still uses native implementations and the same canonical records,
+history, saves and recovery. Other kinds keep their existing renderers. Camera
+zoom reuses settled layout density during gestures, then restores sharp native
+layout; pointer anchors respect the experimental limits.
+
+This is a first working slice, not full rich-content preparation or a production
+migration. It adds no schema, API, dependency or persisted content-format change.
+Cold content/cache eviction/reopening can still need preparation. No browser,
+CPU or temperature improvement has been measured. The exact manual checklist and
+remaining boundaries are in `../reports/12-boards-instant-scene.md`. Stop for
+review before later engine milestones or another product phase.
+
+### Instant Scene PDF preservation review (2026-10-23)
+
+The user approved the focused PDF milestone after reviewing the prototype's
+insufficient preservation. In Instant Scene, prepared PDF page pixels, accessible
+page text and per-object page/zoom/rotation/scroll/sidebar state now outlive a
+culled card. Warm cards attach the prepared page before metadata revalidation;
+unchanged page geometry/density does not start another raster or PDF document
+task. Native controls remain available and load the document when required.
+
+One interacted PDF is pinned independently of the existing editor/retention
+rules. Changing the active PDF or entering another object's editor releases that
+pin. Inactive document tasks are destroyed after their prepared page is complete;
+the page remains visible. Cold preparation shares two fetch slots and one render
+slot, with hidden-tab suspension and stale-result cancellation. Repeated movement
+at unchanged geometry should preserve the current reader/page.
+
+The Board-local LRU holds at most 32 prepared pages / 64 MiB of estimated RGBA
+pixel storage plus page-text bytes. View state/metadata follows current object
+identities within the existing bounded scene-state cache. Visible canvases and active PDF
+internal memory are additional; this is not a browser-wide heap/GPU cap. Cold,
+evicted or changed-resolution content can still prepare again. Full Board reload
+does not persist these transient assets or view state.
+
+Original rendering remains available through `?boardRenderer=original`; normal
+Documents and Library have no Board preservation session. File ownership,
+download/fullscreen controls, canonical content, history, saves and recovery stay
+with their existing contracts. No migration/API/format/dependency change. Read
+`../reports/12-boards-instant-scene-pdf.md` for exact manual steps and measured
+versus unmeasured results. Stop before extending this model to other rich kinds.
+
+## Page insertion and native text references (2026-10-23)
+
+The current phase-4 review supports `@` completion in native Board writing and
+list blocks. Search same-workspace live Documents, Databases and Boards; choose
+with arrows/Enter or a pointer, dismiss with Escape, and switch insertion modes
+with Tab. Mention inserts a readable `@Title` safe link in the sentence. It uses
+the existing native link mark and ordinary page URL, with app-tab navigation from
+previews; it does not create a Document mention-index row or change hierarchy.
+The label is captured at insertion and can be edited as ordinary linked text.
+Email addresses, code marks and existing linked text do not start completion.
+
+Inline Document mode searches Documents only and places the original live
+Document card beside the source block, removing the typed `@query`. This reuses
+existing resource persistence, original-document editing and save/lock guards.
+It does not nest a Document editor inside a sentence or copy its content.
+
+Add → Page or inline Document provides searchable All pages / Documents filters,
+arrow/Enter selection and a collapsed Create a Document form. New Documents still
+use the existing idempotent sibling-creation action and retry recovery. The resource
+browse endpoint accepts an optional validated `type` filter before pagination,
+with unchanged workspace/ancestor visibility. Spatial format 4 and native format 1
+are unchanged. See `../reports/12-boards-page-insertion.md` for manual acceptance.
+
+## Board block-count cap removed (2026-10-23)
+
+At the user's request, Boards no longer enforce the historical 1,000-object cap.
+Native insertion, duplication, clipboard validation, snapshot loading/recovery,
+full saves, incremental create/update/delete operations and sibling Document
+creation accept Boards above that count. The local stress-scene command also
+accepts counts above 1,000. This supersedes earlier object-count limits in the
+phase/history descriptions above; no spatial format or migration changes.
+
+The 256 KiB per-block and 4 MiB aggregate data budgets, block-specific content
+limits, identity/geometry/layer validation and bounded renderer/PDF caches remain.
+Cache capacity is a rendering lifecycle budget, not a Board block-count limit.
+See `../reports/12-boards-object-cap-removal.md` for checks and manual acceptance.
+
+## Inline Documents and self-mention rule (2026-10-23 correction)
+
+The user clarified that inline canvas content is **Documents only**. Add → Inline
+Document always searches Documents and has no All pages filter. The resource
+browse endpoint applies the same restriction; new resource-object writes reject
+non-Documents. Existing Database/Board cards retain their original identities for
+compatibility and may still be moved or removed. Newly inserted Document cards
+enter editing so their content can be changed directly on the canvas.
+
+Mention mode searches the shared same-workspace candidate endpoint, including
+folders, Documents, Databases and Boards. That endpoint requires the source Node
+ID, excludes it before limiting results and checks source/target visibility.
+Native Board mentions use the Board as source. The original Document is the
+source when editing a hosted Document card, matching ordinary Document editing.
+Markdown and legacy editors and database mention-property pickers exclude their
+own source Document. Server-side checks reject saved self-mentions, including
+pasted canonical Board page links and table-source mentions. Existing self-links
+are not silently rewritten; remove them before saving under the new rule.
+
+This supersedes the earlier All pages / Documents inline picker. No migration,
+content-format change or new product phase. Manual acceptance is recorded in
+`../reports/12-boards-inline-document-mention-rules.md`.
+
+
+## Drawing (requested 2026-10-23)
+
+The title toolbar’s Draw button opens Pen, Highlighter and whole-stroke Eraser
+controls. Choose theme-following Ink or red/amber/green/blue/purple, with pen widths
+1/3/6/12 world units (the highlighter uses four times the chosen width and 30%
+opacity). Drag with mouse, pen or touch; a tap creates a dot. Drawing mode stays
+active between strokes. Done or Escape when idle returns to Select. Escape during
+an active gesture discards only that unfinished stroke/erasure; pointer cancellation,
+lost capture and window blur also discard the gesture. Space + drag/middle drag pans;
+a second touch cancels unfinished drawing and hands control to the existing pinch
+navigation. Drawing over existing blocks does not activate their controls.
+
+Each completed stroke is one independent native `drawing` object. Select moves,
+resizes, arranges, layers, duplicates, copies/pastes and deletes it using ordinary
+Board actions. There is no text-edit state for strokes. Side resizing stretches the
+vector geometry; corners retain proportions. Eraser hit testing follows actual
+stroke segments, including moved/resized strokes, rather than their rectangular
+frames. Touched strokes fade during the gesture; release removes the touched set
+as one undoable action. Only drawing objects can be erased. Drawings are Board
+objects and do not stay attached to the blocks beneath them.
+
+Live points and preview paint stay outside React state and persistence; SVG preview
+painting/eraser work is scheduled once per frame. Pointer release commits one
+history/save change. A stroke has at most 6,000 sampled points and 3,900 world units
+of point span per axis; exceeding these budgets preserves the accepted portion and
+shows a message to continue with another stroke. Existing 256 KiB/object, 4 MiB/Board,
+4,000-unit frame and coordinate budgets still apply. No measured browser/thermal
+performance claim is made.
+
+`2026_10_23_000001_add_board_drawings.php` upgrades spatial envelope/default to **5**
+and adds `drawing` to the native row constraint. Native content format remains 1.
+Data contains `drawing: {points: [[x,y], ...], view_width, view_height, color,
+stroke_width, opacity}`, plus optional existing `text_scale` from corner resizing.
+Coordinates are local finite numeric pairs within the saved view box; colors are
+`currentColor` or six-digit hex, width 1–48 and opacity 1 or 0.3. Client and server
+validate these bounded values; arbitrary SVG source/markup is never accepted.
+Drawing rendering uses a generated SVG path with numeric coordinates.
+
+Both full saves and PATCH mutations require envelope 5. Existing database rows and
+revisions are retained; local recovery explicitly adapts formats 1–4 to 5, rejecting
+drawing objects in older envelopes. Existing format-4 resource cards remain readable.
+Older clients reject format 5. Deploy migration/backend/frontend together and reload
+open clients. Downgrade refuses while any drawing object remains, including drawings
+in trashed Boards. See `../reports/12-boards-drawing.md` for actual checks and manual
+acceptance. This request extends the current Board phase-4 review only.
+
+
+### Drawing smoothing (approved 2026-10-23)
+
+Drawing controls offer **Smoothing: Off / Light / Strong**, defaulting to Light
+for Pen and Highlighter. Off keeps direct ink. Light reduces small pointer tremors;
+Strong applies more cleanup and may soften small details. `perfect-freehand` 1.2.3
+supplies centerline streamlining via `getStrokePoints` (Light 0.5, Strong 0.75).
+Each stroke captures the brush/smoothing settings and start-of-stroke zoom. Settings
+remain local to the mounted Board session and affect new strokes only.
+
+Light/Strong simplify the streamlined path before forming curves. Cleanup uses
+1.5 screen pixels for Light and 6 for Strong, converted through start-of-stroke zoom.
+The cleanup first reduces nearby points, then retains deviations above the chosen
+scale; iterative segment simplification has a comparison budget proportional to
+point count. If exhausted on a pathological path, remaining detail is retained.
+Off bypasses both streamlining and cleanup. All three modes retain freehand ink.
+
+Cleaned controls become midpoint quadratic sections, retaining pronounced turns.
+The curves are sampled into numeric point pairs within the existing 6,000-point
+budget. Extra curve samples are distributed within the remaining budget; very
+long strokes can use a coarser approximation. Curve density anticipates the
+maximum supported camera zoom when budget allows. The raw endpoint remains the
+visible tail, retaining the actual release position without a late endpoint snap.
+Live preview and committed geometry share the same preparation path; release does
+not run a separate beautification pass. Existing local-coordinate rounding to two
+decimal places remains in place.
+
+Smoothed geometry is saved as the existing ordinary drawing points. Existing
+strokes are not reinterpreted or rewritten; old clients that already understand
+format 5 render the new strokes and erase their actual saved segments. There is
+no new schema field, migration or format version. Existing history, clipboard,
+selection, resize, recovery, cancellation and byte/geometry limits still apply.
+No shape recognition or pressure/taper behavior is added. The initial implementation
+report is `../reports/12-boards-drawing-smoothing.md`; the user-feedback correction,
+actual latest checks and revised acceptance are recorded in
+`../reports/12-boards-drawing-smoothing-correction.md`.
+
+
+### Drawing toolbar refinement and recognition removal (2026-10-23)
+
+Following poor recognition results, the user requested removing the recognition
+system for now and redesigning drawing controls to match the app. The $P adapter,
+all template catalogs, recognition hook/timers/conversion logic, category controls,
+candidate actions and gallery are removed. Strong is extra freehand smoothing;
+there is no delayed conversion or recognition mode. Existing converted objects
+remain normal editable Text or drawing objects; saved content is not rewritten.
+The smoothing library remains, with its MIT notice in `../../THIRD_PARTY_NOTICES.md`
+and `public/third-party/board-drawing-licenses.txt`. Removed recognizer notices no
+longer describe a distributed dependency.
+
+Drawing controls now use a compact lower-left glass panel above the zoom lane.
+Pen, Highlighter and Eraser have visible labels, the shared Board buttons/tooltips
+and app hover-highlight motion. Done returns to Select. Ink swatches include a
+selection check and a theme-following option. Width uses four visual presets with
+actual width labels (highlighter remains four times wider). A local brush preview
+shows color, width and highlighter opacity. Smoothing uses the shared animated
+`AppSelect`, with direct/gentle/extra descriptions. Eraser hides irrelevant brush
+controls and explains whole-stroke removal and Undo.
+
+The panel has an eased 180 ms entrance and 100 ms noninteractive exit using the
+live element and CSS discrete display transitions. Unsupported browsers fall back
+to immediate visibility changes. Reduced motion removes panel/swatch/width
+transitions; shared controls retain their existing reduced-motion behavior. Layout
+wraps on narrow Boards and touch controls are at least 42 px. The panel scrolls
+within short canvas heights, keeping the zoom lane clear. Keyboard focus, labels,
+existing Escape cancellation, pan/pinch, history and save behavior remain in use.
+
+Spatial format stays **5**; no migration, backend endpoint or persisted field is
+added. Exact checks and manual acceptance are recorded in
+`../reports/12-boards-drawing-toolbar.md`. The earlier recognition report is
+historical and superseded. Remain in Board phase-4 manual review.
+
+
+### Canvas and vertical drawing dock (requested 2026-10-24)
+
+The Board title row is removed from the working surface, giving that height to
+the canvas. Title/icon/appearance editing remains under the floating top-right
+Options → Board details dialog. Favorites and fullscreen remain available there
+and beside the menu. App tabs/navigation retain the Board title.
+
+Tools and history now form one centered left vertical glass dock, with circular
+buttons, a monochrome filled active state and right-side tooltips. Add is icon-only,
+announces its active placement kind and opens toward the canvas. The dock overlays
+the canvas, so opening controls never shifts objects or changes the viewport size.
+
+Draw opens a narrow palette beside the dock. Illustrated horizontal pen,
+highlighter and eraser controls extend on hover/selection; ink colors the pen nib
+and highlighter tip. Existing labeled tools, ink swatches, width presets, live
+stroke sample, smoothing and Done/Escape behavior remain. The palette and dock
+scroll within short viewports; coarse pointers retain 42px controls and use a
+three-column ink grid. Reduced motion disables brush travel and palette animation.
+Fullscreen retains the same floating layout without reserving heading space.
+
+This supersedes the title-toolbar/lower-left drawing-panel placements above.
+No persisted format, API, drawing algorithm or dependency changes. Spatial format
+remains 5. Static checks and exact manual acceptance steps are recorded in
+`../reports/12-boards-canvas-dock.md`. Browser visual acceptance remains pending;
+no automated tests or browser automation were used. Remain in phase 4.
+
+
+### Dock styling and opaque surfaces correction (2026-10-24)
+
+Following user review, Board controls use opaque theme card/popover colors,
+including when the surrounding app uses frosted surfaces. Canvas content no longer
+shows through the dock, drawing palette, contextual controls, view/Add/smoothing
+menus or Board context menu. The canvas itself uses the solid theme background.
+The dock retains its vertical placement but uses the app's rounded rectangular
+buttons, quiet accent selection, border and restrained shadow.
+
+The palette omits the repeated Drawing heading, Done button, footer instructions,
+eraser paragraph, named Ink row and separate stroke preview. Tool labels,
+accessible names/tooltips, selected color checks, numeric width and smoothing
+remain. Smoothing choices read Off / Light / Strong. Click the active Draw button,
+Select, or press Escape while idle to leave drawing. Escape during a gesture still
+cancels only that unfinished gesture. Reset remains on the zoom percentage button;
+its duplicate View menu item is removed. No drawing or persistence behavior changes.
+See the correction checklist in `../reports/12-boards-canvas-dock.md`.

@@ -1,97 +1,31 @@
 .board-page.floating-body-island[data-fullscreen-visited='true'] {
     animation: none;
 }
-
 .board-page.floating-body-island[data-fullscreen='true'] {
     --board-fullscreen-page-padding: 16px;
     max-width: none;
-    padding: calc(
-        var(--board-fullscreen-page-padding) *
-            (1 - var(--board-fullscreen-progress, 0))
-    );
+    padding: calc(16px * (1 - var(--board-fullscreen-progress, 0)));
     background: var(--background);
     box-shadow: 0 18px 60px rgb(0 0 0 / 0.14);
     overscroll-behavior: contain;
 }
-
-.board-page[data-fullscreen='true'] > .board-page-heading {
-    position: absolute;
-    z-index: 10;
-    top: var(--board-fullscreen-page-padding);
-    right: var(--board-fullscreen-page-padding);
-    left: var(--board-fullscreen-page-padding);
-    gap: 12px;
-    background: transparent;
-    pointer-events: none;
-}
-
 /*
- * Leave gaps between floating controls interactive so the canvas can still pan beneath the heading row.
+ * Actions float in both layouts so fullscreen can preserve the live canvas and editor without a heading offset.
  */
-.board-page[data-fullscreen='true'] > .board-page-heading > * {
-    pointer-events: auto;
-    border-radius: 14px;
-    background: color-mix(
-        in srgb,
-        var(--card) calc(var(--board-fullscreen-progress, 0) * 94%),
-        transparent
-    );
-    box-shadow:
-        0 8px 28px rgb(0 0 0 / calc(var(--board-fullscreen-progress, 0) * 0.12)),
-        0 1px 3px rgb(0 0 0 / calc(var(--board-fullscreen-progress, 0) * 0.06)),
-        inset 0 0 0 1px
-            color-mix(
-                in srgb,
-                var(--border) calc(var(--board-fullscreen-progress, 0) * 80%),
-                transparent
-            );
-    backdrop-filter: blur(calc(var(--board-fullscreen-progress, 0) * 16px));
+.board-page[data-fullscreen='true'] > .board-page-heading {
+    top: 16px;
+    right: 16px;
 }
-
-.board-page[data-fullscreen='true']
-    .board-page-heading
-    > .node-media-header[data-layout='toolbar'] {
-    max-width: min(360px, 100%);
-    padding: calc(var(--board-fullscreen-progress, 0) * 6px)
-        calc(var(--board-fullscreen-progress, 0) * 12px);
-}
-
-.board-page[data-fullscreen='true'] .board-page-heading > .board-toolbar-slot {
-    margin-inline-start: auto;
-}
-
-.board-page[data-fullscreen='true'] .board-page-heading > .board-tool-button {
-    min-width: 40px;
-    height: 40px;
-}
-
-.board-page[data-fullscreen='true']
-    .board-page-heading
-    > .board-tool-button:is(:hover, :focus-visible, [aria-pressed='true']) {
-    background: var(--accent);
-}
-
-.board-page[data-fullscreen='true'] > .board-workspace {
-    padding-top: calc(
-        var(--board-fullscreen-heading-height, 0px) *
-            (1 - var(--board-fullscreen-progress, 0))
-    );
-}
-
 .board-page[data-fullscreen='true'] .board-canvas {
     border-radius: calc(20px * (1 - var(--board-fullscreen-progress, 0)));
 }
-
-.board-page[data-fullscreen='true']
-    .board-save-status:is([data-expanded='true'], [data-status='error']) {
-    top: calc(
-        16px + var(--board-fullscreen-progress, 0) *
-            (var(--board-fullscreen-heading-height, 0px) + 16px)
-    );
-}
-
 @media (max-width: 640px) {
     .board-page.floating-body-island[data-fullscreen='true'] {
         --board-fullscreen-page-padding: 10px;
+        padding: calc(10px * (1 - var(--board-fullscreen-progress, 0)));
+    }
+    .board-page[data-fullscreen='true'] > .board-page-heading {
+        top: 12px;
+        right: 12px;
     }
 }

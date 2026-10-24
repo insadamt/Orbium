@@ -1,0 +1,55 @@
+/*
+ * Keep the dock over the canvas so changing tools never resizes or shifts the working surface.
+ */
+.board-page .board-creation-dock {
+    position: absolute;
+    z-index: 7;
+    top: 50%;
+    left: 12px;
+    translate: 0 -50%;
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    gap: 3px;
+    padding: 6px;
+    max-height: calc(100% - 112px);
+    overflow-y: auto;
+    scrollbar-width: none;
+    border-radius: 14px;
+    box-shadow: 0 4px 16px rgb(0 0 0 / 0.06);
+}
+.board-page .board-creation-dock .board-tool-button {
+    width: var(--board-control-size);
+    min-width: var(--board-control-size);
+    height: var(--board-control-size);
+    padding: 0;
+    border-radius: var(--board-control-radius);
+}
+.board-page .board-creation-dock .board-tool-button[aria-pressed='true'] {
+    background: var(--accent);
+    color: var(--foreground);
+    border-color: var(--border);
+}
+.board-creation-dock .app-menu-highlight {
+    border-radius: var(--board-control-radius);
+}
+.board-creation-dock > .board-tool-separator {
+    flex: 0 0 1px;
+    width: 20px;
+    height: 1px;
+    align-self: center;
+    margin: 3px 0;
+}
+.board-page .board-history-controls {
+    flex-direction: column;
+    gap: 3px;
+    margin: 3px 0 0;
+    padding: 7px 0 0;
+    border-inline-start: 0;
+    border-top: 1px solid var(--border);
+}
+@media (max-width: 640px) {
+    .board-page .board-creation-dock {
+        left: 8px;
+    }
+}

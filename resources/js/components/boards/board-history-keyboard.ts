@@ -5,6 +5,7 @@ export function handleBoardHistoryKeyboard(
     event: KeyboardEvent<HTMLElement>,
     model: BoardObjectsController,
     locked: boolean,
+    beforeHistory?: () => void,
 ) {
     if (
         !(event.ctrlKey || event.metaKey) ||
@@ -27,6 +28,7 @@ export function handleBoardHistoryKeyboard(
     event.preventDefault();
     event.stopPropagation();
     if (!locked) {
+        beforeHistory?.();
         if (event.shiftKey || event.key.toLowerCase() === 'y') model.redo();
         else model.undo();
     }

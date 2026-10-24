@@ -50,3 +50,42 @@ incremental saves are recorded in `../reports/12-boards-performance-architecture
 and `../plans/board-performance-architecture.md`. This supersedes P0-only execution,
 preserves format 4/full recovery and remains this phase's manual review. Actual
 performance/thermal acceptance is unmeasured; no later product phase is authorized.
+
+
+Drawing review extension (2026-10-23): the user explicitly requested adding a drawing
+system. That request supersedes this phase’s original drawing exclusion for pen,
+highlighter, whole-stroke eraser and their native persistence/Board interactions.
+Spatial format 5 and the manual acceptance boundary are described in
+`../reports/12-boards-drawing.md` and `../docs/24-boards.md`. No Mind Map or later
+product phase is authorized.
+
+
+Drawing smoothing refinement (2026-10-23): the user approved smoother curves,
+light stabilization and Off / Light / Strong controls. The focused refinement
+bakes curve samples into existing format-5 points, preserving saved drawings and
+Board interactions. See `../reports/12-boards-drawing-smoothing.md`. Stay in the
+same phase for manual review.
+
+
+Drawing smoothing correction (2026-10-23): user review found the modes felt alike.
+The focused repair adds clearly separated geometric cleanup scales, stronger
+stabilization and bounded simplification work. See
+`../reports/12-boards-drawing-smoothing-correction.md`. Manual feel acceptance
+remains outstanding within the same Board phase.
+
+
+Smart drawing templates (2026-10-23): the user explicitly chose free/local template
+recognition after clarifying handwriting/sign/shape conversion. Strong pen now
+uses a BSD $P recognizer adaptation with defined shapes/signs/0–9/A–Z, candidate
+choices and undoable conversion to existing text/drawing objects. perfect-freehand
+supplies streamlining. See `../reports/12-boards-smart-templates.md`. Spatial
+format remains 5; this is still the same phase's manual review.
+
+
+Drawing toolbar correction (2026-10-23): following poor recognition results, the
+user explicitly requested removing recognition for now and improving drawing UI,
+motion and UX. The local recognizer/catalogs/conversion actions are removed;
+Strong retains freehand smoothing. App-style glass controls, shared buttons/select,
+visual brush presets and a preview are recorded in
+`../reports/12-boards-drawing-toolbar.md`. This supersedes the smart-template
+extension above and stays within the same Board phase-4 manual review.

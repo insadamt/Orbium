@@ -1,3 +1,4 @@
+import { validBoardDrawing } from './board-drawing-data';
 import { readBoardTable } from './board-table-data';
 import { isValidTextColor } from '@/components/editor/text-color';
 import {
@@ -27,6 +28,7 @@ export const boardBlockLabels: Record<
     mermaid: 'Diagram',
     divider: 'Divider',
     resource: 'Resource',
+    drawing: 'Drawing',
 };
 export function plainInline(text: string): BoardInline[] {
     return text
@@ -42,6 +44,7 @@ export function inlineText(content: BoardInline[] = []) {
         .join('');
 }
 export function boardBlockText(object: BoardObject) {
+    if (object.block_type === 'drawing') return 'Freehand stroke';
     return (
         object.data.source ??
         object.data.caption ??
@@ -192,6 +195,12 @@ export function validBoardBlockData(
         typeof data.legacy_source !== 'string'
     )
         return false;
+    if (kind === 'drawing')
+        return (
+            Object.keys(data).every((key) =>
+                ['drawing', 'text_scale'].includes(key),
+            ) && validBoardDrawing(data.drawing)
+        );
     if (kind === 'resource')
         return (
             Number.isSafeInteger(data.target_node_id) &&

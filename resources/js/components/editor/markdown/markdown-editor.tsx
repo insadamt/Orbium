@@ -187,7 +187,10 @@ export default function MarkdownEditor(props: MarkdownEditorProps) {
                             markdownSlashCommands(
                                 (request) =>
                                     callbacks.current.chooseFile(request),
-                                initial.current.workspaceId,
+                                {
+                                    workspaceId: initial.current.workspaceId,
+                                    sourceId: initial.current.nodeId,
+                                },
                             ),
                             markdownTypingShortcuts,
                             pendingInlineFormatting,

@@ -269,3 +269,11 @@ Database action buttons use transparent backgrounds, including hover and active 
 ## Document context menus
 
 Right-clicking a Table document row or a Gallery document card opens the shared animated context menu with Open document, Open in new tab (an Orbium app tab), and Move to Trash. Trash uses the existing confirmation. Shift+F10 or the context-menu key opens the same actions from a focused row/card control. Text inputs retain their native editing menu. Existing Table row overflow remains available. The context menu is rendered at the document body so frosted or transformed card/page ancestors cannot offset its viewport coordinates. Menus dismiss on Escape, outside interaction, page scroll, or resize.
+
+
+## Mention self-target exclusion (2026-10-23)
+
+Mention properties reference other Nodes. Their picker omits the owning Document,
+and property writes reject that Document's own ID. This applies both to database
+row editing and the Document property header. Other supported workspace page
+types remain available. See `../reports/12-boards-inline-document-mention-rules.md`.

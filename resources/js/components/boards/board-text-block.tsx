@@ -102,7 +102,7 @@ export function BoardTextBlock(props: BoardContentProps) {
                 <BoardInlinePreview content={data.content} />
             ) : (
                 <span className="board-text-placeholder">
-                    Double-click to write
+                    Double-click to write · @ to link a page
                 </span>
             )}
         </div>

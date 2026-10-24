@@ -1,12 +1,23 @@
 import type { RefObject } from 'react';
 import { intersects } from './board-geometry';
 import type { BoardBounds, BoardCamera, BoardObject } from './board-types';
+import type { BoardRendererMode } from './instant-scene/board-renderer-mode';
+import type { BoardInstantScene } from './instant-scene/board-instant-scene';
+import type { BoardPreparedPreviews } from './board-prepared-previews';
+import type { BoardWorkScheduler } from './board-work-scheduler';
+import type { BoardCameraController } from './use-board-camera';
 
 export type BoardPerformanceContext = {
     viewportRef: RefObject<HTMLDivElement | null>;
     objectsRef: RefObject<BoardObject[]>;
     cameraRef: RefObject<BoardCamera>;
     mountingBounds: BoardBounds;
+    rendererMode?: BoardRendererMode;
+    pinnedPdfIds?: readonly string[];
+    readInstantScene?: () => ReturnType<BoardInstantScene['snapshot']>;
+    readPreparedPreviews?: () => ReturnType<BoardPreparedPreviews['snapshot']>;
+    readWorkScheduler?: () => ReturnType<BoardWorkScheduler['snapshot']>;
+    readCameraDiagnostics?: BoardCameraController['readDiagnostics'];
 };
 
 export function readBoardPerformanceScene(context: BoardPerformanceContext) {
@@ -33,6 +44,7 @@ export function readBoardPerformanceScene(context: BoardPerformanceContext) {
         mounted: {} as Record<string, number>,
         retainedOutsideRegion: {} as Record<string, number>,
         pinnedOutsideRegion: {} as Record<string, number>,
+        pinnedPdfOutsideRegion: {} as Record<string, number>,
         unmountedInViewport: {} as Record<string, number>,
     };
     const editingId = viewport.querySelector<HTMLElement>(
@@ -40,6 +52,7 @@ export function readBoardPerformanceScene(context: BoardPerformanceContext) {
     )?.dataset.boardObjectId;
     const regionReady =
         context.mountingBounds.width > 0 && context.mountingBounds.height > 0;
+    const pinnedPdfIds = new Set(context.pinnedPdfIds ?? []);
     for (const object of context.objectsRef.current) {
         const kind = object.data.media_kind ?? object.block_type;
         const visible =
@@ -55,7 +68,9 @@ export function readBoardPerformanceScene(context: BoardPerformanceContext) {
             increment(
                 object.id === editingId
                     ? counts.pinnedOutsideRegion
-                    : counts.retainedOutsideRegion,
+                    : pinnedPdfIds.has(object.id)
+                      ? counts.pinnedPdfOutsideRegion
+                      : counts.retainedOutsideRegion,
                 kind,
             );
         if (visible && !mounted) increment(counts.unmountedInViewport, kind);
@@ -63,6 +78,11 @@ export function readBoardPerformanceScene(context: BoardPerformanceContext) {
     const count = (selector: string) =>
         viewport.querySelectorAll(selector).length;
     return {
+        rendererMode: context.rendererMode ?? 'original',
+        instantScene: context.readInstantScene?.() ?? null,
+        preparedPreviews: context.readPreparedPreviews?.() ?? null,
+        workScheduler: context.readWorkScheduler?.() ?? null,
+        cameraWork: context.readCameraDiagnostics?.() ?? null,
         sampledAt: performance.now(),
         viewport: {
             width,

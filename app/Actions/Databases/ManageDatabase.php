@@ -7,6 +7,7 @@ use App\Models\DatabaseProperty;
 use App\Models\DatabaseValue;
 use App\Models\DatabaseViewSetting;
 use App\Models\Node;
+use App\Services\References\SelfMentionGuard;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -111,6 +112,13 @@ class ManageDatabase
                 DatabaseValue::query()->where('document_node_id', $document->id)->where('property_id', $property->id)->delete();
 
                 return;
+            }
+            if ($property->type === 'mention' && is_array($value)) {
+                foreach ($value as $targetId) {
+                    if (is_int($targetId)) {
+                        app(SelfMentionGuard::class)->rejectSelfTarget($document, $targetId, 'value');
+                    }
+                }
             }
             $validated = $this->validateValue($database, $property, $value);
             if ($property->type === 'files') {

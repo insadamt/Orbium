@@ -28,7 +28,6 @@ final class CreateBoardDocument
                 return $this->result($node, (int) $receipt->document_node_id);
             }
             abort_unless($board->revision === $data->snapshot->revision, 409, 'The Board changed elsewhere. Load the latest version before creating a Document.');
-            abort_unless(count($data->snapshot->objects) < BoardContent::MAX_OBJECTS, 422, 'This Board has reached its object limit.');
             abort_if(in_array(strtolower($data->object['id']), array_map(fn ($object) => strtolower($object['id']), $data->snapshot->objects), true), 422, 'Use a new object identity.');
             $document = app(ManageHierarchy::class)->create($node->workspace, 'document', $data->title, $node->parent_id);
             $object = [...$data->object, 'block_type' => 'resource', 'content_format_version' => 1, 'data' => ['target_node_id' => $document->id], 'layer' => count($data->snapshot->objects)];

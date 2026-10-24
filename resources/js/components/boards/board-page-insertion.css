@@ -1,0 +1,90 @@
+.board-page-mentions {
+    position: fixed;
+    z-index: 80;
+    width: 340px;
+    max-height: min(420px, 65dvh);
+    padding: 6px;
+    overflow: auto;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background-color: var(--popover);
+    color: var(--popover-foreground);
+    box-shadow: 0 12px 36px #0002;
+    font-size: 13px;
+}
+.board-page-mention-modes {
+    display: flex;
+    gap: 4px;
+    padding: 3px;
+    border-radius: 8px;
+    background: var(--muted);
+}
+.board-page-mention-modes button {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 7px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+}
+.board-page-mention-modes button[aria-pressed='true'] {
+    background: var(--background);
+    box-shadow: 0 1px 3px #0001;
+}
+.board-page-mentions [role='listbox'] {
+    padding-block: 5px;
+}
+.board-page-mentions [role='option'] {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 9px;
+    border-radius: 7px;
+    text-align: start;
+    cursor: pointer;
+}
+.board-page-mentions [role='option'][aria-selected='true'],
+.board-resource-results > button[data-highlighted='true'] {
+    background: var(--accent);
+}
+.board-page-mentions [role='option'] > span {
+    min-width: 0;
+}
+.board-page-mentions strong,
+.board-page-mentions small {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.board-page-mentions strong {
+    font-weight: 500;
+}
+.board-page-mentions small {
+    color: var(--muted-foreground);
+    font-size: 11px;
+}
+.board-page-mentions p {
+    padding: 7px 9px;
+    font-size: 12px;
+}
+.board-page-mention-help {
+    border-top: 1px solid var(--border);
+    color: var(--muted-foreground);
+}
+.board-page-create summary {
+    cursor: pointer;
+    font-size: 13px;
+    padding-block: 8px;
+}
+.board-writing a[href^='/workspaces/'],
+.board-list-content a[href^='/workspaces/'] {
+    padding: 1px 4px;
+    border-radius: 4px;
+    background: var(--accent);
+    text-decoration: none;
+}

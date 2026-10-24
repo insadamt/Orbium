@@ -37,7 +37,7 @@ The experience should be that content *appears ready when needed*. Do not interp
 - `board-document-snapshot-cache.ts`: current source cache capped at 24 documents and estimated 8 MiB. `board-preview-queue.ts`: linked Document preview fetch concurrency capped at 2; retained offscreen object budget is weighted 48. Tune these using data, not arbitrary constants.
 - `use-board-autosave.ts`, `board-api.ts`, `board-recovery.ts`: debounced saves still serialize the full Board; recovery uses synchronous `sessionStorage`. Existing autosave/recovery protects user data and must never be removed merely to lower CPU.
 - `app/Actions/Boards/SaveBoard.php`: every save validates all objects, deletes missing rows and upserts all rows; `BoardContent.php` serves full snapshots. This is a clear structural cost.
-- Current format/version: Board snapshot `format_version: 4`; native object content format 1; max 1,000 objects, 256 KiB/block, 4 MiB/Board. Preserve all these contracts until explicitly migrated.
+- Current format/version: Board snapshot `format_version: 4`; native object content format 1; no fixed object-count cap (removed at user request on 2026-10-23), 256 KiB/block, 4 MiB/Board. Preserve the remaining contracts.
 - Current phase reports `Docs/reports/12-boards-performance-correction.md`, `12-boards-movement-performance-followup.md`, `12-boards-pan-rendering-lifecycle.md`: fixes were linted/built but real-world CPU/temperature and frame improvements were **not measured**; repeated thermal spikes and loading delays were reported.
 
 ### Previous Document performance experience (historical, not a current Board measurement)

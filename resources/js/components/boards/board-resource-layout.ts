@@ -33,3 +33,14 @@ export function createResourceObject(
         layer,
     };
 }
+
+export function resourcePlacementBeside(source: BoardObject): BoardPoint {
+    //
+    // Placement accepts a center point; compensate for the card origin so its left edge clears the writing block.
+    //
+    const origin = resourceObjectGeometry({ x: 0, y: 0 });
+    return {
+        x: source.x + source.width + 32 - origin.x,
+        y: source.y - origin.y,
+    };
+}

@@ -117,10 +117,6 @@ export function useBoardObjects(
         placementKind: BoardBlockKind | BoardPlacementKind = 'text',
         text = '',
     ) {
-        if (objectsRef.current.length >= boardLimits.objects) {
-            toast.error('This Board has reached its 1,000 object limit.');
-            return;
-        }
         const mediaKind = ['pdf', 'video', 'audio'].includes(placementKind)
             ? (placementKind as 'pdf' | 'video' | 'audio')
             : undefined;
@@ -179,6 +175,7 @@ export function useBoardObjects(
         if (!commit([...objectsRef.current, object])) return false;
         select([object.id]);
         finishEditing();
+        setEditingId(object.id);
         return true;
     }
     function adoptSavedInsertion(next: BoardObject[], objectId: string) {
@@ -208,12 +205,6 @@ export function useBoardObjects(
         if (bytes > boardLimits.totalBytes) {
             toast.error(
                 'Duplicating these blocks would exceed the 4 MiB Board text limit.',
-            );
-            return;
-        }
-        if (objectsRef.current.length + source.length > boardLimits.objects) {
-            toast.error(
-                'Duplicating these blocks would exceed the 1,000 object limit.',
             );
             return;
         }

@@ -12,6 +12,7 @@ final class BoardResources
     public function browse(Node $board, string $query, int $after): array
     {
         $rows = $this->summaryQuery($board)->where('nodes.id', '>', $after)
+            ->where('nodes.type', 'document')
             ->when($query !== '', fn ($builder) => $builder->where('nodes.title', 'ilike', '%'.addcslashes($query, '%_\\').'%'))
             ->orderBy('nodes.id')->limit(41)->get();
         $more = $rows->count() > 40;

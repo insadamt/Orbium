@@ -110,7 +110,9 @@ export function BoardContextMenu({
                                     : `${selected.length} selected`}
                             </ContextMenu.Label>
                             {selected.length === 1 &&
-                                selected[0].block_type !== 'divider' && (
+                                !['divider', 'drawing'].includes(
+                                    selected[0].block_type,
+                                ) && (
                                     <ContextMenu.Item
                                         className="board-context-item"
                                         disabled={disabled}

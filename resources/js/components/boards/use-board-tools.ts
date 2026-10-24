@@ -1,3 +1,4 @@
+import { isBoardDrawingTool } from './board-drawing-data';
 import { useState, type KeyboardEvent } from 'react';
 import type { BoardObjectsController } from './use-board-objects';
 import type { BoardCameraController } from './use-board-camera';
@@ -13,7 +14,10 @@ export function useBoardTools({
     isLocked: () => boolean;
 }) {
     const [tool, setTool] = useState<BoardTool>('select');
-    const placementKind = tool === 'select' || tool === 'hand' ? null : tool;
+    const placementKind =
+        tool === 'select' || tool === 'hand' || isBoardDrawingTool(tool)
+            ? null
+            : tool;
     const placing = placementKind !== null;
 
     function chooseTool(nextTool: BoardTool) {

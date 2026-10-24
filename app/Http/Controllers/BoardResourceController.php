@@ -17,7 +17,7 @@ final class BoardResourceController extends Controller
     public function index(Request $request, int $workspace, int $node, BoardAccess $access, BoardResources $resources): JsonResponse
     {
         $board = $access->visibleBoard($request->user(), $workspace, $node);
-        $data = $request->validate(['q' => ['sometimes', 'nullable', 'string', 'max:120'], 'after' => ['sometimes', 'integer', 'min:0', 'max:9007199254740991']]);
+        $data = $request->validate(['q' => ['sometimes', 'nullable', 'string', 'max:120'], 'after' => ['sometimes', 'integer', 'min:0', 'max:9007199254740991'], 'type' => ['sometimes', 'in:document']]);
 
         return $this->json($resources->browse($board, trim($data['q'] ?? ''), (int) ($data['after'] ?? 0)));
     }
