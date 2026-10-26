@@ -1,3 +1,4 @@
+import { styleRichSourceControls } from './rich-block-heading';
 import {
     claimTransferredMediaPlayer,
     registerTransferableMediaPlayer,
@@ -30,6 +31,11 @@ export function mountFileMedia(mount: RichWidgetMount): RichController {
     let unregisterPlayer: (() => void) | undefined;
     let mediaKind: 'video' | 'audio' | 'pdf' | null = null;
     const controls = sourceControls(mount, 'File', false);
+    const heading = styleRichSourceControls(mount, controls, {
+        title: 'File',
+        description: 'Attachment',
+        icon: 'file',
+    });
     const download = element(
         'a',
         'font-medium underline',
@@ -61,7 +67,7 @@ export function mountFileMedia(mount: RichWidgetMount): RichController {
         delete mount.root.dataset.mediaKind;
         controls.toolbar.hidden = false;
         updateActionAppearance(false);
-        controls.toolbar.append(replace, remove);
+        heading.actions.append(replace, remove);
         download.hidden = details.hidden = false;
     }
     function setMissing() {
@@ -80,22 +86,23 @@ export function mountFileMedia(mount: RichWidgetMount): RichController {
     const remove = button('Remove', () =>
         applyRichSource(mount.view, block, ''),
     );
-    controls.toolbar.append(replace, remove);
+    heading.actions.append(replace, remove);
     function updateActionAppearance(mediaPreview: boolean) {
+        mount.root.classList.toggle('attachment-player', !mediaPreview);
+        mount.root.classList.toggle('orbium-rich-card', !mediaPreview);
+        controls.output.classList.toggle(
+            'orbium-rich-card-content',
+            !mediaPreview,
+        );
         replace.className = remove.className = mediaPreview
             ? 'attachment-action attachment-edit-action'
-            : 'rounded p-1.5 text-xs hover:bg-accent';
+            : 'attachment-action';
         replace.title = 'Replace file';
         replace.setAttribute('aria-label', 'Replace file');
         remove.title = 'Remove file';
         remove.setAttribute('aria-label', 'Remove file');
-        if (mediaPreview) {
-            replace.replaceChildren(widgetIcon('edit', 16));
-            remove.replaceChildren(widgetIcon('trash', 16));
-        } else {
-            replace.textContent = 'Replace';
-            remove.textContent = 'Remove';
-        }
+        replace.replaceChildren(widgetIcon('edit', 17));
+        remove.replaceChildren(widgetIcon('trash', 17));
     }
     const pause = () => player?.pause();
     mount.view.dom.addEventListener('orbium:pause-media', pause);
@@ -147,8 +154,7 @@ export function mountFileMedia(mount: RichWidgetMount): RichController {
                     : mediaKind
                       ? mediaKind[0].toUpperCase() + mediaKind.slice(1)
                       : 'File';
-            if (controls.toolbar.firstElementChild)
-                controls.toolbar.firstElementChild.textContent = label;
+            heading.title.textContent = label;
             const playerOptions = {
                 url: richMediaSourceUrl(mount.context, id),
                 name: block.label || metadata.name,

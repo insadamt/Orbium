@@ -1,6 +1,12 @@
+import {
+    createMindMap,
+    validMindMap,
+    mindMapText,
+} from '@/components/mindmap/mindmap-data';
 import { validBoardDrawing } from './board-drawing-data';
 import { readBoardTable } from './board-table-data';
-import { isValidTextColor } from '@/components/editor/text-color';
+import { validBoardInline } from './board-inline-data';
+export { safeBoardLink, validBoardInline } from './board-inline-data';
 import {
     boardBlockKinds,
     type BoardBlockData,
@@ -29,6 +35,7 @@ export const boardBlockLabels: Record<
     divider: 'Divider',
     resource: 'Resource',
     drawing: 'Drawing',
+    mindmap: 'Mind Map',
 };
 export function plainInline(text: string): BoardInline[] {
     return text
@@ -44,6 +51,8 @@ export function inlineText(content: BoardInline[] = []) {
         .join('');
 }
 export function boardBlockText(object: BoardObject) {
+    if (object.block_type === 'mindmap' && object.data.mindmap)
+        return mindMapText(object.data.mindmap);
     if (object.block_type === 'drawing') return 'Freehand stroke';
     return (
         object.data.source ??
@@ -66,6 +75,7 @@ export function createBoardBlockData(
     kind: BoardBlockKind,
     text = '',
 ): BoardBlockData {
+    if (kind === 'mindmap') return { mindmap: createMindMap() };
     if (['text', 'heading', 'quote', 'callout'].includes(kind))
         return {
             content: plainInline(text),
@@ -89,58 +99,6 @@ export function createBoardBlockData(
     if (kind === 'math') return { source: text || 'x^2 + y^2 = z^2' };
     if (kind === 'mermaid') return { source: text || 'graph TD\n  A --> B' };
     return {};
-}
-export function safeBoardLink(href: string) {
-    for (const character of href) {
-        const code = character.charCodeAt(0);
-        if (code <= 32 || code === 127) return false;
-    }
-    return (
-        Boolean(href) &&
-        !href.startsWith('//') &&
-        (!/^[a-z][a-z0-9+.-]*:/i.test(href) ||
-            /^(https?:\/\/|mailto:)/i.test(href))
-    );
-}
-export function validBoardInline(value: unknown): value is BoardInline[] {
-    return (
-        Array.isArray(value) &&
-        value.length <= 10000 &&
-        value.every(
-            (node) =>
-                node &&
-                typeof node === 'object' &&
-                (node.type === 'hardBreak' ||
-                    (node.type === 'text' && typeof node.text === 'string')) &&
-                (!node.marks ||
-                    (Array.isArray(node.marks) &&
-                        node.marks.length <= 8 &&
-                        node.marks.every(
-                            (
-                                mark: BoardInline['marks'] extends
-                                    | (infer M)[]
-                                    | undefined
-                                    ? M
-                                    : never,
-                            ) =>
-                                [
-                                    'bold',
-                                    'italic',
-                                    'underline',
-                                    'strike',
-                                    'code',
-                                    'link',
-                                    'textColor',
-                                ].includes(mark.type) &&
-                                (mark.type !== 'link' ||
-                                    (typeof mark.attrs?.href === 'string' &&
-                                        safeBoardLink(mark.attrs.href))) &&
-                                (mark.type !== 'textColor' ||
-                                    (typeof mark.attrs?.color === 'string' &&
-                                        isValidTextColor(mark.attrs.color))),
-                        ))),
-        )
-    );
 }
 export function validBoardBlockData(
     kind: BoardBlockKind,
@@ -195,6 +153,11 @@ export function validBoardBlockData(
         typeof data.legacy_source !== 'string'
     )
         return false;
+    if (kind === 'mindmap')
+        return (
+            Object.keys(data).every((key) => key === 'mindmap') &&
+            validMindMap(data.mindmap)
+        );
     if (kind === 'drawing')
         return (
             Object.keys(data).every((key) =>

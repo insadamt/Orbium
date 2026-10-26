@@ -7,6 +7,7 @@ use App\Services\Markdown\MarkdownParserService;
 use App\Services\Markdown\MathBlock;
 use App\Services\Markdown\OrbiumBlock;
 use App\Services\Markdown\OrbiumInline;
+use App\Services\MindMaps\MindMapData;
 use League\CommonMark\Extension\CommonMark\Node\Block\BlockQuote;
 use League\CommonMark\Extension\CommonMark\Node\Block\FencedCode;
 use League\CommonMark\Extension\CommonMark\Node\Block\Heading;
@@ -130,6 +131,12 @@ final class DocumentMarkdownSerializer
         if ($node instanceof OrbiumBlock) {
             if ($node->kind() === 'empty') {
                 return '';
+            }
+            if ($node->kind() === 'mindmap') {
+                $outline = app(MindMapData::class)->outline($node->metadata['mindmap']);
+                $fence = $this->fence($outline, 3);
+
+                return $fence."text\n".$outline."\n".$fence;
             }
             if ($node->kind() === 'math') {
                 return "$$\n".$node->metadata['latex']."\n$$";

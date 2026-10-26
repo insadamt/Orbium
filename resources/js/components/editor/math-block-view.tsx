@@ -1,5 +1,5 @@
 import { NodeViewWrapper, type NodeViewProps } from '@tiptap/react';
-import { Eye, Pencil } from 'lucide-react';
+import { RichBlockIcon } from './ui/rich-block-icon';
 import { useEffect, useRef, useState } from 'react';
 import type { EditorActivityController } from './editor-activity-controller';
 import { useMathPreview } from './use-math-preview';
@@ -33,36 +33,46 @@ export default function MathBlockView({
 
     return (
         <NodeViewWrapper
-            className="orbium-math my-4 rounded-xl border border-border p-4"
+            className="orbium-math attachment-player orbium-rich-card my-4"
             dir={node.attrs.dir}
             contentEditable={false}
         >
             <div ref={previewContainer}>
                 <div
-                    className="mb-2 flex items-center justify-between text-xs text-muted-foreground"
+                    className="attachment-heading orbium-rich-card-heading"
                     contentEditable={false}
                 >
-                    <span>Math</span>
+                    <span className="attachment-type-icon">
+                        <RichBlockIcon name="math" />
+                    </span>
+                    <div className="attachment-identity">
+                        <div className="attachment-title">Math</div>
+                        <span className="attachment-description">Equation</span>
+                    </div>
                     <div
                         role="group"
                         aria-label="Math mode"
-                        className="inline-flex rounded-lg border border-border bg-muted/60 p-0.5"
+                        className="attachment-actions"
                     >
                         <button
                             type="button"
+                            aria-label="Edit Math source"
+                            title="Edit Math source"
                             aria-pressed={isEditing}
                             onClick={() => setIsEditing(true)}
-                            className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 transition-colors ${isEditing ? 'bg-background text-foreground shadow-sm' : 'hover:bg-accent hover:text-foreground'}`}
+                            className="attachment-action"
                         >
-                            <Pencil size={13} aria-hidden="true" /> Edit
+                            <RichBlockIcon name="edit" size={17} />
                         </button>
                         <button
                             type="button"
+                            aria-label="Preview Math"
+                            title="Preview Math"
                             aria-pressed={!isEditing}
                             onClick={() => setIsEditing(false)}
-                            className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 transition-colors ${!isEditing ? 'bg-background text-foreground shadow-sm' : 'hover:bg-accent hover:text-foreground'}`}
+                            className="attachment-action"
                         >
-                            <Eye size={14} aria-hidden="true" /> Preview
+                            <RichBlockIcon name="preview" size={17} />
                         </button>
                     </div>
                 </div>
@@ -77,10 +87,10 @@ export default function MathBlockView({
                         }}
                         rows={4}
                         dir="ltr"
-                        className="w-full rounded-md bg-muted p-3 font-mono text-sm outline-none"
+                        className="orbium-rich-card-source font-mono text-sm outline-none"
                     />
                 ) : !activated ? (
-                    <p className="min-h-12 text-sm text-muted-foreground">
+                    <p className="orbium-rich-card-content min-h-12 text-sm text-muted-foreground">
                         Rendering equation…
                     </p>
                 ) : renderedMath.error ? (
@@ -90,7 +100,7 @@ export default function MathBlockView({
                     </p>
                 ) : (
                     <div
-                        className="overflow-auto py-2"
+                        className="orbium-rich-card-content overflow-auto"
                         dangerouslySetInnerHTML={{ __html: renderedMath.html }}
                     />
                 )}

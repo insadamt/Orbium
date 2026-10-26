@@ -1,5 +1,7 @@
 import { useEffect, useLayoutEffect, useRef } from 'react';
-import { Check, Code2, Pencil, Sigma, Workflow } from 'lucide-react';
+import { Check } from 'lucide-react';
+import { RichBlockIcon } from '@/components/editor/ui/rich-block-icon';
+import { CodeLanguageIcon } from '@/components/editor/ui/code-language-icon';
 import { mountCodeInput } from '@/components/editor/markdown/rich/code-input';
 import { mountCodePreview } from '@/components/editor/markdown/rich/code-preview';
 import { mountCodeCopyButton } from '@/components/editor/mount-code-copy-button';
@@ -185,7 +187,9 @@ export function BoardSourceBlock(props: BoardContentProps) {
             preview.dataset.mermaidPreview = '';
             preview.textContent = 'Rendering diagram…';
             controls = createMermaidPreviewControls();
-            output.append(controls.button, preview);
+            controls.button.className = 'attachment-action';
+            actions.current?.append(controls.button);
+            output.append(preview);
             if (cached) {
                 preview.innerHTML = instantiateMermaidSvg(cached);
                 controls.update(cached);
@@ -240,12 +244,6 @@ export function BoardSourceBlock(props: BoardContentProps) {
         scheduler,
         prepared,
     ]);
-    const SourceIcon =
-        object.block_type === 'code'
-            ? Code2
-            : object.block_type === 'math'
-              ? Sigma
-              : Workflow;
     return (
         <div
             className={`board-source-block board-source-${object.block_type} attachment-player orbium-rich-card`}
@@ -265,10 +263,23 @@ export function BoardSourceBlock(props: BoardContentProps) {
         >
             <div className="attachment-heading orbium-rich-card-heading">
                 <span className="attachment-type-icon">
-                    <SourceIcon size={20} />
+                    <RichBlockIcon
+                        name={
+                            object.block_type === 'mermaid'
+                                ? 'diagram'
+                                : object.block_type === 'math'
+                                  ? 'math'
+                                  : 'code'
+                        }
+                    />
                 </span>
                 <div className="attachment-identity">
-                    <div className="attachment-title">
+                    <div
+                        className={`attachment-title${object.block_type === 'code' ? ' rich-code-language-title' : ''}`}
+                    >
+                        {object.block_type === 'code' && (
+                            <CodeLanguageIcon language={language} />
+                        )}
                         {object.block_type === 'code' && editing ? (
                             <AppSelect
                                 label="Code language"
@@ -297,14 +308,14 @@ export function BoardSourceBlock(props: BoardContentProps) {
                         ) : object.block_type === 'math' ? (
                             'Math'
                         ) : (
-                            'Diagram'
+                            'Mermaid'
                         )}
                     </div>
                     {object.block_type !== 'code' && (
                         <span className="attachment-description">
                             {object.block_type === 'math'
                                 ? 'Equation'
-                                : 'Mermaid'}
+                                : 'Diagram'}
                         </span>
                     )}
                 </div>
@@ -327,7 +338,11 @@ export function BoardSourceBlock(props: BoardContentProps) {
                             editing ? props.onFinish : props.onStartEditing
                         }
                     >
-                        {editing ? <Check size={17} /> : <Pencil size={17} />}
+                        {editing ? (
+                            <Check size={17} />
+                        ) : (
+                            <RichBlockIcon name="edit" size={17} />
+                        )}
                     </button>
                 </div>
             </div>

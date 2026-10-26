@@ -10,6 +10,7 @@
         "check:fix": "vp check --fix",
         "types:check": "tsc --noEmit",
         "lint": "vp check",
+        "icons:generate": "node scripts/inline-icons/generate-catalog.mjs",
         "test": "vitest run --passWithNoTests",
         "test:e2e": "playwright test --pass-with-no-tests"
     },

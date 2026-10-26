@@ -1,3 +1,4 @@
+import { mountMindMap } from './mindmap-widget';
 import {
     canUpdateRetainedRichWidget,
     claimRetainedRichWidget,
@@ -29,6 +30,7 @@ import { bindRichBlockSelection } from './rich-block-selection';
 const richBlockMounts: Partial<
     Record<RichBlock['kind'], (mount: RichWidgetMount) => RichController>
 > = {
+    mindmap: mountMindMap,
     empty: mountEmptyParagraph,
     mermaid: mountDiagram,
     math: mountMath,
@@ -49,6 +51,7 @@ const currentBlocks = new WeakMap<HTMLElement, RichBlock>();
 
 function richBlockClassName(kind: RichBlock['kind']) {
     const classes: Partial<Record<RichBlock['kind'], string>> = {
+        mindmap: 'orbium-mindmap-block my-4',
         mermaid: 'orbium-mermaid rounded-xl border border-border p-4',
         code: 'orbium-code my-5 overflow-hidden rounded-xl border border-border bg-muted',
         image: 'orbium-image editor-image my-5',

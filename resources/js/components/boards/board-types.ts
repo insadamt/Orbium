@@ -1,3 +1,4 @@
+import type { MindMapData } from '@/components/mindmap/mindmap-data';
 import type { AttachmentMediaKind } from '@/components/media/attachment-media';
 
 export const boardBlockKinds = [
@@ -15,12 +16,13 @@ export const boardBlockKinds = [
     'divider',
     'resource',
     'drawing',
+    'mindmap',
 ] as const;
 export type BoardBlockKind = (typeof boardBlockKinds)[number];
 export type BoardPlacementKind =
     | Exclude<BoardBlockKind, 'resource' | 'drawing'>
     | AttachmentMediaKind;
-export type BoardDrawingTool = 'pen' | 'highlighter' | 'eraser';
+export type BoardDrawingTool = 'pen' | 'path' | 'highlighter' | 'eraser';
 export type BoardTool =
     | 'select'
     | 'hand'
@@ -28,6 +30,7 @@ export type BoardTool =
     | BoardDrawingTool;
 export type BoardDrawing = {
     points: [number, number][];
+    breaks?: number[];
     view_width: number;
     view_height: number;
     color: string;
@@ -50,6 +53,7 @@ export type BoardInline = {
     }[];
 };
 export type BoardBlockData = {
+    mindmap?: MindMapData;
     drawing?: BoardDrawing;
     text_scale?: number;
     manual_height?: boolean;
@@ -88,7 +92,7 @@ export type BoardBlockReplacement = {
     data: BoardBlockData;
 };
 export type BoardSnapshot = {
-    format_version: 5;
+    format_version: 7;
     mutation_version?: 1;
     revision: number;
     objects: BoardObject[];

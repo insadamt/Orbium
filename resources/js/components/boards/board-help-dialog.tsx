@@ -31,13 +31,25 @@ export function BoardHelpDialog({
                     <dd>
                         Choose Draw, then Pen or Highlighter. Pick ink and
                         width, then drag; taps draw dots. Smoothing offers Off,
-                        Light and Strong. The preview shows your brush before
-                        drawing. Done or Escape returns to Select.
+                        Light and Strong. Click Draw again to hide settings.
+                        Select or Escape returns to Select.
+                    </dd>
+                    <dt>Path Pen</dt>
+                    <dd>
+                        Draw → Path Pen. Click corners; Shift constrains angles.
+                        Enter, double-click or Finish saves one path. Click the
+                        first point to close. Backspace removes a point; Escape
+                        cancels the unfinished path.
                     </dd>
                     <dt>Erase drawings</dt>
                     <dd>
-                        Choose Eraser and drag across strokes. Whole strokes are
-                        removed on release; undo restores them.
+                        Choose Eraser and a size, then drag across ink. Only
+                        touched sections are removed; Undo restores one drag.
+                    </dd>
+                    <dt>Style an existing drawing</dt>
+                    <dd>
+                        Choose Select and click a drawing. Use Drawing color and
+                        Drawing width in its floating toolbar.
                     </dd>
                     <dt>Select several</dt>
                     <dd>

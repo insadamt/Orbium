@@ -1,0 +1,129 @@
+.mindmap-topic-document,
+.mindmap-topic-writing {
+    white-space: normal;
+    font-weight: 400;
+}
+.mindmap-topic-document p,
+.mindmap-topic-writing p {
+    margin: 0;
+    min-height: 1.5em;
+    white-space: pre-wrap;
+}
+.mindmap-topic-document :is(h1, h2, h3),
+.mindmap-topic-writing :is(h1, h2, h3) {
+    margin: 0.25em 0;
+    font-weight: 650;
+    line-height: 1.3;
+    white-space: pre-wrap;
+}
+.mindmap-topic :is(h1) {
+    font-size: 1.6em;
+}
+.mindmap-topic :is(h2) {
+    font-size: 1.35em;
+}
+.mindmap-topic :is(h3) {
+    font-size: 1.15em;
+}
+.mindmap-topic :is(ul, ol) {
+    margin: 0.3em 0;
+    padding-inline-start: 1.4em;
+}
+.mindmap-topic ul {
+    list-style: disc;
+}
+.mindmap-topic ol {
+    list-style: decimal;
+}
+.mindmap-topic :is(blockquote, aside[data-callout]) {
+    margin: 0.4em 0;
+    padding: 0.4em 0.65em;
+    border-inline-start: 3px solid var(--border);
+}
+.mindmap-topic aside[data-callout] {
+    border-radius: 5px;
+    background: var(--muted);
+}
+.mindmap-topic pre {
+    margin: 0.4em 0;
+    padding: 0.6em;
+    border-radius: 5px;
+    background: var(--muted);
+    white-space: pre-wrap;
+    font-weight: 400;
+}
+.mindmap-topic pre code {
+    padding: 0;
+}
+.mindmap-topic ul[data-type='taskList'] {
+    padding: 0;
+    list-style: none;
+}
+.mindmap-topic li[data-type='taskItem'] {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5em;
+}
+.mindmap-topic li[data-type='taskItem'] > div {
+    flex: 1;
+    min-width: 0;
+}
+.mindmap-topic li[data-type='taskItem'] > label {
+    flex: none;
+    padding-top: 0.15em;
+}
+.mindmap-task-check {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: 13px;
+    height: 13px;
+    margin-top: 4px;
+    border: 1px solid var(--muted-foreground);
+    border-radius: 3px;
+    font-size: 11px;
+    line-height: 1;
+}
+.mindmap-writing-menu {
+    position: absolute;
+    z-index: 150;
+    width: min(232px, calc(100% - 24px));
+    max-height: min(320px, calc(100% - 24px));
+    overflow: auto;
+    padding: 6px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--popover);
+    color: var(--popover-foreground);
+    box-shadow: 0 8px 24px #0002;
+}
+.mindmap-writing-menu p {
+    margin: 0;
+    padding: 6px 8px;
+    font-size: 12px;
+    color: var(--muted-foreground);
+}
+.mindmap-writing-menu button {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 8px;
+    border-radius: 6px;
+    font-size: 13px;
+    text-align: start;
+}
+.mindmap-writing-menu button:hover,
+.mindmap-writing-menu button[aria-selected='true'] {
+    background: var(--accent);
+    color: var(--accent-foreground);
+}
+
+.mindmap-topic-writing p.is-empty::before {
+    content: attr(data-placeholder);
+    float: left;
+    height: 0;
+    pointer-events: none;
+    color: var(--muted-foreground);
+}

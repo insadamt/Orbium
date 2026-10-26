@@ -137,20 +137,25 @@ export function useBoardObjects(
             x: clamp(point.x, -boardLimits.coordinate, boardLimits.coordinate),
             y: clamp(point.y, -boardLimits.coordinate, boardLimits.coordinate),
             width:
-                kind === 'heading'
-                    ? 480
-                    : ['code', 'table', 'file', 'mermaid'].includes(kind)
-                      ? 520
-                      : kind === 'image'
-                        ? 400
-                        : 360,
-            height: ['text', 'heading', 'quote', 'list', 'divider'].includes(
-                kind,
-            )
-                ? kind === 'heading'
-                    ? 80
-                    : 56
-                : 300,
+                kind === 'mindmap'
+                    ? 760
+                    : kind === 'heading'
+                      ? 480
+                      : ['code', 'table', 'file', 'mermaid'].includes(kind)
+                        ? 520
+                        : kind === 'image'
+                          ? 400
+                          : 360,
+            height:
+                kind === 'mindmap'
+                    ? 460
+                    : ['text', 'heading', 'quote', 'list', 'divider'].includes(
+                            kind,
+                        )
+                      ? kind === 'heading'
+                          ? 80
+                          : 56
+                      : 300,
             layer:
                 Math.max(-1, ...objectsRef.current.map((item) => item.layer)) +
                 1,

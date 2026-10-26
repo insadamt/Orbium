@@ -4,7 +4,7 @@ export function BoardBrushPreview({
     tool,
     color,
 }: {
-    tool: Extract<BoardTool, 'pen' | 'highlighter' | 'eraser'>;
+    tool: Extract<BoardTool, 'pen' | 'path' | 'highlighter' | 'eraser'>;
     color: string;
 }) {
     return (
@@ -14,7 +14,41 @@ export function BoardBrushPreview({
             fill="none"
             aria-hidden="true"
         >
-            {tool === 'pen' ? (
+            {tool === 'path' ? (
+                <>
+                    <path
+                        d="M-4 8H46L55 12V20L46 24H-4Z"
+                        fill="currentColor"
+                        opacity=".12"
+                    />
+                    <path
+                        d="M-4 8H46L55 12V20L46 24H-4M46 8V24"
+                        stroke="currentColor"
+                        strokeWidth="1.25"
+                    />
+                    <path
+                        d="M55 12L68 8L81 16L68 24L55 20Z"
+                        fill={color}
+                        fillOpacity=".2"
+                        stroke="currentColor"
+                        strokeWidth="1.25"
+                    />
+                    <path
+                        d="M65 16H81"
+                        stroke="currentColor"
+                        strokeWidth="1.25"
+                    />
+                    <circle
+                        cx="65"
+                        cy="16"
+                        r="2"
+                        fill={color}
+                        stroke="currentColor"
+                        strokeWidth="1"
+                    />
+                    <path d="M0 12H39" stroke="currentColor" opacity=".3" />
+                </>
+            ) : tool === 'pen' ? (
                 <>
                     <path
                         d="M-4 8H55L72 16L55 24H-4Z"

@@ -22,7 +22,7 @@ export function handleBoardHistoryKeyboard(
             '.board-document-editor, [data-board-properties], [role="dialog"], [role="menu"], [role="listbox"]',
         ) ||
         (target.closest('input, textarea, select') &&
-            !target.closest('.board-source-block'))
+            !target.closest('.board-source-block, .orbium-mindmap'))
     )
         return false;
     event.preventDefault();

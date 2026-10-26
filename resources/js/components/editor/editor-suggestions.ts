@@ -1,4 +1,5 @@
 import { fetchMentionCandidates } from './mention-candidates';
+import { createLegacyIconSuggestions } from '@/components/inline-icons/legacy-icon-suggestions';
 import { Extension, type Editor } from '@tiptap/core';
 import Mention from '@tiptap/extension-mention';
 import Suggestion from '@tiptap/suggestion';
@@ -9,7 +10,7 @@ import { findBlockCommands, type BlockCommand } from './editor-commands';
 export type MentionCandidate = { id: number; title: string; type: string };
 export type EditorMenu =
     | {
-          type: 'slash';
+          type: 'slash' | 'icon';
           items: BlockCommand[];
           query: string;
           from: number;
@@ -297,5 +298,10 @@ export function createSuggestionExtensions(context: SuggestionContext) {
         },
     });
 
-    return [slash, mention, suspension];
+    return [
+        slash,
+        mention,
+        suspension,
+        createLegacyIconSuggestions(isActive, context.onMenuChange),
+    ];
 }

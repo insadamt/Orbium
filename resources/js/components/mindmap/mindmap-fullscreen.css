@@ -1,0 +1,266 @@
+.mindmap-full-dialog {
+    inset: 12px;
+    display: flex;
+    flex-direction: column;
+    font-family: var(--font-sans);
+}
+.mindmap-full-header {
+    z-index: 3;
+    display: flex;
+    flex: none;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 18px 22px;
+    border-bottom: 1px solid var(--border);
+    background: var(--background);
+}
+.mindmap-full-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+.mindmap-owner-status {
+    font-size: 11px;
+    color: var(--muted-foreground);
+}
+.mindmap-owner-status[data-status='error'] {
+    color: var(--destructive);
+}
+.mindmap-done {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 32px;
+    padding: 6px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--background);
+    color: var(--foreground);
+    font-size: 12px;
+    cursor: pointer;
+}
+.mindmap-done:hover {
+    background: var(--accent);
+}
+.mindmap-full-dialog > .mindmap-canvas {
+    flex: 1;
+    min-height: 0;
+}
+.mindmap-canvas[data-fullscreen='true'] > .mindmap-viewport {
+    margin: 20px 24px 76px 80px;
+    cursor: grab;
+}
+.mindmap-viewport[data-panning='true'] {
+    cursor: grabbing;
+    user-select: none;
+}
+.mindmap-tools,
+.mindmap-view-controls,
+.mindmap-parent-panel {
+    position: absolute;
+    z-index: 4;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    padding: 6px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--background);
+    box-shadow: 0 4px 16px rgb(0 0 0 / 0.06);
+}
+.mindmap-tools {
+    top: 50%;
+    left: 16px;
+    translate: 0 -50%;
+    flex-direction: column;
+    max-height: calc(100% - 32px);
+    overflow-y: auto;
+    scrollbar-width: none;
+}
+.mindmap-tools .board-tool-button {
+    width: 36px;
+    min-width: 36px;
+    height: 36px;
+    padding: 0;
+    border-radius: 9px;
+}
+.mindmap-view-controls {
+    bottom: 18px;
+    left: 50%;
+    translate: -50% 0;
+}
+.mindmap-view-controls output {
+    min-width: 42px;
+    font-size: 11px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+}
+.mindmap-tool-separator {
+    align-self: center;
+    flex: none;
+    width: 20px;
+    height: 1px;
+    margin: 4px 0;
+    background: var(--border);
+}
+.mindmap-view-controls .mindmap-tool-separator {
+    width: 1px;
+    height: 20px;
+    margin: 0 4px;
+}
+.mindmap-parent-panel {
+    top: 50%;
+    left: 76px;
+    translate: 0 -50%;
+    display: block;
+    width: min(260px, calc(100% - 96px));
+    padding: 12px;
+}
+.mindmap-parent-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 10px;
+    font-size: 12px;
+    font-weight: 500;
+}
+.mindmap-parent-heading > button {
+    padding: 4px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+.mindmap-parent-heading > button:hover {
+    background: var(--accent);
+}
+.app-menu-content.app-menu-content.mindmap-parent-menu,
+.mindmap-tool-tooltip {
+    z-index: 130;
+}
+.mindmap-full-dialog .mindmap-delete:hover:not(:disabled) {
+    color: var(--destructive);
+}
+.mindmap-full-dialog button:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+}
+@media (max-width: 640px) {
+    .mindmap-full-dialog {
+        inset: 0;
+        border-radius: 0;
+    }
+    .mindmap-full-header {
+        padding: 12px;
+        gap: 8px;
+    }
+    .mindmap-full-header-actions {
+        gap: 8px;
+    }
+    .mindmap-owner-status {
+        max-width: 100px;
+    }
+    .mindmap-tools {
+        left: 8px;
+    }
+    .mindmap-canvas[data-fullscreen='true'] > .mindmap-viewport {
+        margin-inline: 64px 8px;
+    }
+    .mindmap-parent-panel {
+        left: 64px;
+        width: calc(100% - 76px);
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .mindmap-full-dialog button {
+        transition: none;
+    }
+}
+
+.mindmap-text-toolbar {
+    position: absolute;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    padding: 4px;
+    max-width: calc(100% - 16px);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--background);
+    color: var(--foreground);
+    box-shadow: 0 4px 16px rgb(0 0 0 / 0.08);
+}
+.mindmap-text-toolbar[hidden] {
+    display: none;
+}
+.mindmap-text-toolbar .board-inline-toolbar,
+.mindmap-text-toolbar .board-toolbar-group {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+.mindmap-text-toolbar .board-toolbar-group + .board-toolbar-group {
+    margin-inline-start: 4px;
+    padding-inline-start: 4px;
+    border-inline-start: 1px solid var(--border);
+}
+.mindmap-text-toolbar .editor-toolbar-button[aria-pressed='true'] {
+    background: var(--accent);
+}
+.mindmap-text-toolbar .editor-color-picker {
+    z-index: 150;
+}
+.board-link-popover[data-mindmap-link-popover] {
+    z-index: 150;
+}
+
+.mindmap-full-dialog .board-tool-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.mindmap-text-toolbar {
+    width: max-content;
+}
+.mindmap-text-toolbar .board-inline-toolbar {
+    flex-wrap: wrap;
+}
+
+.mindmap-width-field {
+    display: grid;
+    gap: 6px;
+    font-size: 12px;
+}
+.mindmap-width-field input {
+    width: 100%;
+    min-width: 0;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    background: var(--background);
+    font-variant-numeric: tabular-nums;
+}
+.mindmap-width-field input:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+}
+.mindmap-width-panel > p {
+    margin: 8px 0 12px;
+    font-size: 11px;
+    color: var(--muted-foreground);
+}
+.mindmap-width-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 6px;
+}
+.mindmap-width-actions button {
+    padding: 6px 10px;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    font-size: 12px;
+}
+.mindmap-width-actions button:hover {
+    background: var(--accent);
+}

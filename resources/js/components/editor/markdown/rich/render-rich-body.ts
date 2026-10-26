@@ -1,3 +1,6 @@
+import { mountMindMapPreview } from '@/components/mindmap/mindmap-mount';
+import { readMarkdownIcon } from '@/components/inline-icons/markdown-icon-source';
+import { createInlineIconElement } from '@/components/inline-icons/inline-icon-dom';
 import { mountPlayfulTaskCheckbox } from '../../playful-task-checkbox';
 import { mountNestedMedia } from './nested-media-preview';
 import { applyMarkdownDividerAppearance } from '../preview/markdown-divider-appearance';
@@ -129,6 +132,10 @@ export function renderRichBody(
         block: RichBlock,
         node: SyntaxNode,
     ) {
+        if (block.kind === 'mindmap' && block.metadata.mindmap) {
+            disposals.push(mountMindMapPreview(target, block.metadata.mindmap));
+            return;
+        }
         if (block.kind === 'inline-math' || block.kind === 'math') {
             renderMath(target, {
                 context,
@@ -309,6 +316,11 @@ export function renderRichBody(
             return;
         }
         if (node.name === 'OrbiumSpan') {
+            const icon = readMarkdownIcon(state, node);
+            if (icon && icon.kind !== 'emoji') {
+                parent.append(createInlineIconElement(icon, context));
+                return;
+            }
             const metadataNode = node.getChild('OrbiumMetadata');
             const metadata =
                 metadataNode &&

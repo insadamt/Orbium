@@ -1,0 +1,249 @@
+/*
+ * Geometry follows the pointer immediately; micro-motion only changes presentation, never camera or drag coordinates.
+ */
+.board-page .board-object {
+    outline-color: transparent;
+    transition:
+        outline-color 140ms ease,
+        border-color 140ms ease,
+        background-color 140ms ease;
+}
+.board-page .board-object[data-selected='true'] {
+    outline-color: var(--foreground);
+}
+.board-page .board-object:hover:not([data-selected='true']) {
+    outline-color: color-mix(in srgb, var(--foreground) 25%, transparent);
+}
+.board-page .board-object-body {
+    transform-origin: center;
+}
+.board-object-motion-layer {
+    position: absolute;
+    inset: 0 auto auto 0;
+    z-index: 1000001;
+    width: 0;
+    height: 0;
+    pointer-events: none;
+}
+.board-page .board-object-exit,
+.board-page .board-object-exit * {
+    pointer-events: none;
+    user-select: none;
+}
+.board-page .board-object-exit {
+    transition: none;
+}
+.board-deletion-summary {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--card);
+    color: var(--muted-foreground);
+    font-size: 12px;
+    line-height: 1.5;
+}
+.board-page .board-drawing-stroke path {
+    transition:
+        stroke 160ms ease,
+        stroke-width 160ms ease;
+}
+.board-page
+    :is(.board-writing, .board-list-content, .board-inline-input)
+    :is(span, a, mark),
+.board-page .board-list-content {
+    transition:
+        color 150ms ease,
+        background-color 150ms ease,
+        text-decoration-color 150ms ease;
+}
+.board-page .board-resize::after {
+    animation: board-handle-appear 110ms ease-out;
+    transition:
+        scale 110ms ease,
+        background-color 110ms ease;
+}
+.board-page .board-resize:hover::after {
+    scale: 1.18;
+    background: var(--accent);
+}
+.board-page .board-resize:active::after {
+    scale: 0.92;
+}
+.board-page .board-tool-button,
+.board-page .board-drawing-formatting .editor-toolbar-button {
+    transition:
+        background-color 140ms ease,
+        border-color 140ms ease,
+        color 140ms ease,
+        scale 100ms ease;
+}
+.board-page .board-tool-button:active:not(:disabled),
+.board-page
+    .board-drawing-formatting
+    .editor-toolbar-button:active:not(:disabled) {
+    scale: 0.94;
+}
+.board-page
+    .board-tool-button[aria-pressed='true']
+    > svg:not(.board-brush-preview) {
+    animation: board-control-confirm 130ms ease-out;
+}
+.board-page .board-drawing-swatch,
+.board-page .board-eraser-size-sample {
+    transition:
+        scale 140ms ease,
+        width 140ms ease,
+        height 140ms ease,
+        background-color 150ms ease,
+        border-color 150ms ease;
+}
+.board-page .board-drawing-swatch > svg {
+    animation: board-control-confirm 130ms ease-out;
+}
+.board-page
+    .board-drawing-widths
+    .board-tool-button[aria-pressed='true']
+    .board-drawing-width-sample,
+.board-page
+    .board-drawing-controls
+    .board-tool-button[aria-pressed='true']
+    .board-eraser-size-sample {
+    animation: board-control-confirm 130ms ease-out;
+}
+.board-page .board-path-anchor {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: board-handle-appear 100ms ease-out;
+    transition: fill 100ms ease;
+}
+.board-page .board-path-actions .board-tool-button,
+.board-page .board-history-controls .board-tool-button {
+    transition:
+        opacity 120ms ease,
+        background-color 140ms ease,
+        color 140ms ease,
+        scale 100ms ease;
+}
+.board-page .board-placement-hint {
+    animation: board-hint-appear 140ms ease-out;
+}
+.board-page .board-empty-state {
+    opacity: 1;
+    scale: 1;
+    transition:
+        opacity 140ms ease,
+        scale 140ms ease,
+        display 140ms allow-discrete;
+}
+.board-page .board-empty-state[hidden] {
+    display: none;
+    opacity: 0;
+    scale: 0.98;
+}
+@starting-style {
+    .board-page .board-empty-state {
+        opacity: 0;
+        scale: 0.98;
+    }
+}
+.board-page .board-save-status {
+    transition:
+        background-color 140ms ease,
+        border-color 140ms ease,
+        color 140ms ease;
+}
+.board-page .board-save-label {
+    animation: board-label-appear 120ms ease-out;
+}
+@keyframes board-handle-appear {
+    from {
+        opacity: 0;
+        scale: 0.65;
+    }
+    to {
+        opacity: 1;
+        scale: 1;
+    }
+}
+@keyframes board-control-confirm {
+    from {
+        opacity: 0.5;
+        scale: 0.8;
+    }
+    to {
+        opacity: 1;
+        scale: 1;
+    }
+}
+@keyframes board-hint-appear {
+    from {
+        opacity: 0;
+        translate: 0 3px;
+    }
+    to {
+        opacity: 1;
+        translate: 0 0;
+    }
+}
+@keyframes board-label-appear {
+    from {
+        opacity: 0.45;
+    }
+    to {
+        opacity: 1;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .board-page
+        :is(
+            .board-object,
+            .board-drawing-stroke path,
+            .board-writing span,
+            .board-writing a,
+            .board-list-content,
+            .board-list-content span,
+            .board-inline-input span,
+            .board-inline-input a,
+            .board-tool-button,
+            .board-tool-button > svg,
+            .board-drawing-formatting .editor-toolbar-button,
+            .board-drawing-swatch,
+            .board-drawing-swatch > svg,
+            .board-eraser-size-sample,
+            .board-path-anchor,
+            .board-placement-hint,
+            .board-empty-state,
+            .board-save-status,
+            .board-save-label
+        ),
+    .board-page
+        .board-tool-button[aria-pressed='true']
+        > svg:not(.board-brush-preview),
+    .board-page .board-drawing-swatch > svg,
+    .board-page
+        :is(.board-writing, .board-list-content, .board-inline-input)
+        :is(span, a, mark),
+    .board-page
+        .board-drawing-widths
+        .board-tool-button[aria-pressed='true']
+        .board-drawing-width-sample,
+    .board-page
+        .board-drawing-controls
+        .board-tool-button[aria-pressed='true']
+        .board-eraser-size-sample,
+    .board-page .board-resize::after {
+        animation: none;
+        transition: none;
+    }
+    .board-page .board-tool-button:active:not(:disabled),
+    .board-page
+        .board-drawing-formatting
+        .editor-toolbar-button:active:not(:disabled),
+    .board-page .board-resize:is(:hover, :active)::after,
+    .board-page .board-empty-state[hidden] {
+        scale: 1;
+    }
+}

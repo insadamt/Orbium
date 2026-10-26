@@ -92,3 +92,11 @@ Page mentions have an inline button appearance and keyboard focus. Normal click,
 ## Library shared assets (2026-10-13)
 
 New document ZIP manifests use version 3. The field shapes remain those described above, but every included document may reference any included asset. Each binary is emitted once, and `owner` selects an included document for import provenance. Native `.orbie` document headers remain version 2. Versions 1 and 2 retain their original per-document asset ownership validation. Older Orbium installations reject version 3 with an upgrade message. This is independent from the whole-account archive format.
+
+
+## Mind Map export compatibility (2026-10-24)
+
+The version-1 Mind Map directive is part of the current reserved Orbium dialect. With formatting preserved, exports keep its full graph (topic IDs, parents, labels and collapse state), and imports use the shared graph validator before writes. Older servers reject the unknown directive kind. Without formatting preservation, maps deliberately become an indented text outline in a fenced code block, with all descendants in parent-child order and literal label text. That outline remains readable but cannot reconstruct an editable graphical map or collapse state. No file/page manifest entries are inferred from literal topic labels. `.orbie`/package/archive version numbers do not change in this phase.
+
+
+Mind Map rich-text review (2026-10-26): formatting-preserving native transfer retains supported graph version 2 and inline topic content. Plain Markdown and office outline fallbacks still use validated plain labels and intentionally omit topic mark styling. Existing version-1 maps remain valid; unsupported graph versions are rejected through the shared validator. See `../reports/13-mindmap-rich-text-and-sizing.md` for checks and exact manual acceptance.

@@ -12,6 +12,7 @@ export function BoardToolButton({
     children,
     shortcut,
     tooltipSide = 'top',
+    tooltipClassName = '',
     disabledReason,
     ...props
 }: ComponentProps<'button'> & {
@@ -19,6 +20,7 @@ export function BoardToolButton({
     icon?: LucideIcon;
     shortcut?: string;
     tooltipSide?: 'top' | 'right' | 'bottom' | 'left';
+    tooltipClassName?: string;
     disabledReason?: string;
 }) {
     return (
@@ -38,7 +40,7 @@ export function BoardToolButton({
                 side={tooltipSide}
                 sideOffset={10}
                 collisionPadding={12}
-                className="board-tool-tooltip"
+                className={`board-tool-tooltip ${tooltipClassName}`}
             >
                 <span>{label}</span>
                 {shortcut && <kbd>{shortcut}</kbd>}

@@ -2,6 +2,8 @@
 
 namespace App\Services\Markdown;
 
+use App\Services\Editor\InlineIconData;
+use App\Services\MindMaps\MindMapData;
 use JsonException;
 
 final class OrbiumMetadata
@@ -64,11 +66,12 @@ final class OrbiumMetadata
         $this->rejectDuplicateKeys($json);
         $kind = $inline ? 'inline' : ($metadata['kind'] ?? null);
         $allowed = match ($kind) {
-            'inline' => ['color', 'underline'],
+            'inline' => ['color', 'underline', 'icon'],
             'block' => ['kind', 'dir', 'align', 'listType', 'dividerColor', 'dividerThickness', 'dividerStyle'],
             'image' => ['kind', 'caption', 'width', 'alignment'],
             'empty' => ['kind', 'dir', 'align'],
             'math' => ['kind', 'latex'],
+            'mindmap' => ['kind', 'mindmap'],
             'code', 'table', 'row' => ['kind'],
             'cell' => ['kind', 'align', 'header', 'colspan', 'rowspan', 'colwidth'],
             default => MarkdownContract::invalid('Unknown Orbium directive kind.'),
@@ -78,6 +81,8 @@ final class OrbiumMetadata
                 MarkdownContract::invalid('Orbium metadata contains an unknown key or null value.');
             }
             $valid = match ($key) {
+                'icon' => $value === 'custom' || app(InlineIconData::class)->isBuiltin($value),
+                'mindmap' => is_array($value),
                 'kind' => is_string($value),
                 'dir' => in_array($value, ['auto', 'ltr', 'rtl'], true),
                 'align' => in_array($value, ['left', 'center', 'right'], true),
@@ -97,6 +102,9 @@ final class OrbiumMetadata
             if (! $valid) {
                 MarkdownContract::invalid("Invalid Orbium metadata value for {$key}.");
             }
+        }
+        if ($kind === 'mindmap') {
+            $metadata['mindmap'] = app(MindMapData::class)->validate($metadata['mindmap'] ?? null, 'markdown');
         }
         if ($kind === 'inline' && $metadata === []) {
             MarkdownContract::invalid('An Orbium formatting span needs color or underline.');

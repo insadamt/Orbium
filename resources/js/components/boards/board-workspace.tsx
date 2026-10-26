@@ -1,4 +1,7 @@
 import { useBoardDrawing } from './use-board-drawing';
+import { BoardObjectMotion } from './board-object-motion';
+import './board-micro-motion.css';
+import { BoardDrawingPreview } from './board-drawing-preview';
 import { BoardDrawingControls } from './board-drawing-controls';
 import './board-drawing.css';
 import { openBoardPageLink } from './board-page-links';
@@ -229,10 +232,12 @@ export function BoardWorkspace({
     const content = (
         <section
             className="board-workspace"
+            data-mindmap-owner-status={save.status}
             data-editing={Boolean(model.editingId)}
             aria-label="Board workspace"
             onClickCapture={openBoardPageLink}
             onKeyDownCapture={(event) => {
+                if (drawing.path.handleKeyDown(event)) return;
                 if (
                     handleBoardHistoryKeyboard(
                         event,
@@ -324,17 +329,8 @@ export function BoardWorkspace({
                             className="board-world"
                             data-multi-selection={model.selectedIds.length > 1}
                         >
-                            <svg
-                                className="board-drawing-preview"
-                                aria-hidden="true"
-                            >
-                                <path
-                                    ref={drawing.previewPathRef}
-                                    fill="none"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                />
-                            </svg>
+                            <BoardObjectMotion store={model.store} />
+                            <BoardDrawingPreview drawing={drawing} />
                             <BoardSelectionBounds
                                 objects={model.layoutObjects}
                                 selectedIds={model.selectedIds}
@@ -384,11 +380,12 @@ export function BoardWorkspace({
                             className="board-selection-box"
                             hidden
                         />
-                        {!model.layoutObjects.length && (
-                            <div className="board-empty-state">
-                                <span>Choose Text, Draw or Add to begin.</span>
-                            </div>
-                        )}
+                        <div
+                            className="board-empty-state"
+                            hidden={Boolean(model.layoutObjects.length)}
+                        >
+                            <span>Choose Text, Draw or Add to begin.</span>
+                        </div>
                     </div>
                 </BoardContextMenu>
                 {tools.placementKind && (
@@ -422,7 +419,7 @@ export function BoardWorkspace({
                 <BoardToolbar
                     drawingSettingsOpen={tools.drawingSettingsOpen}
                     onToggleDrawingSettings={() => {
-                        pointer.cancel();
+                        if (tools.tool !== 'path') pointer.cancel();
                         tools.toggleDrawingSettings();
                     }}
                     editing={Boolean(model.editingId)}

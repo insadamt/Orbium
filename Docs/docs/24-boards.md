@@ -1,6 +1,6 @@
 # Boards
 
-Requested 2026-10-18. The supplied development specification ends at “Unlimited subtopics within practical” in section 8; later Mind Map requirements and any subsequent sections are unavailable. Preserve this boundary rather than inventing the missing requirements.
+Requested 2026-10-18. The supplied development specification ends at “Unlimited subtopics within practical” in section 8; later Mind Map requirements and any subsequent sections are unavailable. The user authorized the confirmed Mind Map core on 2026-10-24; see the phase-5 contract below. Do not claim the missing remainder is implemented.
 
 ## Foundation (approved 2026-10-18)
 
@@ -966,3 +966,239 @@ from another tool opens settings. Choosing a brush in the palette keeps settings
 open. This supersedes the click-Draw-to-Select behavior above; no persistence or
 drawing algorithm changes. See the latest manual checklist in
 `../reports/12-boards-canvas-dock.md`.
+
+
+### Partial eraser and size controls (requested 2026-10-24)
+
+The eraser now removes touched portions of native ink instead of deleting a whole
+stroke. Four sizes (8, 16, 32, 64 screen pixels in diameter; default 16) live under
+Eraser. A dual-outline mouse cursor shows the selected footprint. Size remains
+local to the mounted Board, separate from pen/highlighter width; its world radius
+is captured from the camera zoom at gesture start. Palette hiding preserves the
+active eraser/size, as with the drawing tools.
+
+Each pointer sweep clips the drawing's polyline against its swept capsule,
+including interpolated intersections between sparse points. Round stroke caps
+are accounted for using the stroke's scaled half-width. Erased portions disappear
+in the SVG preview during the drag. Preview work is frame-scheduled and paints
+only changed paths, without modifying canonical Board records until release.
+Escape, lost capture, blur and pointer cancellation restore the original paths.
+
+Release replaces touched strokes with their surviving pieces as one validated
+history/save transaction. Each survivor is an ordinary format-5 drawing object;
+the first survivor retains the original UUID and later pieces get new UUIDs.
+Frames shrink within existing minimum sizes while retaining the original drawing
+scale, color, thickness, opacity and relative layer order. A fully erased stroke
+is removed. Untouched content is preserved. Undo restores the complete drag and
+Redo reapplies it. Surviving pieces may be selected, moved, resized and erased
+independently. No masks, new persisted fields, schema or migration are needed;
+existing format-5 clients can render the saved fragments.
+
+This is vector path cutting, including the visible stroke width, rather than a
+pixel mask or shaving one side of a thick stroke. Highly nonuniform resizing uses
+the larger scale for cap clearance, which may cut conservatively. Per-gesture
+preview limits cancel the whole erasure above 120,000 surviving points across
+touched strokes or 6,000 fragments per source stroke. Existing Board validation
+can reject an oversized final result atomically, restoring the original scene
+with the normal limit message. Runtime performance/visual acceptance is unmeasured.
+
+This supersedes whole-stroke erasing in earlier drawing descriptions. No later
+product phase starts. See `../reports/12-boards-partial-eraser.md` for actual checks
+and exact manual validation.
+
+
+### Keep erased ink in one drawing block (2026-10-24 correction)
+
+User clarification supersedes the separate-survivor behavior above. Partial
+erasing now keeps surviving subpaths inside the **original drawing object** with
+its UUID, frame, view box, scale, color, width, opacity and layer. Select, move,
+resize, duplicate and clipboard actions treat the remaining ink as one block.
+Repeated erasing reads all existing subpaths, preserving earlier gaps. Fully
+erasing the final visible subpath removes the object. Each drag remains one
+Undo/Redo transaction; canceled previews restore all prior gaps.
+
+Drawing data retains `points` and adds optional **`breaks: number[]`**. Each index
+starts a new subpath in the flattened point array. Breaks must be strictly
+increasing positive integers below the point count. Empty breaks are omitted;
+ordinary drawings retain their original six fields. Rendering generates multiple
+SVG move commands inside one path and never reconnects across a break. Dot
+subpaths retain the existing round-cap behavior. No raw SVG or arbitrary nested
+content is persisted. Client/server validation enforces 6,000 total points per
+object, at most 5,999 internal breaks and the existing byte/geometry limits.
+Oversized previews cancel the drag atomically.
+
+The additive `2026_10_24_000001_add_board_drawing_gaps.php` upgrades the Board
+spatial envelope/default to **6**, leaving object content versions, UUIDs and
+revisions unchanged. Full saves, PATCH mutations, sibling Document creation and
+recovery serialization use envelope 6. The new reader explicitly adapts valid
+format-5 snapshots and formats 1–4 local drafts; a `breaks` property in an older
+envelope is rejected rather than reinterpreted. Unsupported future envelopes are
+rejected. Old clients reject format 6. Rollback refuses while any drawing has
+breaks, including drawings in Trash. Deploy migration/server/client together and
+reload open Boards.
+
+Already-split pieces saved by the previous implementation have no source grouping
+metadata and are not automatically merged. No unrelated drawings are joined.
+Read `../reports/12-boards-single-drawing-eraser.md` for migration/check results and
+manual acceptance. This stays in Board phase-4 review.
+
+
+### Point-by-point Path Pen (requested 2026-10-24)
+
+Draw → **Path Pen** adds the connected-corner tool from the supplied reference.
+Click/tap anchors to build a straight-segment outline. Square anchor markers show
+placed points, with the latest point filled. A frame-scheduled pointer preview
+shows the next segment. Hold Shift while placing a point to constrain its angle
+to 45° increments. Ordinary freehand smoothing is hidden and does not round these
+corners. Ink and width controls apply to the entire unfinished path and update
+its preview when changed.
+
+Enter, double-click or the compact Finish action commits an open path. Clicking
+within eight screen pixels of the first point, after at least three placed points,
+closes and commits the outline. Consecutive clicks less than three screen pixels
+apart do not add duplicate endpoints. Backspace, draft Ctrl/Cmd+Z or Remove last
+point removes the latest anchor. Escape or Cancel discards only the unfinished
+path; idle Escape then leaves drawing. One-point drafts do not save as paths.
+Finish/Remove/Cancel actions provide pointer/touch access without a keyboard.
+
+Hiding/reopening the Draw palette retains the unfinished path and active tool.
+Clicking the already-active Path Pen choice is a no-op. Switching to another tool,
+window blur, pointer cancellation, two-finger pinch startup, history actions or
+leaving the mounted Board discard its transient draft. Space/middle-button pan
+keeps the draft. Unfinished paths are not autosaved or recovered; finish first.
+
+A completed path is **one ordinary drawing object**, regardless of its segments.
+Selection, movement, scaling, duplication, clipboard, partial erasing, Undo/Redo
+and autosave use the existing drawing pipeline. Partially erased paths retain
+internal gaps in that same block. Anchor markers exist only during construction;
+this adds straight-segment construction rather than editable Bézier handles or
+post-save vertex editing. Closed outlines have no fill.
+
+The existing 6,000-point limit, 3,900-unit input span, coordinate bounds and final
+byte/geometry validation apply. A rejected finish preserves the editable draft.
+No backend/schema/dependency/migration or saved-format change: Board format remains
+**6**. The transient tool name is not persisted. See
+`../reports/12-boards-path-pen.md` for actual checks and manual acceptance; remain
+in phase-4 review.
+
+
+### Existing drawing color/width and Path Pen appearance (2026-10-24)
+
+Path Pen now uses a horizontal fountain-pen body/nib illustration consistent with
+the Pen/Highlighter/Eraser rows, replacing its miniature path/anchor diagram.
+Palette tooltips open to the right with short names and an optional shortcut,
+keeping the preceding row clear. Path construction behavior is unchanged.
+
+Selecting **one drawing block** shows Drawing color and Drawing width in the same
+floating selection toolbar used by text. Color reuses the text color picker with
+presets, spectrum, custom six-digit hex and Default drawing color. Drawing colors
+are stored as supported hex values; Default restores theme-following `currentColor`.
+Closing this picker restores canvas focus while its drawing remains selected,
+allowing normal Board keyboard actions. Other text picker callers retain their
+previous focus behavior. Width offers 1/3/4/6/12/24/48 drawing units; existing other
+valid widths remain visible as a selected option. Labels follow existing px
+conventions; effective appearance still follows drawing resize/camera scale.
+
+These actions update the selected original Pen, Path Pen or Highlighter object.
+The path, internal break indices, identity, relative layer, opacity and original
+scale remain. Width changes expand the local view box and spatial frame only
+when the new stroke/caps need room; point offsets compensate to keep world-space
+centerlines fixed. Frames do not shrink again on width reduction. A required
+expansion beyond existing geometry/coordinate limits is rejected with a message.
+The existing byte-budget validator can also reject a change atomically.
+
+Each actual style action is undoable/autosaved through the existing record update;
+choosing the same style is a no-op. Styling saved ink does not change the creation
+brush or smoothing settings. New drawing style controls use opaque theme surfaces
+in normal/frosted modes and retain existing coarse-pointer targets. Multi-selection
+retains its current count/actions rather than showing single-object style controls.
+
+No schema, backend, dependency, migration or envelope changes; format remains **6**.
+See `../reports/12-boards-drawing-style-editing.md` for actual checks and manual
+acceptance. Stay in Board phase-4 review.
+
+
+### Board micro-motion pass (requested 2026-10-24)
+
+Accepted creates/deletes now produce short lifecycle cues, including duplicate,
+paste, cut and Undo/Redo restoration/removal. Inactive block surfaces pop/fade up
+on creation (180ms); active editors and freshly released drawings use a steady
+140ms fade to preserve caret/ink position. Deletion shrinks/fades an inert visual
+preview for 140ms while the canonical object, editor and persistence action are
+removed immediately. Simple previews are bounded static copies stripped of IDs,
+editor markers and interactive content. Rich/large subtrees use a short summary
+preview; media/render tasks are never cloned.
+
+A transient accepted-transaction subscription owns lifecycle effects, separate
+from record/layout subscriptions. Initial load, confirmed snapshot replacement,
+automatic-height measurements and culling do not trigger block entrances.
+Restoration cancels any old exit for that ID. Pending entrances expire after
+250ms and are capped at 48; each transaction admits at most 24 effects, exits at
+16, active script-driven effects at 48. Simple exit copies are capped at 400 DOM
+nodes each. Offscreen or over-2,000,000-screen-pixel surfaces skip lifecycle motion.
+Reset/unmount/reduced-motion changes cancel effects and remove exit previews.
+Visual-listener failure cannot interrupt an accepted save/history transaction.
+
+Editing entry/exit fades the mounted body over 120ms without moving the caret or
+waiting to focus. Block-type, alignment, direction and list-style changes get a
+140ms settle (opacity-only for active editors). Drawing color/stroke width
+transition over 160ms. Existing native text/list elements transition color and
+background where their mounted style changes; replaced text nodes appear normally.
+There is no per-keystroke pop or tween of SVG drawing/eraser geometry.
+
+Selection outlines fade; resize handles pop in, grow on hover and compress on
+press. Board buttons compress on press, active glyphs/checks confirm with a small
+pop, eraser-size rings transition, and history/Path Pen actions fade when enabled/
+disabled. Checklist toggles pop briefly and checked-item text changes soften.
+New Path Pen anchors pop; previous anchors retain their DOM and change fill instead
+of all replaying their entrance. Placement hints rise/fade on entry; the empty
+prompt fades/scales in/out where discrete display transitions are supported;
+save-status labels fade on status change and their surface colors soften.
+
+The full new-effects inventory, durations, audit findings, known limits and exact
+manual checks are in `../reports/12-boards-micro-motion.md`. Existing toolbar/menu,
+drawing-palette and fullscreen motion remains. Pan/zoom, drag/resize coordinates,
+editor focus, typing, drawing input, erasure geometry and actual saving/deletion
+stay direct. All new motion respects reduced motion; changing that preference
+also stops active script-driven effects. No new persisted data, schema, backend,
+dependency or envelope; format remains **6**. Runtime performance and browser feel
+remain manually unverified. Remain in phase-4 review.
+
+
+## Phase 5 — Shared Mind Map block (authorized 2026-10-24)
+
+The user requested “okey work on the mindmap block go ahead”. `../phases/13-mindmap-block.md` records the confirmed core and architecture; `../reports/13-mindmap-block.md` records actual checks/manual acceptance. This supersedes earlier Mind Map stop statements only for this phase.
+
+**Add block → Technical → Mind Map** selects native Board placement. A new map is 760×460, with a central topic, independent move/resize/clipboard/history and autosave. It mounts the shared topic UI directly, without inheriting a Document editor. Double-click/Enter/Edit activates topic controls; Done returns to ordinary Board movement. Inactive maps show the same static tree and view controls without topic mutation. Existing Board culling, conflict recovery and upload/composition/navigation guards remain in use. Corner resizing changes the viewport independently without adding text formatting fields.
+
+The shared graph is `{version:1, root_id, topics:[{id,parent_id,text,collapsed}]}`. Native data contains exactly `mindmap`; spatial format **7** adds the new kind. IDs are block-local strings, never Node references. Server/client require one root, unique identities, connected acyclic ancestry and maximum parent-link depth 64 (central topic depth 0). UTF-8 labels allow up to 500 Unicode code points. Serialized graph size is bounded to 64 KiB; existing Board object/aggregate byte budgets remain. There is no fixed subtopic count per parent. Unknown graph versions/fields, dangling parents, cycles and malformed labels are rejected before writes. The migration preserves existing rows/revisions/source and refuses downgrade while any saved Board map exists, including in Trash. Old supported envelopes/drafts adapt explicitly; a map inside a pre-7 envelope is rejected with recovery data preserved.
+
+Select a topic to edit its plain label; **Child**, **Sibling**, **Delete branch**, collapse/expand and **Topic parent** provide core changes. Root deletion/reparenting is unavailable. Parent choices exclude the selected subtree, and moving a topic expands its new ancestry so it stays visible. Collapsing a selected ancestor restores visible selection. Tab adds a child, Enter adds a sibling; Shift+Tab permits normal focus navigation. Topic buttons support arrows/Home and Delete/Backspace. Existing owner history handles Ctrl/Cmd+Z/Y; deleting a branch is undoable. Balanced left/right layout keeps the central topic centered. Fit/zoom and native scrolling are view state, not persistent graph changes.
+
+Documents expose **/Mind Map**, using the same graph/rendering controls in the normal document layout. Canonical format-2 source uses an atomic `:::orbium {"kind":"mindmap","mindmap":{...}}` directive with no body; legacy Documents use a `mindmap` atom. Graph edits enter original Document saves/revisions/indexing without a second persistence service. Search/statistics include all labels, including collapsed topics; plain labels create no mentions or attachment usage. Formatting-preserving export retains the versioned directive. Plain Markdown and Word/PDF exports use an indented outline of every topic rather than dropping the block. Exported outlines are not editable graphical maps. See `06-document-editor.md`, `18-document-transfer.md`, and `20-office-document-export.md`.
+
+Advanced themes/layout modes, node attachments/links, arbitrary branch dragging, XMind import/export, collaboration and the missing remainder of section 8 are outside this core phase. No Board/account portability or later product phase is added. No browser performance/visual acceptance is claimed without the user's manual review.
+
+
+Mind Map review correction (2026-10-26): the shared canvas now has a compact header, a bottom topic panel and searchable parent picker. Editable passive Board maps expose **Edit**. F2/Space or double-click selects a topic label for renaming; keyboard branch deletion restores parent focus. Undo to collapsed ancestors keeps a visible selected topic. Actual asymmetric bounds avoid empty mirrored space; accepted edits retain the current scale, initial views remain readable at 65% or above, and explicit Fit can shrink the whole tree further. Selected topics are revealed within the inner canvas. Zoom/scroll remain transient; graph formats and owner persistence are unchanged. See `../reports/13-mindmap-review-correction.md` for manual checks.
+
+
+Mind Map fullscreen redesign (approved 2026-10-26): embedded maps now use the Mermaid/shared rich-card heading with Edit and fullscreen preview actions. Inline inspectors, hints, grid and view controls are removed. Edit opens a fullscreen dialog with a plain canvas, direct topic renaming, a vertically centered left topic toolbar, searchable parent panel, bottom zoom/Fit, real owner save status and Done. Board editing commands open this same surface. Read-only fullscreen preview has no mutation tools. Topic edits, Undo/Redo and IME guards remain owned by the original Board/Document despite the dialog portal. Document previews adapt within 200–440 pixels; Board viewport dimensions remain saved independently. See `../reports/13-mindmap-fullscreen-editor.md`; this supersedes the previous inline presentation correction without changing graph formats or later-phase scope.
+
+
+Mind Map text review (2026-10-26): topic frames automatically follow measured text height, with tree spacing and connectors following their actual dimensions. One active topic uses Document-style inline text editing and shared selection formatting controls. Accepted edits use graph version 2 with inline content and an exact plain-text projection; version 1 remains supported. Native Board geometry remains independent of topic text size, with original owner history/autosave/conflict/recovery. Shared technical/media surfaces adopt the approved frame and inset styling. See `../reports/13-mindmap-rich-text-and-sizing.md` for checks and exact manual acceptance.
+
+
+Block icon consistency correction (2026-10-26): technical headers now share canonical SVG glyphs across Document and Board renderers, with 20-pixel type icons and 17-pixel actions in 32-pixel buttons. Code keeps its main Code badge and shows the language logo beside the name/picker. Native/cached Board Mermaid fullscreen sits beside Edit in the header. File fallbacks use icon actions and keep their badge when metadata updates; real media players retain their own header. See `../reports/13-block-icon-consistency.md` for checks and exact manual acceptance.
+
+
+Mind Map topic-width review (2026-10-26): fullscreen editing exposes an outward-edge grip for each selected topic, bounded to 100–800 map pixels. The map uses variable-width parent/child spacing and connectors while topic height remains content-driven. A completed drag creates one original Board/Document action; cancellation does not save. Topic widths persist independently of native Board viewport dimensions using graph version 3, with older maps still readable. See `../reports/13-mindmap-topic-width.md` for checks and manual acceptance.
+
+
+Mind Map branch text commands (2026-10-26): editing a branch now supports mixed text blocks. Type `/` at the start of an empty paragraph/heading (including inside a list/quote/callout) to open a searchable menu with type icons: Text, Heading 1–3, Bullet list, Numbered list, Checklist, Quote, Callout and Code. Arrow keys choose; Enter/Tab applies; Escape dismisses the menu before ending editing on a subsequent press. Literal slash text stays text when the menu is dismissed, and code blocks keep slashes literal. Enter continues a paragraph/list/code block inside the topic; Shift+Enter inserts a soft break where supported. Tab/Shift+Tab indent/outdent list items. Escape or Ctrl/Cmd+Enter finishes editing. Once a topic is selected, existing Enter/Tab branch-creation shortcuts remain. Inline toolbar formatting and automatic height apply to the structured body; selected topics retain width adjustment. New graph version 4 saves exact text/body with original owner history and save guards, preserving older maps and widths. Static/readonly views render the saved block structure without editing controls. Tables, media and math/diagram widgets are outside these text commands. See `../reports/13-mindmap-branch-slash-commands.md` for actual checks and manual acceptance.
+
+
+Mind Map manual-width repair (2026-10-26): the selected branch now has a visible horizontal-arrow grip at its bottom outward corner, including while its text editor is active. Dragging retains the text caret and uses the existing transient/one-commit resize behavior. The left dock also has **Branch width**, opening a 100–800 px number field with **Apply** and **Reset** (180 px). Enter applies, Escape closes the panel and restores focus to its dock button; closing without applying discards the local draft. Height stays automatic. Graph versions and owner persistence/history are unchanged; resizing structured text retains graph 4. Read-only/embedded maps expose neither grip nor width panel. This supersedes the earlier requirement to leave text editing before finding a narrow grip. See `../reports/13-mindmap-manual-width-repair.md`.
+
+
+Mind Map hierarchy templates (approved 2026-10-26): fullscreen Edit has a **Templates** control at the upper right of the canvas. Its visual picker offers Balanced mind map, Right-facing tree, Left-facing tree, Top-down hierarchy, Bottom-up hierarchy, Outline tree, Brace map, Fishbone and Timeline. For Timeline, reopen Templates to choose Horizontal or Vertical. Selecting a different layout commits one original owner action, retaining IDs, ancestry, plain/rich text, topic widths and collapsed descendants. Selecting the active layout or dismissing the picker does not save. Measured text height and variable widths drive each layout's spacing and connectors; Fit, scrolling and branch resizing remain available. The templates rearrange existing content without inserting sample topics. Timeline uses existing sibling order without dates, scheduling or durations. Fishbone keeps the existing root as the outcome and direct branches as cause groups. Arrow navigation follows branch growth (left/right or up/down); Outline retains the standard Right-child/Left-parent behavior. Read-only/embedded views render the saved layout without a picker. Graph version 5 persists the choice; older maps default to Balanced. See `../reports/13-mindmap-hierarchy-templates.md` and the static gallery `../previews/13-mindmap-templates.html`.

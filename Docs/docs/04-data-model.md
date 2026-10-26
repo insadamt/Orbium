@@ -108,6 +108,19 @@ there is no raw SVG payload or attachment. Full/incremental saves require envelo
 Recovery explicitly adapts older local drafts. Rollback refuses while drawing rows
 remain, including drawings on trashed Boards. See `24-boards.md`.
 
+### Drawing gaps (2026-10-24 correction)
+
+`2026_10_24_000001_add_board_drawing_gaps.php` upgrades the spatial envelope/default
+to **6** without rewriting object JSON, UUIDs or revisions. Drawing data optionally
+adds `breaks`: strictly increasing integer indices in `(0, points.length)` that
+start disconnected subpaths within one drawing object. Total points remain capped
+at 6,000; breaks at 5,999. Empty breaks are omitted. Erasing preserves object
+identity/frame; complete erasure removes that object. Full/incremental saves and
+sibling Document creation require envelope 6. Existing format-5 snapshots explicitly
+adapt; older drafts retain their supported adapters. Older envelopes may not carry
+breaks. Downgrade refuses while any drawing has breaks, including trashed Boards.
+See `24-boards.md` and `../reports/12-boards-single-drawing-eraser.md`.
+
 ## documents
 
 
@@ -363,3 +376,22 @@ Once a migration has shipped in a release candidate/stable build:
 - add compatibility tests for upgrades.
 
 The initial schema may evolve rapidly before the first RC, but history should stabilize once release testing begins.
+
+
+## Mind Map blocks (phase 5, authorized 2026-10-24)
+
+`2026_10_24_000002_add_mindmap_blocks.php` upgrades the Board envelope/default to **7** and extends the native content CHECK with `mindmap`, without rewriting previous source/JSON/UUID/revision fields. Native content format remains 1. A map's data contains only `mindmap`, a version-1 flat graph with one `root_id` and a topic list (`id`, nullable `parent_id`, plain `text`, boolean `collapsed`). Shared application validation rejects unknown keys/versions, duplicate/missing IDs, multiple roots, cycles, disconnected nodes, depth over 64 parent links, labels over 500 Unicode code points and serialized maps over 64 KiB. There is no fixed child count. Topic parents are internal graph links, not `nodes.parent_id` or mentions. Existing full/PATCH validation, Board history/revision/idempotency and per-Board byte accounting remain in use. Downgrade refuses while Board Mind Maps exist, including Trash.
+
+Markdown format 2 gains an additive versioned atomic Mind Map directive; legacy format 1 gains a validated Mind Map atom. Each uses the same graph and original Document save/revision ownership. Search text and statistics include labels, never fabricated page/attachment references. No new Document/Node or graph table is created. Formatting-preserving exports retain canonical graph data; plain/office exports intentionally produce a full topic outline. This does not change the account archive protocol. Deploy matching server/client code and reload open editors before using the new block.
+
+
+Mind Map graph version 2 (approved 2026-10-26) adds optional inline `content` per topic, using validated text/hardBreak nodes and bold/italic/underline/strike/code/link/textColor marks. Its mandatory plain `text` must match the content projection exactly. Version 1 stays supported and literal; accepted rich-label edits upgrade to 2. Existing graph byte/depth/text limits, Board spatial format 7 and Document envelopes remain. Legacy full saves advertise mindmap capability 2 and require capability at least the largest stored graph version, protecting formatted maps from older schemas. No migration is required; deploy matching frontend/server and reload editors. See `../reports/13-mindmap-rich-text-and-sizing.md` for checks and exact manual acceptance.
+
+
+Mind Map graph version 3 (requested 2026-10-26) adds optional integer topic `width`, bounded to 100–800 map pixels with a default of 180. Width is rejected in earlier graph versions; versions 1/2 remain readable. An accepted resize explicitly upgrades to 3, and rich-text edits preserve that version. Legacy full saves advertise capability 3 and use the stored-graph version guard. Existing byte/text/depth constraints and outer Board/Document formats remain unchanged; no migration is required. See `../reports/13-mindmap-topic-width.md` for checks and manual acceptance.
+
+
+Mind Map graph version 4 (requested 2026-10-26) adds optional topic `body`, a bounded structured text document. It supports paragraph/H1–H3, bullet/ordered/task lists, quote/callout wrappers and plain code blocks, with existing safe inline marks. `body` and legacy inline `content` are mutually exclusive on the same topic. Mandatory `text` matches the exact recursive plain projection (newline between text blocks/items); search/statistics/plain exports use that projection. The body allows at most 256 block nodes and nesting depth 16; existing 500-code-point topic and 64 KiB graph budgets remain. Versions 1–3 stay supported without interpreting literal labels as markup. Accepted text changes upgrade to 4; resizing preserves 4. Normal/hosted legacy full saves advertise capability 4 and the existing largest-stored-graph guard prevents older clients from dropping structured bodies. Board spatial format 7, native content format 1 and Document envelopes remain unchanged. No migration is needed. See `../reports/13-mindmap-branch-slash-commands.md`.
+
+
+Mind Map graph version 5 (approved 2026-10-26) adds optional top-level `layout`: `balanced`, `tree-right`, `tree-left`, `hierarchy-down`, `hierarchy-up`, `outline`, `brace`, `fishbone`, `timeline` or `timeline-vertical`. The last two are one template family with an orientation choice. The field is rejected in graph versions 1–4, and unknown/null values are rejected. An omitted layout defaults to balanced; supported older graphs remain readable without mutation. A changed template upgrades the graph to 5 while retaining the entire topic array and its rich text/body/width/collapse data. Subsequent text/width edits preserve 5. Graph limits and Board/Document outer envelopes remain unchanged. Legacy normal/hosted full saves advertise capability 5 and the existing stored-version guard protects template maps from older clients. No migration is needed; deploy matching frontend/server and reload editors. See `../reports/13-mindmap-hierarchy-templates.md`.

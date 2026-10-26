@@ -150,6 +150,20 @@ function readInlineRuns(
                 );
             if (metadata?.color) marks.color = metadata.color;
             if (metadata?.underline) marks.underline = true;
+            if (metadata?.icon) {
+                //
+                // Treat icons as opaque source so formatting nearby text cannot flatten their identity.
+                //
+                appendSourceRuns(
+                    state,
+                    node.from,
+                    node.to,
+                    inherited,
+                    runs,
+                    true,
+                );
+                return;
+            }
         }
         if (node.name === 'InlineCode') {
             marks.code = true;

@@ -30,7 +30,11 @@ export function resizeBoardObject({
         : object.height;
     let data = object.data;
 
-    if (corner && !(object.block_type === 'image' && freeAspect)) {
+    if (
+        corner &&
+        object.block_type !== 'mindmap' &&
+        !(object.block_type === 'image' && freeAspect)
+    ) {
         const ratio = object.width / object.height;
         let scale =
             Math.abs(delta.x / object.width) >=

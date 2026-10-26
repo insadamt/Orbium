@@ -6,6 +6,7 @@ use App\Services\Markdown\CalloutMarker;
 use App\Services\Markdown\MathBlock;
 use App\Services\Markdown\OrbiumBlock;
 use App\Services\Markdown\OrbiumInline;
+use App\Services\MindMaps\MindMapData;
 use League\CommonMark\Extension\CommonMark\Node\Block\BlockQuote;
 use League\CommonMark\Extension\CommonMark\Node\Block\FencedCode;
 use League\CommonMark\Extension\CommonMark\Node\Block\Heading;
@@ -62,6 +63,7 @@ final class MarkdownDocumentStatistics
         $text = match (true) {
             $node instanceof TaskListItemMarker, $node instanceof CalloutMarker => '',
             $node instanceof OrbiumInline && $node->latex !== null => $node->latex,
+            $node instanceof OrbiumBlock && $kind === 'mindmap' => app(MindMapData::class)->text($node->metadata['mindmap']),
             $node instanceof OrbiumBlock && $kind === 'math' => (string) $node->metadata['latex'],
             $node instanceof StringContainerInterface => $node->getLiteral(),
             $node instanceof Newline => ' ',
@@ -83,6 +85,7 @@ final class MarkdownDocumentStatistics
             return match ($node->kind()) {
                 'table' => 'table',
                 'math' => 'math',
+                'mindmap' => 'mindmap',
                 default => null,
             };
         }

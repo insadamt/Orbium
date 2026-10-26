@@ -1,0 +1,208 @@
+.orbium-mindmap {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: var(--mindmap-preview-height, 320px);
+    min-height: 180px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    background: var(--card);
+    color: var(--foreground);
+    text-align: start;
+    font-family: var(--font-sans);
+    line-height: 1.4;
+}
+.orbium-mindmap > .attachment-heading {
+    flex: none;
+}
+.mindmap-block-preview {
+    flex: 1;
+    min-height: 80px;
+    margin: 4px 10px 10px;
+    overflow: hidden;
+    border-radius: 11px;
+    background: color-mix(in srgb, var(--muted) 45%, var(--background));
+}
+.mindmap-canvas {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    min-height: 80px;
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    line-height: 1.4;
+    text-align: start;
+}
+.mindmap-viewport {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    overscroll-behavior: contain;
+    touch-action: pan-x pan-y;
+    scrollbar-width: thin;
+}
+.mindmap-viewport > div {
+    position: relative;
+    min-height: 100%;
+}
+.mindmap-scene {
+    position: absolute;
+    transform-origin: top left;
+}
+.mindmap-scene > svg {
+    position: absolute;
+    inset: 0;
+    overflow: visible;
+    pointer-events: none;
+}
+.mindmap-scene path {
+    fill: none;
+    stroke: color-mix(in srgb, var(--muted-foreground) 45%, var(--background));
+    stroke-width: 1.25;
+}
+.mindmap-topic {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    background: var(--background);
+    font-size: 14px;
+    line-height: 20px;
+}
+.mindmap-topic[data-root='true'] {
+    border-color: color-mix(in srgb, var(--foreground) 25%, var(--border));
+    background: var(--muted);
+    font-weight: 600;
+}
+.mindmap-topic[data-selected='true'] {
+    border-color: var(--foreground);
+}
+.mindmap-topic-content {
+    display: block;
+    flex: 1;
+    width: 100%;
+    min-width: 0;
+    padding: 10px 14px;
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+    text-align: start;
+    font-size: inherit;
+    line-height: 1.5;
+    border-radius: inherit;
+    background: transparent;
+    color: inherit;
+}
+.mindmap-topic > button,
+.mindmap-topic > [role='treeitem'] {
+    cursor: pointer;
+}
+.mindmap-topic-editor {
+    cursor: text;
+    outline: none;
+    background: var(--background);
+}
+.mindmap-topic-writing {
+    outline: none;
+    min-height: 1.5em;
+}
+.mindmap-topic-writing p {
+    padding: 0;
+    margin: 0;
+    min-height: 1.5em;
+    font: inherit;
+}
+.mindmap-topic code {
+    padding: 0 2px;
+    border-radius: 3px;
+    background: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+}
+.mindmap-topic button:focus-visible,
+.orbium-mindmap button:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+}
+/*
+ * Selection and text focus share the topic frame; a child outline would draw a second border.
+ */
+.mindmap-topic:has(> .mindmap-topic-content:focus-visible),
+.mindmap-topic:has(.mindmap-topic-writing:focus-visible) {
+    border-color: var(--ring);
+}
+.mindmap-topic > .mindmap-topic-content:focus-visible {
+    outline: none;
+}
+.mindmap-topic .mindmap-collapse {
+    position: absolute;
+    right: -10px;
+    top: calc(50% - 10px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    padding: 2px;
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    background: var(--background);
+    color: var(--muted-foreground);
+    font-size: 10px;
+    font-variant-numeric: tabular-nums;
+}
+.mindmap-topic[data-side='-1'] .mindmap-collapse {
+    right: auto;
+    left: -10px;
+}
+.mindmap-error {
+    z-index: 5;
+    padding: 8px 12px;
+    margin: 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--destructive);
+    background: var(--background);
+}
+.board-object[data-board-kind='mindmap'] .board-object-body {
+    height: 100%;
+    padding: 0;
+}
+.board-object[data-board-kind='mindmap'] .orbium-mindmap {
+    height: 100%;
+}
+
+.mindmap-topic > .mindmap-width-handle {
+    position: absolute;
+    z-index: 3;
+    right: -10px;
+    bottom: -10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    padding: 2px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--background);
+    color: var(--foreground);
+    cursor: ew-resize;
+    touch-action: none;
+}
+.mindmap-topic > .mindmap-width-handle:hover,
+.mindmap-topic > .mindmap-width-handle[data-mindmap-resizing='true'] {
+    border-color: var(--foreground);
+    background: var(--accent);
+}
+.mindmap-topic > .mindmap-width-handle[data-side='-1'] {
+    right: auto;
+    left: -10px;
+}
+.mindmap-topic .mindmap-collapse {
+    z-index: 2;
+}

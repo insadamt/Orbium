@@ -21,11 +21,13 @@ export function BoardNativeFormatting({
     disabled,
     onLinkOpenChange,
     onFinish,
+    fullscreen = false,
 }: {
     editor: Editor;
     disabled: boolean;
     onLinkOpenChange?: (open: boolean) => void;
     onFinish: () => void;
+    fullscreen?: boolean;
 }) {
     const [linkOpen, setLinkOpen] = useState(false);
     const [address, setAddress] = useState('');
@@ -113,6 +115,9 @@ export function BoardNativeFormatting({
                 >
                     {group.map(([mark, Icon, label, shortcut]) => (
                         <BoardToolButton
+                            tooltipClassName={
+                                fullscreen ? 'mindmap-tool-tooltip' : undefined
+                            }
                             key={mark}
                             label={label}
                             icon={Icon}
@@ -145,6 +150,9 @@ export function BoardNativeFormatting({
                 >
                     <Popover.Trigger asChild>
                         <BoardToolButton
+                            tooltipClassName={
+                                fullscreen ? 'mindmap-tool-tooltip' : undefined
+                            }
                             label="Edit link"
                             icon={Link2}
                             shortcut="Ctrl/Cmd+K"
@@ -156,6 +164,14 @@ export function BoardNativeFormatting({
                     <Popover.Portal>
                         <Popover.Content
                             data-board-editor
+                            data-mindmap-link-popover={fullscreen || undefined}
+                            onKeyDown={(event) => {
+                                if (
+                                    fullscreen &&
+                                    (event.ctrlKey || event.metaKey)
+                                )
+                                    event.stopPropagation();
+                            }}
                             className="board-link-popover glass-surface"
                             sideOffset={10}
                             collisionPadding={12}
@@ -221,6 +237,9 @@ export function BoardNativeFormatting({
                 aria-label="Editing"
             >
                 <BoardToolButton
+                    tooltipClassName={
+                        fullscreen ? 'mindmap-tool-tooltip' : undefined
+                    }
                     label="Finish editing"
                     shortcut="Ctrl/Cmd+Enter"
                     icon={Check}

@@ -132,6 +132,8 @@ export function readRichBlock(
             ),
             metadata,
         };
+        if (metadata.kind === 'mindmap' && !children.length)
+            return { ...base, kind: 'mindmap' };
         if (metadata.kind === 'math' && !children.length)
             return { ...base, kind: 'math', content: String(metadata.latex) };
         if (metadata.kind === 'empty' && !children.length)

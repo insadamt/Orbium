@@ -2,12 +2,13 @@
 
 namespace App\Services\Editor;
 
+use App\Services\MindMaps\MindMapData;
 use App\Services\Statistics\LegacyDocumentStatistics;
 use Illuminate\Validation\ValidationException;
 
 class EditorContentInspector
 {
-    private const NODE_TYPES = ['doc', 'paragraph', 'heading', 'bulletList', 'orderedList', 'listItem', 'taskList', 'taskItem', 'blockquote', 'horizontalRule', 'codeBlock', 'hardBreak', 'text', 'table', 'tableRow', 'tableCell', 'tableHeader', 'image', 'file', 'mention', 'callout', 'mermaid', 'blockMath', 'inlineMath'];
+    private const NODE_TYPES = ['doc', 'paragraph', 'heading', 'bulletList', 'orderedList', 'listItem', 'taskList', 'taskItem', 'blockquote', 'horizontalRule', 'codeBlock', 'hardBreak', 'text', 'table', 'tableRow', 'tableCell', 'tableHeader', 'image', 'file', 'mention', 'callout', 'mermaid', 'blockMath', 'inlineMath', 'mindmap', 'inlineIcon'];
 
     private const MARK_TYPES = ['bold', 'italic', 'strike', 'underline', 'code', 'link', 'textColor'];
 
@@ -46,7 +47,7 @@ class EditorContentInspector
         if ($type === 'mention') {
             $mentions[(int) $attrs['id']] = (string) ($attrs['label'] ?? '');
         }
-        if (in_array($type, ['image', 'file'], true)) {
+        if ($this->isAttachmentNode($node)) {
             $attachments[(int) $attrs['attachmentId']] = true;
         }
         if ($type === 'mermaid' && is_string($attrs['source'] ?? null)) {
@@ -67,8 +68,10 @@ class EditorContentInspector
         return match ($type) {
             'text' => $node['text'],
             'mention' => '@'.($attrs['label'] ?? ''),
+            'inlineIcon' => (string) $attrs['label'],
             'blockMath', 'inlineMath' => (string) ($attrs['latex'] ?? ''),
             'mermaid' => (string) ($attrs['source'] ?? ''),
+            'mindmap' => app(MindMapData::class)->text($attrs['mindmap']),
             default => implode(in_array($type, ['doc', 'bulletList', 'orderedList', 'taskList', 'table', 'tableRow'], true) ? "\n" : '', $parts),
         };
     }
@@ -89,6 +92,18 @@ class EditorContentInspector
             $this->invalid('A block has invalid attributes.');
         }
         $attrs = $node['attrs'] ?? [];
+        if ($type === 'inlineIcon') {
+            app(InlineIconData::class)->validateAttributes($attrs);
+            if (! empty($node['content'])) {
+                $this->invalid('Inline icons are atomic.');
+            }
+        }
+        if ($type === 'mindmap') {
+            app(MindMapData::class)->validate($node['attrs']['mindmap'] ?? null, 'content');
+            if (! empty($node['content'])) {
+                $this->invalid('Mind Maps are atomic blocks.');
+            }
+        }
         if (isset($attrs['dir']) && ! in_array($attrs['dir'], ['ltr', 'rtl', 'auto'], true)) {
             $this->invalid('A block direction is invalid.');
         }
@@ -101,7 +116,7 @@ class EditorContentInspector
         if ($type === 'mention' && ! filter_var($attrs['id'] ?? null, FILTER_VALIDATE_INT)) {
             $this->invalid('A mention has no target.');
         }
-        if (in_array($type, ['image', 'file'], true) && ! filter_var($attrs['attachmentId'] ?? null, FILTER_VALIDATE_INT)) {
+        if ($this->isAttachmentNode($node) && ! filter_var($attrs['attachmentId'] ?? null, FILTER_VALIDATE_INT)) {
             $this->invalid('A file block has no attachment.');
         }
         if ($type === 'heading' && ! in_array($attrs['level'] ?? null, [1, 2, 3], true)) {
@@ -139,6 +154,28 @@ class EditorContentInspector
         return in_array($color, ['preset:charcoal', 'preset:gray', 'preset:red', 'preset:orange', 'preset:amber', 'preset:green', 'preset:teal', 'preset:blue', 'preset:purple', 'preset:pink'], true);
     }
 
+    public function mindMapVersion(array $content): int
+    {
+        $version = 0;
+        $this->walk($content, 0, static function (array $node) use (&$version): void {
+            if (($node['type'] ?? null) === 'mindmap') {
+                $version = max($version, (int) ($node['attrs']['mindmap']['version'] ?? 1));
+            }
+        });
+
+        return $version;
+    }
+
+    public function hasMindMap(array $content): bool
+    {
+        $found = false;
+        $this->walk($content, 0, static function (array $node) use (&$found): void {
+            $found = $found || ($node['type'] ?? null) === 'mindmap';
+        });
+
+        return $found;
+    }
+
     /** @param array<string, mixed> $content */
     public function extractPlainText(array $content): string
     {
@@ -167,7 +204,7 @@ class EditorContentInspector
     {
         $ids = [];
         $this->walk($content, 0, static function (array $node) use (&$ids): void {
-            if (in_array($node['type'] ?? null, ['image', 'file'], true)) {
+            if (in_array($node['type'] ?? null, ['image', 'file'], true) || (($node['type'] ?? null) === 'inlineIcon' && ($node['attrs']['kind'] ?? null) === 'custom')) {
                 $ids[] = (int) $node['attrs']['attachmentId'];
             }
         });
@@ -201,7 +238,7 @@ class EditorContentInspector
             }
             $content['attrs']['id'] = $nodeIds[$oldId];
         }
-        if (in_array($content['type'] ?? null, ['image', 'file'], true)) {
+        if ($this->isAttachmentNode($content)) {
             $oldId = (int) $content['attrs']['attachmentId'];
             if (! isset($attachmentIds[$oldId])) {
                 $this->invalid('A file cannot be remapped.');
@@ -213,6 +250,22 @@ class EditorContentInspector
         }
 
         return $content;
+    }
+
+    private function isAttachmentNode(array $node): bool
+    {
+        return in_array($node['type'] ?? null, ['image', 'file'], true)
+            || (($node['type'] ?? null) === 'inlineIcon' && ($node['attrs']['kind'] ?? null) === 'custom');
+    }
+
+    public function hasInlineIcons(array $content): bool
+    {
+        $found = false;
+        $this->walk($content, 0, static function (array $node) use (&$found): void {
+            $found = $found || ($node['type'] ?? null) === 'inlineIcon';
+        });
+
+        return $found;
     }
 
     private function isSafeUrl(mixed $url): bool
@@ -227,11 +280,17 @@ class EditorContentInspector
         if ($type === 'text') {
             return $node['text'];
         }
+        if ($type === 'inlineIcon') {
+            return (string) ($node['attrs']['label'] ?? '');
+        }
         if ($type === 'mention') {
             return '@'.($node['attrs']['label'] ?? '');
         }
         if (in_array($type, ['blockMath', 'inlineMath'], true)) {
             return (string) ($node['attrs']['latex'] ?? '');
+        }
+        if ($type === 'mindmap') {
+            return app(MindMapData::class)->text($node['attrs']['mindmap']);
         }
         if ($type === 'mermaid') {
             return (string) ($node['attrs']['source'] ?? '');

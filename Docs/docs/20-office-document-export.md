@@ -59,3 +59,8 @@ On Arch Linux, install LibreOffice Writer and the equivalent Liberation/Noto fon
 The PHP process must be able to execute `node` and `soffice`. Set `ORBIUM_EXPORT_NODE_BINARY` or `ORBIUM_LIBREOFFICE_BINARY` to an executable's full path when it is outside that process's PATH. Restart PHP after changing its environment; clear/rebuild Laravel's configuration cache if used. Keep `APP_URL` correct for installation links. Docker's PHP execution and nginx FastCGI timeouts are 150 seconds; external reverse proxies need to allow conversion to finish. Missing runtime dependencies produce an export error; Word remains usable if only LibreOffice is missing.
 
 See [the review report](../reports/06-office-document-export.md) for actual checks and manual acceptance steps.
+
+
+## Mind Map fallback (2026-10-24)
+
+Mind Maps export as a full indented text outline, including collapsed topics, using the existing monospace block layout. Graph labels are plain text; no links/images are inferred from them. This preserves topic content/ancestry without silently omitting an unsupported interactive block. Word/PDF do not contain an editable graphical map, application controls or viewport state. Canonical formatting-preserving Document exports remain the route for retaining the actual graph.

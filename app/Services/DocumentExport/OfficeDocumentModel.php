@@ -9,6 +9,7 @@ use App\Services\Markdown\MarkdownParserService;
 use App\Services\Markdown\MathBlock;
 use App\Services\Markdown\OrbiumBlock;
 use App\Services\Markdown\OrbiumInline;
+use App\Services\MindMaps\MindMapData;
 use League\CommonMark\Extension\CommonMark\Node\Block\BlockQuote;
 use League\CommonMark\Extension\CommonMark\Node\Block\FencedCode;
 use League\CommonMark\Extension\CommonMark\Node\Block\Heading;
@@ -47,6 +48,9 @@ final class OfficeDocumentModel
             $children[] = $this->convert($child, $workspace, $document);
         }
         $value = ['kind' => 'container', 'children' => $children];
+        if ($node instanceof OrbiumBlock && $node->kind() === 'mindmap') {
+            return ['kind' => 'codeBlock', 'text' => app(MindMapData::class)->outline($node->metadata['mindmap']), 'language' => 'Mind Map'];
+        }
         if ($node instanceof OrbiumBlock) {
             return [...$value, ...$node->metadata, 'kind' => 'orbium', 'blockKind' => $node->kind()];
         }

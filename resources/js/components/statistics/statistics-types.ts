@@ -18,6 +18,7 @@ export const blockLabels = {
     divider: 'Dividers',
     mermaid: 'Mermaid diagrams',
     math: 'Math blocks',
+    mindmap: 'Mind Maps',
 } as const;
 
 export type StatisticsSummary = {

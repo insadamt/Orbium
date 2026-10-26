@@ -133,3 +133,30 @@
         transition: none;
     }
 }
+
+.board-drawing-formatting .editor-toolbar-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: var(--board-floating-control-size);
+    height: var(--board-floating-control-size);
+    padding: 7px 9px;
+    border-radius: 7px;
+    color: var(--foreground);
+}
+/*
+ * The color picker is shared with text, while drawing controls must keep an opaque surface over canvas content.
+ */
+:root .board-page .board-drawing-formatting .editor-color-picker,
+:root[data-surface-style]
+    .board-page
+    .board-drawing-formatting
+    .editor-color-picker {
+    background: var(--popover);
+    border-color: var(--border);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+}
+.board-drawing-width-menu .board-drawing-width-sample {
+    margin-inline-end: 4px;
+}

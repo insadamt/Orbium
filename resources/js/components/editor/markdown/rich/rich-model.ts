@@ -16,6 +16,7 @@ export type RichTable = {
     rich: boolean;
 };
 export type RichKind =
+    | 'mindmap'
     | 'code'
     | 'mermaid'
     | 'math'

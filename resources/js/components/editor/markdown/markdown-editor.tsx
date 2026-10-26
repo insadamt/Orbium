@@ -1,3 +1,7 @@
+import { markdownImportPaste } from './markdown-import-paste';
+import { MarkdownFileInput } from './markdown-file-input';
+import { MarkdownInlineIcons } from '@/components/inline-icons/markdown-inline-icons';
+import { isMindMapComposing } from '@/components/mindmap/mindmap-composition';
 import { useHostedMarkdownDocument } from '../use-hosted-document-activity';
 import { dispatchMarkdownHistoryWithLayoutMotion } from './interactions/markdown-history-layout-motion';
 import { markdownBlockHistoryMotion } from './interactions/markdown-block-history-motion';
@@ -96,7 +100,11 @@ export default function MarkdownEditor(props: MarkdownEditorProps) {
     const editorView = useRef<EditorView | null>(null);
     const autosave = useMarkdownAutosave({
         ...props,
-        isComposing: () => editorView.current?.compositionStarted ?? false,
+        isComposing: () =>
+            Boolean(
+                editorView.current?.compositionStarted ||
+                isMindMapComposing(editorView.current?.dom),
+            ),
     });
     const finder = useMarkdownSearch(view);
     const callbacks = useRef({
@@ -204,35 +212,9 @@ export default function MarkdownEditor(props: MarkdownEditorProps) {
                                     ),
                                 setNotice,
                             ),
-                            EditorView.domEventHandlers({
-                                paste(event, current) {
-                                    if (
-                                        !current.state.facet(
-                                            EditorView.editable,
-                                        ) ||
-                                        current.state.doc.toString().trim() ||
-                                        event.clipboardData?.files.length ||
-                                        (event.target instanceof Element &&
-                                            event.target.closest(
-                                                'textarea, input',
-                                            ))
-                                    )
-                                        return false;
-                                    const text =
-                                        event.clipboardData?.getData(
-                                            'text/plain',
-                                        ) ?? '';
-                                    if (
-                                        !/^(?:#{1,6} |[-*+] |\d+\. |> |`{3,}|:{3,}orbium |\$\$)|\*\*[^*]+\*\*|\[[^\]]+\]\([^)]+\)/m.test(
-                                            text,
-                                        )
-                                    )
-                                        return false;
-                                    event.preventDefault();
-                                    void callbacks.current.importSource(text);
-                                    return true;
-                                },
-                            }),
+                            markdownImportPaste((source) =>
+                                callbacks.current.importSource(source),
+                            ),
                             markdownSlashMenuTheme,
                             markdownLinkNavigation,
                             keymap.of([...defaultKeymap, ...historyKeymap]),
@@ -390,6 +372,7 @@ export default function MarkdownEditor(props: MarkdownEditorProps) {
         <section
             className="relative"
             aria-label="Document editor"
+            data-mindmap-owner-status={autosave.status}
             data-document-styles
         >
             <MarkdownEditorControls
@@ -415,6 +398,12 @@ export default function MarkdownEditor(props: MarkdownEditorProps) {
                     {notice}
                 </p>
             )}
+            <MarkdownInlineIcons
+                view={view}
+                workspaceId={props.workspaceId}
+                nodeId={props.nodeId}
+                onUpload={upload.openFileInput}
+            />
             {transfer.error && (
                 <p role="alert" className="mb-2 text-sm text-destructive">
                     {transfer.error}
@@ -465,17 +454,7 @@ export default function MarkdownEditor(props: MarkdownEditorProps) {
                     onUpload={upload.uploadNewFile}
                 />
             )}
-            <input
-                ref={upload.fileInput}
-                type="file"
-                className="hidden"
-                aria-label="Upload document attachment"
-                onChange={(event) => {
-                    const files = [...(event.target.files ?? [])];
-                    if (files.length) void upload.uploadSelectedFiles(files);
-                    else upload.clearUploadRequest();
-                }}
-            />
+            <MarkdownFileInput upload={upload} />
             {autosave.error && (
                 <p role="alert" className="mb-2 text-sm text-destructive">
                     {autosave.error}

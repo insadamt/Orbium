@@ -53,6 +53,7 @@ const blockGroups = [
             { kind: 'code', icon: Code2 },
             { kind: 'math', icon: Sigma },
             { kind: 'mermaid', icon: Workflow },
+            { kind: 'mindmap', icon: Workflow },
         ],
     },
 ] as const;

@@ -1,6 +1,6 @@
 import type { NodeViewProps } from '@tiptap/react';
 import { NodeViewWrapper } from '@tiptap/react';
-import { Eye, Pencil } from 'lucide-react';
+import { RichBlockIcon } from './ui/rich-block-icon';
 import { useEffect, useRef, useState } from 'react';
 import { measureEditorWork } from '@/lib/editor-performance';
 import { instantiateMermaidSvg } from './mermaid-preview-renderer';
@@ -36,6 +36,7 @@ export default function MermaidView({
         if (!element || !output) return;
         let active = true;
         const controls = createMermaidPreviewControls();
+        controls.button.className = 'attachment-action';
         previewToolbar.current?.append(controls.button);
         output.textContent = 'Preparing diagram…';
         output.removeAttribute('role');
@@ -69,7 +70,7 @@ export default function MermaidView({
 
     return (
         <NodeViewWrapper
-            className="orbium-mermaid mermaid-inline-block my-4"
+            className="orbium-mermaid attachment-player orbium-rich-card my-4"
             data-drag-handle
             dir={node.attrs.dir}
             contentEditable={false}
@@ -79,32 +80,39 @@ export default function MermaidView({
                 data-mermaid=""
                 data-mermaid-editing={String(editing)}
             >
-                <div className="mermaid-inline-toolbar mb-3 flex items-center justify-between gap-2 text-xs text-muted-foreground">
-                    <span>Mermaid</span>
-                    <div
-                        ref={previewToolbar}
-                        className="mermaid-inline-actions"
-                    >
+                <div className="attachment-heading orbium-rich-card-heading">
+                    <span className="attachment-type-icon">
+                        <RichBlockIcon name="diagram" />
+                    </span>
+                    <div className="attachment-identity">
+                        <div className="attachment-title">Mermaid</div>
+                        <span className="attachment-description">Diagram</span>
+                    </div>
+                    <div ref={previewToolbar} className="attachment-actions">
                         <div
                             role="group"
                             aria-label="Mermaid mode"
-                            className="inline-flex rounded-lg border border-border bg-muted/60 p-0.5"
+                            className="attachment-actions"
                         >
                             <button
                                 type="button"
+                                aria-label="Edit Mermaid source"
+                                title="Edit Mermaid source"
                                 aria-pressed={editing}
                                 onClick={() => setEditing(true)}
-                                className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 transition-colors ${editing ? 'bg-background text-foreground shadow-sm' : 'hover:bg-accent hover:text-foreground'}`}
+                                className="attachment-action"
                             >
-                                <Pencil size={13} aria-hidden="true" /> Edit
+                                <RichBlockIcon name="edit" size={17} />
                             </button>
                             <button
                                 type="button"
+                                aria-label="Preview Mermaid"
+                                title="Preview Mermaid"
                                 aria-pressed={!editing}
                                 onClick={() => setEditing(false)}
-                                className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 transition-colors ${!editing ? 'bg-background text-foreground shadow-sm' : 'hover:bg-accent hover:text-foreground'}`}
+                                className="attachment-action"
                             >
-                                <Eye size={14} aria-hidden="true" /> Preview
+                                <RichBlockIcon name="preview" size={17} />
                             </button>
                         </div>
                     </div>
@@ -120,13 +128,13 @@ export default function MermaidView({
                     }}
                     rows={6}
                     dir="ltr"
-                    className="w-full rounded-md bg-muted p-3 font-mono text-sm"
+                    className="orbium-rich-card-source font-mono text-sm"
                 />
                 <div
                     ref={diagram}
                     data-mermaid-preview=""
                     hidden={editing}
-                    className="overflow-auto [&>svg]:block [&>svg]:h-auto [&>svg]:w-full"
+                    className="orbium-rich-card-content overflow-auto [&>svg]:block [&>svg]:h-auto [&>svg]:w-full"
                     style={{ minHeight: 100 }}
                 />
             </div>

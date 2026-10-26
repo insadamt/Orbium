@@ -29,7 +29,7 @@ export function BoardSaveStatus({
                 )}
                 aria-live="polite"
             >
-                <span>
+                <span key={save.status} className="board-save-label">
                     {
                         {
                             saved: 'Saved',

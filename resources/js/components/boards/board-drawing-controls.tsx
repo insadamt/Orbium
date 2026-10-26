@@ -1,3 +1,5 @@
+import { BoardPathControls } from './board-path-controls';
+import { BoardEraserControls } from './board-eraser-controls';
 import { BoardBrushPreview } from './board-brush-preview';
 import { BoardToolButton } from './board-tool-button';
 import { BoardToolbarHighlight } from './board-toolbar-highlight';
@@ -8,6 +10,7 @@ import type { BoardDrawingController } from './use-board-drawing';
 
 const drawingTools = [
     { tool: 'pen', label: 'Pen' },
+    { tool: 'path', label: 'Path Pen' },
     { tool: 'highlighter', label: 'Highlighter' },
     { tool: 'eraser', label: 'Eraser' },
 ] as const;
@@ -45,12 +48,20 @@ export function BoardDrawingControls({
                         key={option.tool}
                         label={
                             option.tool === 'eraser'
-                                ? 'Erase whole strokes'
+                                ? 'Erase parts of strokes'
                                 : option.label
+                        }
+                        tooltipSide="right"
+                        shortcut={
+                            option.tool === 'path'
+                                ? 'Enter to finish'
+                                : undefined
                         }
                         aria-pressed={tool === option.tool}
                         disabled={disabled}
-                        onClick={() => onChooseTool(option.tool)}
+                        onClick={() => {
+                            if (tool !== option.tool) onChooseTool(option.tool);
+                        }}
                     >
                         <BoardBrushPreview
                             tool={option.tool}
@@ -60,12 +71,18 @@ export function BoardDrawingControls({
                     </BoardToolButton>
                 ))}
             </div>
-            {tool !== 'eraser' && (
+            {tool === 'eraser' ? (
+                <BoardEraserControls drawing={drawing} disabled={disabled} />
+            ) : (
                 <BoardDrawingStyleControls
                     drawing={drawing}
+                    smoothingEnabled={tool !== 'path'}
                     highlighter={tool === 'highlighter'}
                     disabled={disabled}
                 />
+            )}
+            {tool === 'path' && (
+                <BoardPathControls drawing={drawing} disabled={disabled} />
             )}
         </div>
     );

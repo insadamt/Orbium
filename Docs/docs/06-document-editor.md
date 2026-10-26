@@ -2,6 +2,16 @@
 
 # Document editor specification
 
+## Inline icons (approved 2026-10-26)
+
+Document bodies now have a compact shared picker with Emoji, Icons, Brands and Custom sources, plus browser-local account/workspace Recent and Saved favorites. Type `/icon` or `:rocket` to insert an inline item. Categories, name search, a skin-tone filter, a keyboard-navigable grid and a preview/favorite footer replace the earlier large labeled cards. Custom workspace images insert in one click without the full Library management interface. Built-in icons inherit text size/color; custom PNG/JPEG/GIF/WebP icons reuse workspace Library attachments or upload through the existing image path. Click or keyboard-activate a built-in/custom icon to replace it; Backspace/Delete removes the whole icon. Emoji are ordinary Unicode text.
+
+The catalog includes all 3,972 Unicode Emoji 18.0 fully-qualified sequences/components, all 1,760 icon/alias names from installed Lucide 0.475.0 and all 3,463 installed Simple Icons 16.33.0 brands. Default tone shows unmodified emoji; All tones exposes every sequence, including mixed-tone variants and standalone components. Platform font support determines which newest emoji glyphs display. The picker does not truncate results; it mounts visible rows and loads SVG packs on demand. Colon completions show a short suggestion list with Browse all icons for the complete catalog. Rebuild local datasets using `npm run icons:generate`, then format the generated data with `npm exec -- vp check --fix resources/js/components/inline-icons/data public/third-party/inline-brands-sources.json`.
+
+Markdown uses validated `:orbium[label]{"icon":"rocket"}` spans or `:orbium[![label](orbium:attachment/123)]{"icon":"custom"}`. Brands use stable names such as `brand-github` within the existing built-in icon representation. Legacy JSON uses a version-1 `inlineIcon` atom. Both save endpoints now require `editor_features.inline_icons: 2` when icons are involved so clients with the earlier limited catalog cannot flatten/drop saved content. Deploy matching frontend/server and reload open editors; no migration. Formatting-preserving transfers retain the metadata; clean/legacy Markdown and Office exports use readable label/image fallbacks.
+
+This slice covers ordinary Markdown and legacy Document editors, including hosted Document cards. It does not extend native Board/Mind Map inline schemas; nested Markdown table-cell editors display existing icons without the main picker adapter. See [the original completion report](../reports/14-inline-icons.md) and [the redesigned picker report and checklist](../reports/14-inline-icons-picker-review.md).
+
 ## Product rule
 
 > Markdown speed + Notion interaction + Orbium minimalism.
@@ -865,3 +875,46 @@ not its host Board. Save validation rejects self-targets even when a reference w
 pasted or inserted outside completion. Existing self-mentions remain readable but
 must be removed before the next save. See
 `../reports/12-boards-inline-document-mention-rules.md` for manual checks.
+
+
+## Shared Mind Map block (2026-10-24)
+
+Insert **/Mind Map** in Markdown or legacy Documents. The shared block has a central topic, nested child/sibling topics, plain label editing, branch deletion, collapse/expand, guarded reparenting, keyboard controls and fit/zoom with scrolling. Document layout contains a 440-pixel viewport; it does not create a page type or hierarchy children. Boards use the same model/UI with freely positioned/resizable native viewport objects. See `24-boards.md` and `../phases/13-mindmap-block.md` for graph constraints and the explicitly limited core scope.
+
+Canonical Markdown keeps content format 2 and adds an atomic versioned directive:
+
+```text
+:::orbium {"kind":"mindmap","mindmap":{"version":1,"root_id":"root","topics":[{"id":"root","parent_id":null,"text":"Central topic","collapsed":false}]}}
+:::
+```
+
+The body must be empty. Unknown versions/fields and invalid trees fail validation rather than being rewritten. Older servers reject this new reserved directive kind. Matching clients should be deployed/reloaded together. Legacy Tiptap stores the same graph in `mindmap` atom attributes. Rich-widget disposal/reorders retain the existing lifecycle; editor islands defer their nested React mount/unmount to avoid colliding with parent React commits. Every accepted topic edit enters owner history/autosave immediately; normal Markdown and legacy autosave defer while the topic input is composing. Hosted Document sessions retain their existing conflict/recovery guards. Local controlled input state only bridges queued widget refreshes and is not an independent persistent copy.
+
+Plain labels are rendered as text, including HTML/Markdown-looking content. All topic labels feed Document search/plain text/statistics, including hidden descendants. They do not create mentions, attachments or Node relations. Formatting-preserving Document export keeps the directive; plain Markdown/legacy convenience Markdown and Word/PDF use an explicit full indented topic outline. No graphical map export/import is added. The exact user checklist is `../reports/13-mindmap-block.md`.
+
+
+Legacy compatibility guard: current normal/hosted legacy saves advertise `editor_features: {mindmap: 1}`. If a stored legacy Document contains a map and the request omits that capability, the server rejects the full save with 422 and a reload message. This prevents an older Tiptap schema from silently dropping unknown map atoms. Content/graph validation still applies to capable clients. Manually remove the capability from a copied legacy PUT that omits a saved map: expect rejection and unchanged stored revision/map; the current editor can intentionally delete that map and save.
+
+
+Mind Map review correction (2026-10-26): the shared canvas now has a compact header, a bottom topic panel and searchable parent picker. Editable passive Board maps expose **Edit**. F2/Space or double-click selects a topic label for renaming; keyboard branch deletion restores parent focus. Undo to collapsed ancestors keeps a visible selected topic. Actual asymmetric bounds avoid empty mirrored space; accepted edits retain the current scale, initial views remain readable at 65% or above, and explicit Fit can shrink the whole tree further. Selected topics are revealed within the inner canvas. Zoom/scroll remain transient; graph formats and owner persistence are unchanged. See `../reports/13-mindmap-review-correction.md` for manual checks.
+
+
+Mind Map fullscreen redesign (approved 2026-10-26): embedded maps now use the Mermaid/shared rich-card heading with Edit and fullscreen preview actions. Inline inspectors, hints, grid and view controls are removed. Edit opens a fullscreen dialog with a plain canvas, direct topic renaming, a vertically centered left topic toolbar, searchable parent panel, bottom zoom/Fit, real owner save status and Done. Board editing commands open this same surface. Read-only fullscreen preview has no mutation tools. Topic edits, Undo/Redo and IME guards remain owned by the original Board/Document despite the dialog portal. Document previews adapt within 200–440 pixels; Board viewport dimensions remain saved independently. See `../reports/13-mindmap-fullscreen-editor.md`; this supersedes the previous inline presentation correction without changing graph formats or later-phase scope.
+
+
+Mind Map text review (2026-10-26): topics grow/shrink with measured rich-text content instead of truncating after two lines. Editing uses the existing text extensions and shared selection formatting controls: bold, italic, underline, strike, code, safe links and text color. Toolbar positioning remains outside the scaled scene; text selection/pickers do not pan the canvas. Edited graphs explicitly use version 2 with validated inline content and matching plain text; version-1 labels remain literal on load. Shared rich-card/media surfaces and legacy Code/Math/Mermaid headings now follow the approved Mind Map presentation. See `../reports/13-mindmap-rich-text-and-sizing.md` for checks and exact manual acceptance.
+
+
+Block icon consistency correction (2026-10-26): technical headers now share canonical SVG glyphs across Document and Board renderers, with 20-pixel type icons and 17-pixel actions in 32-pixel buttons. Code keeps its main Code badge and shows the language logo beside the name/picker. Native/cached Board Mermaid fullscreen sits beside Edit in the header. File fallbacks use icon actions and keep their badge when metadata updates; real media players retain their own header. See `../reports/13-block-icon-consistency.md` for checks and exact manual acceptance.
+
+
+Mind Map topic-width review (2026-10-26): after selecting a topic and leaving label editing, drag its outward-edge grip to change width. Height remains automatic. Keyboard arrows adjust by 10 pixels (Shift: 50), Home/End choose limits, and double-click resets to 180. A drag previews locally and publishes one owner action on release; Escape/history during the drag cancels. Saved widths use graph version 3. Read-only and embedded views show the saved widths without grips. See `../reports/13-mindmap-topic-width.md` for checks and manual acceptance.
+
+
+Mind Map branch text commands (2026-10-26): editing a branch now supports mixed text blocks. Type `/` at the start of an empty paragraph/heading (including inside a list/quote/callout) to open a searchable menu with type icons: Text, Heading 1–3, Bullet list, Numbered list, Checklist, Quote, Callout and Code. Arrow keys choose; Enter/Tab applies; Escape dismisses the menu before ending editing on a subsequent press. Literal slash text stays text when the menu is dismissed, and code blocks keep slashes literal. Enter continues a paragraph/list/code block inside the topic; Shift+Enter inserts a soft break where supported. Tab/Shift+Tab indent/outdent list items. Escape or Ctrl/Cmd+Enter finishes editing. Once a topic is selected, existing Enter/Tab branch-creation shortcuts remain. Inline toolbar formatting and automatic height apply to the structured body; selected topics retain width adjustment. New graph version 4 saves exact text/body with original owner history and save guards, preserving older maps and widths. Static/readonly views render the saved block structure without editing controls. Tables, media and math/diagram widgets are outside these text commands. See `../reports/13-mindmap-branch-slash-commands.md` for actual checks and manual acceptance.
+
+
+Mind Map manual-width repair (2026-10-26): the selected branch now has a visible horizontal-arrow grip at its bottom outward corner, including while its text editor is active. Dragging retains the text caret and uses the existing transient/one-commit resize behavior. The left dock also has **Branch width**, opening a 100–800 px number field with **Apply** and **Reset** (180 px). Enter applies, Escape closes the panel and restores focus to its dock button; closing without applying discards the local draft. Height stays automatic. Graph versions and owner persistence/history are unchanged; resizing structured text retains graph 4. Read-only/embedded maps expose neither grip nor width panel. This supersedes the earlier requirement to leave text editing before finding a narrow grip. See `../reports/13-mindmap-manual-width-repair.md`.
+
+
+Mind Map hierarchy templates (approved 2026-10-26): fullscreen Edit has a **Templates** control at the upper right of the canvas. Its visual picker offers Balanced mind map, Right-facing tree, Left-facing tree, Top-down hierarchy, Bottom-up hierarchy, Outline tree, Brace map, Fishbone and Timeline. For Timeline, reopen Templates to choose Horizontal or Vertical. Selecting a different layout commits one original owner action, retaining IDs, ancestry, plain/rich text, topic widths and collapsed descendants. Selecting the active layout or dismissing the picker does not save. Measured text height and variable widths drive each layout's spacing and connectors; Fit, scrolling and branch resizing remain available. The templates rearrange existing content without inserting sample topics. Timeline uses existing sibling order without dates, scheduling or durations. Fishbone keeps the existing root as the outcome and direct branches as cause groups. Arrow navigation follows branch growth (left/right or up/down); Outline retains the standard Right-child/Left-parent behavior. Read-only/embedded views render the saved layout without a picker. Graph version 5 persists the choice; older maps default to Balanced. See `../reports/13-mindmap-hierarchy-templates.md` and the static gallery `../previews/13-mindmap-templates.html`.

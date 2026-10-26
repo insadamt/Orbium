@@ -2,6 +2,8 @@
 
 namespace App\Services\Statistics;
 
+use App\Services\MindMaps\MindMapData;
+
 final class LegacyDocumentStatistics
 {
     /** @param array<string, mixed> $content */
@@ -32,7 +34,7 @@ final class LegacyDocumentStatistics
             'codeBlock' => 'code',
             'blockMath' => 'math',
             'horizontalRule' => 'divider',
-            'callout', 'table', 'image', 'file', 'mermaid' => $type,
+            'callout', 'table', 'image', 'file', 'mermaid', 'mindmap' => $type,
             default => null,
         };
         if ($type === 'inlineMath') {
@@ -47,8 +49,9 @@ final class LegacyDocumentStatistics
         }
         $text = match ($type) {
             'text' => (string) ($node['text'] ?? ''),
-            'mention' => (string) ($attrs['label'] ?? ''),
+            'mention', 'inlineIcon' => (string) ($attrs['label'] ?? ''),
             'blockMath', 'inlineMath' => (string) ($attrs['latex'] ?? ''),
+            'mindmap' => app(MindMapData::class)->text($attrs['mindmap']),
             'mermaid' => (string) ($attrs['source'] ?? ''),
             'image' => implode(' ', array_filter([$attrs['alt'] ?? '', $attrs['caption'] ?? ''])),
             'file' => (string) ($attrs['name'] ?? $attrs['fileName'] ?? ''),

@@ -4,7 +4,7 @@ import {
     useRef,
     useSyncExternalStore,
 } from 'react';
-import { Pencil, Workflow } from 'lucide-react';
+import { RichBlockIcon } from '@/components/editor/ui/rich-block-icon';
 import { instantiateMermaidSvg } from '@/components/editor/mermaid-preview-renderer';
 import { createMermaidPreviewControls } from '@/components/editor/mermaid-preview-controls';
 import type { BoardContentProps } from '../board-text-block';
@@ -16,6 +16,7 @@ export function BoardPreparedSurface(
 ) {
     const { scene, object, readOnly } = props;
     const host = useRef<HTMLDivElement>(null);
+    const diagramActions = useRef<HTMLDivElement>(null);
     const callbacks = useRef(props);
     callbacks.current = props;
     const subscribe = useCallback(
@@ -71,7 +72,9 @@ export function BoardPreparedSurface(
         preview.innerHTML = instantiateMermaidSvg(visual.preview);
         const controls = createMermaidPreviewControls();
         controls.update(visual.preview);
-        output.append(controls.button, preview);
+        controls.button.className = 'attachment-action';
+        diagramActions.current?.append(controls.button);
+        output.append(preview);
         return () => controls.destroy();
     }, [
         scene,
@@ -136,13 +139,17 @@ export function BoardPreparedSurface(
             >
                 <div className="attachment-heading orbium-rich-card-heading">
                     <span className="attachment-type-icon">
-                        <Workflow size={20} />
+                        <RichBlockIcon name="diagram" />
                     </span>
                     <div className="attachment-identity">
-                        <div className="attachment-title">Diagram</div>
-                        <span className="attachment-description">Mermaid</span>
+                        <div className="attachment-title">Mermaid</div>
+                        <span className="attachment-description">Diagram</span>
                     </div>
-                    <div className="attachment-actions" data-board-interactive>
+                    <div
+                        ref={diagramActions}
+                        className="attachment-actions"
+                        data-board-interactive
+                    >
                         <button
                             type="button"
                             className="attachment-action"
@@ -151,7 +158,7 @@ export function BoardPreparedSurface(
                             disabled={readOnly}
                             onClick={props.onStartEditing}
                         >
-                            <Pencil size={17} />
+                            <RichBlockIcon name="edit" size={17} />
                         </button>
                     </div>
                 </div>

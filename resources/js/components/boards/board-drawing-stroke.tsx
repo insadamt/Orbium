@@ -1,4 +1,4 @@
-import { boardDrawingPath } from './board-drawing-data';
+import { boardDrawingStrokePath } from './board-drawing-data';
 import type { BoardDrawing } from './board-types';
 
 export function BoardDrawingStroke({ drawing }: { drawing: BoardDrawing }) {
@@ -10,7 +10,7 @@ export function BoardDrawingStroke({ drawing }: { drawing: BoardDrawing }) {
             aria-hidden="true"
         >
             <path
-                d={boardDrawingPath(drawing.points)}
+                d={boardDrawingStrokePath(drawing)}
                 fill="none"
                 stroke={drawing.color}
                 strokeWidth={drawing.stroke_width}

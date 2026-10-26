@@ -8,7 +8,7 @@ final class BoardSaveRules
     public static function rules(): array
     {
         return [
-            'format_version' => ['required', 'integer', 'in:5'],
+            'format_version' => ['required', 'integer', 'in:'.BoardContent::FORMAT_VERSION],
             'revision' => ['required', 'integer', 'min:0', 'max:9007199254740990'],
             ...self::objects('objects'),
         ];

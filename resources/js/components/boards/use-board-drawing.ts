@@ -1,3 +1,4 @@
+import { useBoardPathDrawing } from './use-board-path-drawing';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import {
@@ -8,10 +9,10 @@ import {
 import {
     boardDrawingPath,
     boardDrawingPointLimit,
-    boardEraserHitsStroke,
     createBoardDrawingObject,
     type BoardBrush,
 } from './board-drawing-data';
+import { BoardEraserSession, boardEraserCursor } from './board-eraser-session';
 import type { BoardObjectsController } from './use-board-objects';
 import type { BoardCameraController } from './use-board-camera';
 import {
@@ -27,7 +28,7 @@ type DrawingGesture = {
     smoothing: BoardDrawingSmoothing;
     zoom: number;
     endpoint: BoardPoint | null;
-    erasedIds: Set<string>;
+    eraser: BoardEraserSession | null;
     lastEraserPoint: BoardPoint;
     pendingEraserPoints: BoardPoint[];
     limited: boolean;
@@ -43,11 +44,24 @@ export function useBoardDrawing(
         color: 'currentColor',
         width: 3,
     });
+    const path = useBoardPathDrawing(model, camera, brush, isLocked);
+    const [eraserSize, setEraserSize] = useState(16);
     const [smoothing, setSmoothing] = useState<BoardDrawingSmoothing>('light');
     const previewPathRef = useRef<SVGPathElement>(null);
     const gesture = useRef<DrawingGesture | null>(null);
     const frame = useRef<number | undefined>(undefined);
     const viewportRef = camera.viewportRef;
+
+    useEffect(() => {
+        const viewport = viewportRef.current;
+        viewport?.style.setProperty(
+            '--board-eraser-cursor',
+            boardEraserCursor(eraserSize),
+        );
+        return () => {
+            viewport?.style.removeProperty('--board-eraser-cursor');
+        };
+    }, [eraserSize, viewportRef]);
 
     function paintPreview() {
         frame.current = undefined;
@@ -67,41 +81,25 @@ export function useBoardDrawing(
             );
             return;
         }
-        const radius = 10 / camera.cameraRef.current.zoom;
         for (const point of current.pendingEraserPoints.splice(0)) {
-            for (const object of model.objectsRef.current) {
-                if (
-                    current.erasedIds.has(object.id) ||
-                    !boardEraserHitsStroke(
-                        object,
-                        current.lastEraserPoint,
-                        point,
-                        radius,
-                    )
-                )
-                    continue;
-                current.erasedIds.add(object.id);
-                viewportRef.current
-                    ?.querySelector<HTMLElement>(
-                        `[data-board-object-id="${object.id}"]`,
-                    )
-                    ?.setAttribute('data-board-erasing', 'true');
-            }
+            current.eraser?.eraseSweep(
+                model.objectsRef.current,
+                current.lastEraserPoint,
+                point,
+            );
             current.lastEraserPoint = point;
         }
+        current.eraser?.paintPreview(viewportRef.current);
     }
 
     function clearPreview() {
-        const active = gesture.current !== null;
+        const pathActive = path.cancel();
+        const active = gesture.current !== null || pathActive;
+        gesture.current?.eraser?.restorePreview();
         gesture.current = null;
         if (frame.current !== undefined) cancelAnimationFrame(frame.current);
         frame.current = undefined;
         previewPathRef.current?.setAttribute('d', '');
-        viewportRef.current
-            ?.querySelectorAll('[data-board-erasing]')
-            .forEach((element) =>
-                element.removeAttribute('data-board-erasing'),
-            );
         return active;
     }
 
@@ -113,7 +111,14 @@ export function useBoardDrawing(
         [],
     );
 
-    function start(tool: BoardDrawingTool, point: BoardPoint) {
+    function start(tool: BoardDrawingTool, point: BoardPoint, shift = false) {
+        if (tool === 'path') {
+            if (isLocked()) return;
+            model.finishEditing();
+            model.select([]);
+            path.addPoint(point, shift);
+            return;
+        }
         clearPreview();
         if (isLocked()) return;
         model.finishEditing();
@@ -126,7 +131,12 @@ export function useBoardDrawing(
             smoothing,
             zoom: camera.cameraRef.current.zoom,
             endpoint: null,
-            erasedIds: new Set(),
+            eraser:
+                tool === 'eraser'
+                    ? new BoardEraserSession(
+                          eraserSize / 2 / camera.cameraRef.current.zoom,
+                      )
+                    : null,
             lastEraserPoint: point,
             pendingEraserPoints: [],
             limited: false,
@@ -203,13 +213,19 @@ export function useBoardDrawing(
         if (frame.current !== undefined) cancelAnimationFrame(frame.current);
         paintPreview();
         if (!isLocked()) {
-            if (current.tool === 'eraser' && current.erasedIds.size) {
-                model.commit(
-                    model.objectsRef.current.filter(
-                        (object) => !current.erasedIds.has(object.id),
-                    ),
-                );
-            } else if (current.tool !== 'eraser' && current.points.length) {
+            if (current.tool === 'eraser') {
+                const nextObjects = current.eraser?.limited
+                    ? null
+                    : current.eraser?.createObjects(model.objectsRef.current);
+                clearPreview();
+                if (current.eraser?.limited)
+                    toast.info(
+                        'Erase a smaller area in one drag. This erasure was canceled.',
+                    );
+                else if (nextObjects) model.commit(nextObjects);
+                return;
+            }
+            if (current.points.length) {
                 const layer = model.objectsRef.current.reduce(
                     (highest, object) => Math.max(highest, object.layer + 1),
                     0,
@@ -231,10 +247,13 @@ export function useBoardDrawing(
     }
 
     return {
+        path,
         brush,
         setBrush,
         smoothing,
         setSmoothing,
+        eraserSize,
+        setEraserSize,
         previewPathRef,
         start,
         move,

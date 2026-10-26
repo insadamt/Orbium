@@ -1,3 +1,7 @@
+import {
+    validMindMap,
+    mindMapOutline,
+} from '@/components/mindmap/mindmap-data';
 import type { EditorDocument } from './editor-api';
 import { attachmentUrl } from './editor-api';
 
@@ -43,6 +47,10 @@ function renderBlock(node: EditorDocument, context: ExportContext): string {
                 children.map((child) => child.text ?? '').join(''),
                 attributeText(node.attrs?.language),
             );
+        case 'mindmap':
+            if (!validMindMap(node.attrs?.mindmap))
+                throw new Error('Unsupported Mind Map. Original data is kept.');
+            return mindMapOutline(node.attrs.mindmap);
         case 'mermaid':
             return fencedCode(attributeText(node.attrs?.source), 'mermaid');
         case 'blockMath':
@@ -102,6 +110,14 @@ function renderInline(nodes: EditorDocument[], context: ExportContext): string {
             if (node.type === 'hardBreak') return '  \n';
             if (node.type === 'inlineMath')
                 return `$${attributeText(node.attrs?.latex)}$`;
+            if (node.type === 'inlineIcon') {
+                const label = escapeLabel(
+                    attributeText(node.attrs?.label || 'Icon'),
+                );
+                return node.attrs?.kind === 'custom'
+                    ? `![${label}](${assetUrl(node, context)})`
+                    : label;
+            }
             if (node.type === 'mention') {
                 const label = `@${attributeText(node.attrs?.label ?? node.attrs?.id)}`;
                 const url = `${context.origin}/workspaces/${context.workspaceId}/nodes/${attributeText(node.attrs?.id)}`;

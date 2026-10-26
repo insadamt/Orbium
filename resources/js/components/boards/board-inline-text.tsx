@@ -3,7 +3,13 @@ import { isValidTextColor } from '@/components/editor/text-color';
 import { safeBoardLink } from './board-block-data';
 import type { BoardInline } from './board-types';
 
-export function BoardInlinePreview({ content }: { content: BoardInline[] }) {
+export function BoardInlinePreview({
+    content,
+    linksInteractive = true,
+}: {
+    content: BoardInline[];
+    linksInteractive?: boolean;
+}) {
     return (
         <>
             {content.map((node, index) => {
@@ -22,7 +28,7 @@ export function BoardInlinePreview({ content }: { content: BoardInline[] }) {
                         typeof mark.attrs.href === 'string' &&
                         safeBoardLink(mark.attrs.href)
                     )
-                        output = (
+                        output = linksInteractive ? (
                             <a
                                 data-board-interactive
                                 href={mark.attrs.href}
@@ -31,6 +37,8 @@ export function BoardInlinePreview({ content }: { content: BoardInline[] }) {
                             >
                                 {output}
                             </a>
+                        ) : (
+                            <span className="underline">{output}</span>
                         );
                     if (
                         mark.type === 'textColor' &&

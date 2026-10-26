@@ -1,3 +1,10 @@
+import { createMindMap } from '@/components/mindmap/mindmap-data';
+import { markdownIconCompletion } from '@/components/inline-icons/markdown-icon-completion';
+import {
+    openMarkdownIconPicker,
+    inlineIconEditing,
+} from '@/components/inline-icons/markdown-icon-widget';
+import { serializeOrbiumBlock } from './dialect/metadata';
 import {
     markdownCompletionMenu,
     completionMenuIcon,
@@ -23,6 +30,7 @@ import {
 
 export type MarkdownUploadKind = 'image' | 'file' | 'video' | 'audio' | 'pdf';
 export type MarkdownUploadRequest = {
+    inlineIcon?: boolean;
     imageMetadata?: OrbiumMetadata;
     presentation?: OrbiumMetadata;
     wrappers?: OrbiumMetadata[];
@@ -40,6 +48,15 @@ export type MarkdownBlockTemplate = {
 
 export const markdownBlockTemplates: MarkdownBlockTemplate[] = [
     { label: 'Text', search: 'paragraph plain', source: '', caret: 0 },
+    {
+        label: 'Mind Map',
+        search: 'mindmap topics branches tree xmind',
+        source: serializeOrbiumBlock({
+            kind: 'mindmap',
+            mindmap: createMindMap(),
+        }),
+        caret: 0,
+    },
     { label: 'Heading 1', search: 'h1 title', source: '# ', caret: 2 },
     { label: 'Heading 2', search: 'h2 subtitle', source: '## ', caret: 3 },
     { label: 'Heading 3', search: 'h3', source: '### ', caret: 4 },
@@ -112,6 +129,14 @@ export function insertBlockTemplate(
     from: number,
     to: number,
 ) {
+    if (template.label === 'Mind Map')
+        template = {
+            ...template,
+            source: serializeOrbiumBlock({
+                kind: 'mindmap',
+                mindmap: createMindMap(),
+            }),
+        };
     const line = view.state.doc.lineAt(from);
     const prefix = view.state.sliceDoc(line.from, from);
     const replaceFrom = prefix.trim() ? from : line.from;
@@ -190,6 +215,12 @@ export function markdownSlashCommands(
                     to: number,
                 ) => insertBlockTemplate(view, template, from, to),
             }));
+        if ('inline icon emoji symbol'.includes(query))
+            options.push({
+                label: 'Inline icon',
+                apply: (view, _completion, from, to) =>
+                    openMarkdownIconPicker(view, { from, to }),
+            });
         for (const kind of [
             'image',
             'file',
@@ -230,10 +261,12 @@ export function markdownSlashCommands(
         return true;
     }
     return [
+        inlineIconEditing.of(true),
         markdownCompletionMenu,
         autocompletion({
             override: [
                 slashSource,
+                markdownIconCompletion,
                 ...(allowMentions && sourceId
                     ? [markdownMentionSource(workspaceId, sourceId)]
                     : []),

@@ -49,7 +49,9 @@ export function mountCode(mount: RichWidgetMount): RichController {
         language.append(option);
     }
     heading.icon.style.color = 'var(--foreground)';
-    heading.title.replaceChildren(language);
+    const languageIcon = element('span', 'rich-code-language-icon');
+    heading.title.classList.add('rich-code-language-title');
+    heading.title.replaceChildren(languageIcon, language);
     const languageSelect = mountCodeLanguageSelect(language);
     const copyButton = mountCodeCopyButton(
         heading.actions,
@@ -107,7 +109,7 @@ export function mountCode(mount: RichWidgetMount): RichController {
         language.value = name;
         language.disabled = !mount.view.state.facet(EditorView.editable);
         languageSelect.update();
-        heading.icon.replaceChildren(createCodeLanguageIcon(name));
+        languageIcon.replaceChildren(createCodeLanguageIcon(name));
         input.update(next.content, name, language.disabled);
         return true;
     }

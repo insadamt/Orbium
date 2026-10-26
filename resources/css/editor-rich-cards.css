@@ -1,7 +1,9 @@
+.orbium-rich-card,
 .orbium-editor .orbium-rich-card {
     padding: 0;
     border-radius: 18px;
-    background: color-mix(in srgb, var(--card) 92%, transparent);
+    background: var(--card);
+    border: 1px solid var(--border);
 }
 
 .orbium-rich-card-heading {
@@ -15,7 +17,7 @@
     padding: 16px;
     overflow: auto;
     border-radius: 11px;
-    background: color-mix(in srgb, var(--muted) 65%, var(--background));
+    background: color-mix(in srgb, var(--muted) 45%, var(--background));
 }
 
 .orbium-rich-card .orbium-rich-card-code {
@@ -28,6 +30,8 @@
     padding: 16px;
     margin: 4px 10px 10px;
     border-radius: 11px;
+    border: 0;
+    background: color-mix(in srgb, var(--muted) 45%, var(--background));
 }
 
 .orbium-rich-card .orbium-rich-card-error {
@@ -85,4 +89,45 @@
 
 .orbium-rich-card [data-mermaid-preview] {
     width: calc(100% - 20px) !important;
+}
+
+.rich-block-glyph {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    line-height: 0;
+}
+.rich-code-language-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+}
+.rich-code-language-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 16px;
+}
+.rich-code-language-icon svg {
+    width: 16px;
+    height: 16px;
+}
+.orbium-rich-card .attachment-type-icon > svg,
+.orbium-rich-card .attachment-type-icon .rich-block-glyph > svg {
+    width: 20px;
+    height: 20px;
+    stroke-width: 2;
+}
+.orbium-rich-card .attachment-actions .attachment-action {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    padding: 0;
+}
+.orbium-rich-card .attachment-action svg {
+    width: 17px;
+    height: 17px;
+    stroke-width: 2;
 }

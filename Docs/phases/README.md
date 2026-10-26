@@ -18,7 +18,7 @@ The phases are designed to produce manually inspectable results without letting 
 
 The 2026-10-18 Boards feature begins with `09-boards-foundation.md`. Its subsequent feature phases require the same explicit approval gate and do not imply approval of the existing release phases.
 
-Boards phases 1–3, including the independent native-block correction in `11-boards-native-correction.md`, were approved on 2026-10-18. Phase 4 is authorized by “okey go ahead”: follow `12-boards-resource-cards.md` and stop after `../reports/12-boards-resource-cards.md` for manual review. The initial document-fragment implementation remains superseded. Mind Maps require a separate approval and the missing source requirements.
+Boards phases 1–3, including the independent native-block correction in `11-boards-native-correction.md`, were approved on 2026-10-18. Phase 4 is authorized by “okey go ahead”: follow `12-boards-resource-cards.md` and stop after `../reports/12-boards-resource-cards.md` for manual review. The initial document-fragment implementation remains superseded. The user explicitly authorized phase 5 on 2026-10-24 with “okey work on the mindmap block go ahead”. Follow `13-mindmap-block.md` for the confirmed core, scope interpretation of the truncated source and the manual-review gate.
 
 After every phase:
 

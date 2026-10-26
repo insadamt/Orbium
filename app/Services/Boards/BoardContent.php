@@ -10,7 +10,7 @@ use Illuminate\Validation\ValidationException;
 
 final class BoardContent
 {
-    public const FORMAT_VERSION = 5;
+    public const FORMAT_VERSION = 7;
 
     /** @return array<string, mixed> */
     public function snapshot(Node $node): array

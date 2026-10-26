@@ -8,6 +8,8 @@ use App\Models\Attachment;
 use App\Models\DatabaseProperty;
 use App\Models\DatabaseValue;
 use App\Models\Node;
+use App\Services\Editor\EditorContentInspector;
+use App\Services\Editor\InlineIconData;
 use App\Services\Editor\MermaidPreviewCache;
 use App\Services\Markdown\MarkdownContract;
 use App\Services\Markdown\MarkdownDocumentInspector;
@@ -68,6 +70,17 @@ class DocumentController extends Controller
         if (strlen(json_encode($data['content'], JSON_THROW_ON_ERROR)) > 1048576) {
             return response()->json(['message' => 'Document content exceeds 1 MB.'], 422);
         }
+        //
+        // An older Tiptap schema may drop unknown atoms before sending its whole-document save.
+        //
+        if ((int) $request->input('editor_features.mindmap', 0) < app(EditorContentInspector::class)->mindMapVersion($documentNode->document?->content ?? [])) {
+            throw ValidationException::withMessages(['content_format_version' => 'This Document contains Mind Maps. Reload Orbium before saving with this editor.']);
+        }
+        if ((int) $request->input('editor_features.inline_icons', 0) < 2
+            && (app(EditorContentInspector::class)->hasInlineIcons($documentNode->document?->content ?? [])
+                || app(EditorContentInspector::class)->hasInlineIcons($data['content']))) {
+            throw ValidationException::withMessages(['content_format_version' => 'This Document contains inline icons. Reload Orbium before saving with this editor.']);
+        }
         $validatedAt = hrtime(true);
         $document = $save->save($documentNode, $data['content'], $data['revision']);
 
@@ -93,6 +106,11 @@ class DocumentController extends Controller
             'attachment_ids' => ['prohibited'],
             'mermaid_sources_by_hash' => ['prohibited'],
         ]);
+        if ((int) $request->input('editor_features.inline_icons', 0) < 2
+            && (app(InlineIconData::class)->markdownHasIcons($documentNode->document?->markdown ?? '')
+                || app(InlineIconData::class)->markdownHasIcons($data['markdown']))) {
+            throw ValidationException::withMessages(['content_format_version' => 'This Document contains inline icons. Reload Orbium before saving with this editor.']);
+        }
         $validatedAt = hrtime(true);
         $document = $save->save($documentNode, new MarkdownSaveData(
             $data['markdown'], (int) $data['revision'], (int) $data['content_format_version'],

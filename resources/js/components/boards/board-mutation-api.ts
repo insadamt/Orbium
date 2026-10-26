@@ -37,7 +37,7 @@ export function prepareBoardMutation(
         // Retain the exact serialized request through uncertain failures; newer edits wait behind this idempotent batch.
         //
         body: JSON.stringify({
-            format_version: 5,
+            format_version: 7,
             mutation_version: 1,
             mutation_id: mutationId,
             revision: snapshot.revision,

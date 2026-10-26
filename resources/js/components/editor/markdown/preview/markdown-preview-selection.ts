@@ -1,4 +1,5 @@
 import { normalizeMentionSelection } from './markdown-mention-selection';
+import { readMarkdownIcon } from '@/components/inline-icons/markdown-icon-source';
 import { syntaxTree } from '@codemirror/language';
 import { EditorSelection, EditorState } from '@codemirror/state';
 import type { SyntaxNode } from '@lezer/common';
@@ -26,7 +27,11 @@ function isMarkdownSpacingPosition(state: EditorState, position: number) {
     );
 }
 
-function visibleSpanPosition(state: EditorState, position: number): number {
+function visibleSpanPosition(
+    state: EditorState,
+    position: number,
+    bias = 0,
+): number {
     for (
         let node: SyntaxNode | null = syntaxTree(state).resolveInner(
             position,
@@ -36,6 +41,15 @@ function visibleSpanPosition(state: EditorState, position: number): number {
         node = node.parent
     ) {
         if (node.name !== 'OrbiumSpan') continue;
+        if (
+            readMarkdownIcon(state, node) &&
+            position > node.from &&
+            position < node.to
+        )
+            return bias < 0 ||
+                (bias === 0 && position - node.from < node.to - position)
+                ? node.from
+                : node.to;
         const metadata = node.getChild('OrbiumMetadata');
         const markers = node.getChildren('OrbiumSpanMark');
         const opening = markers[0];
@@ -82,8 +96,16 @@ export const markdownPreviewSelection = EditorState.transactionFilter.of(
             normalizeMentionSelection(
                 transaction.startState,
                 EditorSelection.range(
-                    visibleSpanPosition(transaction.startState, range.anchor),
-                    visibleSpanPosition(transaction.startState, range.head),
+                    visibleSpanPosition(
+                        transaction.startState,
+                        range.anchor,
+                        range.empty ? 0 : range.anchor === range.from ? -1 : 1,
+                    ),
+                    visibleSpanPosition(
+                        transaction.startState,
+                        range.head,
+                        range.empty ? 0 : range.head === range.from ? -1 : 1,
+                    ),
                 ),
                 transaction.startState.selection.ranges[index]?.head ??
                     transaction.startState.selection.main.head,

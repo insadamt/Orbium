@@ -1,3 +1,5 @@
+import { createMindMap } from '@/components/mindmap/mindmap-data';
+import { openLegacyIconPicker } from '@/components/inline-icons/inline-icon-node';
 import type { Editor } from '@tiptap/core';
 
 export type BlockCommand = {
@@ -7,6 +9,25 @@ export type BlockCommand = {
 };
 
 export const blockCommands: BlockCommand[] = [
+    {
+        label: 'Inline icon',
+        search: 'icon emoji symbol custom',
+        run: (editor) => openLegacyIconPicker(editor),
+    },
+    {
+        label: 'Mind Map',
+        search: 'mindmap topics branches tree xmind',
+        run: (editor) => {
+            editor
+                .chain()
+                .focus()
+                .insertContent({
+                    type: 'mindmap',
+                    attrs: { mindmap: createMindMap() },
+                })
+                .run();
+        },
+    },
     {
         label: 'Text',
         search: 'paragraph plain',

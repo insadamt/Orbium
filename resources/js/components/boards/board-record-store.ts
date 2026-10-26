@@ -13,6 +13,11 @@ type BoardRecordTransaction = {
     bytes: number;
     notifyHistory?: boolean;
     persist?: boolean;
+    motion?: 'change' | 'reset';
+};
+export type BoardVisualChange = {
+    kind: 'change' | 'reset';
+    changes: ReadonlyMap<string, BoardRecordChange>;
 };
 export type BoardObjectSource = BoardObject[] | (() => BoardObject[]);
 export const materializeBoardObjects = (source: BoardObjectSource) =>
@@ -40,6 +45,7 @@ export class BoardRecordStore {
     private layoutListeners = new Set<Listener>();
     private historyListeners = new Set<Listener>();
     private changeListeners = new Set<(ids: Iterable<string>) => void>();
+    private visualListeners = new Set<(change: BoardVisualChange) => void>();
     readonly history = new BoardRecordHistory();
 
     constructor(
@@ -58,6 +64,13 @@ export class BoardRecordStore {
         this.subscribe(this.layoutListeners, listener);
     readonly subscribeHistory = (listener: Listener) =>
         this.subscribe(this.historyListeners, listener);
+
+    subscribeVisualChanges(listener: (change: BoardVisualChange) => void) {
+        this.visualListeners.add(listener);
+        return () => {
+            this.visualListeners.delete(listener);
+        };
+    }
 
     subscribeChanges(listener: (ids: Iterable<string>) => void) {
         this.changeListeners.add(listener);
@@ -163,7 +176,13 @@ export class BoardRecordStore {
                 null,
             );
         else if (!rememberInsertion) this.history.clear();
-        this.publish({ changes, order, bytes, persist: false });
+        this.publish({
+            changes,
+            order,
+            bytes,
+            persist: false,
+            motion: rememberInsertion ? 'change' : 'reset',
+        });
     }
 
     undo() {
@@ -225,6 +244,7 @@ export class BoardRecordStore {
         bytes,
         notifyHistory = true,
         persist = true,
+        motion = persist && notifyHistory ? 'change' : undefined,
     }: BoardRecordTransaction) {
         let geometryChanged = order !== this.order;
         for (const { id, before, after } of changes.values()) {
@@ -240,6 +260,17 @@ export class BoardRecordStore {
         //
         // Publish a completed transaction before notifying any subscriber so cards, selection and persistence observe one coherent version.
         //
+        if (motion) {
+            for (const listener of this.visualListeners) {
+                try {
+                    listener({ kind: motion, changes });
+                } catch {
+                    //
+                    // Decorative effects must never interrupt an accepted history or persistence transaction.
+                    //
+                }
+            }
+        }
         if (persist) this.onChanged(this.getObjects);
         if (changes.size)
             this.changeListeners.forEach((listener) =>

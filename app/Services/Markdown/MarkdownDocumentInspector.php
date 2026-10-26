@@ -3,6 +3,7 @@
 namespace App\Services\Markdown;
 
 use App\Services\Editor\DocumentInspectionResult;
+use App\Services\MindMaps\MindMapData;
 use App\Services\Statistics\MarkdownDocumentStatistics;
 use League\CommonMark\Extension\CommonMark\Node\Block\FencedCode;
 use League\CommonMark\Extension\CommonMark\Node\Inline\AbstractWebResource;
@@ -68,6 +69,9 @@ final class MarkdownDocumentInspector
         }
         if ($node instanceof TaskListItemMarker || $node instanceof CalloutMarker) {
             return '';
+        }
+        if ($node instanceof OrbiumBlock && $node->kind() === 'mindmap') {
+            return app(MindMapData::class)->text($node->metadata['mindmap']);
         }
         if ($node instanceof OrbiumBlock && $node->kind() === 'math') {
             return (string) $node->metadata['latex'];

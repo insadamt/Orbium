@@ -1,3 +1,8 @@
+import { readMarkdownIcon } from '@/components/inline-icons/markdown-icon-source';
+import {
+    MarkdownIconWidget,
+    inlineIconEditing,
+} from '@/components/inline-icons/markdown-icon-widget';
 import {
     markdownLineDirection,
     markdownLinePresentation,
@@ -323,6 +328,22 @@ export function buildMarkdownPreview(
                     }
                 }
                 if (node.name === 'OrbiumSpan') {
+                    const icon = readMarkdownIcon(view.state, node);
+                    if (icon && icon.kind !== 'emoji') {
+                        replaceSyntax(
+                            node.from,
+                            node.to,
+                            new MarkdownIconWidget(
+                                icon,
+                                node.from,
+                                node.to,
+                                linkContext,
+                                view.state.facet(EditorView.editable) &&
+                                    view.state.facet(inlineIconEditing),
+                            ),
+                        );
+                        return false;
+                    }
                     const metadataNode = node.getChild('OrbiumMetadata');
                     const metadata =
                         metadataNode &&

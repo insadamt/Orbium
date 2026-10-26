@@ -20,6 +20,7 @@ final class OrbiumStructureValidator
         switch ($block->kind()) {
             case 'empty':
             case 'math':
+            case 'mindmap':
                 if ($children !== []) {
                     $this->invalid($block, 'This Orbium atom cannot have a body.');
                 }

@@ -178,6 +178,7 @@
 }
 .board-canvas:is(
     [data-tool='pen'],
+    [data-tool='path'],
     [data-tool='highlighter'],
     [data-tool='eraser']
 ) {
@@ -185,6 +186,7 @@
 }
 .board-canvas:is(
         [data-tool='pen'],
+        [data-tool='path'],
         [data-tool='highlighter'],
         [data-tool='eraser']
     )
@@ -217,8 +219,13 @@
     width: 100%;
     height: 100%;
 }
-.board-object[data-board-erasing='true'] {
-    opacity: 0.15;
+.board-canvas[data-tool='eraser'] {
+    cursor: var(--board-eraser-cursor, crosshair);
+}
+.board-eraser-size-sample {
+    display: block;
+    border: 1.5px solid currentColor;
+    border-radius: 50%;
 }
 @media (pointer: coarse) {
     .board-drawing-controls .board-tool-button {
@@ -249,4 +256,25 @@
     .board-drawing-tools .board-tool-button > .board-brush-preview {
         transition: none;
     }
+}
+
+.board-path-anchor {
+    x: calc(-3px * var(--board-inverse-zoom, 1));
+    y: calc(-3px * var(--board-inverse-zoom, 1));
+    width: calc(6px * var(--board-inverse-zoom, 1));
+    height: calc(6px * var(--board-inverse-zoom, 1));
+    fill: var(--card);
+    stroke: var(--foreground);
+    stroke-width: calc(1.25px * var(--board-inverse-zoom, 1));
+}
+.board-path-anchor[data-active='true'] {
+    fill: var(--foreground);
+}
+.board-path-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border);
 }

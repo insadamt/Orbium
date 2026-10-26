@@ -18,7 +18,10 @@ export function useDocumentAutosave(
     workspaceId: number,
     nodeId: number,
     initialRevision: number,
+    isComposing: () => boolean = () => false,
 ) {
+    const composing = useRef(isComposing);
+    composing.current = isComposing;
     const { tabId, active } = useDocumentTab();
     const hostedSession = useHostedDocumentSession();
     const activeTab = useRef(active);
@@ -43,6 +46,11 @@ export function useDocumentAutosave(
         cancelScheduledSave.current?.();
         cancelScheduledSave.current = null;
         if (pendingContent.current === null || stopped.current) return;
+        if (composing.current()) {
+            const timer = window.setTimeout(() => void flush(), 700);
+            cancelScheduledSave.current = () => clearTimeout(timer);
+            return;
+        }
         if (activeRequest.current) {
             flushAfterRequest.current = true;
             return;
@@ -66,6 +74,7 @@ export function useDocumentAutosave(
                     JSON.stringify({
                         content: json,
                         revision: revision.current,
+                        editor_features: { mindmap: 5, inline_icons: 2 },
                     }),
                 );
                 payloadCache.current = {

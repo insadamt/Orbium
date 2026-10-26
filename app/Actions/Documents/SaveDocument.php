@@ -6,6 +6,7 @@ use App\Models\Attachment;
 use App\Models\Document;
 use App\Models\Node;
 use App\Services\Editor\EditorContentInspector;
+use App\Services\Editor\InlineIconData;
 use App\Services\Editor\MermaidPreviewCache;
 use App\Services\References\SelfMentionGuard;
 use Illuminate\Support\Facades\DB;
@@ -33,6 +34,7 @@ class SaveDocument
 
             $this->validateMentions($node, array_keys($mentions));
             $this->validateAttachments($node, $attachmentIds);
+            app(InlineIconData::class)->validateAttachments($node, $content);
 
             $document->update([
                 ...$inspection->statistics->attributes($attachmentIds),

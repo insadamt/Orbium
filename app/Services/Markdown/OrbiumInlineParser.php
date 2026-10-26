@@ -2,6 +2,7 @@
 
 namespace App\Services\Markdown;
 
+use App\Services\Editor\InlineIconData;
 use Illuminate\Validation\ValidationException;
 use League\CommonMark\Environment\EnvironmentAwareInterface;
 use League\CommonMark\Environment\EnvironmentInterface;
@@ -83,6 +84,7 @@ final class OrbiumInlineParser implements EnvironmentAwareInterface, InlineParse
         foreach ($paragraph->children() as $child) {
             $span->appendChild($child);
         }
+        app(InlineIconData::class)->validateMarkdownSpan($span);
         $inlineContext->getContainer()->appendChild($span);
         $cursor->advanceBy(mb_strlen(substr($source, 0, $closingBracket + 1 + $jsonLength), 'UTF-8'));
 

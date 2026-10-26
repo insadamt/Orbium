@@ -31,7 +31,7 @@ final class BoardContentController extends Controller
     {
         $board = $access->visibleBoard($request->user(), $workspace, $node);
         $data = $request->validate([
-            'format_version' => ['required', 'integer', 'in:5'],
+            'format_version' => ['required', 'integer', 'in:'.BoardContent::FORMAT_VERSION],
             'mutation_version' => ['required', 'integer', 'in:1'],
             'revision' => ['required', 'integer', 'min:0', 'max:9007199254740990'],
             'mutation_id' => ['required', 'uuid'],

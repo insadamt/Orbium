@@ -1,3 +1,7 @@
+import { isMindMapComposing } from '@/components/mindmap/mindmap-composition';
+import { createInlineIconNode } from '@/components/inline-icons/inline-icon-node';
+import { LegacyInlineIcons } from '@/components/inline-icons/legacy-inline-icons';
+import { MindMapNode } from '@/components/mindmap/mindmap-node';
 import { useHostedLegacyDocument } from './use-hosted-document-activity';
 import { useHistoryLayoutMotion } from './use-history-layout-motion';
 import { LibraryPicker } from '@/components/library/library-picker';
@@ -112,6 +116,7 @@ export default function DocumentEditor({
     content,
     revision,
 }: Props) {
+    const editorRoot = useRef<HTMLDivElement>(null);
     const [menu, setMenu] = useState<EditorMenu | null>(null);
     const [uploadError, setUploadError] = useState('');
     const [importError, setImportError] = useState('');
@@ -120,7 +125,9 @@ export default function DocumentEditor({
     const fileInput = useRef<HTMLInputElement>(null);
     const markdownInput = useRef<HTMLInputElement>(null);
     const { status, error, navigationNotice, queueSave, saveNow } =
-        useDocumentAutosave(workspaceId, nodeId, revision);
+        useDocumentAutosave(workspaceId, nodeId, revision, () =>
+            isMindMapComposing(editorRoot.current),
+        );
 
     const mermaidSession = useMemo(
         () => new MermaidPreviewSession(workspaceId, nodeId),
@@ -132,6 +139,8 @@ export default function DocumentEditor({
     const extensions = useMemo(
         () => [
             createEditorPerformanceExtension(nodeId),
+            MindMapNode,
+            createInlineIconNode(workspaceId, nodeId),
             StarterKit.configure({
                 codeBlock: false,
                 dropcursor: false,
@@ -332,6 +341,8 @@ export default function DocumentEditor({
         <div
             className="relative"
             data-document-styles
+            data-mindmap-owner-status={status}
+            ref={editorRoot}
             data-editor-activity-active={
                 editorProfilingEnabled ? documentTab.active : undefined
             }
@@ -420,6 +431,11 @@ export default function DocumentEditor({
                     }}
                 />
             )}
+            <LegacyInlineIcons
+                editor={editor}
+                workspaceId={workspaceId}
+                nodeId={nodeId}
+            />
             <input
                 ref={fileInput}
                 aria-label="Upload document file"

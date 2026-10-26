@@ -1,3 +1,11 @@
+# Inline icon assets
+
+The complete installed Lucide 0.475.0 icon/alias catalog is available inline. The ISC license and attribution are distributed at `public/third-party/inline-icons-license.txt`. Existing Lucide application icons continue to use the installed package.
+
+Emoji names, categories and sequences derive from the official [Unicode Emoji 18.0 data](https://www.unicode.org/Public/18.0.0/emoji/emoji-test.txt). The original data is retained at `resources/data/inline-icons/emoji-test.txt`; Unicode License V3 is distributed at `public/third-party/inline-emoji-license.txt`. Emoji artwork comes from the user's platform fonts.
+
+Brand paths and names derive from the complete installed Simple Icons 16.33.0 catalog. Its CC0 license, original disclaimer and per-icon source/license/guideline metadata are distributed at `public/third-party/inline-brands-license.txt`, `public/third-party/inline-brands-disclaimer.md` and `public/third-party/inline-brands-sources.json`. See the [Simple Icons project](https://github.com/simple-icons/simple-icons) for attribution and source context.
+
 # Drawing dependencies
 
 The frontend distribution includes these notices at

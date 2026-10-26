@@ -1,3 +1,70 @@
+Inline icon picker review (2026-10-26): after the user reported poor UI/UX and requested all available emoji/icons, the picker now has compact source tabs, categories, search, skin tones, a keyboard grid and preview/save footer. Generated local catalogs contain all 3,972 Unicode Emoji 18.0 sequences/components, 1,760 installed Lucide icon/alias names and 3,463 Simple Icons brands. Custom images have a focused one-click picker. Virtual rows and 42 on-demand SVG packs bound mounted work. Existing saved names remain valid; both editor clients now advertise icon capability 2, so deploy matching frontend/server and reload. Read `reports/14-inline-icons-picker-review.md` for checks and manual acceptance. No migration, automated tests or Playwright; remain in inline-icon review.
+
+Inline icons (2026-10-26): the user approved Emoji / Built-in icons / My icons with “good start and go ahead”. Markdown and legacy Documents, including hosted cards, now have `/icon`, colon completions, Library image reuse/upload, replacement and local Recent/Favorites. Server validation/reference tracking and stale-client save guards preserve content; no migration. Deploy matching frontend/server and reload editors. Read `phases/14-inline-icons.md` and `reports/14-inline-icons.md` for actual checks, scope and exact manual acceptance. Native Board/Mind Map inline schemas are unchanged. No automated tests or Playwright; stop for icon manual review.
+
+Mind Map hierarchy templates (2026-10-26): the user approved all nine proposed layouts. Templates in fullscreen Edit offers Balanced, Right/Left tree, Top-down/Bottom-up hierarchy, Outline, Brace, Fishbone and Timeline (horizontal/vertical) with visual previews. Switching preserves topics, rich text, widths and collapse state and enters original owner history/saves. Graph version 5 adds validated `layout`; older maps stay balanced, text/width edits retain version 5, and legacy clients advertise capability 5. Deploy matching frontend/server and reload; no migration. Read `reports/13-mindmap-hierarchy-templates.md` and `previews/13-mindmap-templates.html`. No automated tests or Playwright; remain in phase-5 review.
+
+Mind Map manual-width repair (2026-10-26): the user still could not resize branches. The outward corner grip is now larger, shows a horizontal-arrow icon and remains available during text editing. A Branch width dock control accepts an exact 100–800 px width with Apply/Reset. Existing graph versions, auto-height, owner history and saves remain. See `reports/13-mindmap-manual-width-repair.md` for actual checks/manual acceptance. No automated tests or Playwright; remain in phase-5 review.
+
+Mind Map branch slash commands (2026-10-26): branches now support paragraph, H1–H3, bullet/numbered/checklists, quote, callout and code via `/` in an empty text block. Enter edits within a branch; Escape or Ctrl/Cmd+Enter finishes. Graph version 4 stores a validated structured topic body and exact plain-text projection, preserving versions 1–3 and widths. Legacy clients advertise capability 4. Deploy matching frontend/server and reload editors; no migration. Read `reports/13-mindmap-branch-slash-commands.md` for actual checks and exact manual acceptance. No automated tests or Playwright; remain in phase-5 review.
+
+Mind Map topic-width review (2026-10-26): selected topics now expose an outward-edge resize grip with automatic text height, keyboard adjustment, reset and one accepted owner action per drag. Graph version 3 adds optional topic width (100–800, default 180), preserving version-1/2 maps and rich formatting. Current legacy saves advertise capability 3; deploy matching client/server and reload editors. No migration is needed. Read `reports/13-mindmap-topic-width.md` for actual checks and exact manual steps. No automated tests or Playwright; remain in phase-5 review.
+
+Mind Map selection-border correction (2026-10-26): selected topics now use one existing frame border for selection and text focus, without an extra shadow or nested label/editor outline. Other control focus indicators remain. See `reports/13-mindmap-single-selection-border.md` for checks and manual steps. CSS-only; remain in phase-5 review.
+
+Block icon consistency correction (2026-10-26): the user reported that icons/controls were still inconsistent after the style pass. Technical block headers now share the same SVG source across React/Markdown renderers; Code keeps a type badge with a secondary language logo, Board Mermaid fullscreen moves beside Edit (including Instant Scene), and plain-file fallbacks use shared icon actions. Read `reports/13-block-icon-consistency.md` for actual checks and exact manual acceptance. No schema/backend changes, automated tests or Playwright; remain in phase-5 review.
+
+Mind Map rich text/sizing review (2026-10-26): the user requested automatic topic height, Document-like text/toolbar behavior and the approved block styling elsewhere. Topics now measure natural content, use shared inline formatting controls, and explicitly upgrade edited graphs to version 2 while preserving version-1 literal labels. Legacy saves advertise capability 2; deploy matching client/server and reload editors. Shared rich/media cards and legacy technical headings adopt the approved presentation. Read `reports/13-mindmap-rich-text-and-sizing.md` for actual checks, compatibility and exact manual acceptance. No automated tests or Playwright; remain in phase-5 review.
+
+Mind Map fullscreen redesign (2026-10-26): the user approved a Mermaid-style fitted preview with Edit/full-preview actions and a fullscreen editor. A plain canvas, vertically centered Board-style left tools, direct topic renaming, bottom zoom/Fit and real owner save status replace the inline panel. Read `reports/13-mindmap-fullscreen-editor.md` for actual checks, persistence/history/composition boundaries and exact manual acceptance. This supersedes the earlier presentation correction below; remain in phase-5 review. No automated tests or Playwright.
+
+Mind Map review correction (2026-10-26): reported styling and interaction problems are addressed within the existing phase. The Markdown wrapper no longer duplicates the canvas class/frame; actual tree bounds, stable readable zoom, visible keyboard selection, topic reveal, a searchable parent picker and explicit Board Edit improve the shared block. Read `reports/13-mindmap-review-correction.md` for actual checks and exact manual acceptance. No automated tests or Playwright; remain in Mind Map phase-5 review.
+
+Mind Map phase 5 (2026-10-24): the user explicitly authorized “okey work on the mindmap block go ahead”. Follow `phases/13-mindmap-block.md`. A shared version-1 topic tree now has native Board and Markdown/legacy Document adapters, graph validation, editing/history/autosave integration, and export fallbacks. The additive `2026_10_24_000002_add_mindmap_blocks.php` upgrades Boards to spatial format 7; deploy matching client/server/migration and reload open Boards. The supplied source remains truncated; this phase implements the confirmed core and basic topic controls only. Read `reports/13-mindmap-block.md` for actual checks, limits and exact manual acceptance. Stop for manual review after this phase; preserve the existing drawing/motion work below. No automated tests or Playwright.
+
+Board micro-motion review (2026-10-24): the user requested a broad animation
+pass and a complete inventory. Added accepted-change create/delete effects,
+edit/layout cues, drawing color/width transitions, selection/handle/control
+feedback, checkbox/Path Pen anchor feedback, placement/empty/save-status cues.
+Motion does not delay saves/history or replay object entrances on load/culling.
+Deletion uses bounded inert previews; rich media uses a summary, not a live clone.
+Reduced motion disables/cancels new effects. Read `reports/12-boards-micro-motion.md`
+and `docs/24-boards.md`. No format/backend change; remain in phase-4 review.
+
+Drawing style review (2026-10-24): the user requested a pen-shaped Path Pen
+illustration and color/width editing for existing drawing blocks. Path Pen now
+uses a fountain-pen body/nib; palette tooltips open beside rows. Selecting one
+drawing exposes the shared text-style color picker and stroke-width menu in its
+floating toolbar, with undo/save and safe frame expansion for thicker ink.
+Read `reports/12-boards-drawing-style-editing.md` and `docs/24-boards.md`.
+Format 6 is unchanged; remain in Board phase-4 manual review.
+
+Path Pen tool (2026-10-24): the user requested the illustrated point-by-point
+vector pen. Draw → Path Pen now creates straight connected corners with square
+anchors and a live next-segment preview. Enter/double-click/Finish saves an open
+path; clicking the first point closes it. Shift constrains 45° angles; Backspace
+or draft Ctrl/Cmd+Z removes the last point. Completed paths are ordinary single
+format-6 drawing objects, including partial-erasing/history/save behavior. Read
+`reports/12-boards-path-pen.md` and `docs/24-boards.md`. No schema/migration change;
+remain in Board phase-4 manual review.
+
+Single-block eraser correction (2026-10-24): the user clarified that partial
+erasing must keep one drawing block. Surviving ink now uses internal `breaks`
+indices, preserving the original UUID/frame and moving/resizing as one object.
+The additive `2026_10_24_000001_add_board_drawing_gaps.php` upgrades spatial format
+to 6; deploy matching migration/server/client and reload open Boards. Earlier
+format-5 drawings/drafts adapt explicitly; already-split blocks are not merged.
+Read `reports/12-boards-single-drawing-eraser.md` and `docs/24-boards.md`. This
+supersedes separate surviving drawing objects. Remain in phase-4 manual review.
+
+Partial eraser correction (2026-10-24): the user requested erasing only touched
+parts of ink and adjustable eraser size. Eraser now cuts polylines into surviving
+native drawing fragments, previews gaps live and commits one undoable drag.
+Four screen-space diameters (8/16/32/64 px) have a matching mouse cursor. Select,
+Escape/cancel, palette toggling, saves and format 5 remain in use. Read
+`reports/12-boards-partial-eraser.md` and `docs/24-boards.md`. This supersedes all
+whole-stroke-erasing descriptions below. Remain in Board phase-4 manual review.
+
 Drawing palette toggle clarification (2026-10-24): clicking the active Draw
 button now hides/shows settings while preserving Pen/Highlighter/Eraser mode and
 brush settings. Select or idle Escape exits drawing. This supersedes the earlier

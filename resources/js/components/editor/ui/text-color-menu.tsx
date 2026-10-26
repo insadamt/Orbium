@@ -27,6 +27,7 @@ export function TextColorMenu({
     active,
     currentColor,
     onOpen,
+    onClose,
     onChoose,
     colorLabel = 'Text color',
     presetColorFormat = 'token',
@@ -36,6 +37,7 @@ export function TextColorMenu({
     active: boolean;
     currentColor?: string;
     onOpen: () => void;
+    onClose?: () => void;
     onChoose: (color: string | null, keepOpen: boolean) => void;
 }) {
     const [open, setOpen] = useState(false);
@@ -94,7 +96,10 @@ export function TextColorMenu({
                     sideOffset={8}
                     aria-label={`${colorLabel} choices`}
                     className="editor-color-picker"
-                    onCloseAutoFocus={(event) => event.preventDefault()}
+                    onCloseAutoFocus={(event) => {
+                        event.preventDefault();
+                        onClose?.();
+                    }}
                 >
                     <div className="editor-color-picker-heading">
                         {colorLabel}

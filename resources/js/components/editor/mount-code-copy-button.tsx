@@ -8,6 +8,7 @@ function CodeCopyButton({ readCode }: { readCode: () => string }) {
         <>
             <CopyButton
                 type="button"
+                className="attachment-action"
                 content={readCode}
                 variant="ghost"
                 size="xs"

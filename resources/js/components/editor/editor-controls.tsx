@@ -250,7 +250,7 @@ export function SuggestionMenu({
 }) {
     const menuRef = useRef<HTMLDivElement>(null);
     const items =
-        menu.type === 'slash'
+        menu.type !== 'mention'
             ? menu.items.map((item) => ({
                   label: item.label,
                   action: () => {
@@ -338,7 +338,11 @@ export function SuggestionMenu({
             ref={menuRef}
             role="listbox"
             aria-label={
-                menu.type === 'slash' ? 'Block commands' : 'Mention items'
+                menu.type === 'slash'
+                    ? 'Block commands'
+                    : menu.type === 'icon'
+                      ? 'Inline icons'
+                      : 'Mention items'
             }
             className="app-menu-enter app-menu-content glass-surface fixed z-50 max-h-72 w-64 max-w-[calc(100vw-16px)] overflow-auto rounded-xl border border-border p-1 shadow-xl"
             style={{

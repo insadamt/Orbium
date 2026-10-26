@@ -1,4 +1,11 @@
+import { isBuiltinIcon } from '@/components/inline-icons/icon-catalog';
+import {
+    validMindMap,
+    type MindMapData,
+} from '@/components/mindmap/mindmap-data';
 export type OrbiumMetadata = {
+    icon?: string;
+    mindmap?: MindMapData;
     kind?: string;
     dir?: 'auto' | 'ltr' | 'rtl';
     align?: 'left' | 'center' | 'right';
@@ -71,7 +78,7 @@ function duplicateKeys(source: string): boolean {
 }
 
 const allowedKeys: Record<string, string[]> = {
-    inline: ['color', 'underline'],
+    inline: ['color', 'underline', 'icon'],
     block: [
         'kind',
         'dir',
@@ -84,6 +91,7 @@ const allowedKeys: Record<string, string[]> = {
     image: ['kind', 'caption', 'width', 'alignment'],
     empty: ['kind', 'dir', 'align'],
     math: ['kind', 'latex'],
+    mindmap: ['kind', 'mindmap'],
     code: ['kind'],
     table: ['kind'],
     row: ['kind'],
@@ -114,6 +122,10 @@ export function readOrbiumMetadata(
                 }
             }
             switch (key) {
+                case 'icon':
+                    if (value !== 'custom' && !isBuiltinIcon(value))
+                        return null;
+                    break;
                 case 'kind':
                     if (typeof value !== 'string') return null;
                     break;
@@ -206,6 +218,7 @@ export function readOrbiumMetadata(
                         return null;
             }
         }
+        if (kind === 'mindmap' && !validMindMap(metadata.mindmap)) return null;
         if (
             (kind === 'math' || kind === 'inline-math') &&
             typeof metadata.latex !== 'string'

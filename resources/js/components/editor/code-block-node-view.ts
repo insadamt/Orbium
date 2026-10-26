@@ -1,3 +1,4 @@
+import { widgetIcon } from './markdown/rich/widget-icons';
 import { mountCodeCopyButton } from './mount-code-copy-button';
 import { mountCodeLanguageSelect } from './mount-code-language-select';
 import type { NodeViewRendererProps } from '@tiptap/core';
@@ -32,26 +33,29 @@ export function createCodeBlockNodeView({
     let currentNode = node;
     const eventController = new AbortController();
     const dom = document.createElement('div');
-    dom.className =
-        'my-5 overflow-hidden rounded-xl border border-border bg-muted';
+    dom.className = 'orbium-code attachment-player orbium-rich-card my-5';
     dom.setAttribute('data-node-view-wrapper', '');
     dom.dir = node.attrs.dir;
 
     const toolbar = document.createElement('div');
     toolbar.contentEditable = 'false';
-    toolbar.className =
-        'flex items-center justify-between border-b border-border px-3 py-2 text-xs text-muted-foreground';
+    toolbar.className = 'attachment-heading orbium-rich-card-heading';
     const languageGroup = document.createElement('div');
-    languageGroup.className = 'flex items-center gap-2';
+    languageGroup.className = 'attachment-identity';
     let languageIcon = createCodeLanguageIcon(
         String(node.attrs.language ?? ''),
     );
     languageIcon.dataset.language = normalizeCodeLanguage(
         String(node.attrs.language || 'plaintext'),
     );
-    languageGroup.append(languageIcon);
+    const iconFrame = document.createElement('span');
+    iconFrame.className = 'attachment-type-icon';
+    iconFrame.append(widgetIcon('code', 20));
     const selectContainer = document.createElement('div');
-    selectContainer.className = 'relative flex items-center';
+    selectContainer.className = 'rich-code-language-title';
+    const languageBadge = document.createElement('span');
+    languageBadge.className = 'rich-code-language-icon';
+    languageBadge.append(languageIcon);
     const select = document.createElement('select');
     select.setAttribute('aria-label', 'Code language');
     select.className =
@@ -74,13 +78,15 @@ export function createCodeBlockNodeView({
         },
         { signal: eventController.signal },
     );
-    selectContainer.append(select);
+    selectContainer.append(languageBadge, select);
     const languageSelect = mountCodeLanguageSelect(select);
     languageGroup.append(selectContainer);
-    toolbar.append(languageGroup);
+    const actions = document.createElement('div');
+    actions.className = 'attachment-actions';
+    toolbar.append(iconFrame, languageGroup, actions);
 
     const copyButton = mountCodeCopyButton(
-        toolbar,
+        actions,
         () => currentNode.textContent,
     );
     dom.append(toolbar);
@@ -90,7 +96,11 @@ export function createCodeBlockNodeView({
     pre.dir = 'ltr';
     const contentDOM = document.createElement('code');
     pre.append(contentDOM);
-    dom.append(pre);
+    pre.style.background = 'transparent';
+    const surface = document.createElement('div');
+    surface.className = 'orbium-rich-card-code';
+    surface.append(pre);
+    dom.append(surface);
 
     return {
         dom,

@@ -3,14 +3,13 @@ import {
     type BoardDrawing,
     type BoardDrawingTool,
     type BoardObject,
-    type BoardPoint,
 } from './board-types';
 
 export const boardDrawingPointLimit = 6000;
 export type BoardBrush = { color: string; width: number };
 
 export function isBoardDrawingTool(tool: string): tool is BoardDrawingTool {
-    return ['pen', 'highlighter', 'eraser'].includes(tool);
+    return ['pen', 'path', 'highlighter', 'eraser'].includes(tool);
 }
 
 export function validBoardDrawing(value: unknown): value is BoardDrawing {
@@ -18,7 +17,8 @@ export function validBoardDrawing(value: unknown): value is BoardDrawing {
         return false;
     const drawing = value as BoardDrawing;
     return (
-        Object.keys(drawing).length === 6 &&
+        Object.keys(drawing).length ===
+            (Object.hasOwn(drawing, 'breaks') ? 7 : 6) &&
         ['view_width', 'view_height'].every((key) => {
             const size = drawing[key as 'view_width'];
             return (
@@ -36,6 +36,17 @@ export function validBoardDrawing(value: unknown): value is BoardDrawing {
         Array.isArray(drawing.points) &&
         drawing.points.length >= 1 &&
         drawing.points.length <= boardDrawingPointLimit &&
+        (!Object.hasOwn(drawing, 'breaks') ||
+            (Array.isArray(drawing.breaks) &&
+                drawing.breaks.length >= 1 &&
+                drawing.breaks.length < drawing.points.length &&
+                drawing.breaks.every(
+                    (index, position, indices) =>
+                        Number.isInteger(index) &&
+                        index > 0 &&
+                        index < drawing.points.length &&
+                        (position === 0 || index > indices[position - 1]),
+                ))) &&
         drawing.points.every(
             (point) =>
                 Array.isArray(point) &&
@@ -52,6 +63,19 @@ export function validBoardDrawing(value: unknown): value is BoardDrawing {
                 ),
         )
     );
+}
+
+export function boardDrawingFragments(
+    drawing: BoardDrawing,
+): [number, number][][] {
+    const boundaries = [0, ...(drawing.breaks ?? []), drawing.points.length];
+    return boundaries
+        .slice(1)
+        .map((end, index) => drawing.points.slice(boundaries[index], end));
+}
+
+export function boardDrawingStrokePath(drawing: BoardDrawing) {
+    return boardDrawingFragments(drawing).map(boardDrawingPath).join('');
 }
 
 export function boardDrawingPath(points: [number, number][]) {
@@ -107,77 +131,4 @@ export function createBoardDrawingObject(
             },
         },
     };
-}
-
-function distanceToSegment(
-    point: BoardPoint,
-    start: BoardPoint,
-    end: BoardPoint,
-) {
-    const dx = end.x - start.x;
-    const dy = end.y - start.y;
-    const lengthSquared = dx * dx + dy * dy;
-    const fraction = lengthSquared
-        ? Math.max(
-              0,
-              Math.min(
-                  1,
-                  ((point.x - start.x) * dx + (point.y - start.y) * dy) /
-                      lengthSquared,
-              ),
-          )
-        : 0;
-    return Math.hypot(
-        point.x - start.x - fraction * dx,
-        point.y - start.y - fraction * dy,
-    );
-}
-
-export function boardEraserHitsStroke(
-    object: BoardObject,
-    start: BoardPoint,
-    end: BoardPoint,
-    radius: number,
-) {
-    const drawing = object.data.drawing;
-    if (object.block_type !== 'drawing' || !drawing) return false;
-    const margin =
-        radius +
-        (drawing.stroke_width / 2) *
-            Math.max(
-                object.width / drawing.view_width,
-                object.height / drawing.view_height,
-            );
-    if (
-        Math.max(start.x, end.x) + margin < object.x ||
-        Math.min(start.x, end.x) - margin > object.x + object.width ||
-        Math.max(start.y, end.y) + margin < object.y ||
-        Math.min(start.y, end.y) - margin > object.y + object.height
-    )
-        return false;
-    const worldPoint = ([x, y]: [number, number]) => ({
-        x: object.x + (x / drawing.view_width) * object.width,
-        y: object.y + (y / drawing.view_height) * object.height,
-    });
-    let previous = worldPoint(drawing.points[0]);
-    for (const point of drawing.points) {
-        const current = worldPoint(point);
-        const cross = (a: BoardPoint, b: BoardPoint, c: BoardPoint) =>
-            (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
-        const crossing =
-            cross(start, end, previous) * cross(start, end, current) < 0 &&
-            cross(previous, current, start) * cross(previous, current, end) < 0;
-        if (
-            crossing ||
-            Math.min(
-                distanceToSegment(start, previous, current),
-                distanceToSegment(end, previous, current),
-                distanceToSegment(previous, start, end),
-                distanceToSegment(current, start, end),
-            ) <= margin
-        )
-            return true;
-        previous = current;
-    }
-    return false;
 }

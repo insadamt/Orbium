@@ -1,3 +1,4 @@
+import { BoardDrawingFormatting } from './board-drawing-formatting';
 import { useState } from 'react';
 import { ToolbarHighlight } from '@/components/editor/ui/toolbar-motion';
 import { mountBoardToolbarMotion } from './board-toolbar-motion';
@@ -108,6 +109,25 @@ export function BoardSelectionTools({
                                     }
                                 />
                             </>
+                        ) : object.block_type === 'drawing' ? (
+                            <BoardDrawingFormatting
+                                key={object.id}
+                                object={object}
+                                disabled={disabled}
+                                onFocusCanvas={() => {
+                                    if (
+                                        !disabled &&
+                                        model.selectedRef.current.length ===
+                                            1 &&
+                                        model.selectedRef.current[0] ===
+                                            object.id
+                                    )
+                                        camera.viewportRef.current?.focus({
+                                            preventScroll: true,
+                                        });
+                                }}
+                                onChange={onChange}
+                            />
                         ) : (
                             <span className="board-selection-label">
                                 {

@@ -15,7 +15,7 @@
     overflow: hidden;
     border: 1px solid var(--border);
     border-radius: 18px;
-    background: color-mix(in srgb, var(--card) 92%, transparent);
+    background: var(--card);
     color: var(--foreground);
     font-family: var(--font-sans);
     text-align: start;

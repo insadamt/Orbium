@@ -1,5 +1,9 @@
 import { mountCompletionMenuReveal } from './markdown-completion-reveal';
 import {
+    createBuiltinIcon,
+    type InlineIconChoice,
+} from '@/components/inline-icons/icon-catalog';
+import {
     getTooltip,
     showTooltip,
     ViewPlugin,
@@ -25,6 +29,7 @@ const completionIcons: Record<string, Parameters<typeof widgetIcon>[0]> = {
     Quote: 'quote',
     Code: 'code',
     Mermaid: 'code',
+    'Mind Map': 'mindmap',
     Divider: 'divider',
     'Math block': 'math',
     'Inline math': 'math',
@@ -37,6 +42,26 @@ const completionIcons: Record<string, Parameters<typeof widgetIcon>[0]> = {
 };
 
 export function completionMenuIcon(completion: Completion) {
+    const choice = (
+        completion as Completion & { inlineIcon?: InlineIconChoice }
+    ).inlineIcon;
+    if (choice && choice.kind !== 'custom') {
+        const preview = document.createElement('span');
+        preview.className = 'app-menu-option-icon';
+        preview.style.cssText =
+            'display:inline-flex;width:18px;height:18px;align-items:center;justify-content:center';
+        preview.setAttribute('aria-hidden', 'true');
+        if (choice.kind === 'emoji') preview.textContent = choice.value;
+        else {
+            const svg = createBuiltinIcon(choice.name);
+            if (svg) {
+                svg.setAttribute('width', '16');
+                svg.setAttribute('height', '16');
+                preview.append(svg);
+            }
+        }
+        return preview;
+    }
     const icon = widgetIcon(completionIcons[completion.label] ?? 'plus', 16);
     icon.classList.add('app-menu-option-icon');
     icon.setAttribute('aria-hidden', 'true');

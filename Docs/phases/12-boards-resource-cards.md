@@ -89,3 +89,36 @@ Strong retains freehand smoothing. App-style glass controls, shared buttons/sele
 visual brush presets and a preview are recorded in
 `../reports/12-boards-drawing-toolbar.md`. This supersedes the smart-template
 extension above and stays within the same Board phase-4 manual review.
+
+
+Partial eraser review correction (2026-10-24): user-requested path cutting and
+8/16/32/64px size controls supersede the whole-stroke eraser. Saved survivors are
+ordinary format-5 drawing objects; no migration. Stay in this phase-4 review.
+See `../reports/12-boards-partial-eraser.md` for checks and manual acceptance.
+
+
+Single-block eraser correction (2026-10-24): the user clarified that surviving ink
+must stay in the original drawing block. Internal break indices replace separate
+survivors. Additive Board format-6 migration preserves saved objects/revisions,
+with explicit older draft adaptation and downgrade refusal while gaps remain.
+See `../reports/12-boards-single-drawing-eraser.md`; remain in phase-4 review.
+
+
+Path Pen review extension (2026-10-24): the user's reference authorizes point-by-
+point straight-path construction in the drawing palette. Completed paths reuse
+one native format-6 drawing object with existing selection/history/partial erasing.
+No new schema, migration or later phase. See `../reports/12-boards-path-pen.md`.
+
+
+Existing drawing styling (2026-10-24): user-requested Path Pen nib illustration
+and floating color/width controls for a selected drawing block. Uses the shared
+text color picker, existing drawing fields and validated undoable record updates;
+no format or migration change. See `../reports/12-boards-drawing-style-editing.md`.
+Remain in phase-4 review.
+
+
+Board micro-motion review (2026-10-24): user-requested lifecycle, editing/style,
+selection/control, checkbox/path and status feedback, with bounded decorative
+exits and reduced-motion cancellation. Existing direct camera/input/persistence
+contracts remain. Full inventory/manual checks: `../reports/12-boards-micro-motion.md`.
+No later phase, backend or format change.

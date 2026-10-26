@@ -51,7 +51,7 @@ export function useBoardPointer(
 
     const cancel = useCallback(() => {
         const current = gesture.current;
-        drawingRef.current.cancel();
+        const drawingCanceled = drawingRef.current.cancel();
         if (current?.kind === 'move' || current?.kind === 'resize')
             paintBoardObjects(
                 viewportRef.current,
@@ -65,7 +65,7 @@ export function useBoardPointer(
         if (viewportRef.current) viewportRef.current.dataset.gesture = '';
         if (frame.current !== undefined) cancelAnimationFrame(frame.current);
         frame.current = undefined;
-        return current !== null;
+        return current !== null || drawingCanceled;
     }, [viewportRef]);
 
     const clearTouches = useCallback(() => touches.current.clear(), []);
@@ -149,6 +149,7 @@ export function useBoardPointer(
                 interaction.drawing.start(
                     interaction.tool,
                     canvasPoint(local, camera.cameraRef.current),
+                    event.shiftKey,
                 );
                 gesture.current = { kind: 'draw', pointerId: event.pointerId };
                 event.currentTarget.dataset.gesture = 'draw';

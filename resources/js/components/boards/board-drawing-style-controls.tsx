@@ -28,10 +28,12 @@ export function BoardDrawingStyleControls({
     drawing,
     highlighter,
     disabled,
+    smoothingEnabled = true,
 }: {
     drawing: BoardDrawingController;
     highlighter: boolean;
     disabled: boolean;
+    smoothingEnabled?: boolean;
 }) {
     const strokeWidth = drawing.brush.width * (highlighter ? 4 : 1);
     return (
@@ -103,25 +105,29 @@ export function BoardDrawingStyleControls({
                     </div>
                 </div>
             </div>
-            <div className="board-drawing-style-row board-drawing-smoothing-row">
-                <div className="board-drawing-field">
-                    <span className="board-drawing-field-label">Smoothing</span>
-                    <AppSelect
-                        label="Drawing smoothing"
-                        value={drawing.smoothing}
-                        options={smoothingOptions}
-                        disabled={disabled}
-                        className="board-drawing-smoothing-select"
-                        contentClassName="board-drawing-smoothing-menu"
-                        onValueChange={(value) => {
-                            const option = smoothingOptions.find(
-                                (option) => option.value === value,
-                            );
-                            if (option) drawing.setSmoothing(option.value);
-                        }}
-                    />
+            {smoothingEnabled && (
+                <div className="board-drawing-style-row board-drawing-smoothing-row">
+                    <div className="board-drawing-field">
+                        <span className="board-drawing-field-label">
+                            Smoothing
+                        </span>
+                        <AppSelect
+                            label="Drawing smoothing"
+                            value={drawing.smoothing}
+                            options={smoothingOptions}
+                            disabled={disabled}
+                            className="board-drawing-smoothing-select"
+                            contentClassName="board-drawing-smoothing-menu"
+                            onValueChange={(value) => {
+                                const option = smoothingOptions.find(
+                                    (option) => option.value === value,
+                                );
+                                if (option) drawing.setSmoothing(option.value);
+                            }}
+                        />
+                    </div>
                 </div>
-            </div>
+            )}
         </>
     );
 }

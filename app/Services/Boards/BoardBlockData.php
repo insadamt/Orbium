@@ -5,15 +5,23 @@ namespace App\Services\Boards;
 use App\Models\Attachment;
 use App\Models\Node;
 use App\Services\Library\AttachmentMediaTypes;
+use App\Services\MindMaps\MindMapData;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 
 final class BoardBlockData
 {
-    public const KINDS = ['text', 'heading', 'list', 'quote', 'callout', 'code', 'table', 'image', 'file', 'math', 'mermaid', 'divider', 'resource', 'drawing'];
+    public const KINDS = ['text', 'heading', 'list', 'quote', 'callout', 'code', 'table', 'image', 'file', 'math', 'mermaid', 'divider', 'resource', 'drawing', 'mindmap'];
 
     public function validate(string $kind, array $data): array
     {
+        if ($kind === 'mindmap') {
+            if (array_keys($data) !== ['mindmap']) {
+                $this->invalid('A Mind Map block stores only its topic tree.');
+            }
+
+            return ['mindmap' => app(MindMapData::class)->validate($data['mindmap'], 'objects')];
+        }
         if ($kind === 'drawing') {
             return (new BoardDrawingData)->validate($data);
         }

@@ -40,6 +40,7 @@ function serializeMarkdown(request: MarkdownSaveRequest): string {
         markdown,
         revision: request.revision,
         content_format_version: 2,
+        editor_features: { inline_icons: 2 },
     });
 }
 

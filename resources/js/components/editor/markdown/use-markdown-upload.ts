@@ -1,4 +1,6 @@
 import { serializeOrbiumBlock } from './dialect/metadata';
+import { announceInsertedIcon } from '@/components/inline-icons/icon-preferences';
+import { inlineIconLabel } from '@/components/inline-icons/icon-catalog';
 import { closeCompletion } from '@codemirror/autocomplete';
 import { isolateHistory } from '@codemirror/commands';
 import { router } from '@inertiajs/react';
@@ -142,8 +144,14 @@ export function useMarkdownUpload(
                               uploadOptions.current?.ownerKind,
                           )
                         : file;
-                const label = escapeMarkdownLabel(attachment.name || file.name);
+                const label = escapeMarkdownLabel(
+                    current.inlineIcon
+                        ? inlineIconLabel(attachment.name || file.name)
+                        : attachment.name || file.name,
+                );
                 let source = `${current.kind === 'image' ? '!' : ''}[${label}](orbium:attachment/${attachment.id})`;
+                if (current.inlineIcon)
+                    source = `:orbium[${source}]{"icon":"custom"}`;
                 if (
                     current.kind === 'image' &&
                     current.imageMetadata?.kind === 'image'
@@ -177,19 +185,21 @@ export function useMarkdownUpload(
                     );
                 setError('');
                 const line = current.view.state.doc.lineAt(anchor.from);
-                const prefix = current.view.state
-                    .sliceDoc(line.from, anchor.from)
-                    .trim()
-                    ? '\n\n'
-                    : '';
-                const suffix = current.view.state
-                    .sliceDoc(
-                        anchor.to,
-                        current.view.state.doc.lineAt(anchor.to).to,
-                    )
-                    .trim()
-                    ? '\n\n'
-                    : '';
+                const prefix =
+                    current.view.state
+                        .sliceDoc(line.from, anchor.from)
+                        .trim() && !current.inlineIcon
+                        ? '\n\n'
+                        : '';
+                const suffix =
+                    current.view.state
+                        .sliceDoc(
+                            anchor.to,
+                            current.view.state.doc.lineAt(anchor.to).to,
+                        )
+                        .trim() && !current.inlineIcon
+                        ? '\n\n'
+                        : '';
                 const insertion = `${prefix}${source}${suffix}`;
                 current.view.dispatch({
                     changes: {
@@ -202,6 +212,13 @@ export function useMarkdownUpload(
                     annotations: isolateHistory.of('full'),
                     userEvent: 'input.attachment',
                 });
+                if (current.inlineIcon) current.view.focus();
+                if (current.inlineIcon)
+                    announceInsertedIcon(current.view.dom, {
+                        kind: 'custom',
+                        attachmentId: attachment.id,
+                        label: inlineIconLabel(attachment.name || file.name),
+                    });
                 return anchor.from + insertion.length;
             } catch (failure) {
                 if (mounted.current)
@@ -322,6 +339,7 @@ export function useMarkdownUpload(
     );
 
     return {
+        openFileInput,
         libraryOpen,
         uploadNewFile,
         closeLibrary: () => {

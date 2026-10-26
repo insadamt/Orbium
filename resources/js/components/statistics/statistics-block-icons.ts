@@ -36,5 +36,6 @@ export const blockIcons: Record<keyof typeof blockLabels, LucideIcon> = {
     file: File,
     divider: Minus,
     mermaid: Workflow,
+    mindmap: Workflow,
     math: Sigma,
 };

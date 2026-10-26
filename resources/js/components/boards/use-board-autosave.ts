@@ -100,7 +100,7 @@ export function useBoardAutosave(
             )
                 return;
             const saved = writeBoardDraft(location, {
-                format_version: 5,
+                format_version: 7,
                 revision: revision.current,
                 objects,
             });
@@ -145,7 +145,7 @@ export function useBoardAutosave(
         let saved = false;
         try {
             const snapshot: BoardSnapshot = {
-                format_version: 5,
+                format_version: 7,
                 revision: revision.current,
                 objects,
             };
@@ -385,7 +385,7 @@ export function useBoardAutosave(
         downloadDraft: () =>
             downloadBoardDraft(
                 unsupportedDraft.current ?? {
-                    format_version: 5,
+                    format_version: 7,
                     revision: revision.current,
                     objects: materializeBoardObjects(latest.current),
                 },

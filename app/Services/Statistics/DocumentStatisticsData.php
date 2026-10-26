@@ -7,7 +7,7 @@ final readonly class DocumentStatisticsData
     public const VERSION = 1;
 
     public const BLOCK_TYPES = ['paragraph', 'heading_1', 'heading_2', 'heading_3', 'heading_4', 'heading_5', 'heading_6',
-        'bullet_list_item', 'numbered_list_item', 'checklist_item', 'quote', 'callout', 'code', 'table', 'image', 'file', 'divider', 'mermaid', 'math'];
+        'bullet_list_item', 'numbered_list_item', 'checklist_item', 'quote', 'callout', 'code', 'table', 'image', 'file', 'divider', 'mermaid', 'math', 'mindmap'];
 
     /** @param array<string, int> $blocks */
     public function __construct(

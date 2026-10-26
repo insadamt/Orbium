@@ -19,6 +19,8 @@
 /*
  * These menus render in portals outside the Board page, so their surfaces need explicit Board-scoped selectors.
  */
+:root .app-menu-content.board-drawing-width-menu,
+:root[data-surface-style] .app-menu-content.board-drawing-width-menu,
 :root .app-menu-content.board-view-menu,
 :root[data-surface-style] .app-menu-content.board-view-menu,
 :root .app-menu-content.board-block-picker,

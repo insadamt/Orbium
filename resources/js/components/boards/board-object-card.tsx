@@ -1,3 +1,5 @@
+import { BoardMindMapBlock } from './board-mindmap-block';
+import { useBoardEditMotion } from './use-board-edit-motion';
 import { BoardDrawingStroke } from './board-drawing-stroke';
 import {
     supportsBoardContentHeight,
@@ -77,6 +79,7 @@ export const BoardObjectCard = memo(function BoardObjectCard({
         [object.id, onResourceLock],
     );
     const body = useRef<HTMLDivElement>(null);
+    useBoardEditMotion(body, editing);
     const autoHeight = supportsBoardContentHeight(object);
     useLayoutEffect(() => {
         if (!autoHeight || blocked) return;
@@ -189,7 +192,9 @@ export const BoardObjectCard = memo(function BoardObjectCard({
                 className={`board-object-body board-object-preview${object.block_type === 'resource' ? '' : ' orbium-editor orbium-markdown-content'}`}
                 data-board-scroll
             >
-                {object.block_type === 'drawing' && object.data.drawing ? (
+                {object.block_type === 'mindmap' ? (
+                    <BoardMindMapBlock {...props} />
+                ) : object.block_type === 'drawing' && object.data.drawing ? (
                     <BoardDrawingStroke drawing={object.data.drawing} />
                 ) : !editing && instantScene?.supports(object) ? (
                     <BoardPreparedSurface {...props} scene={instantScene} />

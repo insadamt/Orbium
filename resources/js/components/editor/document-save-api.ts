@@ -8,7 +8,11 @@ export async function saveLegacyDocument(
     content: EditorDocument,
     revision: number,
 ) {
-    const body = JSON.stringify({ content, revision });
+    const body = JSON.stringify({
+        content,
+        revision,
+        editor_features: { mindmap: 5, inline_icons: 2 },
+    });
     if (new TextEncoder().encode(JSON.stringify(content)).length > 1048576)
         throw new DocumentSaveError('Document content exceeds 1 MiB.');
     const response = await fetch(documentUrl(workspaceId, nodeId), {

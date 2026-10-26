@@ -95,7 +95,7 @@ export function readBoardSnapshot(
     } | null;
     if (
         !snapshot ||
-        ![5, ...(allowLegacyDraft ? [1, 2, 3, 4] : [])].includes(
+        ![7, 6, 5, ...(allowLegacyDraft ? [1, 2, 3, 4] : [])].includes(
             snapshot.format_version ?? 0,
         ) ||
         !Number.isSafeInteger(snapshot.revision) ||
@@ -133,6 +133,13 @@ export function readBoardSnapshot(
         .flatMap((value) => {
             const object = value as BoardObject;
             if (
+                (snapshot.format_version ?? 0) < 7 &&
+                object?.block_type === 'mindmap'
+            )
+                throw new BoardSaveError(
+                    'Mind Maps require Board format 7. Original recovery data is kept.',
+                );
+            if (
                 (snapshot.format_version ?? 0) < 4 &&
                 object?.block_type === 'resource'
             )
@@ -140,11 +147,19 @@ export function readBoardSnapshot(
                     'Resource cards require Board format 4. Original recovery data is kept.',
                 );
             if (
-                snapshot.format_version !== 5 &&
+                (snapshot.format_version ?? 0) < 5 &&
                 object?.block_type === 'drawing'
             )
                 throw new BoardSaveError(
                     'Drawings require Board format 5. Original recovery data is kept.',
+                );
+            if (
+                (snapshot.format_version ?? 0) < 6 &&
+                object?.data?.drawing &&
+                Object.hasOwn(object.data.drawing, 'breaks')
+            )
+                throw new BoardSaveError(
+                    'Drawing gaps require Board format 6. Original recovery data is kept.',
                 );
             if (
                 (object as { content_format_version: number })
@@ -178,7 +193,7 @@ export function readBoardSnapshot(
             'This Board exceeds the native block limits or has invalid data. Download the original snapshot for recovery.',
         );
     return {
-        format_version: 5,
+        format_version: 7,
         revision: snapshot.revision!,
         objects,
         ...(snapshot.mutation_version === 1 ? { mutation_version: 1 } : {}),
