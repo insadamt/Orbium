@@ -5,7 +5,7 @@ export { default as iconCatalogManifest } from './data/manifest.json';
 
 export type InlineIconChoice =
     | { kind: 'emoji'; value: string; label: string }
-    | { kind: 'builtin'; name: string; label: string }
+    | { kind: 'builtin'; name: string; label: string; color?: string }
     | { kind: 'custom'; attachmentId: number; label: string };
 export type IconFamily = 'emoji' | 'lucide' | 'brands';
 export type CatalogIcon = {

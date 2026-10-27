@@ -143,6 +143,17 @@ export function LegacyInlineIcons({
                     : {
                           type: 'inlineIcon',
                           attrs: legacyIconAttributes(choice),
+                          //
+                          // Replacing a symbol must retain the formatting applied through text selection.
+                          //
+                          ...(editor.state.doc.nodeAt(anchor.from)?.type
+                              .name === 'inlineIcon' && anchor.to > anchor.from
+                              ? {
+                                    marks: editor.state.doc
+                                        .nodeAt(anchor.from)
+                                        ?.toJSON().marks,
+                                }
+                              : {}),
                       },
             )
             .run();

@@ -202,6 +202,12 @@ function decodeInlineSource(source: string) {
 }
 
 function serializedRunText(run: FormattingRun, source: string): string {
+    if (run.icon && source === run.source) {
+        const metadata = { ...run.icon.metadata };
+        if (run.marks.color) metadata.color = run.marks.color;
+        else delete metadata.color;
+        return run.icon.prefix + JSON.stringify(metadata);
+    }
     if (run.protected) return source;
     if (run.marks.code)
         return run.literal ? source : decodeInlineSource(source);

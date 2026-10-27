@@ -1,3 +1,4 @@
+import { inlineIconColorStyle } from './inline-icon-color';
 import {
     contentOwnerUrl,
     type ContentOwnerKind,
@@ -19,6 +20,7 @@ export function createInlineIconElement(
     span.setAttribute('aria-label', choice.label);
     span.title = choice.label;
     if (choice.kind === 'builtin') {
+        span.style.color = inlineIconColorStyle(choice.color) ?? '';
         const svg = createBuiltinIcon(choice.name);
         if (svg) span.append(svg);
     } else {

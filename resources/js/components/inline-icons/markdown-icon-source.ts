@@ -11,7 +11,7 @@ export function serializeInlineIcon(choice: InlineIconChoice): string {
         choice.kind === 'custom'
             ? `![${label}](orbium:attachment/${choice.attachmentId})`
             : label;
-    return `:orbium[${content}]${JSON.stringify({ icon: choice.kind === 'custom' ? 'custom' : choice.name })}`;
+    return `:orbium[${content}]${JSON.stringify({ icon: choice.kind === 'custom' ? 'custom' : choice.name, ...(choice.kind === 'builtin' && choice.color ? { color: choice.color } : {}) })}`;
 }
 
 export function readMarkdownIcon(
@@ -33,7 +33,12 @@ export function readMarkdownIcon(
         .sliceDoc(markers[0].to, markers[1].from)
         .replace(/\\([\\`*_{}[\]()#+.!<>:=-])/g, '$1');
     if (isBuiltinIcon(metadata.icon))
-        return { kind: 'builtin', name: metadata.icon, label };
+        return {
+            kind: 'builtin',
+            name: metadata.icon,
+            label,
+            ...(metadata.color ? { color: metadata.color } : {}),
+        };
     const image = node.getChild('Image');
     const url = image?.getChild('URL');
     const reference =

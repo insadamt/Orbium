@@ -1,7 +1,7 @@
 import type { EditorSelection, EditorState } from '@codemirror/state';
 import type { SyntaxNode } from '@lezer/common';
 import { readRichBlock } from '../rich/read-rich-block';
-import { readOrbiumMetadata } from '../dialect/metadata';
+import { readOrbiumMetadata, type OrbiumMetadata } from '../dialect/metadata';
 import { readEditableMarkdownPresentation } from './markdown-editable-presentation';
 import { markdownFormattingTree } from './markdown-formatting-source';
 
@@ -23,6 +23,7 @@ export type FormattingRun = {
     selected: boolean;
     literal?: boolean;
     protected?: boolean;
+    icon?: { prefix: string; metadata: OrbiumMetadata };
 };
 export type FormattingBlock = {
     from: number;
@@ -152,16 +153,20 @@ function readInlineRuns(
             if (metadata?.underline) marks.underline = true;
             if (metadata?.icon) {
                 //
-                // Treat icons as opaque source so formatting nearby text cannot flatten their identity.
+                // Keep icon syntax atomic while letting the text toolbar recolor the selected symbol.
                 //
-                appendSourceRuns(
-                    state,
-                    node.from,
-                    node.to,
-                    inherited,
-                    runs,
-                    true,
-                );
+                runs.push({
+                    from: node.from,
+                    to: node.to,
+                    source: state.sliceDoc(node.from, node.to),
+                    marks,
+                    protected: true,
+                    selected: false,
+                    icon: {
+                        prefix: state.sliceDoc(node.from, json!.from),
+                        metadata,
+                    },
+                });
                 return;
             }
         }
@@ -243,6 +248,18 @@ function splitRunAtSelection(
     run: FormattingRun,
     selection: EditorSelection,
 ): FormattingRun[] {
+    if (run.icon)
+        return [
+            {
+                ...run,
+                selected: selection.ranges.some(
+                    (range) =>
+                        !range.empty &&
+                        range.from < run.to &&
+                        range.to > run.from,
+                ),
+            },
+        ];
     if (run.protected) return [run];
     const boundaries = new Set([run.from, run.to]);
     for (const range of selection.ranges) {

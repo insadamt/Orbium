@@ -60,7 +60,8 @@ export function applyMarkdownSelectionFormatting(
     for (const block of blocks) {
         let changed = false;
         const runs = block.runs.map((run) => {
-            if (!run.selected) return run;
+            if (!run.selected || (run.icon && change.kind !== 'color'))
+                return run;
             const marks = applyTextMarks(
                 run.marks,
                 change,
