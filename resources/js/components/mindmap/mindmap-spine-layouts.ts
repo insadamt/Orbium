@@ -4,6 +4,8 @@ import {
     horizontalConnection,
     verticalConnection,
     placedTopic,
+    topicPath,
+    type LayoutPath,
     visibleChildren,
     type LayoutContext,
     type PlacedTopic,
@@ -12,7 +14,7 @@ import {
 
 function appendTreeConnections(
     topics: PlacedTopic[],
-    paths: string[],
+    paths: LayoutPath[],
     vertical: boolean,
     direction: number,
 ) {
@@ -23,9 +25,12 @@ function appendTreeConnections(
             : undefined;
         if (parent)
             paths.push(
-                vertical
-                    ? verticalConnection(parent, child, direction)
-                    : horizontalConnection(parent, child),
+                topicPath(
+                    child.topic.id,
+                    vertical
+                        ? verticalConnection(parent, child, direction)
+                        : horizontalConnection(parent, child),
+                ),
             );
     }
 }
@@ -36,14 +41,14 @@ export function timelineLayout(
     const rootSize = context.sizes.get(context.root.id)!;
     const root = placedTopic(context, context.root, {
         x: vertical ? -rootSize.width / 2 : 0,
-        y: vertical ? 0 : -rootSize.height / 2,
+        y: vertical ? 0 : -rootSize.height / 2 - rootSize.iconSpace / 2,
         depth: 0,
         direction: vertical ? 'down' : 'right',
     });
     const topics = [root];
-    const paths: string[] = [];
-    let position = (vertical ? root.height : root.width) + 80;
-    let spineEnd = vertical ? root.height : root.width;
+    const paths: LayoutPath[] = [];
+    let position = (vertical ? root.y + root.height : root.width) + 80;
+    let spineEnd = vertical ? root.y + root.height : root.width;
     visibleChildren(context, context.root).forEach((branch, index) => {
         const direction = index % 2 === 0 ? -1 : 1;
         const branchContext = { ...context, root: branch };
@@ -70,13 +75,19 @@ export function timelineLayout(
         if (vertical) {
             spineEnd = station.y + station.height / 2;
             paths.push(
-                `M0,${spineEnd} H${station.x + (direction < 0 ? station.width : 0)}`,
+                topicPath(
+                    station.topic.id,
+                    `M0,${spineEnd} H${station.x + (direction < 0 ? station.width : 0)}`,
+                ),
             );
             position += bounds.bottom - bounds.top + 64;
         } else {
             spineEnd = station.x + station.width / 2;
             paths.push(
-                `M${spineEnd},0 V${station.y + (direction < 0 ? station.height : 0)}`,
+                topicPath(
+                    station.topic.id,
+                    `M${spineEnd},0 V${station.y + (direction < 0 ? station.height : 0)}`,
+                ),
             );
             position += bounds.right - bounds.left + 64;
         }
@@ -85,9 +96,12 @@ export function timelineLayout(
     });
     if (topics.length > 1)
         paths.unshift(
-            vertical
-                ? `M0,${root.height} V${spineEnd}`
-                : `M${root.width},0 H${spineEnd}`,
+            topicPath(
+                root.topic.id,
+                vertical
+                    ? `M0,${root.y + root.height} V${spineEnd}`
+                    : `M${root.width},0 H${spineEnd}`,
+            ),
         );
     return { topics, paths };
 }
@@ -98,7 +112,7 @@ export function fishboneLayout(context: LayoutContext): TopicArrangement {
         horizontalTree({ ...context, root: branch }, 'left'),
     );
     const topics: PlacedTopic[] = [];
-    const paths: string[] = [];
+    const paths: LayoutPath[] = [];
     let left = 0;
     //
     // Reserve a full subtree column for each pair of causes so variable-width, multiline branches cannot overlap.
@@ -120,7 +134,10 @@ export function fishboneLayout(context: LayoutContext): TopicArrangement {
             }
             const cause = group.topics[0];
             paths.push(
-                `M${left + columnWidth + 48},0 L${cause.x + cause.width},${cause.y + cause.height / 2}`,
+                topicPath(
+                    cause.topic.id,
+                    `M${left + columnWidth + 48},0 L${cause.x + cause.width},${cause.y + cause.height / 2}`,
+                ),
             );
             appendTreeConnections(group.topics, paths, false, -1);
             topics.push(...group.topics);
@@ -129,13 +146,22 @@ export function fishboneLayout(context: LayoutContext): TopicArrangement {
     }
     const root = placedTopic(context, context.root, {
         x: left,
-        y: -context.sizes.get(context.root.id)!.height / 2,
+        y:
+            -(
+                context.sizes.get(context.root.id)!.height +
+                context.sizes.get(context.root.id)!.iconSpace
+            ) / 2,
         depth: 0,
         direction: 'left',
     });
     if (branches.length) {
-        paths.unshift(`M0,0 H${root.x}`);
-        paths.push(`M${root.x - 9},-5 L${root.x},0 L${root.x - 9},5`);
+        paths.unshift(topicPath(root.topic.id, `M0,0 H${root.x}`));
+        paths.push(
+            topicPath(
+                root.topic.id,
+                `M${root.x - 9},-5 L${root.x},0 L${root.x - 9},5`,
+            ),
+        );
     }
     return { topics: [root, ...topics], paths };
 }

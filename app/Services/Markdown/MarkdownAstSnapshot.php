@@ -2,6 +2,7 @@
 
 namespace App\Services\Markdown;
 
+use App\Services\MindMaps\MindMapIconReferences;
 use League\CommonMark\Extension\CommonMark\Node\Block\FencedCode;
 use League\CommonMark\Extension\CommonMark\Node\Inline\AbstractWebResource;
 use League\CommonMark\Node\Block\Document;
@@ -11,7 +12,7 @@ use League\CommonMark\Node\StringContainerInterface;
 final class MarkdownAstSnapshot
 {
     /** @return list<MarkdownNodeSnapshot> */
-    public function capture(Node $node, int $depth = 0): array
+    public function capture(Node $node, int $depth = 0, ?array $attachmentIds = null): array
     {
         $values = [$node::class, $depth];
         if ($node instanceof StringContainerInterface) {
@@ -21,7 +22,11 @@ final class MarkdownAstSnapshot
             $values[] = $node->getInfo();
         }
         if ($node instanceof OrbiumBlock || $node instanceof OrbiumInline) {
-            $values[] = $node->metadata;
+            $metadata = $node->metadata;
+            if ($attachmentIds !== null && $node instanceof OrbiumBlock && $node->kind() === 'mindmap') {
+                $metadata['mindmap'] = app(MindMapIconReferences::class)->remap($metadata['mindmap'], $attachmentIds);
+            }
+            $values[] = $metadata;
         }
         if ($node instanceof OrbiumInline) {
             $values[] = $node->latex;
@@ -41,7 +46,7 @@ final class MarkdownAstSnapshot
             }
         }
         foreach ($node->children() as $child) {
-            array_push($snapshot, ...$this->capture($child, $depth + 1));
+            array_push($snapshot, ...$this->capture($child, $depth + 1, $attachmentIds));
         }
 
         return $snapshot;

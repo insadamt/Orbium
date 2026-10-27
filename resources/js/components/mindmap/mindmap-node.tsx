@@ -1,3 +1,4 @@
+import { useDocumentTab } from '@/components/navigation/document-tab-context';
 import type { KeyboardEvent } from 'react';
 import { Node, mergeAttributes } from '@tiptap/core';
 import {
@@ -9,8 +10,14 @@ import { MindMapBlock } from './mindmap-block';
 import { validMindMap } from './mindmap-data';
 import { useHostedDocumentSession } from '@/components/editor/hosted-document-session';
 
-function MindMapNodeView({ node, editor, updateAttributes }: NodeViewProps) {
+function MindMapNodeView({
+    node,
+    editor,
+    updateAttributes,
+    extension,
+}: NodeViewProps) {
     const hosted = useHostedDocumentSession();
+    const { tabId } = useDocumentTab();
     if (!validMindMap(node.attrs.mindmap))
         return (
             <NodeViewWrapper contentEditable={false}>
@@ -36,6 +43,14 @@ function MindMapNodeView({ node, editor, updateAttributes }: NodeViewProps) {
         >
             <MindMapBlock
                 data={node.attrs.mindmap}
+                owner={{
+                    tabId,
+                    workspaceId: extension.options.workspaceId,
+                    nodeId: extension.options.nodeId,
+                    kind: 'document',
+                    onBusy: (active) =>
+                        hosted?.setBusy('mindmap-icon-upload', active),
+                }}
                 editable={editor.isEditable && !hosted?.readOnly}
                 onComposition={hosted?.setComposing}
                 onChange={(mindmap) => {
@@ -49,6 +64,7 @@ function MindMapNodeView({ node, editor, updateAttributes }: NodeViewProps) {
 }
 export const MindMapNode = Node.create({
     name: 'mindmap',
+    addOptions: () => ({ workspaceId: 0, nodeId: 0 }),
     group: 'block',
     atom: true,
     draggable: true,

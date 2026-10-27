@@ -1,3 +1,5 @@
+import { Smile } from 'lucide-react';
+import { requestMindMapInlineIcon } from './mindmap-inline-icons';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { Editor } from '@tiptap/core';
@@ -107,6 +109,17 @@ export function MindMapTextToolbar({
             style={{ left: position?.left ?? 0, top: position?.top ?? 0 }}
         >
             <ToolbarHighlight />
+            <button
+                type="button"
+                className="board-tool-button editor-toolbar-button"
+                aria-label="Insert inline icon"
+                title="Emoji & icons"
+                disabled={editor.isActive('codeBlock')}
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={() => requestMindMapInlineIcon(editor)}
+            >
+                <Smile size={17} />
+            </button>
             <BoardNativeFormatting
                 fullscreen
                 editor={editor}

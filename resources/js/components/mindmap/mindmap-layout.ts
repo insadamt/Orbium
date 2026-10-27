@@ -58,9 +58,13 @@ export function layoutMindMap(
                 topic.id,
                 {
                     width: topic.width ?? topicWidth,
+                    //
+                    // Reserve the external badge in layout bounds while connectors still attach to the text frame.
+                    //
+                    iconSpace: topic.icon ? 44 : 0,
                     height:
-                        measuredHeights.get(topic.id) ??
-                        estimateTopicHeight(topic),
+                        (measuredHeights.get(topic.id) ??
+                            estimateTopicHeight(topic)) + (topic.icon ? 44 : 0),
                 },
             ]),
         ),

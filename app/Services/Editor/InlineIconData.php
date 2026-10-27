@@ -40,6 +40,13 @@ final class InlineIconData
             if (($node['type'] ?? null) === 'inlineIcon' && ($node['attrs']['kind'] ?? null) === 'custom') {
                 $ids[] = $node['attrs']['attachmentId'];
             }
+            if (($node['type'] ?? null) === 'mindmap') {
+                foreach ($node['attrs']['mindmap']['topics'] as $topic) {
+                    if (isset($topic['body'])) {
+                        $pending[] = $topic['body'];
+                    }
+                }
+            }
             array_push($pending, ...($node['content'] ?? []));
         }
         $ids = array_unique($ids);

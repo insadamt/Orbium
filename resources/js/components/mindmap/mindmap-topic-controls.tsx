@@ -1,5 +1,8 @@
+import { MindMapStylePanel } from './mindmap-style-panel';
+import type { BranchColor } from './mindmap-branch-style';
 import { useRef, useState } from 'react';
 import {
+    Palette,
     MoveHorizontal,
     CornerDownRight,
     Plus,
@@ -26,6 +29,7 @@ type Props = {
     onToggle: () => void;
     onMove: (parentId: string) => void;
     onWidthCommit: (width: number) => boolean;
+    onStyleChange: (style: { color?: BranchColor; icon?: string }) => void;
 };
 
 export function MindMapTopicControls({
@@ -38,11 +42,14 @@ export function MindMapTopicControls({
     onToggle,
     onMove,
     onWidthCommit,
+    onStyleChange,
 }: Props) {
     const [panel, setPanel] = useState<{
         topicId: string;
-        kind: 'parent' | 'width';
+        kind: 'parent' | 'width' | 'style';
     } | null>(null);
+    const styleButton = useRef<HTMLButtonElement>(null);
+    const styleOpen = panel?.topicId === selected.id && panel.kind === 'style';
     const widthButton = useRef<HTMLButtonElement>(null);
     const parentOpen =
         panel?.topicId === selected.id && panel.kind === 'parent';
@@ -97,6 +104,20 @@ export function MindMapTopicControls({
                             widthOpen
                                 ? null
                                 : { topicId: selected.id, kind: 'width' },
+                        )
+                    }
+                />
+                <BoardToolButton
+                    {...common}
+                    ref={styleButton}
+                    label="Branch appearance"
+                    icon={Palette}
+                    aria-expanded={styleOpen}
+                    onClick={() =>
+                        setPanel(
+                            styleOpen
+                                ? null
+                                : { topicId: selected.id, kind: 'style' },
                         )
                     }
                 />
@@ -177,6 +198,17 @@ export function MindMapTopicControls({
                         }}
                     />
                 </div>
+            )}
+            {styleOpen && (
+                <MindMapStylePanel
+                    key={selected.id}
+                    topic={selected}
+                    onChange={onStyleChange}
+                    onClose={() => {
+                        setPanel(null);
+                        styleButton.current?.focus({ preventScroll: true });
+                    }}
+                />
             )}
             {widthOpen && (
                 <MindMapWidthPanel

@@ -1,4 +1,13 @@
-import { MindMapTemplatePicker } from './mindmap-template-picker';
+import './mindmap-branch-features.css';
+import { MindMapMapTools } from './mindmap-map-tools';
+import { useMindMapSearch } from './use-mindmap-search';
+import { useMindMapBranchDrag } from './use-mindmap-branch-drag';
+import {
+    moveMindMapBranch,
+    setMindMapVisibleLevels,
+    mindMapLevelCount,
+} from './mindmap-branch-actions';
+import { withMindMapBranchStyle } from './mindmap-branch-style';
 import { withMindMapLayout } from './mindmap-templates';
 import { withMindMapTopicWidth } from './mindmap-topic-width';
 import {
@@ -8,16 +17,12 @@ import {
     useMemo,
     useRef,
     useState,
-    type KeyboardEvent,
 } from 'react';
 import { useMindMapViewport } from './use-mindmap-viewport';
 import { MindMapTopicControls } from './mindmap-topic-controls';
 import { MindMapScene } from './mindmap-scene';
-import {
-    mindMapExpandKey,
-    mindMapNavigation,
-    visibleMindMapTopic,
-} from './mindmap-navigation';
+import { visibleMindMapTopic } from './mindmap-navigation';
+import { useMindMapTopicActions } from './use-mindmap-topic-actions';
 import {
     validMindMap,
     mindMapDescendants,
@@ -72,21 +77,26 @@ export function MindMapCanvas({
         },
         [],
     );
+    const search = useMindMapSearch(data, setSelectedId, renamingId);
     const valid = useMemo(() => validMindMap(data), [data]);
+    const levelCount = useMemo(
+        () => (valid ? mindMapLevelCount(data) : 1),
+        [data, valid],
+    );
     const layout = useMemo(() => {
         if (!valid) return null;
         const preview = topicResize
             ? {
-                  ...data,
-                  topics: data.topics.map((topic) =>
+                  ...search.displayData,
+                  topics: search.displayData.topics.map((topic) =>
                       topic.id === topicResize.id
                           ? { ...topic, width: topicResize.width }
                           : topic,
                   ),
               }
-            : data;
+            : search.displayData;
         return layoutMindMap(preview, topicHeights);
-    }, [data, valid, topicHeights, topicResize]);
+    }, [data, search.displayData, valid, topicHeights, topicResize]);
     useLayoutEffect(() => {
         if (layout) onLayoutHeight?.(layout.height);
     }, [layout, onLayoutHeight]);
@@ -108,8 +118,8 @@ export function MindMapCanvas({
         });
     }, []);
     const selected = useMemo(
-        () => visibleMindMapTopic(data, selectedId),
-        [data, selectedId],
+        () => visibleMindMapTopic(search.displayData, selectedId),
+        [search.displayData, selectedId],
     );
     const descendants = useMemo(
         () => mindMapDescendants(data, selected?.id ?? data.root_id),
@@ -128,7 +138,7 @@ export function MindMapCanvas({
     } = useMindMapViewport({
         layout,
         selectedId: selected?.id,
-        editable,
+        editable: editable || Boolean(search.query.trim()),
         fullscreen,
         horizontalAnchor: topicResize,
     });
@@ -139,6 +149,10 @@ export function MindMapCanvas({
                 'This change exceeds the Mind Map limits: 64 KiB, 64 levels, or 500 characters per topic.',
             );
             return false;
+        }
+        if (JSON.stringify(next) === JSON.stringify(data)) {
+            setError('');
+            return true;
         }
         const accepted = onChange(next, typing);
         if (accepted) {
@@ -152,126 +166,37 @@ export function MindMapCanvas({
         );
         return accepted;
     }
-    function addTopic(sibling = false) {
-        if (!selected) return;
-        const parent =
-            sibling && selected.parent_id !== null
-                ? selected.parent_id
-                : selected.id;
-        const id = crypto.randomUUID();
-        const next = {
-            ...data,
-            topics: [
-                ...data.topics.map((topic) =>
-                    topic.id === parent
-                        ? { ...topic, collapsed: false }
-                        : topic,
-                ),
-                { id, parent_id: parent, text: 'New topic', collapsed: false },
-            ],
-        };
-        if (commit(next)) {
+    const { addTopic, removeTopic, toggleTopic, shortcut } =
+        useMindMapTopicActions({
+            data,
+            selected,
+            descendants,
+            editable,
+            layout,
+            commit,
+            setSelectedId,
+            setRenamingId,
+            viewport,
+        });
+    const branchDrag = useMindMapBranchDrag({
+        data,
+        viewport,
+        composing,
+        onStart: (id) => {
             setSelectedId(id);
-            setRenamingId(id);
-        }
-    }
-    function removeTopic() {
-        if (!selected || selected.id === data.root_id) return;
-        const restoreTopicFocus = viewport.current?.contains(
-            document.activeElement,
-        );
-        if (
-            commit({
-                ...data,
-                topics: data.topics.filter(
-                    (topic) => !descendants.has(topic.id),
-                ),
-            })
-        ) {
-            setSelectedId(selected.parent_id!);
-            if (restoreTopicFocus) focusTopic(selected.parent_id!);
-        }
-    }
-    function focusTopic(id: string) {
-        requestAnimationFrame(() =>
-            viewport.current
-                ?.querySelector<HTMLElement>(`[data-topic-id="${id}"]`)
-                ?.focus({ preventScroll: true }),
-        );
-    }
-    function toggleTopic(id: string) {
-        const next = {
-            ...data,
-            topics: data.topics.map((topic) =>
-                topic.id === id
-                    ? { ...topic, collapsed: !topic.collapsed }
-                    : topic,
-            ),
-        };
-        if (
-            commit(next) &&
-            next.topics.find((topic) => topic.id === id)?.collapsed &&
-            mindMapDescendants(data, id).has(selected?.id ?? data.root_id)
-        )
-            setSelectedId(id);
-    }
-    function shortcut(event: KeyboardEvent) {
-        if (
-            !editable ||
-            !selected ||
-            event.nativeEvent.isComposing ||
-            event.ctrlKey ||
-            event.metaKey ||
-            event.altKey
-        )
-            return;
-        if (event.currentTarget.getAttribute('role') === 'treeitem') {
-            if (event.key === 'F2' || event.key === ' ') {
-                event.preventDefault();
-                event.stopPropagation();
-                setRenamingId(selected.id);
+            setRenamingId(null);
+        },
+        onDrop: (drop, original) => {
+            if (JSON.stringify(original) !== JSON.stringify(data)) {
+                setError(
+                    'The map changed during the drag. Try moving the branch again.',
+                );
                 return;
             }
-            const next = mindMapNavigation(
-                data,
-                selected,
-                event.key,
-                layout?.topics.find((item) => item.topic.id === selected.id)
-                    ?.direction,
-            );
-            if (next) {
-                event.preventDefault();
-                event.stopPropagation();
-                if (
-                    selected.collapsed &&
-                    next === selected.id &&
-                    event.key ===
-                        mindMapExpandKey(
-                            data,
-                            layout?.topics.find(
-                                (item) => item.topic.id === selected.id,
-                            )?.direction,
-                        )
-                )
-                    toggleTopic(selected.id);
-                setSelectedId(next);
-                focusTopic(next);
-                return;
-            }
-            if (event.key === 'Delete' || event.key === 'Backspace') {
-                event.preventDefault();
-                event.stopPropagation();
-                removeTopic();
-                return;
-            }
-        }
-        if (event.key === 'Enter' && event.shiftKey) return;
-        if ((event.key === 'Tab' && !event.shiftKey) || event.key === 'Enter') {
-            event.preventDefault();
-            event.stopPropagation();
-            addTopic(event.key === 'Enter');
-        }
-    }
+            const next = moveMindMapBranch(data, drop);
+            if (next && commit(next)) setSelectedId(drop.sourceId);
+        },
+    });
     const drag = useRef<{
         pointerId: number;
         x: number;
@@ -295,6 +220,13 @@ export function MindMapCanvas({
             {error && (
                 <p role="alert" className="mindmap-error">
                     {error}
+                </p>
+            )}
+            {branchDrag.draggedId && (
+                <p className="mindmap-drag-announcement" role="status">
+                    {branchDrag.dropTarget
+                        ? `${branchDrag.dropTarget.position === 'inside' ? 'Move inside' : `Place ${branchDrag.dropTarget.position}`} ${data.topics.find((topic) => topic.id === branchDrag.dropTarget?.targetId)?.text.slice(0, 60) || 'topic'}`
+                        : 'Drag onto a topic to change parent, or to its edge to reorder.'}
                 </p>
             )}
             <div
@@ -405,10 +337,19 @@ export function MindMapCanvas({
                         onWidthCommit={(id, width) =>
                             commit(withMindMapTopicWidth(data, id, width))
                         }
+                        searchMatches={search.matchIds}
+                        activeMatchId={search.activeMatchId}
+                        branchDrag={editable ? branchDrag : undefined}
                         onTopicHeights={updateTopicHeights}
                         onRename={setRenamingId}
                         onKeyDown={shortcut}
-                        onToggle={toggleTopic}
+                        onToggle={(id) => {
+                            const collapsed = !search.displayData.topics.find(
+                                (topic) => topic.id === id,
+                            )?.collapsed;
+                            search.setQuery('');
+                            toggleTopic(id, collapsed);
+                        }}
                         onContentChange={(id, content, typing) =>
                             commit(
                                 replaceMindMapTopicDocument(data, id, content),
@@ -422,10 +363,14 @@ export function MindMapCanvas({
                     />
                 </div>
             </div>
-            {editable && fullscreen && (
-                <MindMapTemplatePicker
+            {fullscreen && (
+                <MindMapMapTools
+                    onSearchStart={() => setRenamingId(null)}
+                    search={search}
+                    editable={editable}
                     layout={data.layout}
-                    onChoose={(layout) => {
+                    levelCount={levelCount}
+                    onLayout={(layout) => {
                         if (composing.current) {
                             setError(
                                 'Finish composing the topic text before changing its layout.',
@@ -438,6 +383,12 @@ export function MindMapCanvas({
                             return true;
                         }
                         return false;
+                    }}
+                    onLevels={(levels) => {
+                        if (composing.current) return;
+                        search.setQuery('');
+                        const next = setMindMapVisibleLevels(data, levels);
+                        if (commit(next)) setRenamingId(null);
                     }}
                 />
             )}
@@ -456,10 +407,30 @@ export function MindMapCanvas({
                     selected={selected}
                     data={data}
                     descendants={descendants}
+                    onStyleChange={(style) => {
+                        if (
+                            !composing.current &&
+                            Object.entries(style).some(
+                                ([key, value]) =>
+                                    selected[key as keyof typeof selected] !==
+                                    value,
+                            )
+                        )
+                            commit(
+                                withMindMapBranchStyle(
+                                    data,
+                                    selected.id,
+                                    style,
+                                ),
+                            );
+                    }}
                     onRename={() => setRenamingId(selected.id)}
                     onAdd={addTopic}
                     onRemove={removeTopic}
-                    onToggle={() => toggleTopic(selected.id)}
+                    onToggle={() => {
+                        search.setQuery('');
+                        toggleTopic(selected.id, !selected.collapsed);
+                    }}
                     onWidthCommit={(width) =>
                         commit(withMindMapTopicWidth(data, selected.id, width))
                     }

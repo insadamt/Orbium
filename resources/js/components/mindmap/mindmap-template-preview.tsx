@@ -55,7 +55,7 @@ export function MindMapTemplatePreview({
                 {preview.paths.map((path, index) => (
                     <path
                         key={index}
-                        d={path}
+                        d={path.d}
                         fill="none"
                         stroke="currentColor"
                         strokeWidth={3}

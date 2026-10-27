@@ -1,0 +1,316 @@
+.mindmap-topic[data-colored='true'] {
+    background: color-mix(in srgb, var(--branch-color) 10%, var(--background));
+}
+.mindmap-topic[data-colored='true']:not([data-selected='true']) {
+    border-color: color-mix(in srgb, var(--branch-color) 65%, var(--border));
+}
+.mindmap-topic[data-search-match='true'] {
+    background: color-mix(in srgb, #eab308 16%, var(--background));
+}
+.mindmap-topic[data-search-current='true'][data-colored] {
+    border-color: var(--foreground);
+}
+.mindmap-topic-icon {
+    display: inline-flex;
+    float: inline-start;
+    width: 18px;
+    height: 18px;
+    margin-block-start: 2px;
+    margin-inline-end: 6px;
+    color: var(--branch-color, currentColor);
+    pointer-events: none;
+}
+.mindmap-topic-icon svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+.mindmap-topic-content::after {
+    display: block;
+    clear: both;
+    content: '';
+}
+.mindmap-topic[data-root='false'] > [role='treeitem'] {
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+}
+.mindmap-topic[data-dragging='true'] {
+    opacity: 0.45;
+}
+.mindmap-topic[data-drop-position='inside'][data-colored] {
+    border-color: var(--foreground);
+    background: var(--accent);
+}
+.mindmap-topic[data-drop-position='before']::before,
+.mindmap-topic[data-drop-position='after']::before {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 3px;
+    border-radius: 3px;
+    background: var(--foreground);
+    content: '';
+    pointer-events: none;
+}
+.mindmap-topic[data-drop-position='before']::before {
+    top: -8px;
+}
+.mindmap-topic[data-drop-position='after']::before {
+    bottom: -8px;
+}
+.mindmap-topic[data-drop-axis='x'][data-drop-position='before']::before,
+.mindmap-topic[data-drop-axis='x'][data-drop-position='after']::before {
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    height: auto;
+}
+.mindmap-topic[data-drop-axis='x'][data-drop-position='before']::before {
+    left: -8px;
+    right: auto;
+}
+.mindmap-topic[data-drop-axis='x'][data-drop-position='after']::before {
+    right: -8px;
+    left: auto;
+}
+.mindmap-topic > .mindmap-drag-handle {
+    position: absolute;
+    z-index: 3;
+    top: -9px;
+    left: -9px;
+    display: grid;
+    place-items: center;
+    width: 20px;
+    height: 20px;
+    padding: 2px;
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    background: var(--background);
+    cursor: grab;
+    touch-action: none;
+}
+.mindmap-drag-handle[data-mindmap-dragging='true'] {
+    cursor: grabbing;
+}
+.mindmap-drag-announcement {
+    position: absolute;
+    z-index: 6;
+    bottom: 70px;
+    left: 80px;
+    max-width: calc(100% - 104px);
+    padding: 5px 8px;
+    border-radius: 6px;
+    background: var(--foreground);
+    color: var(--background);
+    font-size: 12px;
+    pointer-events: none;
+}
+.mindmap-style-panel {
+    max-height: calc(100% - 24px);
+    overflow-y: auto;
+    width: min(300px, calc(100% - 96px));
+}
+.mindmap-style-panel p {
+    margin: 6px 0 10px;
+    font-size: 11px;
+    line-height: 1.5;
+    color: var(--muted-foreground);
+}
+.mindmap-color-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+.mindmap-color-options button {
+    min-width: 22px;
+    height: 22px;
+    padding: 0 5px;
+    border-radius: 5px;
+    border: 1px solid var(--border);
+    font-size: 11px;
+}
+.mindmap-color-options button[aria-pressed='true'] {
+    outline: 2px solid var(--foreground);
+    outline-offset: 2px;
+}
+.mindmap-icon-current {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 14px 0 8px;
+    font-size: 12px;
+}
+.mindmap-icon-current > span {
+    display: flex;
+    align-items: center;
+}
+.mindmap-icon-current button {
+    font-size: 11px;
+    color: var(--muted-foreground);
+}
+.mindmap-icon-current button:disabled {
+    opacity: 0.4;
+}
+.mindmap-icon-search {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+}
+.mindmap-icon-search input {
+    width: 100%;
+    min-width: 0;
+    background: transparent;
+    font-size: 12px;
+    outline: none;
+}
+.mindmap-icon-search:focus-within {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+}
+.mindmap-icon-options {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 3px;
+    margin-top: 8px;
+}
+.mindmap-icon-options > button {
+    display: grid;
+    place-items: center;
+    height: 32px;
+    border-radius: 6px;
+}
+.mindmap-icon-options > button:hover,
+.mindmap-icon-options > button[aria-pressed='true'] {
+    background: var(--accent);
+}
+.mindmap-icon-options .mindmap-topic-icon {
+    float: none;
+    margin: 0;
+}
+.mindmap-icon-pages {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 8px;
+    font-size: 11px;
+}
+.mindmap-icon-pages button {
+    padding: 4px;
+    border-radius: 5px;
+}
+.mindmap-icon-pages button:disabled {
+    opacity: 0.4;
+}
+.mindmap-map-actions {
+    position: absolute;
+    z-index: 5;
+    top: 12px;
+    left: 80px;
+    right: 24px;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.mindmap-search {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    max-width: 360px;
+    gap: 5px;
+    min-width: 190px;
+    padding: 7px 8px;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    background: var(--background);
+}
+.mindmap-search input {
+    flex: 1;
+    width: 70px;
+    min-width: 0;
+    background: transparent;
+    outline: none;
+    font-size: 12px;
+}
+.mindmap-search:focus-within {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+}
+.mindmap-search output {
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+.mindmap-search button {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 22px;
+    height: 22px;
+    border-radius: 5px;
+}
+.mindmap-search button:disabled {
+    opacity: 0.4;
+}
+.mindmap-collapse-tools {
+    display: flex;
+    align-items: center;
+    padding: 4px;
+    gap: 4px;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    background: var(--background);
+}
+.mindmap-collapse-tools button {
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 5px;
+}
+.mindmap-collapse-tools select {
+    width: 65px;
+    background: var(--background);
+    font-size: 12px;
+}
+.mindmap-collapse-tools button:hover,
+.mindmap-search button:hover {
+    background: var(--accent);
+}
+.mindmap-map-actions .mindmap-template-picker {
+    position: relative;
+    top: auto;
+    right: auto;
+    margin-inline-start: auto;
+}
+.mindmap-canvas[data-fullscreen='true'] > .mindmap-viewport {
+    margin-top: 68px;
+}
+@media (max-width: 640px) {
+    .mindmap-map-actions {
+        left: 64px;
+        right: 8px;
+    }
+    .mindmap-search {
+        max-width: none;
+        flex-basis: 100%;
+    }
+    .mindmap-canvas[data-fullscreen='true'] > .mindmap-viewport {
+        margin-top: 112px;
+    }
+    .mindmap-map-actions .mindmap-template-panel {
+        right: 0;
+    }
+    .mindmap-style-panel {
+        width: calc(100% - 76px);
+    }
+}
+
+.mindmap-topic[data-colored='true'] > .mindmap-topic-editor,
+.mindmap-topic[data-search-match='true'] > .mindmap-topic-editor {
+    background: transparent;
+}

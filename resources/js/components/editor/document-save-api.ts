@@ -11,7 +11,7 @@ export async function saveLegacyDocument(
     const body = JSON.stringify({
         content,
         revision,
-        editor_features: { mindmap: 5, inline_icons: 2 },
+        editor_features: { mindmap: 7, inline_icons: 2 },
     });
     if (new TextEncoder().encode(JSON.stringify(content)).length > 1048576)
         throw new DocumentSaveError('Document content exceeds 1 MiB.');

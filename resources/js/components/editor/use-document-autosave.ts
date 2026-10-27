@@ -74,7 +74,7 @@ export function useDocumentAutosave(
                     JSON.stringify({
                         content: json,
                         revision: revision.current,
-                        editor_features: { mindmap: 5, inline_icons: 2 },
+                        editor_features: { mindmap: 7, inline_icons: 2 },
                     }),
                 );
                 payloadCache.current = {

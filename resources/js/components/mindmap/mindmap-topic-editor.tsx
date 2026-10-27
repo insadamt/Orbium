@@ -1,3 +1,6 @@
+import { MindMapInlineIcons } from './mindmap-inline-icons';
+import { useMindMapOwner } from './mindmap-owner-context';
+import { createInlineIconNode } from '@/components/inline-icons/inline-icon-node';
 import { useEffect, useLayoutEffect, useRef } from 'react';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
@@ -24,12 +27,20 @@ type Props = {
     onFinish: () => void;
 };
 export function MindMapTopicEditor(props: Props) {
+    const owner = useMindMapOwner();
     const callbacks = useRef(props);
     callbacks.current = props;
     const editor = useEditor({
         extensions: [
             TextColor,
-            Placeholder.configure({ placeholder: 'Type / for text types' }),
+            createInlineIconNode(
+                owner?.workspaceId ?? 0,
+                owner?.nodeId ?? 0,
+                owner?.kind,
+            ),
+            Placeholder.configure({
+                placeholder: 'Type / for blocks or : for icons',
+            }),
             TaskList,
             TaskItem.configure({ nested: true }),
             MindMapCallout,
@@ -174,6 +185,7 @@ export function MindMapTopicEditor(props: Props) {
         >
             <EditorContent editor={editor} />
             {writingMenu.popup}
+            {editor && <MindMapInlineIcons editor={editor} />}
             {editor && (
                 <MindMapTextToolbar editor={editor} onFinish={props.onFinish} />
             )}

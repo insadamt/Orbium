@@ -1,3 +1,4 @@
+import type { ContentOwnerKind } from '@/components/editor/editor-api';
 import { Node, type Editor } from '@tiptap/core';
 import { Plugin, PluginKey, NodeSelection } from '@tiptap/pm/state';
 import { createInlineIconElement } from './inline-icon-dom';
@@ -28,7 +29,11 @@ export function legacyIconAttributes(
     };
 }
 
-export function createInlineIconNode(workspaceId: number, nodeId: number) {
+export function createInlineIconNode(
+    workspaceId: number,
+    nodeId: number,
+    ownerKind?: ContentOwnerKind,
+) {
     return Node.create({
         name: 'inlineIcon',
         inline: true,
@@ -115,6 +120,7 @@ export function createInlineIconNode(workspaceId: number, nodeId: number) {
                 const dom = createInlineIconElement(choice, {
                     workspaceId,
                     nodeId,
+                    ownerKind,
                 });
                 dom.dataset.orbiumInlineIcon = JSON.stringify(node.attrs);
                 dom.setAttribute('role', 'button');

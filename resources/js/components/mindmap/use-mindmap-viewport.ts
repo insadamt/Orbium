@@ -95,7 +95,7 @@ export function useMindMapViewport({
         // Reveal topics inside this canvas without scrolling the surrounding Document or Board.
         //
         const left = sceneLeft + topic.x * scale;
-        const top = sceneTop + topic.y * scale;
+        const top = sceneTop + (topic.y - topic.iconSpace) * scale;
         const right = left + topic.width * scale;
         const bottom = top + topic.height * scale;
         const padding = 16;

@@ -1,3 +1,4 @@
+import type { ContentOwnerKind } from '@/components/editor/editor-api';
 import {
     useEffect,
     useImperativeHandle,
@@ -20,6 +21,7 @@ export function IconResultsGrid({
     onPreview,
     disabled = false,
     imageUrls,
+    ownerKind,
     gridRef,
 }: {
     choices: InlineIconChoice[];
@@ -29,6 +31,7 @@ export function IconResultsGrid({
     onPreview: (choice: InlineIconChoice) => void;
     disabled?: boolean;
     imageUrls?: Map<number, string>;
+    ownerKind?: ContentOwnerKind;
     gridRef?: Ref<IconGridHandle>;
 }) {
     const viewport = useRef<HTMLDivElement>(null);
@@ -203,6 +206,7 @@ export function IconResultsGrid({
                                             >
                                                 <InlineIconGlyph
                                                     choice={choice}
+                                                    ownerKind={ownerKind}
                                                     workspaceId={workspaceId}
                                                     nodeId={nodeId}
                                                     previewUrl={

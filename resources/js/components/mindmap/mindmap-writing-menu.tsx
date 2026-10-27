@@ -1,4 +1,12 @@
 import {
+    findInlineIcons,
+    type InlineIconChoice,
+} from '@/components/inline-icons/icon-catalog';
+import { InlineIconGlyph } from '@/components/inline-icons/inline-icon-glyph';
+import { legacyIconAttributes } from '@/components/inline-icons/inline-icon-node';
+import { announceInsertedIcon } from '@/components/inline-icons/icon-preferences';
+import { requestMindMapInlineIcon } from './mindmap-inline-icons';
+import {
     useEffect,
     useId,
     useLayoutEffect,
@@ -9,6 +17,8 @@ import {
 import { createPortal } from 'react-dom';
 import { Node, type Editor } from '@tiptap/core';
 import {
+    Smile,
+    type LucideIcon,
     AlignLeft,
     Heading1,
     Heading2,
@@ -29,7 +39,21 @@ export const MindMapCallout = Node.create({
     parseHTML: () => [{ tag: 'aside[data-callout]' }],
     renderHTML: () => ['aside', { 'data-callout': '' }, 0],
 });
-const commands = [
+type WritingCommand = {
+    label: string;
+    search: string;
+    icon: LucideIcon;
+    type: string;
+    level?: number;
+    choice?: InlineIconChoice;
+};
+const commands: WritingCommand[] = [
+    {
+        label: 'Inline icon',
+        search: 'icon emoji symbol brand image',
+        icon: Smile,
+        type: 'inlineIcon',
+    },
     {
         label: 'Text',
         search: 'paragraph plain',
@@ -95,18 +119,54 @@ function readQuery(editor: Editor) {
         editor.view.composing ||
         !selection.empty ||
         !selection.$from.parent.isTextblock ||
-        editor.isActive('codeBlock')
+        editor.isActive('codeBlock') ||
+        editor.isActive('code')
     )
         return null;
     const { $from } = selection;
-    const match = /^\/([a-z0-9 ]*)$/i.exec(
-        $from.parent.textBetween(0, $from.parentOffset, undefined, '\n'),
+    const prefix = $from.parent.textBetween(
+        0,
+        $from.parentOffset,
+        undefined,
+        '\n',
     );
-    return match && $from.parentOffset === $from.parent.content.size
-        ? { query: match[1], from: $from.start(), to: selection.from }
+    const slash = /^\/([a-z0-9 ]*)$/i.exec(prefix);
+    if (slash && $from.parentOffset === $from.parent.content.size)
+        return {
+            mode: 'block' as const,
+            query: slash[1],
+            from: $from.start(),
+            to: selection.from,
+        };
+    const colon = /(?:^|\s):([a-z0-9_-]{0,40})$/i.exec(prefix);
+    return colon
+        ? {
+              mode: 'icon' as const,
+              query: colon[1],
+              from: selection.from - colon[1].length - 1,
+              to: selection.from,
+          }
         : null;
 }
-function matches(query: string) {
+function matches(query: string, mode = 'block'): WritingCommand[] {
+    if (mode === 'icon')
+        return [
+            ...findInlineIcons(query)
+                .slice(0, 10)
+                .map((choice) => ({
+                    label: choice.label,
+                    search: choice.label,
+                    icon: Smile,
+                    type: 'iconChoice',
+                    choice,
+                })),
+            {
+                label: 'Browse all icons…',
+                search: 'icons',
+                icon: Smile,
+                type: 'inlineIcon',
+            },
+        ];
     return commands.filter((command) =>
         `${command.label} ${command.search}`
             .toLowerCase()
@@ -121,7 +181,7 @@ export function useMindMapWritingMenu(editor: Editor | null) {
     const [surface, setSurface] = useState<HTMLElement | null>(null);
     const [position, setPosition] = useState({ left: 0, top: 0 });
     const menu = useRef<HTMLDivElement>(null);
-    const filtered = matches(query?.query ?? '');
+    const filtered = matches(query?.query ?? '', query?.mode);
     const open = query !== null && dismissed !== `${query.from}:${query.query}`;
     useEffect(() => {
         if (!editor) return;
@@ -213,12 +273,34 @@ export function useMindMapWritingMenu(editor: Editor | null) {
         if (!editor || editor.view.composing) return;
         const live = readQuery(editor);
         if (!live) return;
+        if (command.type === 'inlineIcon') {
+            setDismissed(`${live.from}:${live.query}`);
+            requestMindMapInlineIcon(
+                editor,
+                live.mode === 'icon' ? live.query : '',
+                { from: live.from, to: live.to },
+            );
+            return;
+        }
         const chain = editor
             .chain()
             .focus()
             .deleteRange({ from: live.from, to: live.to })
             .setMeta('boardAction', true);
-        if (command.type === 'heading')
+        if (command.type === 'iconChoice' && command.choice) {
+            const choice = command.choice;
+            chain
+                .insertContent(
+                    choice.kind === 'emoji'
+                        ? { type: 'text', text: choice.value }
+                        : {
+                              type: 'inlineIcon',
+                              attrs: legacyIconAttributes(choice),
+                          },
+                )
+                .run();
+            announceInsertedIcon(editor.view.dom, choice);
+        } else if (command.type === 'heading')
             chain.setHeading({ level: command.level as 1 | 2 | 3 }).run();
         else if (command.type === 'bulletList') chain.toggleBulletList().run();
         else if (command.type === 'orderedList')
@@ -245,7 +327,7 @@ export function useMindMapWritingMenu(editor: Editor | null) {
         //
         const live = readQuery(editor);
         if (!live || dismissed === `${live.from}:${live.query}`) return false;
-        const options = matches(live.query);
+        const options = matches(live.query, live.mode);
         const index =
             live.query === query?.query && live.from === query.from
                 ? active
@@ -275,12 +357,20 @@ export function useMindMapWritingMenu(editor: Editor | null) {
                       ref={menu}
                       id={menuId}
                       role="listbox"
-                      aria-label="Branch text type"
+                      aria-label={
+                          query?.mode === 'icon'
+                              ? 'Insert inline icon'
+                              : 'Branch text type'
+                      }
                       className="mindmap-writing-menu"
                       style={position}
                       onPointerDown={(event) => event.preventDefault()}
                   >
-                      <p>Text type</p>
+                      <p>
+                          {query?.mode === 'icon'
+                              ? 'Emoji & icons'
+                              : 'Text type'}
+                      </p>
                       {filtered.map((command, index) => (
                           <button
                               key={command.label}
@@ -290,7 +380,15 @@ export function useMindMapWritingMenu(editor: Editor | null) {
                               aria-selected={active === index}
                               onClick={() => choose(command)}
                           >
-                              <command.icon size={16} />
+                              {command.choice ? (
+                                  <InlineIconGlyph
+                                      choice={command.choice}
+                                      workspaceId={0}
+                                      nodeId={0}
+                                  />
+                              ) : (
+                                  <command.icon size={16} />
+                              )}
                               <span>{command.label}</span>
                           </button>
                       ))}

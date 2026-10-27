@@ -60,5 +60,5 @@ export function withMindMapLayout(
     map: MindMapData,
     layout: MindMapLayoutId,
 ): MindMapData {
-    return { ...map, version: 5, layout };
+    return { ...map, version: map.version >= 5 ? map.version : 5, layout };
 }

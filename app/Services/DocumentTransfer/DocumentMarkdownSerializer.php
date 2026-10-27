@@ -8,6 +8,7 @@ use App\Services\Markdown\MathBlock;
 use App\Services\Markdown\OrbiumBlock;
 use App\Services\Markdown\OrbiumInline;
 use App\Services\MindMaps\MindMapData;
+use App\Services\MindMaps\MindMapIconReferences;
 use League\CommonMark\Extension\CommonMark\Node\Block\BlockQuote;
 use League\CommonMark\Extension\CommonMark\Node\Block\FencedCode;
 use League\CommonMark\Extension\CommonMark\Node\Block\Heading;
@@ -123,7 +124,13 @@ final class DocumentMarkdownSerializer
             $length = max([3, ...array_map(fn ($run) => strlen($run) + 1, $runs[0])]);
             $fence = str_repeat(':', $length);
 
-            return $fence.'orbium '.json_encode($node->metadata, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR)."\n".($body !== '' ? $body."\n" : '').$fence;
+            $metadata = $node->metadata;
+            if ($node->kind() === 'mindmap') {
+                $omittedIds = array_keys(array_filter($this->options->attachmentDestinations, static fn ($destination) => str_starts_with($destination, '#orbium-missing-')));
+                $metadata['mindmap'] = app(MindMapIconReferences::class)->replaceOmittedIconsWithLabels($metadata['mindmap'], $omittedIds);
+            }
+
+            return $fence.'orbium '.json_encode($metadata, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR)."\n".($body !== '' ? $body."\n" : '').$fence;
         }
         if ($node instanceof Table || ($node instanceof OrbiumBlock && $node->kind() === 'table')) {
             return $this->table($node);

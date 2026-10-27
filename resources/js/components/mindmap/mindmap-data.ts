@@ -1,3 +1,8 @@
+import {
+    validBranchColor,
+    validBranchIcon,
+    type BranchColor,
+} from './mindmap-branch-style';
 import { validMindMapLayout, type MindMapLayoutId } from './mindmap-templates';
 import type { JSONContent } from '@tiptap/core';
 import { validMindMapDocument } from './mindmap-topic-document';
@@ -12,9 +17,11 @@ export type MindMapTopic = {
     content?: BoardInline[];
     width?: number;
     body?: JSONContent;
+    color?: BranchColor;
+    icon?: string;
 };
 export type MindMapData = {
-    version: 1 | 2 | 3 | 4 | 5;
+    version: 1 | 2 | 3 | 4 | 5 | 6 | 7;
     layout?: MindMapLayoutId;
     root_id: string;
     topics: MindMapTopic[];
@@ -38,7 +45,7 @@ export function validMindMap(value: unknown): value is MindMapData {
                     ...(map.version >= 5 ? ['layout'] : []),
                 ].includes(key),
         ) ||
-        ![1, 2, 3, 4, 5].includes(map.version) ||
+        ![1, 2, 3, 4, 5, 6, 7].includes(map.version) ||
         (map.layout !== undefined && !validMindMapLayout(map.layout)) ||
         typeof map.root_id !== 'string' ||
         !identifier.test(map.root_id) ||
@@ -71,6 +78,7 @@ export function validMindMap(value: unknown): value is MindMapData {
                         ...(map.version >= 2 ? ['content'] : []),
                         ...(map.version >= 3 ? ['width'] : []),
                         ...(map.version >= 4 ? ['body'] : []),
+                        ...(map.version >= 6 ? ['color', 'icon'] : []),
                     ].includes(key),
             ) ||
             typeof topic.id !== 'string' ||
@@ -88,9 +96,15 @@ export function validMindMap(value: unknown): value is MindMapData {
                     code === 127 || (code < 32 && ![9, 10, 13].includes(code))
                 );
             }) ||
+            (topic.color !== undefined && !validBranchColor(topic.color)) ||
+            (topic.icon !== undefined && !validBranchIcon(topic.icon)) ||
             (topic.body !== undefined &&
                 (topic.content !== undefined ||
-                    !validMindMapDocument(topic.body, topic.text))) ||
+                    !validMindMapDocument(
+                        topic.body,
+                        topic.text,
+                        map.version >= 7,
+                    ))) ||
             (topic.content !== undefined &&
                 !validMindMapTopicContent(topic.content, topic.text)) ||
             (topic.width !== undefined &&

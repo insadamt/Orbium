@@ -59,7 +59,7 @@
     overflow: visible;
     pointer-events: none;
 }
-.mindmap-scene path {
+.mindmap-scene > svg path {
     fill: none;
     stroke: color-mix(in srgb, var(--muted-foreground) 45%, var(--background));
     stroke-width: 1.25;

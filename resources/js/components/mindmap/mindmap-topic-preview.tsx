@@ -1,7 +1,6 @@
 import './mindmap-topic-document.css';
 import type { JSONContent } from '@tiptap/core';
-import { BoardInlinePreview } from '@/components/boards/board-inline-text';
-import type { BoardInline } from '@/components/boards/board-types';
+import { MindMapInlinePreview } from './mindmap-inline-preview';
 import type { MindMapTopic } from './mindmap-data';
 import { mindMapTopicDocument } from './mindmap-topic-document';
 
@@ -15,8 +14,8 @@ export function MindMapTopicPreview({
     function render(node: JSONContent, index: number): React.ReactNode {
         const children = (node.content ?? []).map(render);
         const inline = (
-            <BoardInlinePreview
-                content={(node.content ?? []) as BoardInline[]}
+            <MindMapInlinePreview
+                content={node.content ?? []}
                 linksInteractive={linksInteractive}
             />
         );

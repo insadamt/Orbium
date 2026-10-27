@@ -55,6 +55,7 @@ export type AttachmentMetadata = {
     purpose: string;
 };
 export type RichContext = {
+    tabId?: string;
     ownerKind?: ContentOwnerKind;
     workspaceId: number;
     nodeId: number;

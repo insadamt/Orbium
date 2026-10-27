@@ -90,7 +90,7 @@ export default function MarkdownEditor(props: MarkdownEditorProps) {
     const transfer = useMarkdownTransfer(view, transferContext.current);
     const [livePreview, setLivePreview] = useState(true);
     const upload = useMarkdownUpload(props.workspaceId, props.nodeId);
-    const { active, visible } = useDocumentTab();
+    const { active, visible, tabId } = useDocumentTab();
     const hosted = useHostedMarkdownDocument(
         view,
         upload.uploading,
@@ -132,6 +132,7 @@ export default function MarkdownEditor(props: MarkdownEditorProps) {
     const presentation = useRef(new Compartment());
     const outlineUpdates = useRef(new Compartment());
     const [richContext] = useState<RichContext>(() => ({
+        tabId,
         workspaceId: props.workspaceId,
         nodeId: props.nodeId,
         mermaid: new MermaidPreviewSession(props.workspaceId, props.nodeId),

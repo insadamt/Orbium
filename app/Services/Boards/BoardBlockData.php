@@ -6,6 +6,7 @@ use App\Models\Attachment;
 use App\Models\Node;
 use App\Services\Library\AttachmentMediaTypes;
 use App\Services\MindMaps\MindMapData;
+use App\Services\MindMaps\MindMapIconReferences;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 
@@ -157,6 +158,10 @@ final class BoardBlockData
             $ids = [...$ids, ...(new BoardTableSource)->attachmentIds($data['table_source'])];
         }
 
+        if (isset($data['mindmap'])) {
+            $ids = [...$ids, ...app(MindMapIconReferences::class)->attachmentIds($data['mindmap'])];
+        }
+
         return array_values(array_unique($ids));
     }
 
@@ -173,6 +178,13 @@ final class BoardBlockData
             }
         }
         foreach ($objects as $object) {
+            if (isset($object['data']['mindmap'])) {
+                foreach (app(MindMapIconReferences::class)->attachmentIds($object['data']['mindmap']) as $id) {
+                    if ($files[$id]->purpose !== 'image' || ! in_array($files[$id]->mime_type, ['image/png', 'image/jpeg', 'image/gif', 'image/webp'], true)) {
+                        $this->invalid('A Mind Map icon requires an owned image attachment.');
+                    }
+                }
+            }
             if (isset($object['data']['attachment_id'], $object['data']['media_kind'])) {
                 $allowedTypes = match ($object['data']['media_kind']) {
                     'pdf' => ['application/pdf'],

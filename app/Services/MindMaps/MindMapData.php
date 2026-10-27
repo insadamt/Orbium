@@ -3,6 +3,7 @@
 namespace App\Services\MindMaps;
 
 use App\Services\Boards\BoardBlockData;
+use App\Services\Editor\InlineIconData;
 use Illuminate\Validation\ValidationException;
 
 final class MindMapData
@@ -12,7 +13,7 @@ final class MindMapData
     public function validate(mixed $value, string $field = 'mindmap'): array
     {
         $invalid = static fn () => throw ValidationException::withMessages([$field => 'Invalid Mind Map. Use a connected supported topic tree, labels up to 500 characters, depth up to 64 and at most 64 KiB.']);
-        if (! is_array($value) || array_diff(array_keys($value), ['version', 'root_id', 'topics', ...(($value['version'] ?? 0) >= 5 ? ['layout'] : [])]) !== [] || ! in_array($value['version'] ?? null, [1, 2, 3, 4, 5], true) || ! $this->identifier($value['root_id'] ?? null) || ! is_array($value['topics'] ?? null) || ! array_is_list($value['topics']) || $value['topics'] === []) {
+        if (! is_array($value) || array_diff(array_keys($value), ['version', 'root_id', 'topics', ...(($value['version'] ?? 0) >= 5 ? ['layout'] : [])]) !== [] || ! in_array($value['version'] ?? null, [1, 2, 3, 4, 5, 6, 7], true) || ! $this->identifier($value['root_id'] ?? null) || ! is_array($value['topics'] ?? null) || ! array_is_list($value['topics']) || $value['topics'] === []) {
             $invalid();
         }
         if (array_key_exists('layout', $value) && ! in_array($value['layout'], ['balanced', 'tree-right', 'tree-left', 'hierarchy-down', 'hierarchy-up', 'outline', 'brace', 'fishbone', 'timeline', 'timeline-vertical'], true)) {
@@ -24,7 +25,10 @@ final class MindMapData
         }
         $topics = [];
         foreach ($value['topics'] as $topic) {
-            if (! is_array($topic) || array_diff(array_keys($topic), ['id', 'parent_id', 'text', 'collapsed', ...($value['version'] >= 2 ? ['content'] : []), ...($value['version'] >= 3 ? ['width'] : []), ...($value['version'] >= 4 ? ['body'] : [])]) !== [] || ! $this->identifier($topic['id'] ?? null) || isset($topics[$topic['id']]) || ! array_key_exists('parent_id', $topic) || ($topic['parent_id'] !== null && ! $this->identifier($topic['parent_id'])) || ! is_string($topic['text'] ?? null) || mb_strlen($topic['text']) > 500 || ! mb_check_encoding($topic['text'], 'UTF-8') || preg_match('/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/u', $topic['text']) || ! is_bool($topic['collapsed'] ?? null)) {
+            if (! is_array($topic) || array_diff(array_keys($topic), ['id', 'parent_id', 'text', 'collapsed', ...($value['version'] >= 2 ? ['content'] : []), ...($value['version'] >= 3 ? ['width'] : []), ...($value['version'] >= 4 ? ['body'] : []), ...($value['version'] >= 6 ? ['color', 'icon'] : [])]) !== [] || ! $this->identifier($topic['id'] ?? null) || isset($topics[$topic['id']]) || ! array_key_exists('parent_id', $topic) || ($topic['parent_id'] !== null && ! $this->identifier($topic['parent_id'])) || ! is_string($topic['text'] ?? null) || mb_strlen($topic['text']) > 500 || ! mb_check_encoding($topic['text'], 'UTF-8') || preg_match('/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/u', $topic['text']) || ! is_bool($topic['collapsed'] ?? null)) {
+                $invalid();
+            }
+            if ((array_key_exists('color', $topic) && ! in_array($topic['color'], ['gray', 'red', 'orange', 'amber', 'green', 'teal', 'blue', 'purple', 'pink'], true)) || (array_key_exists('icon', $topic) && ! (new InlineIconData)->isBuiltin($topic['icon']))) {
                 $invalid();
             }
             if (array_key_exists('width', $topic) && (! is_int($topic['width']) || $topic['width'] < 100 || $topic['width'] > 800)) {
@@ -34,7 +38,7 @@ final class MindMapData
                 if (array_key_exists('content', $topic)) {
                     $invalid();
                 }
-                (new MindMapTopicDocument)->validate($topic['body'], $topic['text'], $field);
+                (new MindMapTopicDocument)->validate($topic['body'], $topic['text'], $field, $value['version'] >= 7);
             }
             if (array_key_exists('content', $topic)) {
                 $content = $topic['content'];

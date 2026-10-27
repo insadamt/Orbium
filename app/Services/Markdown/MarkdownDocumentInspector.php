@@ -4,6 +4,7 @@ namespace App\Services\Markdown;
 
 use App\Services\Editor\DocumentInspectionResult;
 use App\Services\MindMaps\MindMapData;
+use App\Services\MindMaps\MindMapIconReferences;
 use App\Services\Statistics\MarkdownDocumentStatistics;
 use League\CommonMark\Extension\CommonMark\Node\Block\FencedCode;
 use League\CommonMark\Extension\CommonMark\Node\Inline\AbstractWebResource;
@@ -71,6 +72,11 @@ final class MarkdownDocumentInspector
             return '';
         }
         if ($node instanceof OrbiumBlock && $node->kind() === 'mindmap') {
+            foreach (app(MindMapIconReferences::class)->attachmentIds($node->metadata['mindmap']) as $id) {
+                $attachments[$id] = true;
+                $references[] = new MarkdownAttachmentReference($id, true, $node->getStartLine());
+            }
+
             return app(MindMapData::class)->text($node->metadata['mindmap']);
         }
         if ($node instanceof OrbiumBlock && $node->kind() === 'math') {

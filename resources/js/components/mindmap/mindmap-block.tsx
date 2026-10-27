@@ -1,3 +1,8 @@
+import './mindmap-inline-icons.css';
+import {
+    MindMapOwnerContext,
+    type MindMapOwner,
+} from './mindmap-owner-context';
 import { RichBlockIcon } from '@/components/editor/ui/rich-block-icon';
 import * as Dialog from '@radix-ui/react-dialog';
 import { Pencil, Check } from 'lucide-react';
@@ -21,6 +26,7 @@ import './mindmap-fullscreen.css';
 
 type Props = {
     data: MindMapData;
+    owner?: MindMapOwner;
     editable?: boolean;
     editingRequested?: boolean;
     onChange?: (map: MindMapData, typing?: boolean) => boolean;
@@ -31,6 +37,7 @@ type Props = {
 
 export function MindMapBlock({
     data: incoming,
+    owner,
     editable = false,
     editingRequested,
     onChange,
@@ -62,7 +69,11 @@ export function MindMapBlock({
     }, [editingRequested]);
 
     function closeEditor() {
-        if (composing.current) return;
+        if (
+            composing.current ||
+            dialog.current?.querySelector('[data-mindmap-uploading]')
+        )
+            return;
         setMode(null);
         if (mode === 'edit') onFinishEditing?.();
     }
@@ -77,6 +88,26 @@ export function MindMapBlock({
     }
     function dispatchOwnerHistory(event: KeyboardEvent) {
         if (
+            (event.ctrlKey || event.metaKey) &&
+            !event.altKey &&
+            event.key.toLowerCase() === 'f' &&
+            !event.nativeEvent.isComposing &&
+            !composing.current
+        ) {
+            if ((event.target as Element).closest('[data-inline-icon-picker]'))
+                return;
+            const search = dialog.current?.querySelector<HTMLInputElement>(
+                '[data-mindmap-search-input]',
+            );
+            if (search) {
+                event.preventDefault();
+                event.stopPropagation();
+                search.focus();
+                search.select();
+            }
+            return;
+        }
+        if (
             !(event.ctrlKey || event.metaKey) ||
             event.altKey ||
             !['z', 'y'].includes(event.key.toLowerCase())
@@ -85,7 +116,7 @@ export function MindMapBlock({
         if (
             event.target instanceof Element &&
             event.target.closest(
-                '[role="menu"], [role="listbox"], .board-link-popover, [data-mindmap-width-panel] input',
+                '[data-inline-icon-picker], [role="menu"], [role="listbox"], .board-link-popover, [data-mindmap-width-panel] input, [data-mindmap-search-input], [data-mindmap-style-panel] input',
             )
         )
             return;
@@ -137,173 +168,181 @@ export function MindMapBlock({
         (topic ?? viewport)?.focus({ preventScroll: true });
     }
     return (
-        <TooltipProvider>
-            <div
-                ref={anchor}
-                className="orbium-mindmap attachment-player orbium-rich-card"
-                style={
-                    {
-                        '--mindmap-preview-height': `${previewHeight}px`,
-                    } as CSSProperties
-                }
-                data-rich-writing
-                data-mindmap-composing="false"
-            >
+        <MindMapOwnerContext.Provider value={owner}>
+            <TooltipProvider>
                 <div
-                    className="attachment-heading orbium-rich-card-heading"
-                    data-board-interactive
+                    ref={anchor}
+                    className="orbium-mindmap attachment-player orbium-rich-card"
+                    style={
+                        {
+                            '--mindmap-preview-height': `${previewHeight}px`,
+                        } as CSSProperties
+                    }
+                    data-rich-writing
+                    data-mindmap-composing="false"
                 >
-                    <span className="attachment-type-icon">
-                        <RichBlockIcon name="mindmap" />
-                    </span>
-                    <div className="attachment-identity">
-                        <div className="attachment-title">Mind map</div>
-                        <span className="attachment-description">
-                            Topic diagram
+                    <div
+                        className="attachment-heading orbium-rich-card-heading"
+                        data-board-interactive
+                    >
+                        <span className="attachment-type-icon">
+                            <RichBlockIcon name="mindmap" />
                         </span>
-                    </div>
-                    <div className="attachment-actions">
-                        {editable && (
+                        <div className="attachment-identity">
+                            <div className="attachment-title">Mind map</div>
+                            <span className="attachment-description">
+                                Topic diagram
+                            </span>
+                        </div>
+                        <div className="attachment-actions">
+                            {editable && (
+                                <button
+                                    type="button"
+                                    className="attachment-action"
+                                    aria-label="Edit Mind Map"
+                                    title="Edit Mind Map"
+                                    aria-haspopup="dialog"
+                                    onClick={() => {
+                                        onStartEditing?.();
+                                        setMode('edit');
+                                    }}
+                                >
+                                    <RichBlockIcon name="edit" size={17} />
+                                </button>
+                            )}
                             <button
                                 type="button"
                                 className="attachment-action"
-                                aria-label="Edit Mind Map"
-                                title="Edit Mind Map"
+                                aria-label="Open Mind Map in fullscreen"
+                                title="Full preview"
                                 aria-haspopup="dialog"
-                                onClick={() => {
-                                    onStartEditing?.();
-                                    setMode('edit');
-                                }}
+                                onClick={() => setMode('preview')}
                             >
-                                <RichBlockIcon name="edit" size={17} />
+                                <RichBlockIcon name="maximize" size={17} />
                             </button>
-                        )}
-                        <button
-                            type="button"
-                            className="attachment-action"
-                            aria-label="Open Mind Map in fullscreen"
-                            title="Full preview"
-                            aria-haspopup="dialog"
-                            onClick={() => setMode('preview')}
-                        >
-                            <RichBlockIcon name="maximize" size={17} />
-                        </button>
+                        </div>
+                    </div>
+                    <div className="mindmap-block-preview">
+                        <MindMapCanvas
+                            data={data}
+                            onLayoutHeight={setPreviewTreeHeight}
+                        />
                     </div>
                 </div>
-                <div className="mindmap-block-preview">
-                    <MindMapCanvas
-                        data={data}
-                        onLayoutHeight={setPreviewTreeHeight}
-                    />
-                </div>
-            </div>
-            <Dialog.Root
-                open={mode !== null}
-                onOpenChange={(open) => {
-                    if (!open) closeEditor();
-                }}
-            >
-                <Dialog.Portal container={anchor.current?.ownerDocument.body}>
-                    <Dialog.Overlay className="mermaid-full-overlay" />
-                    <Dialog.Content
-                        ref={dialog}
-                        onOpenAutoFocus={(event) => {
-                            event.preventDefault();
-                            requestAnimationFrame(focusCanvas);
-                        }}
-                        className="mermaid-full-dialog mindmap-full-dialog"
-                        data-mindmap-dialog
-                        data-board-interactive
-                        onPointerDown={(event) => event.stopPropagation()}
-                        onDoubleClick={(event) => event.stopPropagation()}
-                        onKeyDownCapture={dispatchOwnerHistory}
-                        onEscapeKeyDown={(event) => {
-                            if (
-                                composing.current ||
-                                dialog.current?.querySelector(
-                                    '[data-mindmap-resizing]',
-                                ) ||
-                                (event.target as Element)?.closest(
-                                    'textarea, [data-mindmap-topic-editor], [data-mindmap-width-panel], [data-mindmap-template-panel], [role="menu"], [role="listbox"]',
-                                )
-                            )
-                                event.preventDefault();
-                        }}
-                        onInteractOutside={(event) => event.preventDefault()}
-                        onCloseAutoFocus={(event) => {
-                            event.preventDefault();
-                            anchor.current
-                                ?.querySelector<HTMLButtonElement>('button')
-                                ?.focus({ preventScroll: true });
-                        }}
+                <Dialog.Root
+                    open={mode !== null}
+                    onOpenChange={(open) => {
+                        if (!open) closeEditor();
+                    }}
+                >
+                    <Dialog.Portal
+                        container={anchor.current?.ownerDocument.body}
                     >
-                        <header className="mindmap-full-header">
-                            <div>
-                                <Dialog.Title className="mermaid-full-title">
-                                    Mind map
-                                </Dialog.Title>
-                                <Dialog.Description className="sr-only">
-                                    Double-click a topic to edit text. Type /
-                                    for text types. Escape finishes text
-                                    editing. With a topic selected, Tab adds a
-                                    child and Enter adds a sibling. Drag empty
-                                    canvas to pan.
-                                </Dialog.Description>
-                            </div>
-                            <div className="mindmap-full-header-actions">
-                                {mode === 'edit' && (
-                                    <span
-                                        className="mindmap-owner-status"
-                                        role="status"
-                                        data-status={status}
-                                    >
-                                        {status
-                                            ? {
-                                                  saved: 'Saved',
-                                                  unsaved: 'Unsaved changes',
-                                                  saving: 'Saving…',
-                                                  error: 'Not saved',
-                                                  loading: 'Loading…',
-                                              }[status]
-                                            : 'Autosave managed by page'}
-                                    </span>
-                                )}
-                                {mode === 'preview' && editable && (
+                        <Dialog.Overlay className="mermaid-full-overlay" />
+                        <Dialog.Content
+                            ref={dialog}
+                            onOpenAutoFocus={(event) => {
+                                event.preventDefault();
+                                requestAnimationFrame(focusCanvas);
+                            }}
+                            className="mermaid-full-dialog mindmap-full-dialog"
+                            data-mindmap-dialog
+                            data-board-interactive
+                            onPointerDown={(event) => event.stopPropagation()}
+                            onDoubleClick={(event) => event.stopPropagation()}
+                            onKeyDownCapture={dispatchOwnerHistory}
+                            onEscapeKeyDown={(event) => {
+                                if (
+                                    composing.current ||
+                                    dialog.current?.querySelector(
+                                        '[data-mindmap-resizing], [data-mindmap-dragging], [data-mindmap-uploading]',
+                                    ) ||
+                                    (event.target as Element)?.closest(
+                                        'textarea, [data-mindmap-topic-editor], [data-mindmap-width-panel], [data-inline-icon-picker], [data-mindmap-template-panel], [data-mindmap-style-panel], [data-mindmap-search-input], [role="menu"], [role="listbox"]',
+                                    )
+                                )
+                                    event.preventDefault();
+                            }}
+                            onInteractOutside={(event) =>
+                                event.preventDefault()
+                            }
+                            onCloseAutoFocus={(event) => {
+                                event.preventDefault();
+                                anchor.current
+                                    ?.querySelector<HTMLButtonElement>('button')
+                                    ?.focus({ preventScroll: true });
+                            }}
+                        >
+                            <header className="mindmap-full-header">
+                                <div>
+                                    <Dialog.Title className="mermaid-full-title">
+                                        Mind map
+                                    </Dialog.Title>
+                                    <Dialog.Description className="sr-only">
+                                        Double-click a topic to edit text. Type
+                                        / for text types and icons, or : to
+                                        search inline icons. Escape finishes
+                                        text editing. With a topic selected, Tab
+                                        adds a child and Enter adds a sibling.
+                                        Drag empty canvas to pan.
+                                    </Dialog.Description>
+                                </div>
+                                <div className="mindmap-full-header-actions">
+                                    {mode === 'edit' && (
+                                        <span
+                                            className="mindmap-owner-status"
+                                            role="status"
+                                            data-status={status}
+                                        >
+                                            {status
+                                                ? {
+                                                      saved: 'Saved',
+                                                      unsaved:
+                                                          'Unsaved changes',
+                                                      saving: 'Saving…',
+                                                      error: 'Not saved',
+                                                      loading: 'Loading…',
+                                                  }[status]
+                                                : 'Autosave managed by page'}
+                                        </span>
+                                    )}
+                                    {mode === 'preview' && editable && (
+                                        <button
+                                            type="button"
+                                            className="mindmap-done"
+                                            onClick={() => {
+                                                onStartEditing?.();
+                                                setMode('edit');
+                                            }}
+                                        >
+                                            <Pencil size={15} /> Edit
+                                        </button>
+                                    )}
                                     <button
                                         type="button"
                                         className="mindmap-done"
-                                        onClick={() => {
-                                            onStartEditing?.();
-                                            setMode('edit');
-                                        }}
+                                        onClick={closeEditor}
                                     >
-                                        <Pencil size={15} /> Edit
+                                        <Check size={15} /> Done
                                     </button>
-                                )}
-                                <button
-                                    type="button"
-                                    className="mindmap-done"
-                                    onClick={closeEditor}
-                                >
-                                    <Check size={15} /> Done
-                                </button>
-                            </div>
-                        </header>
-                        <MindMapCanvas
-                            data={data}
-                            editable={mode === 'edit' && editable}
-                            fullscreen
-                            onComposition={updateComposition}
-                            onChange={(next, typing) => {
-                                const accepted =
-                                    onChange?.(next, typing) ?? false;
-                                if (accepted) setData(next);
-                                return accepted;
-                            }}
-                        />
-                    </Dialog.Content>
-                </Dialog.Portal>
-            </Dialog.Root>
-        </TooltipProvider>
+                                </div>
+                            </header>
+                            <MindMapCanvas
+                                data={data}
+                                editable={mode === 'edit' && editable}
+                                fullscreen
+                                onComposition={updateComposition}
+                                onChange={(next, typing) => {
+                                    const accepted =
+                                        onChange?.(next, typing) ?? false;
+                                    if (accepted) setData(next);
+                                    return accepted;
+                                }}
+                            />
+                        </Dialog.Content>
+                    </Dialog.Portal>
+                </Dialog.Root>
+            </TooltipProvider>
+        </MindMapOwnerContext.Provider>
     );
 }

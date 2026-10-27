@@ -15,6 +15,12 @@ export function mountMindMap(mount: RichWidgetMount): RichController {
             root.render(
                 <MindMapBlock
                     data={block.metadata.mindmap}
+                    owner={{
+                        tabId: mount.context.tabId,
+                        workspaceId: mount.context.workspaceId,
+                        nodeId: mount.context.nodeId,
+                        kind: mount.context.ownerKind ?? 'document',
+                    }}
                     editable={mount.view.state.facet(EditorView.editable)}
                     onChange={(mindmap) => {
                         const next = preservePresentation(

@@ -3,6 +3,7 @@
 namespace App\Services\Editor;
 
 use App\Services\MindMaps\MindMapData;
+use App\Services\MindMaps\MindMapIconReferences;
 use App\Services\Statistics\LegacyDocumentStatistics;
 use Illuminate\Validation\ValidationException;
 
@@ -49,6 +50,11 @@ class EditorContentInspector
         }
         if ($this->isAttachmentNode($node)) {
             $attachments[(int) $attrs['attachmentId']] = true;
+        }
+        if ($type === 'mindmap') {
+            foreach (app(MindMapIconReferences::class)->attachmentIds($attrs['mindmap']) as $id) {
+                $attachments[$id] = true;
+            }
         }
         if ($type === 'mermaid' && is_string($attrs['source'] ?? null)) {
             $sources[hash('sha256', $attrs['source'])] = $attrs['source'];
@@ -204,6 +210,9 @@ class EditorContentInspector
     {
         $ids = [];
         $this->walk($content, 0, static function (array $node) use (&$ids): void {
+            if (($node['type'] ?? null) === 'mindmap') {
+                $ids = [...$ids, ...app(MindMapIconReferences::class)->attachmentIds($node['attrs']['mindmap'])];
+            }
             if (in_array($node['type'] ?? null, ['image', 'file'], true) || (($node['type'] ?? null) === 'inlineIcon' && ($node['attrs']['kind'] ?? null) === 'custom')) {
                 $ids[] = (int) $node['attrs']['attachmentId'];
             }
@@ -237,6 +246,9 @@ class EditorContentInspector
                 $this->invalid('A mention cannot be remapped.');
             }
             $content['attrs']['id'] = $nodeIds[$oldId];
+        }
+        if (($content['type'] ?? null) === 'mindmap') {
+            $content['attrs']['mindmap'] = app(MindMapIconReferences::class)->remap($content['attrs']['mindmap'], $attachmentIds);
         }
         if ($this->isAttachmentNode($content)) {
             $oldId = (int) $content['attrs']['attachmentId'];

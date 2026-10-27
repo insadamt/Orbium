@@ -139,7 +139,7 @@ export default function DocumentEditor({
     const extensions = useMemo(
         () => [
             createEditorPerformanceExtension(nodeId),
-            MindMapNode,
+            MindMapNode.configure({ workspaceId, nodeId }),
             createInlineIconNode(workspaceId, nodeId),
             StarterKit.configure({
                 codeBlock: false,

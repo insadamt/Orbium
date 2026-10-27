@@ -1,6 +1,8 @@
 import type { MindMapTopic } from './mindmap-data';
 import {
     placedTopic,
+    topicPath,
+    type LayoutPath,
     visibleChildren,
     horizontalConnection,
     verticalConnection,
@@ -49,7 +51,7 @@ export function horizontalTree(
         direction: mode === 'left' ? 'left' : 'right',
     });
     const topics = [root];
-    const paths: string[] = [];
+    const paths: LayoutPath[] = [];
     function place(
         group: MindMapTopic[],
         direction: number,
@@ -71,7 +73,12 @@ export function horizontalTree(
                 direction: direction > 0 ? 'right' : 'left',
             });
             topics.push(current);
-            paths.push(horizontalConnection(parent, current));
+            paths.push(
+                topicPath(
+                    current.topic.id,
+                    horizontalConnection(parent, current),
+                ),
+            );
             const descendants = visibleChildren(context, topic);
             place(
                 descendants,
@@ -125,7 +132,7 @@ export function verticalTree(
             (levelPositions[depth + 1] = levelPositions[depth] + height + 64),
     );
     const topics: PlacedTopic[] = [];
-    const paths: string[] = [];
+    const paths: LayoutPath[] = [];
     function place(
         topic: MindMapTopic,
         depth: number,
@@ -143,7 +150,13 @@ export function verticalTree(
             direction: direction > 0 ? 'down' : 'up',
         });
         topics.push(current);
-        if (parent) paths.push(verticalConnection(parent, current, direction));
+        if (parent)
+            paths.push(
+                topicPath(
+                    current.topic.id,
+                    verticalConnection(parent, current, direction),
+                ),
+            );
         const children = visibleChildren(context, topic);
         const childrenWidth =
             children.reduce((sum, child) => sum + spans.get(child.id)!, 0) +
@@ -160,7 +173,7 @@ export function verticalTree(
 
 export function outlineTree(context: LayoutContext): TopicArrangement {
     const topics: PlacedTopic[] = [];
-    const paths: string[] = [];
+    const paths: LayoutPath[] = [];
     let top = 0;
     function place(topic: MindMapTopic, depth: number, parent?: PlacedTopic) {
         const current = placedTopic(context, topic, {
@@ -172,9 +185,12 @@ export function outlineTree(context: LayoutContext): TopicArrangement {
         topics.push(current);
         if (parent)
             paths.push(
-                `M${parent.x + 12},${parent.y + parent.height} V${current.y + current.height / 2} H${current.x}`,
+                topicPath(
+                    current.topic.id,
+                    `M${parent.x + 12},${parent.y + parent.height} V${current.y + current.height / 2} H${current.x}`,
+                ),
             );
-        top += current.height + 18;
+        top += context.sizes.get(topic.id)!.height + 18;
         visibleChildren(context, topic).forEach((child) =>
             place(child, depth + 1, current),
         );
@@ -188,7 +204,7 @@ export function braceTree(context: LayoutContext): TopicArrangement {
     const positions = new Map(
         arrangement.topics.map((topic) => [topic.topic.id, topic]),
     );
-    const paths: string[] = [];
+    const paths: LayoutPath[] = [];
     for (const parent of arrangement.topics) {
         const children = visibleChildren(context, parent.topic).map((child) =>
             positions.get(child.id)!,
@@ -201,13 +217,24 @@ export function braceTree(context: LayoutContext): TopicArrangement {
         const middle = (top + bottom) / 2;
         const x = parent.x + parent.width + 24;
         paths.push(
-            `M${parent.x + parent.width},${parent.y + parent.height / 2} L${x},${middle}`,
+            topicPath(
+                parent.topic.id,
+                `M${parent.x + parent.width},${parent.y + parent.height / 2} L${x},${middle}`,
+            ),
         );
         paths.push(
-            `M${x + 16},${top} Q${x + 6},${top} ${x + 6},${top + 12} L${x + 6},${middle - 10} Q${x + 6},${middle} ${x},${middle} Q${x + 6},${middle} ${x + 6},${middle + 10} L${x + 6},${bottom - 12} Q${x + 6},${bottom} ${x + 16},${bottom}`,
+            topicPath(
+                parent.topic.id,
+                `M${x + 16},${top} Q${x + 6},${top} ${x + 6},${top + 12} L${x + 6},${middle - 10} Q${x + 6},${middle} ${x},${middle} Q${x + 6},${middle} ${x + 6},${middle + 10} L${x + 6},${bottom - 12} Q${x + 6},${bottom} ${x + 16},${bottom}`,
+            ),
         );
         children.forEach((child) =>
-            paths.push(`M${x + 16},${child.y + child.height / 2} H${child.x}`),
+            paths.push(
+                topicPath(
+                    child.topic.id,
+                    `M${x + 16},${child.y + child.height / 2} H${child.x}`,
+                ),
+            ),
         );
     }
     return { topics: arrangement.topics, paths };

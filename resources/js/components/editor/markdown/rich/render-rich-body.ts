@@ -133,7 +133,13 @@ export function renderRichBody(
         node: SyntaxNode,
     ) {
         if (block.kind === 'mindmap' && block.metadata.mindmap) {
-            disposals.push(mountMindMapPreview(target, block.metadata.mindmap));
+            disposals.push(
+                mountMindMapPreview(target, block.metadata.mindmap, {
+                    workspaceId: context.workspaceId,
+                    nodeId: context.nodeId,
+                    kind: context.ownerKind ?? 'document',
+                }),
+            );
             return;
         }
         if (block.kind === 'inline-math' || block.kind === 'math') {

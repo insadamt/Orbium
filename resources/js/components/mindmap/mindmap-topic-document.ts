@@ -1,3 +1,7 @@
+import {
+    validMindMapInlineIcon,
+    mindMapDocumentInlineText,
+} from './mindmap-inline-icon-data';
 import { validBoardInline } from '@/components/boards/board-inline-data';
 import type { JSONContent } from '@tiptap/core';
 import {
@@ -65,12 +69,13 @@ const containers: Record<string, string[]> = {
 };
 export function mindMapDocumentText(node: JSONContent): string {
     if (['paragraph', 'heading', 'codeBlock'].includes(node.type ?? ''))
-        return mindMapInlineText((node.content ?? []) as BoardInline[]);
+        return mindMapDocumentInlineText(node.content ?? []);
     return (node.content ?? []).map(mindMapDocumentText).join('\n');
 }
 export function validMindMapDocument(
     value: unknown,
     text: string,
+    allowIcons = false,
 ): value is JSONContent {
     let count = 0;
     function valid(value: unknown, allowed: string[], depth: number): boolean {
@@ -124,10 +129,22 @@ export function validMindMapDocument(
         if (!Array.isArray(content)) return false;
         if (['paragraph', 'heading', 'codeBlock'].includes(node.type!)) {
             if (
-                !validBoardInline(content) ||
+                !content.every(
+                    (child) =>
+                        child &&
+                        (child.type === 'inlineIcon'
+                            ? allowIcons &&
+                              node.type !== 'codeBlock' &&
+                              validMindMapInlineIcon(child)
+                            : validBoardInline([child])),
+                ) ||
                 !validMindMapTopicContent(
-                    content,
-                    mindMapInlineText(content as BoardInline[]),
+                    content.filter((child) => child.type !== 'inlineIcon'),
+                    mindMapInlineText(
+                        content.filter(
+                            (child) => child.type !== 'inlineIcon',
+                        ) as BoardInline[],
+                    ),
                 )
             )
                 return false;
@@ -163,6 +180,27 @@ export function mindMapTopicDocument(topic: MindMapTopic): JSONContent {
     );
 }
 export function normalizeMindMapDocument(node: JSONContent): JSONContent {
+    if (node.type === 'inlineIcon') {
+        return {
+            type: node.type,
+            attrs: {
+                version: 1,
+                kind: node.attrs?.kind,
+                label: node.attrs?.label,
+                name: node.attrs?.name ?? null,
+                attachmentId: node.attrs?.attachmentId ?? null,
+            },
+            ...(node.marks?.length
+                ? {
+                      marks: normalizeMindMapDocument({
+                          type: 'text',
+                          text: '',
+                          marks: node.marks,
+                      }).marks,
+                  }
+                : {}),
+        };
+    }
     if (node.type === 'text' || node.type === 'hardBreak') {
         return {
             type: node.type,
@@ -204,7 +242,7 @@ export function replaceMindMapTopicDocument(
 ): MindMapData {
     return {
         ...map,
-        version: map.version === 5 ? 5 : 4,
+        version: 7,
         topics: map.topics.map((topic) => {
             if (topic.id !== id) return topic;
             //

@@ -1,6 +1,15 @@
+import { MindMapTopicIcon } from './mindmap-topic-icon';
+import { mindMapBranchColors } from './mindmap-branch-style';
+import type { useMindMapBranchDrag } from './use-mindmap-branch-drag';
 import { MindMapWidthHandle } from './mindmap-width-handle';
-import { Minus } from 'lucide-react';
-import { useLayoutEffect, useRef, type KeyboardEventHandler } from 'react';
+import { GripVertical, Minus } from 'lucide-react';
+import {
+    useMemo,
+    useLayoutEffect,
+    useRef,
+    type KeyboardEventHandler,
+    type CSSProperties,
+} from 'react';
 import type { JSONContent } from '@tiptap/core';
 import { MindMapTopicPreview } from './mindmap-topic-preview';
 import { MindMapTopicEditor } from './mindmap-topic-editor';
@@ -24,6 +33,9 @@ type Props = {
         content: JSONContent,
         typing: boolean,
     ) => boolean;
+    searchMatches: Set<string>;
+    activeMatchId: string | null;
+    branchDrag?: ReturnType<typeof useMindMapBranchDrag>;
     onTopicHeights: (updates: Map<string, number>) => void;
     onWidthPreview: (id: string, width: number | null) => void;
     onWidthCommit: (id: string, width: number) => boolean;
@@ -44,11 +56,23 @@ export function MindMapScene({
     onKeyDown,
     onToggle,
     onContentChange,
+    searchMatches,
+    activeMatchId,
+    branchDrag,
     onTopicHeights,
     onWidthPreview,
     onWidthCommit,
     onComposition,
 }: Props) {
+    const colors = useMemo(
+        () =>
+            mindMapBranchColors({
+                version: 6,
+                root_id: rootId,
+                topics: layout.topics.map((item) => item.topic),
+            }),
+        [layout, rootId],
+    );
     const scene = useRef<HTMLDivElement>(null);
     const measuredTopicIds = layout.topics
         .map((item) => item.topic.id)
@@ -90,6 +114,11 @@ export function MindMapScene({
     return (
         <div
             ref={scene}
+            onPointerMove={branchDrag?.move}
+            onPointerUp={branchDrag?.end}
+            onPointerCancel={branchDrag?.cancel}
+            onLostPointerCapture={branchDrag?.cancel}
+            onClickCapture={branchDrag?.blockClick}
             className="mindmap-scene"
             style={{
                 width: layout.width,
@@ -102,7 +131,11 @@ export function MindMapScene({
             <svg width={layout.width} height={layout.height} aria-hidden="true">
                 <g transform={`translate(${layout.offsetX} ${layout.offsetY})`}>
                     {layout.paths.map((path, index) => (
-                        <path key={index} d={path} />
+                        <path
+                            key={index}
+                            d={path.d}
+                            style={{ stroke: colors.get(path.topicId) }}
+                        />
                     ))}
                 </g>
             </svg>
@@ -112,17 +145,39 @@ export function MindMapScene({
                         key={item.topic.id}
                         className="mindmap-topic"
                         data-topic-container-id={item.topic.id}
+                        data-colored={colors.has(item.topic.id)}
+                        data-search-match={searchMatches.has(item.topic.id)}
+                        data-search-current={activeMatchId === item.topic.id}
+                        data-dragging={branchDrag?.draggedId === item.topic.id}
+                        data-drop-position={
+                            branchDrag?.dropTarget?.targetId === item.topic.id
+                                ? branchDrag.dropTarget.position
+                                : undefined
+                        }
+                        data-drop-axis={branchDrag?.dropTarget?.axis}
                         data-root={item.topic.id === rootId}
                         data-side={item.side}
+                        data-topic-direction={item.direction}
                         data-selected={editable && item.topic.id === selectedId}
                         title={item.topic.text || 'Untitled topic'}
-                        style={{
-                            left: item.x,
-                            top: item.y,
-                            width: item.width,
-                            height: item.height,
-                        }}
+                        style={
+                            {
+                                left: item.x,
+                                top: item.y,
+                                width: item.width,
+                                height: item.height,
+                                '--branch-color': colors.get(item.topic.id),
+                            } as CSSProperties
+                        }
                     >
+                        {item.topic.icon && (
+                            <span
+                                className="mindmap-topic-badge"
+                                aria-hidden="true"
+                            >
+                                <MindMapTopicIcon name={item.topic.icon} />
+                            </span>
+                        )}
                         {editable && renamingId === item.topic.id ? (
                             <MindMapTopicEditor
                                 topic={item.topic}
@@ -150,6 +205,9 @@ export function MindMapScene({
                                         : undefined
                                 }
                                 tabIndex={item.topic.id === selectedId ? 0 : -1}
+                                onPointerDown={(event) =>
+                                    branchDrag?.start(event, item.topic.id)
+                                }
                                 onFocus={() => onSelect(item.topic.id)}
                                 onClick={() => onSelect(item.topic.id)}
                                 onDoubleClick={() => {
@@ -177,6 +235,23 @@ export function MindMapScene({
                                 {!item.topic.text && 'Untitled topic'}
                             </div>
                         )}
+                        {editable &&
+                            item.topic.id === selectedId &&
+                            item.topic.id !== rootId && (
+                                <button
+                                    type="button"
+                                    className="mindmap-drag-handle"
+                                    data-mindmap-drag-handle
+                                    aria-label="Drag branch; Alt+Up or Alt+Down reorders"
+                                    title="Drag to move branch · Alt+↑/↓ to reorder"
+                                    onPointerDown={(event) =>
+                                        branchDrag?.start(event, item.topic.id)
+                                    }
+                                    onKeyDown={onKeyDown}
+                                >
+                                    <GripVertical size={14} />
+                                </button>
+                            )}
                         {editable && item.topic.id === selectedId && (
                             <MindMapWidthHandle
                                 width={item.width}

@@ -1,3 +1,4 @@
+import type { ContentOwnerKind } from '@/components/editor/editor-api';
 import { useEffect, useRef, useState, type Ref } from 'react';
 import { ImagePlus, RefreshCw, Upload } from 'lucide-react';
 import {
@@ -17,6 +18,7 @@ export function CustomIconBrowser({
     onPreview,
     onUpload,
     gridRef,
+    ownerKind,
 }: {
     workspaceId: number;
     nodeId: number;
@@ -26,6 +28,7 @@ export function CustomIconBrowser({
     onPreview: (choice: InlineIconChoice) => void;
     onUpload: () => void;
     gridRef: Ref<IconGridHandle>;
+    ownerKind?: ContentOwnerKind;
 }) {
     const [files, setFiles] = useState<LibraryFile[]>([]);
     const [page, setPage] = useState(1);
@@ -146,6 +149,7 @@ export function CustomIconBrowser({
                 <IconResultsGrid
                     key={query}
                     choices={choices}
+                    ownerKind={ownerKind}
                     workspaceId={workspaceId}
                     nodeId={nodeId}
                     disabled={disabled}

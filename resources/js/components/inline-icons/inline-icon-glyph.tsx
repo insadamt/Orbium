@@ -1,17 +1,22 @@
 import { useLayoutEffect, useRef } from 'react';
 import { createBuiltinIcon, type InlineIconChoice } from './icon-catalog';
-import { attachmentUrl } from '@/components/editor/editor-api';
+import {
+    contentOwnerUrl,
+    type ContentOwnerKind,
+} from '@/components/editor/editor-api';
 
 export function InlineIconGlyph({
     choice,
     workspaceId,
     nodeId,
     previewUrl,
+    ownerKind,
 }: {
     choice: InlineIconChoice;
     workspaceId: number;
     nodeId: number;
     previewUrl?: string;
+    ownerKind?: ContentOwnerKind;
 }) {
     const host = useRef<HTMLSpanElement>(null);
     useLayoutEffect(() => {
@@ -30,7 +35,7 @@ export function InlineIconGlyph({
                 draggable={false}
                 src={
                     previewUrl ??
-                    attachmentUrl(workspaceId, nodeId, choice.attachmentId)
+                    `${contentOwnerUrl(workspaceId, nodeId, ownerKind)}/attachments/${choice.attachmentId}`
                 }
             />
         );

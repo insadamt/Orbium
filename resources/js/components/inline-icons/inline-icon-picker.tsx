@@ -1,3 +1,4 @@
+import type { ContentOwnerKind } from '@/components/editor/editor-api';
 import * as Dialog from '@radix-ui/react-dialog';
 import { usePage } from '@inertiajs/react';
 import { useId, useMemo, useRef, useState } from 'react';
@@ -24,7 +25,37 @@ import {
 } from './icon-preferences';
 import './inline-icons.css';
 
-export function InlineIconPicker({
+type IconPickerProps = {
+    workspaceId: number;
+    nodeId: number;
+    initialQuery?: string;
+    busy?: boolean;
+    error?: string;
+    ownerKind?: ContentOwnerKind;
+    portalContainer?: HTMLElement;
+    preferenceScope?: string;
+    onChoose: (choice: InlineIconChoice) => void;
+    onUpload: () => void;
+    onClose: () => void;
+    onReturnFocus: () => void;
+};
+export function InlineIconPicker(props: IconPickerProps) {
+    return props.preferenceScope ? (
+        <IconPickerContent {...props} preferenceKey={props.preferenceScope} />
+    ) : (
+        <AuthenticatedIconPicker {...props} />
+    );
+}
+function AuthenticatedIconPicker(props: IconPickerProps) {
+    const { auth } = usePage<{ auth: { user: { id: number } } }>().props;
+    return (
+        <IconPickerContent
+            {...props}
+            preferenceKey={`orbium:inline-icons:v1:${auth.user.id}:${props.workspaceId}`}
+        />
+    );
+}
+function IconPickerContent({
     workspaceId,
     nodeId,
     initialQuery = '',
@@ -34,19 +65,10 @@ export function InlineIconPicker({
     onUpload,
     onClose,
     onReturnFocus,
-}: {
-    workspaceId: number;
-    nodeId: number;
-    initialQuery?: string;
-    busy?: boolean;
-    error?: string;
-    onChoose: (choice: InlineIconChoice) => void;
-    onUpload: () => void;
-    onClose: () => void;
-    onReturnFocus: () => void;
-}) {
-    const { auth } = usePage<{ auth: { user: { id: number } } }>().props;
-    const preferenceKey = `orbium:inline-icons:v1:${auth.user.id}:${workspaceId}`;
+    ownerKind,
+    portalContainer,
+    preferenceKey,
+}: IconPickerProps & { preferenceKey: string }) {
     const [preferences, setPreferences] = useState(() =>
         readIconPreferences(preferenceKey),
     );
@@ -159,10 +181,15 @@ export function InlineIconPicker({
                 if (!open && !busy) onClose();
             }}
         >
-            <Dialog.Portal>
+            <Dialog.Portal container={portalContainer}>
                 <Dialog.Overlay className="inline-icon-overlay" />
                 <Dialog.Content
                     className="inline-icon-picker"
+                    data-inline-icon-picker
+                    onKeyDown={(event) => {
+                        if (event.ctrlKey || event.metaKey)
+                            event.stopPropagation();
+                    }}
                     aria-busy={busy}
                     onOpenAutoFocus={(event) => {
                         event.preventDefault();
@@ -285,6 +312,7 @@ export function InlineIconPicker({
                             <CustomIconBrowser
                                 workspaceId={workspaceId}
                                 nodeId={nodeId}
+                                ownerKind={ownerKind}
                                 query={query}
                                 disabled={busy}
                                 onChoose={choose}
@@ -308,6 +336,7 @@ export function InlineIconPicker({
                                         choices={choices}
                                         workspaceId={workspaceId}
                                         nodeId={nodeId}
+                                        ownerKind={ownerKind}
                                         disabled={busy}
                                         onChoose={choose}
                                         onPreview={setPreview}
@@ -343,6 +372,7 @@ export function InlineIconPicker({
                                         choice={current}
                                         workspaceId={workspaceId}
                                         nodeId={nodeId}
+                                        ownerKind={ownerKind}
                                     />
                                     <span>
                                         <strong>{current.label}</strong>

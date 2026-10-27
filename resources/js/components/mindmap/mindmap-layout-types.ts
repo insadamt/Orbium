@@ -10,13 +10,18 @@ export type PlacedTopic = {
     children: number;
     height: number;
     width: number;
+    iconSpace: number;
 };
 export type LayoutContext = {
     root: MindMapTopic;
     children: Map<string, MindMapTopic[]>;
-    sizes: Map<string, { width: number; height: number }>;
+    sizes: Map<string, { width: number; height: number; iconSpace: number }>;
 };
-export type TopicArrangement = { topics: PlacedTopic[]; paths: string[] };
+export type LayoutPath = { d: string; topicId: string };
+export type TopicArrangement = { topics: PlacedTopic[]; paths: LayoutPath[] };
+export function topicPath(topicId: string, d: string): LayoutPath {
+    return { topicId, d };
+}
 export function visibleChildren(context: LayoutContext, topic: MindMapTopic) {
     return topic.collapsed ? [] : (context.children.get(topic.id) ?? []);
 }
@@ -30,12 +35,15 @@ export function placedTopic(
         direction: TopicDirection;
     },
 ): PlacedTopic {
+    const size = context.sizes.get(topic.id)!;
     return {
         topic,
         ...placement,
         side: placement.direction === 'left' ? -1 : 1,
         children: context.children.get(topic.id)?.length ?? 0,
-        ...context.sizes.get(topic.id)!,
+        ...size,
+        y: placement.y + size.iconSpace,
+        height: size.height - size.iconSpace,
     };
 }
 export function horizontalConnection(parent: PlacedTopic, child: PlacedTopic) {
@@ -61,7 +69,7 @@ export function verticalConnection(
 export function arrangementBounds(topics: PlacedTopic[]) {
     return {
         left: Math.min(...topics.map((topic) => topic.x)),
-        top: Math.min(...topics.map((topic) => topic.y)),
+        top: Math.min(...topics.map((topic) => topic.y - topic.iconSpace)),
         right: Math.max(...topics.map((topic) => topic.x + topic.width)),
         bottom: Math.max(...topics.map((topic) => topic.y + topic.height)),
     };
