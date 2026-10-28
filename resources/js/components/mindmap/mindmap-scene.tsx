@@ -1,3 +1,8 @@
+import {
+    documentContentColors,
+    uniformContentColor,
+} from '@/components/editor/content-selection-color';
+import { mindMapTopicDocument } from './mindmap-topic-document';
 import { MindMapTopicIcon } from './mindmap-topic-icon';
 import { mindMapBranchColors } from './mindmap-branch-style';
 import type { useMindMapBranchDrag } from './use-mindmap-branch-drag';
@@ -175,7 +180,14 @@ export function MindMapScene({
                                 className="mindmap-topic-badge"
                                 aria-hidden="true"
                             >
-                                <MindMapTopicIcon name={item.topic.icon} />
+                                <MindMapTopicIcon
+                                    name={item.topic.icon}
+                                    color={uniformContentColor(
+                                        documentContentColors(
+                                            mindMapTopicDocument(item.topic),
+                                        ),
+                                    )}
+                                />
                             </span>
                         )}
                         {editable && renamingId === item.topic.id ? (

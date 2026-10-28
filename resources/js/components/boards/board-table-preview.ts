@@ -25,7 +25,12 @@ export function mountBoardTablePreview({
     const nativeRows =
         data.table_source === undefined &&
         data.rows?.every((row) =>
-            row.every((cell) => cell.every((inline) => !inline.marks?.length)),
+            row.every((cell) =>
+                cell.every(
+                    (inline) =>
+                        inline.type !== 'inlineIcon' && !inline.marks?.length,
+                ),
+            ),
         )
             ? data.rows
             : null;

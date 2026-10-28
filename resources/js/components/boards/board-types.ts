@@ -1,3 +1,4 @@
+import type { InlineIconAttributes } from '@/components/inline-icons/inline-icon-data';
 import type { MindMapData } from '@/components/mindmap/mindmap-data';
 import type { AttachmentMediaKind } from '@/components/media/attachment-media';
 
@@ -38,7 +39,8 @@ export type BoardDrawing = {
     opacity: number;
 };
 export type BoardInline = {
-    type: 'text' | 'hardBreak';
+    type: 'text' | 'hardBreak' | 'inlineIcon';
+    attrs?: InlineIconAttributes;
     text?: string;
     marks?: {
         type:
@@ -92,7 +94,7 @@ export type BoardBlockReplacement = {
     data: BoardBlockData;
 };
 export type BoardSnapshot = {
-    format_version: 7;
+    format_version: 8;
     mutation_version?: 1;
     revision: number;
     objects: BoardObject[];

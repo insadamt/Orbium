@@ -127,3 +127,8 @@
     pointer-events: none;
     color: var(--muted-foreground);
 }
+
+/* Topic editors must override the parent canvas selection policy while editing. */
+.mindmap-topic-writing {
+    user-select: text;
+}

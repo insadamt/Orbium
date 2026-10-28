@@ -47,7 +47,13 @@ export function plainInline(text: string): BoardInline[] {
 }
 export function inlineText(content: BoardInline[] = []) {
     return content
-        .map((node) => (node.type === 'hardBreak' ? '\n' : (node.text ?? '')))
+        .map((node) =>
+            node.type === 'hardBreak'
+                ? '\n'
+                : node.type === 'inlineIcon'
+                  ? (node.attrs?.label ?? '')
+                  : (node.text ?? ''),
+        )
         .join('');
 }
 export function boardBlockText(object: BoardObject) {

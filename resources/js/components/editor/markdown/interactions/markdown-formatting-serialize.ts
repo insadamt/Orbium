@@ -131,7 +131,8 @@ function markValue(
     run: FormattingRun,
     mark: (typeof markOrder)[number],
 ): string {
-    if (run.protected) return '';
+    if (run.protected && !run.icon) return '';
+    if (run.icon && (mark === 'metadata' || mark === 'code')) return '';
     if (mark === 'metadata')
         return run.marks.color || run.marks.underline
             ? JSON.stringify({
@@ -206,6 +207,8 @@ function serializedRunText(run: FormattingRun, source: string): string {
         const metadata = { ...run.icon.metadata };
         if (run.marks.color) metadata.color = run.marks.color;
         else delete metadata.color;
+        if (run.marks.underline) metadata.underline = true;
+        else delete metadata.underline;
         return run.icon.prefix + JSON.stringify(metadata);
     }
     if (run.protected) return source;

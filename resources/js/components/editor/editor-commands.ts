@@ -1,10 +1,12 @@
 import { createMindMap } from '@/components/mindmap/mindmap-data';
 import { openLegacyIconPicker } from '@/components/inline-icons/inline-icon-node';
 import type { Editor } from '@tiptap/core';
+import type { InlineIconChoice } from '@/components/inline-icons/icon-catalog';
 
 export type BlockCommand = {
     label: string;
     search: string;
+    inlineIcon?: InlineIconChoice;
     run: (editor: Editor) => void;
 };
 

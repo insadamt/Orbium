@@ -1,3 +1,5 @@
+import { colorDocumentContent } from '@/components/editor/content-selection-color';
+import { mindMapTopicDocument } from './mindmap-topic-document';
 import './mindmap-branch-features.css';
 import { MindMapMapTools } from './mindmap-map-tools';
 import { useMindMapSearch } from './use-mindmap-search';
@@ -233,7 +235,7 @@ export function MindMapCanvas({
                 ref={viewport}
                 className="mindmap-viewport"
                 tabIndex={0}
-                aria-label="Mind Map canvas; scroll or drag empty space to pan"
+                aria-label="Mind Map canvas; wheel or Control plus/minus to zoom, drag empty space to pan"
                 onPointerDown={(event) => {
                     if (
                         !fullscreen ||
@@ -407,6 +409,23 @@ export function MindMapCanvas({
                     selected={selected}
                     data={data}
                     descendants={descendants}
+                    onColorChange={(color) => {
+                        if (composing.current) return;
+                        const body = mindMapTopicDocument(selected);
+                        const colored = colorDocumentContent(body, color);
+                        if (JSON.stringify(colored) === JSON.stringify(body))
+                            return;
+                        if (
+                            commit(
+                                replaceMindMapTopicDocument(
+                                    data,
+                                    selected.id,
+                                    colored,
+                                ),
+                            )
+                        )
+                            setRenamingId(null);
+                    }}
                     onStyleChange={(style) => {
                         if (
                             !composing.current &&

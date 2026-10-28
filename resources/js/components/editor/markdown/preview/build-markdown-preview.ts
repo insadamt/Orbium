@@ -1,8 +1,5 @@
 import { readMarkdownIcon } from '@/components/inline-icons/markdown-icon-source';
-import {
-    MarkdownIconWidget,
-    inlineIconEditing,
-} from '@/components/inline-icons/markdown-icon-widget';
+import { MarkdownIconWidget } from '@/components/inline-icons/markdown-icon-widget';
 import {
     markdownLineDirection,
     markdownLinePresentation,
@@ -333,14 +330,7 @@ export function buildMarkdownPreview(
                         replaceSyntax(
                             node.from,
                             node.to,
-                            new MarkdownIconWidget(
-                                icon,
-                                node.from,
-                                node.to,
-                                linkContext,
-                                view.state.facet(EditorView.editable) &&
-                                    view.state.facet(inlineIconEditing),
-                            ),
+                            new MarkdownIconWidget(icon, linkContext),
                         );
                         return false;
                     }

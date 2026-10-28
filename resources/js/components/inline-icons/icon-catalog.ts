@@ -110,7 +110,12 @@ export function matchesIconSearch(search: string, query: string): boolean {
     );
 }
 
+export function iconPickerSearchQuery(query: string): string {
+    return /^icons?$/i.test(query.trim()) ? '' : query;
+}
+
 export function findInlineIcons(query: string): InlineIconChoice[] {
+    if (query && !iconPickerSearchQuery(query)) return [];
     const normalized = normalizeIconSearch(query);
     return iconCatalog
         .filter((icon) => matchesIconSearch(icon.search, normalized))

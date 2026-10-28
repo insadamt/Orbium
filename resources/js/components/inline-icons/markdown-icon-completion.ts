@@ -27,7 +27,7 @@ export function markdownIconCompletion(context: CompletionContext) {
         Math.max(0, match.from - 1),
         match.from,
     );
-    if (previous && !/[\s(]/.test(previous)) return null;
+    if (previous && !/[\s([]/.test(previous)) return null;
     const query = match.text.slice(1);
     const options: (Completion & { inlineIcon?: InlineIconChoice })[] =
         findInlineIcons(query)

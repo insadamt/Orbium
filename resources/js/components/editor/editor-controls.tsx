@@ -3,7 +3,7 @@ import { FormatButton } from './ui/format-button';
 import { measureEditorWork } from '@/lib/editor-performance';
 import type { Editor } from '@tiptap/core';
 import type { Node as DocumentSnapshot } from '@tiptap/pm/model';
-import { TextSelection } from '@tiptap/pm/state';
+import { TextSelection, NodeSelection } from '@tiptap/pm/state';
 import { useEditorActivity } from './use-editor-activity';
 import { ActivityBubbleMenu } from './activity-bubble-menu';
 import type { EditorActivityController } from './editor-activity-controller';
@@ -20,6 +20,7 @@ import { useCallback, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import type { EditorMenu } from './editor-suggestions';
 import { TextColorPicker } from './text-color-picker';
+import { InlineIconGlyph } from '@/components/inline-icons/inline-icon-glyph';
 
 export function changeBlockOrder(
     editor: Editor,
@@ -218,7 +219,11 @@ function canFormatTextSelection(editor: Editor): boolean {
     const { selection, doc, schema } = editor.state;
     if (
         !editor.isEditable ||
-        !(selection instanceof TextSelection) ||
+        !(
+            selection instanceof TextSelection ||
+            (selection instanceof NodeSelection &&
+                selection.node.type.name === 'inlineIcon')
+        ) ||
         selection.empty
     )
         return false;
@@ -226,11 +231,15 @@ function canFormatTextSelection(editor: Editor): boolean {
     let containsText = false;
     let supportsFormatting = true;
     doc.nodesBetween(selection.from, selection.to, (node) => {
-        if (node.isText && node.text?.length) containsText = true;
+        if (
+            (node.isText && node.text?.length) ||
+            node.type.name === 'inlineIcon'
+        )
+            containsText = true;
         if (
             (node.isTextblock &&
                 !node.type.allowsMarkType(schema.marks.bold)) ||
-            (node.isAtom && !node.isText)
+            (node.isAtom && !node.isText && node.type.name !== 'inlineIcon')
         ) {
             supportsFormatting = false;
         }
@@ -253,6 +262,7 @@ export function SuggestionMenu({
         menu.type !== 'mention'
             ? menu.items.map((item) => ({
                   label: item.label,
+                  inlineIcon: item.inlineIcon,
                   action: () => {
                       editor
                           .chain()
@@ -265,6 +275,7 @@ export function SuggestionMenu({
               }))
             : menu.items.map((item) => ({
                   label: `${item.title} · ${item.type}`,
+                  inlineIcon: undefined,
                   action: () => {
                       editor
                           .chain()
@@ -337,6 +348,7 @@ export function SuggestionMenu({
         <div
             ref={menuRef}
             role="listbox"
+            data-board-editor
             aria-label={
                 menu.type === 'slash'
                     ? 'Block commands'
@@ -364,9 +376,16 @@ export function SuggestionMenu({
                     aria-selected={index === menu.selectedIndex}
                     onMouseDown={(event) => event.preventDefault()}
                     onClick={item.action}
-                    className="app-menu-option block w-full rounded-md px-3 py-2 text-left text-sm"
+                    className="app-menu-option flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm"
                 >
-                    {item.label}
+                    {item.inlineIcon && (
+                        <InlineIconGlyph
+                            choice={item.inlineIcon}
+                            workspaceId={0}
+                            nodeId={0}
+                        />
+                    )}
+                    <span>{item.label}</span>
                 </button>
             ))}
         </div>,

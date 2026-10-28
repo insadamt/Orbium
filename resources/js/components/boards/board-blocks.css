@@ -42,7 +42,7 @@
 }
 .board-inline-input a,
 .board-writing a {
-    color: var(--foreground);
+    color: inherit;
     text-decoration: underline;
 }
 .board-text-placeholder {

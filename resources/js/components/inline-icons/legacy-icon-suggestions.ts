@@ -1,5 +1,6 @@
+import { inlineIconInsertionMarks } from '@/components/inline-icons/inline-icon-node';
 import { Extension, type Editor } from '@tiptap/core';
-import Suggestion from '@tiptap/suggestion';
+import Suggestion, { exitSuggestion } from '@tiptap/suggestion';
 import { PluginKey } from '@tiptap/pm/state';
 import type { EditorMenu } from '@/components/editor/editor-suggestions';
 import type { BlockCommand } from '@/components/editor/editor-commands';
@@ -7,13 +8,20 @@ import { findInlineIcons } from './icon-catalog';
 import { announceInsertedIcon } from './icon-preferences';
 import { legacyIconAttributes, openLegacyIconPicker } from './inline-icon-node';
 
+export const legacyIconSuggestionKey = new PluginKey('orbiumIconSuggestions');
+
 export function createLegacyIconSuggestions(
     isActive: () => boolean,
     onMenuChange: (menu: EditorMenu | null) => void,
 ) {
     return Extension.create({
         name: 'orbiumIconSuggestions',
+        //
+        // Completion acceptance must run before StarterKit's ordinary Enter/newline keymap.
+        //
+        priority: 200,
         addProseMirrorPlugins() {
+            const editor = this.editor;
             let selectedIndex = 0;
             let menu: Extract<EditorMenu, { type: 'slash' | 'icon' }> | null =
                 null;
@@ -21,8 +29,9 @@ export function createLegacyIconSuggestions(
             return [
                 Suggestion<BlockCommand>({
                     editor: this.editor,
-                    pluginKey: new PluginKey('orbiumIconSuggestions'),
+                    pluginKey: legacyIconSuggestionKey,
                     char: ':',
+                    allowedPrefixes: [' ', '\n', '(', '['],
                     allow: ({ state, range }) =>
                         isActive() &&
                         !this.editor.view.composing &&
@@ -36,7 +45,8 @@ export function createLegacyIconSuggestions(
                         ...findInlineIcons(query)
                             .slice(0, 24)
                             .map((choice) => ({
-                                label: `${choice.kind === 'emoji' ? choice.value : '◇'} ${choice.label}`,
+                                label: choice.label,
+                                inlineIcon: choice,
                                 search: choice.label,
                                 run(editor: Editor) {
                                     editor
@@ -50,6 +60,9 @@ export function createLegacyIconSuggestions(
                                                   }
                                                 : {
                                                       type: 'inlineIcon',
+                                                      marks: inlineIconInsertionMarks(
+                                                          editor,
+                                                      ),
                                                       attrs: legacyIconAttributes(
                                                           choice,
                                                       ),
@@ -109,6 +122,10 @@ export function createLegacyIconSuggestions(
                         onKeyDown({ event }) {
                             if (!menu || !isActive()) return false;
                             if (event.key === 'Escape') {
+                                exitSuggestion(
+                                    editor.view,
+                                    legacyIconSuggestionKey,
+                                );
                                 onMenuChange(null);
                                 return true;
                             }

@@ -58,38 +58,46 @@ export function nativeEditorDocument(
 
 function readInline(content: JSONContent[] = []): BoardInline[] {
     return content.map((node) =>
-        node.type === 'hardBreak'
-            ? { type: 'hardBreak' }
-            : {
-                  type: 'text',
-                  text: node.text ?? '',
+        node.type === 'inlineIcon'
+            ? {
+                  type: 'inlineIcon',
+                  attrs: node.attrs as BoardInline['attrs'],
                   ...(node.marks?.length
-                      ? {
-                            marks: node.marks.map((mark) => ({
-                                type: mark.type as NonNullable<
-                                    BoardInline['marks']
-                                >[number]['type'],
-                                ...(mark.type === 'link'
-                                    ? {
-                                          attrs: {
-                                              href: String(
-                                                  mark.attrs?.href ?? '',
-                                              ),
-                                          },
-                                      }
-                                    : mark.type === 'textColor'
+                      ? { marks: node.marks as BoardInline['marks'] }
+                      : {}),
+              }
+            : node.type === 'hardBreak'
+              ? { type: 'hardBreak' }
+              : {
+                    type: 'text',
+                    text: node.text ?? '',
+                    ...(node.marks?.length
+                        ? {
+                              marks: node.marks.map((mark) => ({
+                                  type: mark.type as NonNullable<
+                                      BoardInline['marks']
+                                  >[number]['type'],
+                                  ...(mark.type === 'link'
                                       ? {
                                             attrs: {
-                                                color: String(
-                                                    mark.attrs?.color ?? '',
+                                                href: String(
+                                                    mark.attrs?.href ?? '',
                                                 ),
                                             },
                                         }
-                                      : {}),
-                            })),
-                        }
-                      : {}),
-              },
+                                      : mark.type === 'textColor'
+                                        ? {
+                                              attrs: {
+                                                  color: String(
+                                                      mark.attrs?.color ?? '',
+                                                  ),
+                                              },
+                                          }
+                                        : {}),
+                              })),
+                          }
+                        : {}),
+                },
     );
 }
 

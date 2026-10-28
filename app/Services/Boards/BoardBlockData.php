@@ -4,6 +4,7 @@ namespace App\Services\Boards;
 
 use App\Models\Attachment;
 use App\Models\Node;
+use App\Services\Editor\InlineIconData;
 use App\Services\Library\AttachmentMediaTypes;
 use App\Services\MindMaps\MindMapData;
 use App\Services\MindMaps\MindMapIconReferences;
@@ -132,7 +133,15 @@ final class BoardBlockData
             $this->invalid('Invalid Board inline text.');
         }
         foreach ($content as $inline) {
-            Validator::make(['inline' => $inline], ['inline' => ['required', 'array:type,text,marks'], 'inline.type' => ['required', 'in:text,hardBreak'], 'inline.text' => ['required_if:inline.type,text', 'string'], 'inline.marks' => ['sometimes', 'array', 'list', 'max:8']])->validate();
+            Validator::make(['inline' => $inline], ['inline' => ['required', 'array:type,text,marks,attrs'], 'inline.type' => ['required', 'in:text,hardBreak,inlineIcon'], 'inline.text' => ['required_if:inline.type,text', 'string'], 'inline.marks' => ['sometimes', 'array', 'list', 'max:8']])->validate();
+            if (($inline['type'] ?? null) === 'inlineIcon') {
+                app(InlineIconData::class)->validateAttributes($inline['attrs'] ?? null);
+                if (array_diff(array_keys($inline['attrs']), ['version', 'kind', 'label', 'name', 'attachmentId']) !== [] || isset($inline['text']) || (($inline['attrs']['attachmentId'] ?? 0) > 9007199254740991)) {
+                    $this->invalid('An inline icon has invalid content.');
+                }
+            } elseif (isset($inline['attrs'])) {
+                $this->invalid('Only inline icons have inline attributes.');
+            }
             foreach ($inline['marks'] ?? [] as $mark) {
                 Validator::make(['mark' => $mark], [
                     'mark' => ['required', 'array:type,attrs'],
@@ -153,7 +162,7 @@ final class BoardBlockData
 
     public function attachmentIds(array $data): array
     {
-        $ids = isset($data['attachment_id']) ? [(int) $data['attachment_id']] : [];
+        $ids = [...(isset($data['attachment_id']) ? [(int) $data['attachment_id']] : []), ...app(BoardInlineIcons::class)->attachmentIds($data)];
         if (isset($data['table_source'])) {
             $ids = [...$ids, ...(new BoardTableSource)->attachmentIds($data['table_source'])];
         }
@@ -178,6 +187,11 @@ final class BoardBlockData
             }
         }
         foreach ($objects as $object) {
+            foreach (app(BoardInlineIcons::class)->attachmentIds($object['data']) as $id) {
+                if ($files[$id]->purpose !== 'image' || ! in_array($files[$id]->mime_type, ['image/png', 'image/jpeg', 'image/gif', 'image/webp'], true)) {
+                    $this->invalid('A Board inline icon requires an owned image attachment.');
+                }
+            }
             if (isset($object['data']['mindmap'])) {
                 foreach (app(MindMapIconReferences::class)->attachmentIds($object['data']['mindmap']) as $id) {
                     if ($files[$id]->purpose !== 'image' || ! in_array($files[$id]->mime_type, ['image/png', 'image/jpeg', 'image/gif', 'image/webp'], true)) {

@@ -1,3 +1,4 @@
+import { openLegacyIconPicker } from '@/components/inline-icons/inline-icon-node';
 import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { Editor } from '@tiptap/core';
@@ -12,27 +13,44 @@ import { useBoardEditorAnchor } from './use-board-editor-anchor';
 import type { BoardContentProps } from './board-text-block';
 
 function readSlashQuery(editor: Editor) {
-    const { doc, selection } = editor.state;
-    if (
-        editor.view.composing ||
-        !selection.empty ||
-        doc.childCount !== 1 ||
-        selection.$from.parentOffset !== selection.$from.parent.content.size
-    )
-        return null;
+    const { selection } = editor.state;
+    if (editor.view.composing || !selection.empty) return null;
+    const prefix = selection.$from.parent.textBetween(
+        0,
+        selection.$from.parentOffset,
+        '',
+        '\ufffc',
+    );
+    return /(?:^|\s)\/([a-z0-9 ]*)$/i.exec(prefix)?.[1] ?? null;
+}
+
+function inlineCommandsOnly(editor: Editor, kind: string) {
+    const { $from } = editor.state.selection;
     return (
-        /^\/([a-z0-9 ]*)$/i.exec(
-            doc.textBetween(0, doc.content.size, '\n', '\n'),
-        )?.[1] ?? null
+        kind === 'list' ||
+        editor.state.doc.childCount !== 1 ||
+        !$from.parent.textContent.startsWith('/') ||
+        $from.parentOffset !== $from.parent.content.size
     );
 }
 
-function matchingWritingCommands(query: string) {
+type WritingMenuCommand =
+    | BoardWritingCommand
+    | { id: 'icon'; title: 'Inline icon'; kind: 'inlineIcon' };
+
+function matchingWritingCommands(
+    query: string,
+    iconsOnly = false,
+): WritingMenuCommand[] {
     const search = query
         .toLowerCase()
         .replace(/\s+/g, '')
         .replace(/^h([1-3])$/, 'heading$1');
-    return boardWritingCommands.filter((command) =>
+    const choices: WritingMenuCommand[] = [
+        ...(iconsOnly ? [] : boardWritingCommands),
+        { id: 'icon', title: 'Inline icon', kind: 'inlineIcon' },
+    ];
+    return choices.filter((command) =>
         command.title.toLowerCase().replace(/\s+/g, '').includes(search),
     );
 }
@@ -46,17 +64,39 @@ export function BoardWritingMenu({
     const [activeIndex, setActiveIndex] = useState(0);
     const previousQuery = useRef<string | null>(null);
     const menuId = useId();
-    const writableKind = ['text', 'heading', 'quote', 'callout'].includes(
-        props.object.block_type,
-    );
+    const writableKind = [
+        'text',
+        'heading',
+        'quote',
+        'callout',
+        'list',
+    ].includes(props.object.block_type);
     const open =
         writableKind &&
         !props.readOnly &&
         query !== null &&
         dismissedQuery !== query;
-    const commands = matchingWritingCommands(query ?? '');
-    function apply(command: BoardWritingCommand, clearContent: boolean) {
+    const commands = matchingWritingCommands(
+        query ?? '',
+        inlineCommandsOnly(editor, props.object.block_type),
+    );
+    function apply(command: WritingMenuCommand, clearContent: boolean) {
         if (props.readOnly || editor.view.composing) return false;
+        if (command.kind === 'inlineIcon') {
+            const { from } = editor.state.selection;
+            const slashQuery = readSlashQuery(editor);
+            if (slashQuery === null) return false;
+            editor
+                .chain()
+                .focus()
+                .setTextSelection({
+                    from: from - slashQuery.length - 1,
+                    to: from,
+                })
+                .run();
+            openLegacyIconPicker(editor);
+            return true;
+        }
         const content = clearContent
             ? []
             : (nativeEditorData(
@@ -108,7 +148,10 @@ export function BoardWritingMenu({
             // React menu state can lag behind the current keystroke; accept commands against the live editor query.
             //
             const liveQuery = readSlashQuery(editor);
-            const liveCommands = matchingWritingCommands(liveQuery ?? '');
+            const liveCommands = matchingWritingCommands(
+                liveQuery ?? '',
+                inlineCommandsOnly(editor, props.object.block_type),
+            );
             const liveIndex = liveQuery === query ? activeIndex : 0;
             const liveOpen = liveQuery !== null && liveQuery !== dismissedQuery;
             let handled = false;
@@ -221,9 +264,9 @@ function BoardWritingMenuSurface({
     boardId: number;
     editor: Editor;
     menuId: string;
-    commands: BoardWritingCommand[];
+    commands: WritingMenuCommand[];
     activeIndex: number;
-    onChoose: (command: BoardWritingCommand) => boolean;
+    onChoose: (command: WritingMenuCommand) => boolean;
 }) {
     const surface = useBoardEditorAnchor(editor, 'caret', boardId);
     useLayoutEffect(() => {

@@ -15,10 +15,16 @@ export function createInlineIconElement(
 ): HTMLSpanElement {
     const span = document.createElement('span');
     span.className = 'orbium-inline-icon';
+    span.draggable = false;
     span.contentEditable = 'false';
     span.setAttribute('role', 'img');
     span.setAttribute('aria-label', choice.label);
     span.title = choice.label;
+    const text = document.createElement('span');
+    text.className = 'orbium-inline-icon-text';
+    text.textContent = '\ufffc';
+    text.setAttribute('aria-hidden', 'true');
+    span.append(text);
     if (choice.kind === 'builtin') {
         span.style.color = inlineIconColorStyle(choice.color) ?? '';
         const svg = createBuiltinIcon(choice.name);
@@ -35,7 +41,7 @@ export function createInlineIconElement(
                 const fallback = document.createElement('span');
                 fallback.className = 'orbium-inline-icon-fallback';
                 fallback.textContent = '?';
-                span.replaceChildren(fallback);
+                image.replaceWith(fallback);
                 span.title = `${choice.label} (image unavailable)`;
             },
             { once: true },

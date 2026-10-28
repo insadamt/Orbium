@@ -1,3 +1,4 @@
+import { validInlineIconAttributes } from '@/components/inline-icons/inline-icon-data';
 import type { BoardInline } from './board-types';
 import { isValidTextColor } from '@/components/editor/text-color';
 
@@ -22,7 +23,9 @@ export function validBoardInline(value: unknown): value is BoardInline[] {
                 node &&
                 typeof node === 'object' &&
                 (node.type === 'hardBreak' ||
-                    (node.type === 'text' && typeof node.text === 'string')) &&
+                    (node.type === 'text' && typeof node.text === 'string') ||
+                    (node.type === 'inlineIcon' &&
+                        validInlineIconAttributes(node.attrs))) &&
                 (node.marks === undefined ||
                     (Array.isArray(node.marks) &&
                         node.marks.length <= 8 &&
@@ -58,5 +61,21 @@ export function validBoardInline(value: unknown): value is BoardInline[] {
                                         isValidTextColor(mark.attrs.color))),
                         ))),
         )
+    );
+}
+
+export function hasNativeBoardInlineIcons(data: unknown): boolean {
+    if (!data || typeof data !== 'object') return false;
+    const value = data as Record<string, unknown>;
+    const groups: unknown[] = [value.content];
+    if (Array.isArray(value.items))
+        for (const item of value.items) groups.push(item?.content);
+    if (Array.isArray(value.rows))
+        for (const row of value.rows)
+            if (Array.isArray(row)) groups.push(...row);
+    return groups.some(
+        (content) =>
+            Array.isArray(content) &&
+            content.some((node) => node?.type === 'inlineIcon'),
     );
 }

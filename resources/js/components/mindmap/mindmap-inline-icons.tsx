@@ -1,3 +1,5 @@
+import { iconPickerSearchQuery } from '@/components/inline-icons/icon-catalog';
+import { inlineIconInsertionMarks } from '@/components/inline-icons/inline-icon-node';
 import { useEffect, useRef, useState } from 'react';
 import type { Editor } from '@tiptap/core';
 import { router } from '@inertiajs/react';
@@ -79,7 +81,7 @@ export function MindMapInlineIcons({ editor }: { editor: Editor }) {
                 }),
             );
             setError('');
-            setQuery(detail.query ?? '');
+            setQuery(iconPickerSearchQuery(detail.query ?? ''));
         };
         const remember = (event: Event) =>
             saveIconPreferences(
@@ -163,17 +165,11 @@ export function MindMapInlineIcons({ editor }: { editor: Editor }) {
                     : {
                           type: 'inlineIcon',
                           attrs: legacyIconAttributes(choice),
-                          //
-                          // Replacing a symbol must retain the formatting applied through text selection.
-                          //
-                          ...(editor.state.doc.nodeAt(anchor.from)?.type
-                              .name === 'inlineIcon' && anchor.to > anchor.from
-                              ? {
-                                    marks: editor.state.doc
-                                        .nodeAt(anchor.from)
-                                        ?.toJSON().marks,
-                                }
-                              : {}),
+                          marks: inlineIconInsertionMarks(
+                              editor,
+                              anchor.from,
+                              anchor.to,
+                          ),
                       },
             )
             .run();

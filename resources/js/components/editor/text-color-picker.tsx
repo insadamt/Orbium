@@ -1,3 +1,5 @@
+import { applySelectionTextColor } from './apply-selection-text-color';
+import type { SelectionBookmark } from '@tiptap/pm/state';
 import type { Editor } from '@tiptap/core';
 import { useRef } from 'react';
 import { TextColorMenu } from './ui/text-color-menu';
@@ -9,7 +11,7 @@ export function TextColorPicker({
     editor: Editor;
     active: boolean;
 }) {
-    const selectedRange = useRef<{ from: number; to: number } | null>(null);
+    const selectedRange = useRef<SelectionBookmark | null>(null);
     return (
         <TextColorMenu
             active={active}
@@ -17,19 +19,16 @@ export function TextColorPicker({
                 editor.getAttributes('textColor').color as string | undefined
             }
             onOpen={() => {
-                selectedRange.current = {
-                    from: editor.state.selection.from,
-                    to: editor.state.selection.to,
-                };
+                selectedRange.current = editor.state.selection.getBookmark();
             }}
             onChoose={(color, keepOpen) => {
-                const range = selectedRange.current;
-                if (!range || range.to > editor.state.doc.content.size) return;
-                const command = editor.chain();
-                if (!keepOpen) command.focus();
-                command.setTextSelection(range);
-                if (color) command.setMark('textColor', { color }).run();
-                else command.unsetMark('textColor').run();
+                if (!selectedRange.current || editor.isDestroyed) return;
+                applySelectionTextColor(
+                    editor,
+                    selectedRange.current.resolve(editor.state.doc),
+                    color,
+                    !keepOpen,
+                );
             }}
         />
     );

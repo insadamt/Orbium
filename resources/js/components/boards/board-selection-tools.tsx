@@ -1,3 +1,4 @@
+import { BoardSelectionColor } from './board-selection-color';
 import { BoardDrawingFormatting } from './board-drawing-formatting';
 import { useState } from 'react';
 import { ToolbarHighlight } from '@/components/editor/ui/toolbar-motion';
@@ -91,6 +92,12 @@ export function BoardSelectionTools({
                     <span className="board-selection-label">
                         {selectionCount} selected
                     </span>
+                )}
+                {!toolbarEditing && (
+                    <BoardSelectionColor
+                        model={model}
+                        disabled={disabled || busy || !hasSelection}
+                    />
                 )}
                 {object && (
                     <>

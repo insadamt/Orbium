@@ -1,4 +1,8 @@
 import {
+    markdownInlineIconInput,
+    mountMarkdownInlineIcons,
+} from '@/components/inline-icons/markdown-inline-icon-input';
+import {
     markdownSelectAll,
     orbiumSelectionAppearance,
 } from '../markdown-selection';
@@ -44,6 +48,7 @@ export function mountRichTextInput({
             doc: source,
             extensions: [
                 orbiumSelectionAppearance,
+                markdownInlineIconInput,
                 markdownSelectAll,
                 markdown({
                     base: markdownLanguage,
@@ -75,11 +80,17 @@ export function mountRichTextInput({
             ],
         }),
     });
+    const disposeIcons = mountMarkdownInlineIcons(host, view, context);
     return {
         view,
         focus: () => view.focus(),
         containsFormattingTarget: (target: Node) =>
-            isSelectionToolbarTarget(view, target),
+            isSelectionToolbarTarget(view, target) ||
+            (view.dom.dataset.inlineIconPickerOpen === 'true' &&
+                target instanceof Element &&
+                Boolean(
+                    target.closest('.inline-icon-picker, .inline-icon-overlay'),
+                )),
         update(next: string, disabled: boolean) {
             pendingUpdate = { source: next, disabled };
             // Parent serialization can normalize the cell during this editor's update listener.
@@ -111,6 +122,7 @@ export function mountRichTextInput({
         },
         destroy() {
             destroyed = true;
+            disposeIcons();
             view.destroy();
         },
     };

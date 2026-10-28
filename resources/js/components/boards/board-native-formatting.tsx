@@ -1,7 +1,9 @@
+import { openLegacyIconPicker } from '@/components/inline-icons/inline-icon-node';
 import { useEffect, useState } from 'react';
 import type { Editor } from '@tiptap/core';
 import { Popover } from 'radix-ui';
 import {
+    Smile,
     Bold,
     Italic,
     Underline,
@@ -92,6 +94,19 @@ export function BoardNativeFormatting({
                     event.preventDefault();
             }}
         >
+            {editor.schema.nodes.inlineIcon && (
+                <BoardToolButton
+                    label="Insert inline icon"
+                    icon={Smile}
+                    disabled={
+                        disabled ||
+                        editor.isActive('codeBlock') ||
+                        editor.isActive('code')
+                    }
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={() => openLegacyIconPicker(editor)}
+                />
+            )}
             {(
                 [
                     [

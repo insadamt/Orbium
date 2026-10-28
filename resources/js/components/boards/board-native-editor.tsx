@@ -1,3 +1,11 @@
+import {
+    createLegacyIconSuggestions,
+    legacyIconSuggestionKey,
+} from '@/components/inline-icons/legacy-icon-suggestions';
+import type { EditorMenu } from '@/components/editor/editor-suggestions';
+import { SuggestionMenu } from '@/components/editor/editor-controls';
+import { createInlineIconNode } from '@/components/inline-icons/inline-icon-node';
+import { LegacyInlineIcons } from '@/components/inline-icons/legacy-inline-icons';
 import { BoardPageMentions } from './board-page-mentions';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -26,11 +34,17 @@ export function BoardNativeEditor(props: BoardContentProps) {
     >(null);
     const callbacks = useRef(props);
     callbacks.current = props;
+    const [iconMenu, setIconMenu] = useState<EditorMenu | null>(null);
     const [toolbar, setToolbar] = useState<HTMLElement | null>(null);
     const [, refresh] = useState(0);
     const appliedResetVersion = useRef(props.editorResetVersion);
     const [extensions] = useState(() => [
         TextColor,
+        createInlineIconNode(props.workspaceId, props.boardId, 'board'),
+        createLegacyIconSuggestions(
+            () => !callbacks.current.readOnly,
+            setIconMenu,
+        ),
         ...nativeEditorExtensions(props.object.block_type, () =>
             callbacks.current.onFinish(),
         ),
@@ -74,6 +88,17 @@ export function BoardNativeEditor(props: BoardContentProps) {
             handleKeyDown: (_view, event) => {
                 if (event.isComposing || _view.composing) return false;
                 if (mentionKeyHandler.current?.(event)) return true;
+                if (
+                    (
+                        legacyIconSuggestionKey.getState(_view.state) as
+                            | { active?: boolean }
+                            | undefined
+                    )?.active &&
+                    ['Enter', 'Tab', 'Escape', 'ArrowUp', 'ArrowDown'].includes(
+                        event.key,
+                    )
+                )
+                    return false;
                 const current = callbacks.current;
                 if (event.key === 'Escape') {
                     event.preventDefault();
@@ -96,7 +121,14 @@ export function BoardNativeEditor(props: BoardContentProps) {
                 return false;
             },
             handlePaste: (_view, event) => {
+                if (
+                    event.clipboardData
+                        ?.getData('text/html')
+                        .includes('data-orbium-inline-icon')
+                )
+                    return false;
                 const text = event.clipboardData?.getData('text/plain');
+                if (text?.includes(':orbium[')) return false;
                 if (text === undefined || event.clipboardData?.files.length)
                     return false;
                 event.preventDefault();
@@ -134,7 +166,7 @@ export function BoardNativeEditor(props: BoardContentProps) {
                 return;
             const structural =
                 transaction.getMeta('boardAction') ||
-                transaction.getMeta('uiEvent') === 'cut' ||
+                ['paste', 'cut'].includes(transaction.getMeta('uiEvent')) ||
                 transaction.steps.some(
                     (step) =>
                         step instanceof AddMarkStep ||
@@ -246,6 +278,22 @@ export function BoardNativeEditor(props: BoardContentProps) {
                     boardId={props.boardId}
                     onFinish={props.onFinish}
                     disabled={props.readOnly}
+                />
+            )}
+            {editor && (
+                <LegacyInlineIcons
+                    editor={editor}
+                    workspaceId={props.workspaceId}
+                    nodeId={props.boardId}
+                    ownerKind="board"
+                    onBusy={props.onUploading}
+                />
+            )}
+            {editor && iconMenu && (
+                <SuggestionMenu
+                    menu={iconMenu}
+                    editor={editor}
+                    onClose={() => setIconMenu(null)}
                 />
             )}
             {editor && <BoardWritingMenu {...props} editor={editor} />}

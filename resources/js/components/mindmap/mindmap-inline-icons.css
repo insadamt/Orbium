@@ -37,9 +37,7 @@
     margin: 0;
 }
 .mindmap-topic .orbium-inline-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+    display: inline-block;
     width: 1.25em;
     height: 1.25em;
     margin-inline: 0.08em;
@@ -54,16 +52,7 @@
     object-fit: contain;
 }
 .mindmap-topic-writing .orbium-inline-icon {
-    cursor: pointer;
-}
-.mindmap-topic-writing .orbium-inline-icon:focus-visible {
-    outline: 2px solid var(--ring);
-    outline-offset: 2px;
-    border-radius: 3px;
-}
-.mindmap-topic-writing .ProseMirror-selectednode {
-    background: var(--accent);
-    border-radius: 3px;
+    cursor: text;
 }
 .mindmap-full-dialog .inline-icon-overlay {
     z-index: 160;

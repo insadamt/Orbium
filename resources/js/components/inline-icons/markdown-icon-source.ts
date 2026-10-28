@@ -1,17 +1,57 @@
+import { markdownFormattingTree } from '@/components/editor/markdown/interactions/markdown-formatting-source';
 import type { EditorState } from '@codemirror/state';
 import type { SyntaxNode } from '@lezer/common';
 import { readOrbiumMetadata } from '@/components/editor/markdown/dialect/metadata';
 import { escapeMarkdownLabel } from '@/components/editor/markdown/markdown-syntax';
 import { isBuiltinIcon, type InlineIconChoice } from './icon-catalog';
 
-export function serializeInlineIcon(choice: InlineIconChoice): string {
+export function serializeInlineIcon(
+    choice: InlineIconChoice,
+    formatting: { color?: string; underline?: boolean } = {},
+): string {
     if (choice.kind === 'emoji') return choice.value;
     const label = escapeMarkdownLabel(choice.label).replace(/[\r\n]/g, ' ');
     const content =
         choice.kind === 'custom'
             ? `![${label}](orbium:attachment/${choice.attachmentId})`
             : label;
-    return `:orbium[${content}]${JSON.stringify({ icon: choice.kind === 'custom' ? 'custom' : choice.name, ...(choice.kind === 'builtin' && choice.color ? { color: choice.color } : {}) })}`;
+    return `:orbium[${content}]${JSON.stringify({ ...formatting, icon: choice.kind === 'custom' ? 'custom' : choice.name, ...(choice.kind === 'builtin' && choice.color ? { color: choice.color } : {}) })}`;
+}
+
+export function serializeReplacementIcon(
+    state: EditorState,
+    from: number,
+    to: number,
+    choice: InlineIconChoice,
+): string {
+    let node: SyntaxNode | null = markdownFormattingTree(state).resolveInner(
+        from,
+        1,
+    );
+    while (
+        node &&
+        !(node.name === 'OrbiumSpan' && node.from === from && node.to === to)
+    )
+        node = node.parent;
+    const metadataNode = node?.getChild('OrbiumMetadata');
+    const metadata =
+        metadataNode &&
+        readOrbiumMetadata(
+            state.sliceDoc(metadataNode.from, metadataNode.to),
+            'inline',
+        );
+    //
+    // Symbol replacement must keep the selection's color rather than requiring a second formatting action.
+    //
+    return serializeInlineIcon(
+        choice,
+        metadata?.icon
+            ? {
+                  ...(metadata.color ? { color: metadata.color } : {}),
+                  ...(metadata.underline ? { underline: true } : {}),
+              }
+            : {},
+    );
 }
 
 export function readMarkdownIcon(

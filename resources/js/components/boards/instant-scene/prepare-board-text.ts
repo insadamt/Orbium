@@ -58,6 +58,13 @@ function prepareInlineContent(content: BoardInline[]) {
 }
 
 export function supportsPreparedBoardText(object: BoardObject) {
+    if (
+        [
+            ...(object.data.content ?? []),
+            ...(object.data.items?.flatMap((item) => item.content) ?? []),
+        ].some((node) => node.type === 'inlineIcon')
+    )
+        return false;
     return ['text', 'heading', 'list', 'quote', 'callout'].includes(
         object.block_type,
     );

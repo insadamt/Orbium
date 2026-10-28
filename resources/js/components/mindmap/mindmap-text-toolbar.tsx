@@ -1,5 +1,3 @@
-import { Smile } from 'lucide-react';
-import { requestMindMapInlineIcon } from './mindmap-inline-icons';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { Editor } from '@tiptap/core';
@@ -31,44 +29,49 @@ export function MindMapTextToolbar({
         let frame = 0;
         function updatePosition() {
             cancelAnimationFrame(frame);
-            frame = requestAnimationFrame(() => {
-                if (editor.isDestroyed) return;
-                const { from, to, empty } = editor.state.selection;
-                if (
-                    (empty && !linkOpen) ||
-                    selecting.current ||
-                    editor.view.composing
-                ) {
-                    setPosition(null);
-                    return;
-                }
-                const start = editor.view.coordsAtPos(from);
-                const end = editor.view.coordsAtPos(to);
-                const bounds = dialog!.getBoundingClientRect();
-                const toolbarWidth = toolbar.current?.offsetWidth || 400;
-                const toolbarHeight = toolbar.current?.offsetHeight || 40;
-                setPosition({
-                    left: Math.max(
-                        8,
-                        Math.min(
-                            bounds.width - toolbarWidth,
-                            (start.left + end.right) / 2 -
-                                bounds.left -
-                                toolbarWidth / 2,
-                        ),
+            if (editor.isDestroyed) return;
+            const { from, to, empty } = editor.state.selection;
+            if (
+                (empty && !linkOpen) ||
+                selecting.current ||
+                editor.view.composing
+            ) {
+                setPosition(null);
+                return;
+            }
+            const start = editor.view.coordsAtPos(from);
+            const end = editor.view.coordsAtPos(to);
+            const bounds = dialog!.getBoundingClientRect();
+            const toolbarWidth = toolbar.current?.offsetWidth || 400;
+            const toolbarHeight = toolbar.current?.offsetHeight || 40;
+            setPosition({
+                left: Math.max(
+                    8,
+                    Math.min(
+                        bounds.width - toolbarWidth,
+                        (start.left + end.right) / 2 -
+                            bounds.left -
+                            toolbarWidth / 2,
                     ),
-                    top: Math.max(
-                        8,
-                        Math.min(start.top, end.top) -
-                            bounds.top -
-                            toolbarHeight -
-                            12,
-                    ),
-                });
+                ),
+                top: Math.max(
+                    8,
+                    Math.min(start.top, end.top) -
+                        bounds.top -
+                        toolbarHeight -
+                        12,
+                ),
             });
         }
+        function schedulePosition() {
+            cancelAnimationFrame(frame);
+            frame = requestAnimationFrame(updatePosition);
+        }
         const pointerDown = (event: PointerEvent) => {
-            if (editor.view.dom.contains(event.target as Node)) {
+            if (
+                event.button === 0 &&
+                editor.view.dom.contains(event.target as Node)
+            ) {
                 selecting.current = true;
                 setPosition(null);
             }
@@ -78,24 +81,43 @@ export function MindMapTextToolbar({
             updatePosition();
         };
         editor.on('selectionUpdate', updatePosition);
-        editor.on('transaction', updatePosition);
-        dialog.ownerDocument.addEventListener('pointerdown', pointerDown);
-        dialog.ownerDocument.addEventListener('pointerup', pointerUp);
-        dialog.addEventListener('scroll', updatePosition, true);
-        const sizeObserver = new ResizeObserver(updatePosition);
+        editor.on('transaction', schedulePosition);
+        //
+        // The fullscreen dialog stops bubbling pointer events; observe the gesture before its boundary so the toolbar waits for release.
+        //
+        dialog.ownerDocument.addEventListener('pointerdown', pointerDown, true);
+        dialog.ownerDocument.addEventListener('pointerup', pointerUp, true);
+        dialog.ownerDocument.addEventListener('pointercancel', pointerUp, true);
+        dialog.ownerDocument.defaultView?.addEventListener('blur', pointerUp);
+        dialog.addEventListener('scroll', schedulePosition, true);
+        const sizeObserver = new ResizeObserver(schedulePosition);
         if (toolbar.current) sizeObserver.observe(toolbar.current);
         updatePosition();
         return () => {
             sizeObserver.disconnect();
             cancelAnimationFrame(frame);
             editor.off('selectionUpdate', updatePosition);
-            editor.off('transaction', updatePosition);
+            editor.off('transaction', schedulePosition);
             dialog.ownerDocument.removeEventListener(
                 'pointerdown',
                 pointerDown,
+                true,
             );
-            dialog.ownerDocument.removeEventListener('pointerup', pointerUp);
-            dialog.removeEventListener('scroll', updatePosition, true);
+            dialog.ownerDocument.removeEventListener(
+                'pointerup',
+                pointerUp,
+                true,
+            );
+            dialog.ownerDocument.removeEventListener(
+                'pointercancel',
+                pointerUp,
+                true,
+            );
+            dialog.ownerDocument.defaultView?.removeEventListener(
+                'blur',
+                pointerUp,
+            );
+            dialog.removeEventListener('scroll', schedulePosition, true);
         };
     }, [editor, linkOpen, surface]);
     if (!surface) return null;
@@ -109,17 +131,6 @@ export function MindMapTextToolbar({
             style={{ left: position?.left ?? 0, top: position?.top ?? 0 }}
         >
             <ToolbarHighlight />
-            <button
-                type="button"
-                className="board-tool-button editor-toolbar-button"
-                aria-label="Insert inline icon"
-                title="Emoji & icons"
-                disabled={editor.isActive('codeBlock')}
-                onMouseDown={(event) => event.preventDefault()}
-                onClick={() => requestMindMapInlineIcon(editor)}
-            >
-                <Smile size={17} />
-            </button>
             <BoardNativeFormatting
                 fullscreen
                 editor={editor}

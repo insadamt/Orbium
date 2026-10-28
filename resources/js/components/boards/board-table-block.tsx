@@ -164,6 +164,8 @@ export function BoardTableBlock(props: BoardContentProps) {
                     workspaceId: props.workspaceId,
                     nodeId: props.boardId,
                     ownerKind: 'board',
+                    localIconUploads: true,
+                    onIconBusy: (busy) => callbacks.current.onUploading(busy),
                     mermaid,
                     mathPreviewScope: prepared.mathScope,
                     metadata: new Map(),

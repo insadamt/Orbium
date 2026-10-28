@@ -75,6 +75,13 @@ export function useBoardEditorAnchor(
         const schedule = () => {
             if (frame === undefined) frame = requestAnimationFrame(position);
         };
+        const updateSelectionPosition = () => {
+            //
+            // A selected range must expose its controls even before the next canvas paint, including after edit entry.
+            //
+            if (frame !== undefined) cancelAnimationFrame(frame);
+            position();
+        };
         const beginPointerSelection = (event: PointerEvent) => {
             if (mode !== 'selection' || event.button !== 0) return;
             selectingWithPointer = true;
@@ -83,14 +90,15 @@ export function useBoardEditorAnchor(
         const finishPointerSelection = () => {
             if (!selectingWithPointer) return;
             selectingWithPointer = false;
-            schedule();
+            updateSelectionPosition();
         };
         const editorDom = editor.view.dom;
         editorDom.addEventListener('pointerdown', beginPointerSelection);
-        window.addEventListener('pointerup', finishPointerSelection);
-        window.addEventListener('pointercancel', finishPointerSelection);
+        window.addEventListener('pointerup', finishPointerSelection, true);
+        window.addEventListener('pointercancel', finishPointerSelection, true);
         window.addEventListener('blur', finishPointerSelection);
         editor.on('transaction', schedule);
+        editor.on('selectionUpdate', updateSelectionPosition);
         window.addEventListener('resize', schedule);
         window.addEventListener('scroll', schedule, true);
         window.visualViewport?.addEventListener('resize', schedule);
@@ -110,10 +118,19 @@ export function useBoardEditorAnchor(
         schedule();
         return () => {
             editorDom.removeEventListener('pointerdown', beginPointerSelection);
-            window.removeEventListener('pointerup', finishPointerSelection);
-            window.removeEventListener('pointercancel', finishPointerSelection);
+            window.removeEventListener(
+                'pointerup',
+                finishPointerSelection,
+                true,
+            );
+            window.removeEventListener(
+                'pointercancel',
+                finishPointerSelection,
+                true,
+            );
             window.removeEventListener('blur', finishPointerSelection);
             editor.off('transaction', schedule);
+            editor.off('selectionUpdate', updateSelectionPosition);
             window.removeEventListener('resize', schedule);
             window.removeEventListener('scroll', schedule, true);
             window.visualViewport?.removeEventListener('resize', schedule);

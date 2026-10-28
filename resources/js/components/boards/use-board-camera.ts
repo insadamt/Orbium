@@ -245,6 +245,12 @@ export function useBoardCamera(
         settle();
         const wheel = (event: WheelEvent) => {
             if (event.target instanceof Element) {
+                if (
+                    event.target.closest(
+                        '.mindmap-viewport, [data-mindmap-dialog]',
+                    )
+                )
+                    return;
                 const body = event.target.closest<HTMLElement>(
                     '[data-board-resource-scroll], .board-object[data-editing="true"] [data-board-scroll], [data-board-player], video, audio, [role="slider"]',
                 );

@@ -11,6 +11,8 @@ import { useMindMapOwner } from './mindmap-owner-context';
 function PreviewIcon({ node }: { node: JSONContent }) {
     const owner = useMindMapOwner();
     const host = useRef<HTMLSpanElement>(null);
+    const color = node.marks?.find((mark) => mark.type === 'textColor')?.attrs
+        ?.color as string | undefined;
     const { kind, name, attachmentId, label } = node.attrs ?? {};
     const workspaceId = owner?.workspaceId;
     const nodeId = owner?.nodeId;
@@ -27,6 +29,7 @@ function PreviewIcon({ node }: { node: JSONContent }) {
                 : {
                       kind: 'builtin' as const,
                       name: name as string,
+                      color,
                       label: label as string,
                   };
         host.current?.replaceChildren(
@@ -36,7 +39,16 @@ function PreviewIcon({ node }: { node: JSONContent }) {
                 ownerKind,
             }),
         );
-    }, [kind, name, attachmentId, label, workspaceId, nodeId, ownerKind]);
+    }, [
+        kind,
+        name,
+        attachmentId,
+        label,
+        workspaceId,
+        nodeId,
+        ownerKind,
+        color,
+    ]);
     return <span ref={host}>{node.attrs?.label}</span>;
 }
 export function MindMapInlinePreview({

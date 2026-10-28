@@ -1,3 +1,4 @@
+import { hasNativeBoardInlineIcons } from './board-inline-data';
 import {
     validBoardBlockData,
     boardDataBytes,
@@ -95,7 +96,7 @@ export function readBoardSnapshot(
     } | null;
     if (
         !snapshot ||
-        ![7, 6, 5, ...(allowLegacyDraft ? [1, 2, 3, 4] : [])].includes(
+        ![8, 7, 6, 5, ...(allowLegacyDraft ? [1, 2, 3, 4] : [])].includes(
             snapshot.format_version ?? 0,
         ) ||
         !Number.isSafeInteger(snapshot.revision) ||
@@ -132,6 +133,13 @@ export function readBoardSnapshot(
     const objects = snapshot.objects
         .flatMap((value) => {
             const object = value as BoardObject;
+            if (
+                (snapshot.format_version ?? 0) < 8 &&
+                hasNativeBoardInlineIcons(object?.data)
+            )
+                throw new BoardSaveError(
+                    'Inline icons require Board format 8. Reload Orbium before editing.',
+                );
             if (
                 (snapshot.format_version ?? 0) < 7 &&
                 object?.block_type === 'mindmap'
@@ -193,7 +201,7 @@ export function readBoardSnapshot(
             'This Board exceeds the native block limits or has invalid data. Download the original snapshot for recovery.',
         );
     return {
-        format_version: 7,
+        format_version: 8,
         revision: snapshot.revision!,
         objects,
         ...(snapshot.mutation_version === 1 ? { mutation_version: 1 } : {}),

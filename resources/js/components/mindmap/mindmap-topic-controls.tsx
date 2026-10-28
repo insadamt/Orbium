@@ -1,3 +1,9 @@
+import { TextColorMenu } from '@/components/editor/ui/text-color-menu';
+import {
+    documentContentColors,
+    uniformContentColor,
+} from '@/components/editor/content-selection-color';
+import { mindMapTopicDocument } from './mindmap-topic-document';
 import { MindMapStylePanel } from './mindmap-style-panel';
 import type { BranchColor } from './mindmap-branch-style';
 import { useRef, useState } from 'react';
@@ -29,6 +35,7 @@ type Props = {
     onToggle: () => void;
     onMove: (parentId: string) => void;
     onWidthCommit: (width: number) => boolean;
+    onColorChange: (color: string | null) => void;
     onStyleChange: (style: { color?: BranchColor; icon?: string }) => void;
 };
 
@@ -43,6 +50,7 @@ export function MindMapTopicControls({
     onMove,
     onWidthCommit,
     onStyleChange,
+    onColorChange,
 }: Props) {
     const [panel, setPanel] = useState<{
         topicId: string;
@@ -86,6 +94,21 @@ export function MindMapTopicControls({
                     onClick={() => onAdd(true)}
                 />
                 <span className="mindmap-tool-separator" />
+                {documentContentColors(mindMapTopicDocument(selected)).length >
+                    0 && (
+                    <TextColorMenu
+                        key={selected.id}
+                        active
+                        colorLabel="Topic color"
+                        currentColor={uniformContentColor(
+                            documentContentColors(
+                                mindMapTopicDocument(selected),
+                            ),
+                        )}
+                        onOpen={() => setPanel(null)}
+                        onChoose={(color) => onColorChange(color)}
+                    />
+                )}
                 <BoardToolButton
                     {...common}
                     label="Rename topic"

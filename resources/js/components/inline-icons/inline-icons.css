@@ -395,14 +395,6 @@
     margin-inline: 0.08em;
     border-radius: 2px;
 }
-.orbium-inline-icon[role='button'] {
-    cursor: pointer;
-}
-.orbium-inline-icon[role='button']:hover,
-.orbium-inline-icon[role='button']:focus-visible {
-    outline: 1px solid var(--ring);
-    outline-offset: 3px;
-}
 .orbium-inline-icon-fallback {
     font-size: 0.75em;
 }
@@ -432,4 +424,53 @@
     .icon-results-cell {
         transition: none;
     }
+}
+
+/* Inline atoms must participate in the same drag selection as their surrounding text. */
+.orbium-inline-icon {
+    display: inline-block;
+    position: relative;
+    user-select: text;
+    cursor: text;
+    pointer-events: none;
+}
+.orbium-inline-icon > :is(svg, img, .orbium-inline-icon-fallback) {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+.orbium-inline-icon-text {
+    color: transparent;
+    text-shadow: none;
+    user-select: text;
+}
+/* Noneditable artwork needs the text range's highlight even when the browser omits it. */
+[data-inline-icon-editor] {
+    --inline-icon-selection-background: color-mix(
+        in srgb,
+        var(--foreground) 14%,
+        transparent
+    );
+}
+[data-inline-icon-editor].ProseMirror-focused {
+    --inline-icon-selection-background: color-mix(
+        in srgb,
+        var(--foreground) 22%,
+        transparent
+    );
+}
+[data-inline-icon-editor]::selection,
+[data-inline-icon-editor] ::selection {
+    background: var(--inline-icon-selection-background);
+}
+[data-inline-icon-editor] .orbium-inline-icon-in-selection {
+    background: var(--inline-icon-selection-background);
+}
+[data-inline-icon-editor] .orbium-inline-icon-text::selection {
+    color: transparent;
+    background: transparent;
+}
+
+.orbium-rich-text-input .cm-content {
+    user-select: text;
 }

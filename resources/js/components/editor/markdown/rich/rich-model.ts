@@ -55,6 +55,8 @@ export type AttachmentMetadata = {
     purpose: string;
 };
 export type RichContext = {
+    localIconUploads?: boolean;
+    onIconBusy?: (busy: boolean) => void;
     tabId?: string;
     ownerKind?: ContentOwnerKind;
     workspaceId: number;

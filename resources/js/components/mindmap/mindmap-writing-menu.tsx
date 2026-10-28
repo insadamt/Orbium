@@ -1,3 +1,4 @@
+import { inlineIconInsertionMarks } from '@/components/inline-icons/inline-icon-node';
 import {
     findInlineIcons,
     type InlineIconChoice,
@@ -138,7 +139,7 @@ function readQuery(editor: Editor) {
             from: $from.start(),
             to: selection.from,
         };
-    const colon = /(?:^|\s):([a-z0-9_-]{0,40})$/i.exec(prefix);
+    const colon = /(?:^|[\s([]):([a-z0-9_-]{0,40})$/i.exec(prefix);
     return colon
         ? {
               mode: 'icon' as const,
@@ -295,6 +296,7 @@ export function useMindMapWritingMenu(editor: Editor | null) {
                         ? { type: 'text', text: choice.value }
                         : {
                               type: 'inlineIcon',
+                              marks: inlineIconInsertionMarks(editor),
                               attrs: legacyIconAttributes(choice),
                           },
                 )

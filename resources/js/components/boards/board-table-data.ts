@@ -1,3 +1,4 @@
+import { serializeInlineIcon } from '@/components/inline-icons/markdown-icon-source';
 import { EditorState } from '@codemirror/state';
 import { markdownLanguage } from '@codemirror/lang-markdown';
 import type { MarkdownParser } from '@lezer/markdown';
@@ -15,6 +16,23 @@ function inlineMarkdown(content: BoardInline[]): string {
         .map((node) => {
             if (node.type === 'hardBreak') return '  \n';
             const raw = node.text ?? '';
+            const attrs = node.attrs;
+            const icon =
+                node.type === 'inlineIcon' && attrs
+                    ? serializeInlineIcon(
+                          attrs.kind === 'custom'
+                              ? {
+                                    kind: 'custom',
+                                    label: attrs.label,
+                                    attachmentId: attrs.attachmentId!,
+                                }
+                              : {
+                                    kind: 'builtin',
+                                    label: attrs.label,
+                                    name: attrs.name!,
+                                },
+                      )
+                    : undefined;
             const code = node.marks?.some((mark) => mark.type === 'code');
             const fence = '`'.repeat(
                 Math.max(
@@ -22,9 +40,11 @@ function inlineMarkdown(content: BoardInline[]): string {
                     ...(raw.match(/`+/g) ?? []).map((run) => run.length),
                 ) + 1,
             );
-            let text = code
-                ? `${fence} ${raw} ${fence}`
-                : raw.replace(/[\\`*_[\]<>~#$!:]/g, '\\$&');
+            let text =
+                icon ??
+                (code
+                    ? `${fence} ${raw} ${fence}`
+                    : raw.replace(/[\\`*_[\]<>~#$!:]/g, '\\$&'));
             for (const mark of node.marks ?? []) {
                 if (mark.type === 'bold') text = `**${text}**`;
                 if (mark.type === 'italic') text = `*${text}*`;

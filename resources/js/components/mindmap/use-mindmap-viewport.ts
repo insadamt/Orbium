@@ -1,3 +1,4 @@
+import { useMindMapZoomInput } from './use-mindmap-zoom-input';
 import { useLayoutEffect, useRef, useState } from 'react';
 import { type layoutMindMap } from './mindmap-layout';
 
@@ -61,6 +62,16 @@ export function useMindMapViewport({
         panPadding +
         (layout ? Math.max(0, (height - layout.height * scale) / 2) : 0);
 
+    const skipZoomReveal = useMindMapZoomInput({
+        viewport,
+        scale,
+        fit,
+        panPadding,
+        sceneLeft,
+        sceneTop,
+        setZoom,
+    });
+
     useLayoutEffect(() => {
         const host = viewport.current;
         if (!host) return;
@@ -90,6 +101,10 @@ export function useMindMapViewport({
         const topic = layout?.topics.find(
             (item) => item.topic.id === selectedId,
         );
+        if (skipZoomReveal.current) {
+            skipZoomReveal.current = false;
+            return;
+        }
         if (!editable || !host || !topic || horizontalAnchor) return;
         //
         // Reveal topics inside this canvas without scrolling the surrounding Document or Board.

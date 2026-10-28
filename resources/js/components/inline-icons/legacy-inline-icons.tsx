@@ -1,3 +1,5 @@
+import { inlineIconInsertionMarks } from '@/components/inline-icons/inline-icon-node';
+import type { ContentOwnerKind } from '@/components/editor/editor-api';
 import type { Editor } from '@tiptap/core';
 import { useEffect, useRef, useState } from 'react';
 import { useIconRecents } from './use-icon-recents';
@@ -15,10 +17,14 @@ export function LegacyInlineIcons({
     editor,
     workspaceId,
     nodeId,
+    ownerKind,
+    onBusy,
 }: {
     editor: Editor | null;
     workspaceId: number;
     nodeId: number;
+    ownerKind?: ContentOwnerKind;
+    onBusy?: (busy: boolean) => void;
 }) {
     const [query, setQuery] = useState<string | null>(null);
     const [error, setError] = useState('');
@@ -33,14 +39,20 @@ export function LegacyInlineIcons({
 
     useEffect(() => {
         if (!editor) return;
-        let frame = 0;
         const attach = () => {
             if (editor.isDestroyed) return;
-            if (editor.isInitialized) setHost(editor.view.dom);
-            else frame = requestAnimationFrame(attach);
+            setHost(editor.view.dom);
         };
-        attach();
-        return () => cancelAnimationFrame(frame);
+        //
+        // Picker requests can arrive before a paint; subscribe to editor readiness rather than waiting for an animation frame.
+        //
+        if (editor.isInitialized) attach();
+        editor.on('create', attach);
+        editor.on('mount', attach);
+        return () => {
+            editor.off('create', attach);
+            editor.off('mount', attach);
+        };
     }, [editor]);
 
     useEffect(() => {
@@ -98,6 +110,7 @@ export function LegacyInlineIcons({
         events.forEach((name) => window.addEventListener(name, guard));
         return () => {
             mounted.current = false;
+            if (busy.current) onBusy?.(false);
             removeGuard();
             events.forEach((name) => window.removeEventListener(name, guard));
         };
@@ -136,6 +149,7 @@ export function LegacyInlineIcons({
         editor
             .chain()
             .focus()
+            .setMeta('boardAction', true)
             .insertContentAt(
                 { from: anchor.from, to: anchor.to },
                 choice.kind === 'emoji'
@@ -143,17 +157,11 @@ export function LegacyInlineIcons({
                     : {
                           type: 'inlineIcon',
                           attrs: legacyIconAttributes(choice),
-                          //
-                          // Replacing a symbol must retain the formatting applied through text selection.
-                          //
-                          ...(editor.state.doc.nodeAt(anchor.from)?.type
-                              .name === 'inlineIcon' && anchor.to > anchor.from
-                              ? {
-                                    marks: editor.state.doc
-                                        .nodeAt(anchor.from)
-                                        ?.toJSON().marks,
-                                }
-                              : {}),
+                          marks: inlineIconInsertionMarks(
+                              editor,
+                              anchor.from,
+                              anchor.to,
+                          ),
                       },
             )
             .run();
@@ -181,12 +189,14 @@ export function LegacyInlineIcons({
         busy.current = true;
         setUploading(true);
         hosted?.setBusy('upload', true);
+        onBusy?.(true);
         setError('');
         try {
             const attachment = await uploadAttachment(
                 workspaceId,
                 nodeId,
                 file,
+                ownerKind,
             );
             if (mounted.current)
                 choose({
@@ -205,6 +215,7 @@ export function LegacyInlineIcons({
             busy.current = false;
             if (mounted.current) setUploading(false);
             hosted?.setBusy('upload', false);
+            onBusy?.(false);
         }
     }
     return (
@@ -223,6 +234,7 @@ export function LegacyInlineIcons({
                 <InlineIconPicker
                     workspaceId={workspaceId}
                     nodeId={nodeId}
+                    ownerKind={ownerKind}
                     initialQuery={query}
                     busy={uploading}
                     error={error}

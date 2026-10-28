@@ -1,9 +1,6 @@
 import { createMindMap } from '@/components/mindmap/mindmap-data';
 import { markdownIconCompletion } from '@/components/inline-icons/markdown-icon-completion';
-import {
-    openMarkdownIconPicker,
-    inlineIconEditing,
-} from '@/components/inline-icons/markdown-icon-widget';
+import { openMarkdownIconPicker } from '@/components/inline-icons/markdown-icon-widget';
 import { serializeOrbiumBlock } from './dialect/metadata';
 import {
     markdownCompletionMenu,
@@ -261,7 +258,6 @@ export function markdownSlashCommands(
         return true;
     }
     return [
-        inlineIconEditing.of(true),
         markdownCompletionMenu,
         autocompletion({
             override: [

@@ -1,3 +1,4 @@
+import { applySelectionTextColor } from '@/components/editor/apply-selection-text-color';
 import type { Editor } from '@tiptap/core';
 import type { SelectionBookmark } from '@tiptap/pm/state';
 import { useRef } from 'react';
@@ -35,14 +36,12 @@ export function BoardTextColorPicker({
                     const selection = selectionBookmark.current.resolve(
                         editor.state.doc,
                     );
-                    const command = editor.chain().command(({ tr }) => {
-                        tr.setSelection(selection).setMeta('boardAction', true);
-                        return true;
-                    });
-                    if (!keepOpen)
-                        command.focus(undefined, { scrollIntoView: false });
-                    if (color) command.setMark('textColor', { color }).run();
-                    else command.unsetMark('textColor').run();
+                    applySelectionTextColor(
+                        editor,
+                        selection,
+                        color,
+                        !keepOpen,
+                    );
                 }}
             />
         </div>

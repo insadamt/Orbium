@@ -45,6 +45,9 @@ final class MindMapData
                 (new BoardBlockData)->validate('text', ['content' => $content]);
                 $plainText = '';
                 foreach ($content as $inline) {
+                    if (! in_array($inline['type'], ['text', 'hardBreak'], true)) {
+                        $invalid();
+                    }
                     if ($inline['type'] === 'hardBreak' && array_keys($inline) !== ['type']) {
                         $invalid();
                     }

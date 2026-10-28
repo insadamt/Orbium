@@ -1,3 +1,4 @@
+import { InlineIconPreview } from '@/components/inline-icons/inline-icon-preview';
 import { Fragment, type ReactNode } from 'react';
 import { isValidTextColor } from '@/components/editor/text-color';
 import { safeBoardLink } from './board-block-data';
@@ -6,8 +7,12 @@ import type { BoardInline } from './board-types';
 export function BoardInlinePreview({
     content,
     linksInteractive = true,
+    workspaceId,
+    nodeId,
 }: {
     content: BoardInline[];
+    workspaceId?: number;
+    nodeId?: number;
     linksInteractive?: boolean;
 }) {
     return (
@@ -20,7 +25,21 @@ export function BoardInlinePreview({
                         marks={node.marks}
                         linksInteractive={linksInteractive}
                     >
-                        {node.text}
+                        {node.type === 'inlineIcon' && node.attrs ? (
+                            <InlineIconPreview
+                                attrs={node.attrs}
+                                color={
+                                    node.marks?.find(
+                                        (mark) => mark.type === 'textColor',
+                                    )?.attrs?.color
+                                }
+                                workspaceId={workspaceId}
+                                nodeId={nodeId}
+                                ownerKind="board"
+                            />
+                        ) : (
+                            node.text
+                        )}
                     </BoardInlineMarks>
                 );
             })}

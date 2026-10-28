@@ -81,7 +81,11 @@ export function BoardTextBlock(props: BoardContentProps) {
                                 </span>
                             )}
                             <div className="board-list-content">
-                                <BoardInlinePreview content={item.content} />
+                                <BoardInlinePreview
+                                    content={item.content}
+                                    workspaceId={props.workspaceId}
+                                    nodeId={props.boardId}
+                                />
                             </div>
                         </div>
                     ))
@@ -99,7 +103,11 @@ export function BoardTextBlock(props: BoardContentProps) {
             {editing ? (
                 <BoardNativeEditor key={kind} {...props} />
             ) : data.content?.length ? (
-                <BoardInlinePreview content={data.content} />
+                <BoardInlinePreview
+                    content={data.content}
+                    workspaceId={props.workspaceId}
+                    nodeId={props.boardId}
+                />
             ) : (
                 <span className="board-text-placeholder">
                     Double-click to write · @ to link a page

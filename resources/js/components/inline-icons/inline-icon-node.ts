@@ -1,9 +1,14 @@
+import { inlineIconColorStyle } from './inline-icon-color';
+import { readInlineIconClipboard } from './inline-icon-clipboard';
+import { serializeInlineIcon } from './markdown-icon-source';
+import { validInlineIconAttributes } from './inline-icon-data';
+import { createInlineIconSelectionPlugin } from './inline-icon-selection';
 import type { ContentOwnerKind } from '@/components/editor/editor-api';
 import { Node, type Editor } from '@tiptap/core';
-import { Plugin, PluginKey, NodeSelection } from '@tiptap/pm/state';
+import { Plugin, PluginKey } from '@tiptap/pm/state';
 import { createInlineIconElement } from './inline-icon-dom';
 import { iconPickerEvent } from './markdown-icon-widget';
-import { isBuiltinIcon, type InlineIconChoice } from './icon-catalog';
+import { iconPickerSearchQuery, type InlineIconChoice } from './icon-catalog';
 
 export type LegacyIconAnchor = { from: number; to: number; source: string };
 export const legacyIconAnchor = new PluginKey<LegacyIconAnchor | null>(
@@ -13,7 +18,9 @@ export const legacyIconAnchor = new PluginKey<LegacyIconAnchor | null>(
 export function openLegacyIconPicker(editor: Editor, query = '') {
     if (!editor.isEditable || editor.view.composing) return;
     editor.view.dom.dispatchEvent(
-        new CustomEvent(iconPickerEvent, { detail: { query } }),
+        new CustomEvent(iconPickerEvent, {
+            detail: { query: iconPickerSearchQuery(query) },
+        }),
     );
 }
 
@@ -29,6 +36,19 @@ export function legacyIconAttributes(
     };
 }
 
+export function inlineIconInsertionMarks(
+    editor: Editor,
+    from = editor.state.selection.from,
+    to = editor.state.selection.to,
+) {
+    const selected = editor.state.doc.nodeAt(from);
+    if (selected?.type.name === 'inlineIcon' && to === from + selected.nodeSize)
+        return selected.toJSON().marks ?? [];
+    return (
+        editor.state.storedMarks ?? editor.state.doc.resolve(from).marks()
+    ).map((mark) => mark.toJSON());
+}
+
 export function createInlineIconNode(
     workspaceId: number,
     nodeId: number,
@@ -39,6 +59,11 @@ export function createInlineIconNode(
         inline: true,
         group: 'inline',
         atom: true,
+        //
+        // Keep pointer and keyboard selection in the text range instead of switching an inline glyph to object selection.
+        //
+        selectable: false,
+        draggable: false,
         addAttributes() {
             return Object.fromEntries(
                 ['version', 'kind', 'label', 'name', 'attachmentId'].map(
@@ -50,7 +75,27 @@ export function createInlineIconNode(
             );
         },
         renderText({ node }) {
-            return String(node.attrs.label ?? 'Icon');
+            const choice =
+                node.attrs.kind === 'custom'
+                    ? {
+                          kind: 'custom' as const,
+                          label: String(node.attrs.label),
+                          attachmentId: Number(node.attrs.attachmentId),
+                      }
+                    : {
+                          kind: 'builtin' as const,
+                          label: String(node.attrs.label),
+                          name: String(node.attrs.name),
+                      };
+            const color = node.marks.find(
+                (mark) => mark.type.name === 'textColor',
+            )?.attrs.color as string | undefined;
+            return serializeInlineIcon(choice, {
+                ...(color ? { color } : {}),
+                ...(node.marks.some((mark) => mark.type.name === 'underline')
+                    ? { underline: true }
+                    : {}),
+            });
         },
         parseHTML() {
             return [
@@ -63,24 +108,9 @@ export function createInlineIconNode(
                                     'data-orbium-inline-icon',
                                 ) ?? '{}',
                             );
-                            if (
-                                attrs.version !== 1 ||
-                                typeof attrs.label !== 'string' ||
-                                !attrs.label.trim() ||
-                                attrs.label.length > 160
-                            )
-                                return false;
-                            if (
-                                attrs.kind === 'builtin' &&
-                                isBuiltinIcon(attrs.name)
-                            )
-                                return attrs;
-                            if (
-                                attrs.kind === 'custom' &&
-                                Number.isSafeInteger(attrs.attachmentId) &&
-                                attrs.attachmentId > 0
-                            )
-                                return attrs;
+                            return validInlineIconAttributes(attrs)
+                                ? attrs
+                                : false;
                         } catch {
                             //
                             // Invalid clipboard metadata falls back to readable text.
@@ -104,7 +134,7 @@ export function createInlineIconNode(
             ];
         },
         addNodeView() {
-            return ({ node, editor, getPos }) => {
+            return ({ node }) => {
                 const choice: Exclude<InlineIconChoice, { kind: 'emoji' }> =
                     node.attrs.kind === 'custom'
                         ? {
@@ -115,6 +145,9 @@ export function createInlineIconNode(
                         : {
                               kind: 'builtin',
                               name: String(node.attrs.name),
+                              color: node.marks.find(
+                                  (mark) => mark.type.name === 'textColor',
+                              )?.attrs.color as string | undefined,
                               label: String(node.attrs.label),
                           };
                 const dom = createInlineIconElement(choice, {
@@ -123,56 +156,63 @@ export function createInlineIconNode(
                     ownerKind,
                 });
                 dom.dataset.orbiumInlineIcon = JSON.stringify(node.attrs);
-                dom.setAttribute('role', 'button');
-                dom.tabIndex = 0;
-                dom.setAttribute('aria-label', `Replace ${choice.label} icon`);
-                function replace() {
-                    const position = getPos();
-                    if (
-                        typeof position !== 'number' ||
-                        !editor.isEditable ||
-                        editor.view.composing
-                    )
-                        return;
-                    editor.view.dispatch(
-                        editor.state.tr.setSelection(
-                            NodeSelection.create(editor.state.doc, position),
-                        ),
-                    );
-                    openLegacyIconPicker(editor);
-                }
-                dom.addEventListener('click', (event) => {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    replace();
-                });
-                dom.addEventListener('keydown', (event) => {
-                    if (event.key === 'Enter' || event.key === ' ') {
-                        event.preventDefault();
-                        event.stopPropagation();
-                        replace();
-                    }
-                    if (event.key === 'Backspace' || event.key === 'Delete') {
-                        const position = getPos();
-                        if (typeof position !== 'number' || !editor.isEditable)
-                            return;
-                        event.preventDefault();
-                        event.stopPropagation();
-                        editor
-                            .chain()
-                            .focus()
-                            .deleteRange({
-                                from: position,
-                                to: position + node.nodeSize,
-                            })
-                            .run();
-                    }
-                });
-                return { dom, stopEvent: () => true };
+                return {
+                    dom,
+                    update(next) {
+                        if (
+                            next.type !== node.type ||
+                            JSON.stringify(next.attrs) !==
+                                JSON.stringify(node.attrs)
+                        )
+                            return false;
+                        if (next.attrs.kind === 'builtin')
+                            dom.style.color =
+                                inlineIconColorStyle(
+                                    next.marks.find(
+                                        (mark) =>
+                                            mark.type.name === 'textColor',
+                                    )?.attrs.color as string | undefined,
+                                ) ?? '';
+                        return true;
+                    },
+                };
             };
         },
         addProseMirrorPlugins() {
+            const editor = this.editor;
             return [
+                createInlineIconSelectionPlugin(),
+                new Plugin({
+                    props: {
+                        handlePaste(view, event) {
+                            if (
+                                !editor.isEditable ||
+                                view.composing ||
+                                view.state.selection.$from.parent.type.spec
+                                    .code ||
+                                editor.isActive('code')
+                            )
+                                return false;
+                            if (
+                                event.clipboardData
+                                    ?.getData('text/html')
+                                    .includes('data-orbium-inline-icon')
+                            )
+                                return false;
+                            const content = readInlineIconClipboard(
+                                event.clipboardData?.getData('text/plain') ??
+                                    '',
+                            );
+                            if (!content) return false;
+                            editor
+                                .chain()
+                                .setMeta('boardAction', true)
+                                .insertContent(content)
+                                .run();
+                            return true;
+                        },
+                    },
+                }),
                 new Plugin<LegacyIconAnchor | null>({
                     key: legacyIconAnchor,
                     state: {

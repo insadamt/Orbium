@@ -11,9 +11,15 @@ import type { InlineIconChoice } from './icon-catalog';
 export function useIconRecents(host: HTMLElement | null, workspaceId: number) {
     const { auth } = usePage<{ auth: { user: { id: number } } }>().props;
     const accountId = auth.user.id;
+    useScopedIconRecents(
+        host,
+        `orbium:inline-icons:v1:${accountId}:${workspaceId}`,
+    );
+}
+
+export function useScopedIconRecents(host: HTMLElement | null, key: string) {
     useEffect(() => {
         if (!host) return;
-        const key = `orbium:inline-icons:v1:${accountId}:${workspaceId}`;
         const remember = (event: Event) =>
             saveIconPreferences(
                 key,
@@ -24,5 +30,5 @@ export function useIconRecents(host: HTMLElement | null, workspaceId: number) {
             );
         host.addEventListener(iconInsertedEvent, remember);
         return () => host.removeEventListener(iconInsertedEvent, remember);
-    }, [host, workspaceId, accountId]);
+    }, [host, key]);
 }
