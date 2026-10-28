@@ -1,3 +1,5 @@
+// Renders explorer cards using shared node media and navigation callbacks.
+// Image failures stay local so unavailable uploads do not change saved node metadata.
 import {
     PanelsTopLeft,
     Database,
@@ -57,6 +59,9 @@ export function FloatingItem({
 }: Props) {
     const Icon = icons[node.type];
     const [unavailableCoverId, setUnavailableCoverId] = useState<number | null>(
+        null,
+    );
+    const [unavailableIconId, setUnavailableIconId] = useState<number | null>(
         null,
     );
     const natural = appearance?.layout === 'natural';
@@ -166,12 +171,18 @@ export function FloatingItem({
                 </div>
             )}
             <span className="floating-item-label">
-                {node.icon_attachment_id ? (
+                {node.icon_attachment_id &&
+                unavailableIconId !== node.icon_attachment_id ? (
                     <img
                         className="floating-item-icon-image"
                         draggable={false}
                         src={imageUrl(node.icon_attachment_id)}
                         alt=""
+                        onError={() =>
+                            setUnavailableIconId(
+                                node.icon_attachment_id ?? null,
+                            )
+                        }
                     />
                 ) : node.icon ? (
                     <span

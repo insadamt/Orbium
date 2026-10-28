@@ -1,3 +1,5 @@
+// Composes the workspace/folder explorer and its mutations; depends on shared
+// navigation, persisted container preferences, and hierarchy/media services.
 import { ExportDialog } from '@/components/document-transfer/export-dialog';
 import { ImportDialog } from '@/components/document-transfer/import-dialog';
 import { router } from '@inertiajs/react';
@@ -16,6 +18,8 @@ import {
 } from '@/components/navigation/navigation-types';
 import { openLocation } from '@/components/navigation/tab-navigation';
 import { useExplorerFilters } from './use-explorer-filters';
+import { useExplorerReveal } from './use-explorer-reveal';
+import { ExplorerFilterFeedback } from './explorer-filter-feedback';
 import { useContainerView } from '@/components/navigation/use-container-view';
 import { ExplorerDragDropTargets } from './explorer-drag-drop-targets';
 import { trashExplorerNodes } from './explorer-node-mutations';
@@ -72,9 +76,6 @@ export function WorkspaceContents({
         contentsRef,
         view !== 'gallery' || appearance.layout !== 'natural',
     );
-    const focusId = Number(
-        new URLSearchParams(window.location.search).get('focus'),
-    );
     const [menuPosition, setMenuPosition] =
         useState<ExplorerMenuPosition | null>(null);
     const [importOpen, setImportOpen] = useState(false);
@@ -94,7 +95,18 @@ export function WorkspaceContents({
         typeFilter,
         setTypeFilter,
         hasActiveFilter,
+        clearFilters,
+        revealedOutsideFilters,
+        dismissReveal,
+        focusId,
+        revealRequestKey,
     } = useExplorerFilters({ workspaceId, parentId, nodes });
+    useExplorerReveal({
+        containerRef: contentsRef,
+        focusId,
+        requestKey: revealRequestKey,
+        targetVisible: children.some((node) => node.id === focusId),
+    });
     const canReorder = sort === 'manual';
     const selection = useExplorerSelection(workspaceId, children);
     const menuNode = children.find((node) => node.id === menuPosition?.nodeId);
@@ -326,6 +338,12 @@ export function WorkspaceContents({
                     openActionsAt(null, event.currentTarget);
                 }}
             >
+                <ExplorerFilterFeedback
+                    revealedOutsideFilters={revealedOutsideFilters}
+                    noMatches={hasActiveFilter && children.length === 0}
+                    onDismissReveal={dismissReveal}
+                    onClearFilters={clearFilters}
+                />
                 {view === 'gallery' && appearance.layout === 'natural' ? (
                     <MasonryLayout
                         hiddenItemIds={liftedIds}
@@ -348,11 +366,6 @@ export function WorkspaceContents({
                     children.map(renderChild)
                 )}
             </section>
-            {hasActiveFilter && children.length === 0 && (
-                <p className="floating-no-results" role="status">
-                    No items match your search and filters.
-                </p>
-            )}
             <p className="sr-only" role="status">
                 {announcement}
             </p>

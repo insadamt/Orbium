@@ -1,3 +1,5 @@
+/* Shared icon picker and inline artwork styles. Inline selection depends on the
+   surrounding editor's font metrics and native selection decoration. */
 .inline-icon-overlay {
     position: fixed;
     inset: 0;
@@ -392,10 +394,13 @@
     object-fit: contain;
 }
 .orbium-inline-icon {
-    margin-inline: 0.08em;
-    border-radius: 2px;
-    /* Align the artwork box to the text, independent of its selection character's baseline. */
-    vertical-align: middle;
+    --inline-icon-artwork-size: 1em;
+    box-sizing: content-box;
+    width: var(--inline-icon-artwork-size);
+    height: auto;
+    padding-inline: 0.08em;
+    vertical-align: baseline;
+    line-height: inherit;
 }
 .orbium-inline-icon-fallback {
     font-size: 0.75em;
@@ -438,9 +443,14 @@
 }
 .orbium-inline-icon > :is(svg, img, .orbium-inline-icon-fallback) {
     position: absolute;
-    inset: 0;
+    top: 50%;
+    left: 0.08em;
+    width: var(--inline-icon-artwork-size);
+    height: var(--inline-icon-artwork-size);
+    transform: translateY(-50%);
     pointer-events: none;
 }
+/* Keep the baseline and full selection height of text; center only the artwork. */
 .orbium-inline-icon-text {
     color: transparent;
     text-shadow: none;

@@ -1,5 +1,16 @@
 # UI/UX system
 
+Home explorer polish (2026-10-28): the user scoped this review to desktop with an
+English interface; authored text can use other languages. This pass excludes
+touch/mobile, screen-reader semantics, and RTL menu changes. Filtered-empty
+feedback appears at the start of the explorer with Clear search and filters.
+Explicit Reveal requests scroll their target into view and temporarily include
+it when current filters would hide it, without rewriting saved preferences.
+Return to filters or changing the search/type filter ends that exception.
+Unavailable uploaded card icons use the existing emoji/type fallback. Truly
+empty containers retain the approved blank presentation. See
+`../reports/07-home-page-polish.md` for checks and manual acceptance.
+
 App checkbox review (2026-10-14): native inputs, shared Radix checkboxes,
 menu checkbox items and editor tasks share a 200 ms checkmark reveal and subtle
 hover/press scaling. Completed task text has no animated strike. Indeterminate
