@@ -1,5 +1,19 @@
 # UI/UX system
 
+Home no-results motion (2026-10-28): the centered feedback group fades and
+settles in over 240 ms and fades upward out over 180 ms. Exit is retained only
+for painting and reserves no layout space, so matching cards return immediately.
+The exiting reset action is inert; OS reduced motion skips the animation. See
+`../reports/07-home-empty-state-motion.md` for manual acceptance.
+
+Shared viewport fit (2026-10-28): normal app pages share one viewport through
+column flex layout below the measured navigation spacer. Short/empty pages fill
+the remainder; explorer and page/editor minimums must not add another viewport
+below headers and padding. Library does not reserve a second app-bar allowance.
+Short desktop windows use smaller decorative gaps. Long content still scrolls;
+Library detail and split panes retain their own scroll owners. See
+`../reports/07-app-viewport-fit.md` for the surface audit and manual acceptance.
+
 Home explorer polish (2026-10-28): the user scoped this review to desktop with an
 English interface; authored text can use other languages. This pass excludes
 touch/mobile, screen-reader semantics, and RTL menu changes. Filtered-empty

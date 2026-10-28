@@ -1,0 +1,139 @@
+/* Fits short app pages to the space left after navigation, gaps, and padding.
+   Depends on the floating shell and retained-page wrappers; long content keeps
+   natural browser scrolling, while split panes and Library detail keep theirs. */
+.orbium-shell:not(.orbium-embedded-pane)
+    > .floating-workspace:not(:has(> .split-workspace.is-active)) {
+    display: flex;
+    flex-direction: column;
+}
+
+.orbium-shell:not(.orbium-embedded-pane)
+    > .floating-workspace:not(.library-detail-workspace)
+    > .retained-document-workspace:not(.is-active) {
+    display: flex;
+    min-width: 0;
+    flex: 1 0 auto;
+    flex-direction: column;
+}
+
+.retained-document-workspace > .explorer-view-controls,
+.retained-document-workspace > .floating-folder-header {
+    flex-shrink: 0;
+}
+
+.retained-document-workspace > .floating-contents {
+    min-height: 0;
+    flex: 1 0 auto;
+}
+
+/* An empty state fills the remainder instead of adding another viewport. */
+.floating-workspace .floating-contents[data-view][data-empty-results='true'] {
+    min-height: 0;
+    padding-block: 24px;
+}
+
+.retained-document-workspace
+    > :is(
+        .floating-settings-island,
+        .floating-trash-island,
+        .floating-database-island
+    ) {
+    width: 100%;
+    min-height: 0;
+    flex: 1 0 auto;
+}
+
+.floating-document-island .document-outline-container,
+.floating-document-island .orbium-editor,
+.floating-document-island [data-orbium-markdown-editor] > .cm-editor,
+.orbium-embedded-pane .floating-database-island {
+    min-height: 0;
+}
+
+.floating-document-island
+    [data-orbium-markdown-editor][data-live-preview='false']
+    > .cm-editor {
+    height: auto;
+    max-height: min(65dvh, 900px);
+}
+
+/* Library already sits below the measured app bar, so its former header
+   allowance must not be counted again inside the page. */
+.library-workspace
+    > .retained-document-workspace
+    > .library-page:not(.library-detail-page) {
+    display: flex;
+    flex: 1 0 auto;
+    flex-direction: column;
+    padding: var(--page-surface-top-gap) 0 0;
+}
+
+.library-page > .library-browser {
+    display: flex;
+    flex: 1 0 auto;
+    flex-direction: column;
+}
+
+.library-page > .library-browser > .library-empty {
+    min-height: 0;
+    flex: 1 0 auto;
+    padding-block: 24px;
+}
+
+.floating-trash-island:has(.trash-empty-state) {
+    display: flex;
+    flex-direction: column;
+}
+
+.floating-trash-island > .trash-page-header {
+    flex-shrink: 0;
+}
+
+.floating-trash-island .trash-empty-state {
+    flex: 1 0 auto;
+    justify-content: center;
+    padding-block: 24px;
+}
+
+.floating-workspace .statistics-insight-page {
+    min-height: 0;
+}
+
+.statistics-insight-standalone {
+    display: flex;
+    flex: 1 0 auto;
+    flex-direction: column;
+}
+
+.statistics-insight-standalone > .statistics-insight-page {
+    max-height: none;
+    flex: 1 0 auto;
+}
+
+/* Short desktop windows need smaller decorative gaps, not clipped content. */
+@media (max-height: 760px) {
+    .orbium-shell:not(.orbium-embedded-pane) > .floating-workspace {
+        --page-surface-top-gap: 24px;
+    }
+
+    .floating-workspace .floating-folder-header {
+        margin-top: 24px;
+    }
+
+    .floating-workspace .explorer-view-controls {
+        margin-top: 24px;
+    }
+
+    .floating-workspace .floating-contents[data-view] {
+        padding-top: 24px;
+    }
+
+    .floating-workspace .statistics-pages,
+    .floating-workspace .statistics-insight-standalone {
+        margin-top: 24px;
+    }
+
+    .floating-workspace :is(.floating-settings-island, .floating-trash-island) {
+        padding-block: 24px;
+    }
+}

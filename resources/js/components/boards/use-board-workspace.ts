@@ -1,3 +1,5 @@
+// Sizes the Board from its document position below the responsive app bar.
+// Depends on viewport/navigation resize events, independent of current page scroll.
 import { useLayoutEffect, useRef } from 'react';
 
 export function useBoardWorkspace() {
@@ -11,7 +13,7 @@ export function useBoardWorkspace() {
             if (page.dataset.fullscreen === 'true') return;
             const viewportHeight =
                 window.visualViewport?.height ?? window.innerHeight;
-            const pageTop = page.getBoundingClientRect().top;
+            const pageTop = page.getBoundingClientRect().top + window.scrollY;
             //
             // The app bar wraps on smaller screens; size the canvas from its real position instead of hiding navigation.
             //

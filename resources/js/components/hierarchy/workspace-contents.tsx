@@ -343,12 +343,13 @@ export function WorkspaceContents({
                     openActionsAt(null, event.currentTarget);
                 }}
             >
-                {noMatches ? (
-                    <ExplorerEmptyResults
-                        onClearFilters={clearFilters}
-                        disabled={explorerBusy}
-                    />
-                ) : view === 'gallery' && appearance.layout === 'natural' ? (
+                <ExplorerEmptyResults
+                    visible={noMatches}
+                    onClearFilters={clearFilters}
+                    disabled={explorerBusy}
+                />
+                {noMatches ? null : view === 'gallery' &&
+                  appearance.layout === 'natural' ? (
                     <MasonryLayout
                         hiddenItemIds={liftedIds}
                         animateExplorerLayout
