@@ -20,6 +20,7 @@ import { openLocation } from '@/components/navigation/tab-navigation';
 import { useExplorerFilters } from './use-explorer-filters';
 import { useExplorerReveal } from './use-explorer-reveal';
 import { ExplorerFilterFeedback } from './explorer-filter-feedback';
+import { ExplorerEmptyResults } from './explorer-empty-results';
 import { useContainerView } from '@/components/navigation/use-container-view';
 import { ExplorerDragDropTargets } from './explorer-drag-drop-targets';
 import { trashExplorerNodes } from './explorer-node-mutations';
@@ -169,6 +170,9 @@ export function WorkspaceContents({
         selection.selectedIds,
     );
     const currentFolder = nodes.find((node) => node.id === parentId);
+    const explorerBusy =
+        changingHierarchy || selection.busy || draggedId !== null;
+    const noMatches = hasActiveFilter && children.length === 0;
     function openNode(node: TreeNode, newTab: boolean) {
         openLocation(nodeUrl(workspaceId, node), newTab);
     }
@@ -246,9 +250,7 @@ export function WorkspaceContents({
                 node={node}
                 selected={selection.selectedIds.includes(node.id)}
                 revealed={focusId === node.id}
-                disabled={
-                    changingHierarchy || selection.busy || draggedId !== null
-                }
+                disabled={explorerBusy}
                 dragging={liftedIds.includes(node.id)}
                 placement={
                     dropHint?.targetId === node.id
@@ -289,22 +291,25 @@ export function WorkspaceContents({
                 onSortChange={setSort}
                 typeFilter={typeFilter}
                 onTypeFilterChange={setTypeFilter}
-                disabled={
-                    changingHierarchy || selection.busy || draggedId !== null
-                }
+                disabled={explorerBusy}
                 onChange={setView}
                 onGalleryAppearance={() => setAppearanceDraft(appearance)}
-            />
+            >
+                <ExplorerFilterFeedback
+                    revealedOutsideFilters={revealedOutsideFilters}
+                    onDismissReveal={dismissReveal}
+                    disabled={explorerBusy}
+                />
+            </ExplorerViewControls>
             <section
                 ref={contentsRef}
                 data-workspace-id={workspaceId}
                 className="floating-contents"
                 data-view={view}
+                data-empty-results={noMatches || undefined}
                 data-layout={view === 'gallery' ? appearance.layout : undefined}
                 aria-label="Current container contents"
-                aria-busy={
-                    changingHierarchy || selection.busy || draggedId !== null
-                }
+                aria-busy={explorerBusy}
                 onClick={(event) => {
                     if (
                         !(event.target as HTMLElement).closest('[data-node-id]')
@@ -338,13 +343,12 @@ export function WorkspaceContents({
                     openActionsAt(null, event.currentTarget);
                 }}
             >
-                <ExplorerFilterFeedback
-                    revealedOutsideFilters={revealedOutsideFilters}
-                    noMatches={hasActiveFilter && children.length === 0}
-                    onDismissReveal={dismissReveal}
-                    onClearFilters={clearFilters}
-                />
-                {view === 'gallery' && appearance.layout === 'natural' ? (
+                {noMatches ? (
+                    <ExplorerEmptyResults
+                        onClearFilters={clearFilters}
+                        disabled={explorerBusy}
+                    />
+                ) : view === 'gallery' && appearance.layout === 'natural' ? (
                     <MasonryLayout
                         hiddenItemIds={liftedIds}
                         animateExplorerLayout

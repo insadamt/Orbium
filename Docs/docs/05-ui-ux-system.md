@@ -3,7 +3,9 @@
 Home explorer polish (2026-10-28): the user scoped this review to desktop with an
 English interface; authored text can use other languages. This pass excludes
 touch/mobile, screen-reader semantics, and RTL menu changes. Filtered-empty
-feedback appears at the start of the explorer with Clear search and filters.
+feedback uses a large centered icon, No matching pages heading, short guidance,
+and a labeled Clear search and filters action in the explorer’s empty area.
+Reveal feedback stays compact beside the toolbar because cards remain visible.
 Explicit Reveal requests scroll their target into view and temporarily include
 it when current filters would hide it, without rewriting saved preferences.
 Return to filters or changing the search/type filter ends that exception.

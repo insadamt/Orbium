@@ -1,3 +1,6 @@
+// Groups container view, sort, filter, and recovery controls in one toolbar.
+// Depends on shared menus/toggles and optional feedback supplied by the explorer.
+import type { ReactNode } from 'react';
 import * as Menu from '@/components/ui/dropdown-menu';
 import {
     explorerSortOptions,
@@ -31,6 +34,7 @@ export function ExplorerViewControls({
     disabled,
     onChange,
     onGalleryAppearance,
+    children,
 }: {
     view: ExplorerView;
     sort: string;
@@ -40,9 +44,11 @@ export function ExplorerViewControls({
     disabled: boolean;
     onChange: (view: ExplorerView) => void;
     onGalleryAppearance: () => void;
+    children?: ReactNode;
 }) {
     return (
         <div className="explorer-view-controls">
+            {children}
             {sort !== 'manual' && (
                 <span className="explorer-sort-hint">
                     Choose Manual order to drag items.

@@ -1,34 +1,39 @@
-// Shows recovery actions where explorer results begin; depends on filter state
-// supplied by WorkspaceContents so genuine empty containers stay visually empty.
+// Keeps the Reveal exception beside the controls while matching cards stay visible.
+// Depends on the shared floating surface, tooltip provider, and dismissal callback.
+import { ScanEye, X } from 'lucide-react';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
+
 export function ExplorerFilterFeedback({
     revealedOutsideFilters,
-    noMatches,
     onDismissReveal,
-    onClearFilters,
+    disabled,
 }: {
     revealedOutsideFilters: boolean;
-    noMatches: boolean;
     onDismissReveal: () => void;
-    onClearFilters: () => void;
+    disabled: boolean;
 }) {
-    if (!revealedOutsideFilters && !noMatches) return null;
+    if (!revealedOutsideFilters) return null;
     return (
-        <div className="explorer-filter-feedback">
-            <p>
-                {revealedOutsideFilters
-                    ? 'Showing the revealed item outside your current filters.'
-                    : 'No items match your search and filters.'}
-            </p>
-            <button
-                type="button"
-                onClick={
-                    revealedOutsideFilters ? onDismissReveal : onClearFilters
-                }
-            >
-                {revealedOutsideFilters
-                    ? 'Return to filters'
-                    : 'Clear search and filters'}
-            </button>
+        <div className="explorer-filter-feedback floating-surface">
+            <ScanEye size={16} aria-hidden="true" />
+            <span>Revealed outside filters</span>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <button
+                        type="button"
+                        disabled={disabled}
+                        aria-label="Return to filters"
+                        onClick={onDismissReveal}
+                    >
+                        <X size={15} aria-hidden="true" />
+                    </button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">Return to filters</TooltipContent>
+            </Tooltip>
         </div>
     );
 }
