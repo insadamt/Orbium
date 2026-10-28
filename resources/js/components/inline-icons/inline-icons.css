@@ -394,6 +394,8 @@
 .orbium-inline-icon {
     margin-inline: 0.08em;
     border-radius: 2px;
+    /* Align the artwork box to the text, independent of its selection character's baseline. */
+    vertical-align: middle;
 }
 .orbium-inline-icon-fallback {
     font-size: 0.75em;
