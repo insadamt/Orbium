@@ -26,7 +26,7 @@ class NavigationController extends Controller
     public function tree(Request $request, int $workspace): JsonResponse
     {
         $workspace = $request->user()->workspaces()->findOrFail($workspace);
-        $nodes = $workspace->nodes()->orderBy('position')->orderBy('id')->get(['id', 'parent_id', 'title', 'type', 'position', 'is_favorite']);
+        $nodes = $workspace->nodes()->orderBy('position')->orderBy('id')->get(['id', 'parent_id', 'title', 'type', 'position', 'is_favorite', 'icon', 'icon_attachment_id']);
         $byId = $nodes->keyBy('id');
         $visible = $nodes->filter(function ($node) use ($byId) {
             $visited = [];

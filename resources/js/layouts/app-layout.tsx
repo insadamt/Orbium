@@ -8,6 +8,9 @@ import EditorStyleRuntime from '@/components/editor/styles/editor-style-runtime'
 import { AppBackground } from '@/backgrounds/app-background';
 import { useSurfaceStyle } from '@/backgrounds/surface-preferences';
 import { FloatingTopControls } from '@/components/hierarchy/floating-top-controls';
+import { WorkspaceSidebar } from '@/components/navigation/workspace-sidebar';
+import { WorkspaceAdaptiveTabs } from '@/components/navigation/workspace-adaptive-tabs';
+import { useWorkspaceNavigationPreferences } from '@/components/navigation/workspace-navigation-preferences';
 import type { TrashedNode } from '@/components/hierarchy/node-browser';
 import type { WorkspaceSummary } from '@/components/hierarchy/workspace-panel';
 import { NavigationEvents } from '@/components/navigation/navigation-events';
@@ -55,6 +58,8 @@ export default function AppLayout({ children }: AppLayoutProps) {
     const page = usePage<ShellPageProps>();
     const { auth } = page.props;
     const isPane = window.self !== window.top;
+    const { mode: navigationMode } = useWorkspaceNavigationPreferences();
+    const isWorkspaceMode = !isPane && navigationMode === 'workspace';
     useLayoutEffect(() => {
         if (!isPane) return;
         // Explicit frame state avoids rescanning the document after editor mutations.
@@ -147,6 +152,14 @@ export default function AppLayout({ children }: AppLayoutProps) {
           : breadcrumbLinks;
     const [accountMenuOpen, setAccountMenuOpen] = useState(false);
     const surfaceStyle = useSurfaceStyle();
+    useEffect(() => {
+        if (!isWorkspaceMode || !shellWorkspace || pageType === 'settings' || pageType === 'statistics' || pageType === 'trash') return;
+        try {
+            localStorage.setItem('orbium.lastWorkspaceId', String(shellWorkspace.id));
+        } catch {
+            // Browser storage is optional.
+        }
+    }, [isWorkspaceMode, shellWorkspace?.id, pageType]);
 
     function signOut(): void {
         router.post('/logout');
@@ -154,12 +167,32 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
     return (
         <div
-            className={`orbium-shell surface-${surfaceStyle} ${isPane ? 'orbium-embedded-pane' : ''} min-h-screen bg-background text-foreground`}
+            className={`orbium-shell surface-${surfaceStyle} ${isPane ? 'orbium-embedded-pane' : ''} ${isWorkspaceMode ? 'workspace-navigation-shell' : ''} min-h-screen bg-background text-foreground`}
         >
             <EditorStyleRuntime key={auth.user.id} />
             {!isPane && <AppBackground />}
             {!isPane && <NavigationEvents />}
-            {!isPane && !isFloatingPage && (
+            {isWorkspaceMode && (
+                <WorkspaceSidebar
+                    key={`${auth.user.id}:${shellWorkspace?.id ?? 'none'}`}
+                    userId={auth.user.id}
+                    workspace={shellWorkspace}
+                    workspaces={page.props.workspaces ?? []}
+                    activeNodeId={
+                        page.props.node?.id ??
+                        page.props.database?.id ??
+                        page.props.currentNode?.id
+                    }
+                    currentFolderId={
+                        isHomePage && page.props.currentNode?.type === 'folder'
+                            ? page.props.currentNode.id
+                            : null
+                    }
+                    currentPath={currentPath}
+                    pageNodes={isHomePage ? page.props.nodes : undefined}
+                />
+            )}
+            {!isPane && !isWorkspaceMode && !isFloatingPage && (
                 <header className="glass-surface sticky top-0 z-20 border-b border-border/70">
                     <div className="flex h-14 items-center gap-2 px-3 md:gap-3 md:px-5">
                         <NavigationBackButton className="flex size-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-40" />
@@ -242,9 +275,12 @@ export default function AppLayout({ children }: AppLayoutProps) {
             <PageSearchProvider routePath={page.url.split('?')[0]}>
                 <main
                     data-page-type={pageType}
-                    className={`orbium-main w-full ${page.component === 'documents/show' ? 'document-workspace' : ''} ${page.component.startsWith('library/') ? 'library-workspace' : ''} ${page.component === 'library/show' ? 'library-detail-workspace' : ''} ${isFloatingPage ? 'floating-workspace' : 'mx-auto max-w-[1600px] px-5 py-10 md:px-8 md:py-14'}`}
+                    className={`orbium-main w-full ${isWorkspaceMode ? 'workspace-main' : ''} ${page.component === 'documents/show' ? 'document-workspace' : ''} ${page.component.startsWith('library/') ? 'library-workspace' : ''} ${page.component === 'library/show' ? 'library-detail-workspace' : ''} ${isFloatingPage ? 'floating-workspace' : 'mx-auto max-w-[1600px] px-5 py-10 md:px-8 md:py-14'}`}
                 >
-                    {!isPane && isFloatingPage && (
+                    {isWorkspaceMode && (
+                        <WorkspaceAdaptiveTabs workspaceId={shellWorkspace?.id} />
+                    )}
+                    {!isPane && !isWorkspaceMode && isFloatingPage && (
                         <FloatingTopControls
                             workspace={shellWorkspace}
                             workspaces={page.props.workspaces ?? []}

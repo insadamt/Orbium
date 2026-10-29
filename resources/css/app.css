@@ -41,6 +41,7 @@
 @import './editor-color-picker.css';
 @import './viewport-layout.css';
 @import './home-interactions.css';
+@import './workspace-navigation.css';
 
 .table-edge-control {
     pointer-events: auto;

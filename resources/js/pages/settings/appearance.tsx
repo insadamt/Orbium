@@ -2,6 +2,7 @@ import { Head } from '@inertiajs/react';
 import { BackgroundSettings } from '@/backgrounds/background-settings';
 import { SurfaceSettings } from '@/backgrounds/surface-settings';
 import AppearanceTabs from '@/components/appearance-tabs';
+import { WorkspaceNavigationSettings } from '@/components/navigation/workspace-navigation-settings';
 import Heading from '@/components/heading';
 import { edit as editAppearance } from '@/routes/appearance';
 
@@ -19,6 +20,7 @@ export default function Appearance() {
                     description="Choose how Orbium looks on this browser"
                 />
                 <AppearanceTabs />
+                <WorkspaceNavigationSettings />
                 <SurfaceSettings />
                 <BackgroundSettings />
             </div>

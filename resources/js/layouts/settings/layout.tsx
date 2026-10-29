@@ -31,7 +31,7 @@ const settingsSections = [
         title: 'Appearance',
         href: editAppearance(),
         searchText:
-            'appearance theme light dark system backgrounds animated upload image ghost fibers molten metal',
+            'appearance navigation classic workspace sidebar tabs theme light dark system backgrounds animated upload image ghost fibers molten metal',
     },
     {
         title: 'Workspaces',
