@@ -429,6 +429,8 @@ export function BoardWorkspace({
                     onChooseTool={chooseTool}
                 />
                 <BoardToolbar
+                    openPanel={tools.openPanel}
+                    onPanelOpenChange={tools.setPanelOpen}
                     drawingSettingsOpen={tools.drawingSettingsOpen}
                     onToggleDrawingSettings={() => {
                         if (tools.tool !== 'path') pointer.cancel();

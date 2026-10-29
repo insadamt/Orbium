@@ -15,18 +15,24 @@ import type { BoardShapeKind, BoardTool } from './board-types';
 export function BoardShapePicker({
     tool,
     disabled,
+    open,
+    onOpenChange,
     onChoose,
 }: {
     tool: BoardTool;
     disabled: boolean;
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
     onChoose: (tool: BoardShapeKind) => void;
 }) {
     const chosen = useRef(false);
     return (
         <Menu.Root
             modal={false}
-            onOpenChange={(open) => {
-                if (open) chosen.current = false;
+            open={open && !disabled}
+            onOpenChange={(nextOpen) => {
+                if (nextOpen) chosen.current = false;
+                onOpenChange(nextOpen);
             }}
         >
             <Menu.Trigger asChild>

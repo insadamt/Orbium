@@ -1,9 +1,8 @@
-import { Fragment, useRef, useState } from 'react';
+import { Fragment, useRef } from 'react';
 import {
     Plus,
     Check,
     Link2,
-    Type,
     Heading1,
     List,
     Quote,
@@ -28,7 +27,6 @@ const blockGroups = [
     {
         label: 'Writing',
         choices: [
-            { kind: 'text', icon: Type },
             { kind: 'heading', icon: Heading1 },
             { kind: 'list', icon: List },
             { kind: 'quote', icon: Quote },
@@ -62,16 +60,19 @@ export function BoardBlockPicker({
     disabled,
     disabledReason,
     tool,
+    open,
+    onOpenChange,
     onAdd,
     onResource,
 }: {
     disabled: boolean;
     disabledReason?: string;
     tool: BoardTool;
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
     onAdd: (kind: BoardPlacementKind) => void;
     onResource: () => void;
 }) {
-    const [open, setOpen] = useState(false);
     const insertedBlock = useRef(false);
     const activeChoice = blockGroups
         .flatMap((group) => [...group.choices])
@@ -82,7 +83,7 @@ export function BoardBlockPicker({
             open={open && !disabled}
             onOpenChange={(nextOpen) => {
                 if (nextOpen) insertedBlock.current = false;
-                setOpen(nextOpen);
+                onOpenChange(nextOpen);
             }}
             modal={false}
         >

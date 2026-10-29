@@ -11,6 +11,8 @@ import type { BoardObjectsController } from './use-board-objects';
 import type { BoardCameraController } from './use-board-camera';
 import type { BoardPlacementKind, BoardPoint, BoardTool } from './board-types';
 
+export type BoardToolbarPanel = 'drawing' | 'shapes' | 'add';
+
 export function useBoardTools({
     model,
     camera,
@@ -21,7 +23,15 @@ export function useBoardTools({
     isLocked: () => boolean;
 }) {
     const [tool, setTool] = useState<BoardTool>('select');
-    const [drawingSettingsOpen, setDrawingSettingsOpen] = useState(false);
+    // A single owner prevents the Draw, Shapes and Add flyouts from stacking.
+    const [openPanel, setOpenPanel] = useState<BoardToolbarPanel | null>(null);
+    const drawingSettingsOpen =
+        openPanel === 'drawing' && isBoardDrawingTool(tool);
+    function setPanelOpen(panel: 'shapes' | 'add', open: boolean) {
+        setOpenPanel((current) =>
+            open ? panel : current === panel ? null : current,
+        );
+    }
     const placementKind =
         tool === 'select' || tool === 'hand' || isBoardDrawingTool(tool)
             ? null
@@ -33,7 +43,7 @@ export function useBoardTools({
         model.finishEditing();
         model.select([]);
         setTool(nextTool);
-        setDrawingSettingsOpen(isBoardDrawingTool(nextTool));
+        setOpenPanel(isBoardDrawingTool(nextTool) ? 'drawing' : null);
         camera.viewportRef.current?.focus({ preventScroll: true });
     }
     function toggleDrawingSettings() {
@@ -45,12 +55,17 @@ export function useBoardTools({
         //
         // Palette visibility is independent of the active brush so hiding settings preserves drawing mode.
         //
-        setDrawingSettingsOpen((open) => !open);
+        setOpenPanel((current) =>
+            current === 'drawing' ? null : 'drawing',
+        );
         camera.viewportRef.current?.focus({ preventScroll: true });
     }
     function placeShape(kind: BoardShapeKind, bounds: BoardBounds) {
         if (isLocked()) return;
-        if (model.addShape(kind, bounds)) setTool('select');
+        if (model.addShape(kind, bounds)) {
+            setTool('select');
+            setOpenPanel(null);
+        }
     }
     function placeBlock(kind: BoardPlacementKind, point: BoardPoint) {
         if (isLocked()) return;
@@ -60,7 +75,10 @@ export function useBoardTools({
         }
         const previousCount = model.objectsRef.current.length;
         model.addBlock(point, kind);
-        if (model.objectsRef.current.length > previousCount) setTool('select');
+        if (model.objectsRef.current.length > previousCount) {
+            setTool('select');
+            setOpenPanel(null);
+        }
     }
     function handleToolKeyboard(event: KeyboardEvent<HTMLDivElement>) {
         if (!event.currentTarget.contains(event.target as Node)) return true;
@@ -92,13 +110,15 @@ export function useBoardTools({
     function cancelTool() {
         if (tool === 'select') return false;
         setTool('select');
-        setDrawingSettingsOpen(false);
+        setOpenPanel(null);
         camera.viewportRef.current?.focus({ preventScroll: true });
         return true;
     }
 
     return {
         tool,
+        openPanel,
+        setPanelOpen,
         drawingSettingsOpen,
         toggleDrawingSettings,
         placing,

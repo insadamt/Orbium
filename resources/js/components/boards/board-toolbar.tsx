@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import * as Menu from '@/components/ui/dropdown-menu';
 import type { BoardTool } from './board-types';
+import type { BoardToolbarPanel } from './use-board-tools';
 import type { BoardObjectsController } from './use-board-objects';
 import type { BoardCameraController } from './use-board-camera';
 import { BoardBlockPicker } from './board-block-picker';
@@ -34,6 +35,8 @@ export function BoardToolbar({
     editing,
     tool,
     onChooseTool,
+    openPanel,
+    onPanelOpenChange,
     drawingSettingsOpen,
     onToggleDrawingSettings,
     onResource,
@@ -46,6 +49,8 @@ export function BoardToolbar({
     blocked: boolean;
     editing: boolean;
     tool: BoardTool;
+    openPanel: BoardToolbarPanel | null;
+    onPanelOpenChange: (panel: 'shapes' | 'add', open: boolean) => void;
     drawingSettingsOpen: boolean;
     onToggleDrawingSettings: () => void;
     onChooseTool: (tool: BoardTool) => void;
@@ -122,9 +127,17 @@ export function BoardToolbar({
                 <BoardShapePicker
                     tool={tool}
                     disabled={blocked || editing}
+                    open={openPanel === 'shapes'}
+                    onOpenChange={(open) =>
+                        onPanelOpenChange('shapes', open)
+                    }
                     onChoose={onChooseTool}
                 />
                 <BoardBlockPicker
+                    open={openPanel === 'add'}
+                    onOpenChange={(open) =>
+                        onPanelOpenChange('add', open)
+                    }
                     disabled={blocked || editing}
                     disabledReason={
                         editing ? 'Finish editing to add blocks.' : undefined

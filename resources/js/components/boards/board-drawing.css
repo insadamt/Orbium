@@ -37,10 +37,8 @@
     opacity: 0;
     translate: -6px -50%;
     pointer-events: none;
-    transition:
-        opacity 100ms ease-in,
-        translate 100ms ease-in,
-        display 100ms allow-discrete;
+    /* Close immediately when another dock flyout opens, with no overlap. */
+    transition: none;
 }
 @starting-style {
     .board-page .board-drawing-controls {
