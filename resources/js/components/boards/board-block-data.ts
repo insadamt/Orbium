@@ -41,6 +41,7 @@ export const boardBlockLabels: Record<
     drawing: 'Drawing',
     mindmap: 'Mind Map',
     shape: 'Shape',
+    circle: 'Circle',
     rectangle: 'Rectangle',
     rounded_rectangle: 'Rounded rectangle',
     ellipse: 'Ellipse',

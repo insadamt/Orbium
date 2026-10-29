@@ -6,7 +6,7 @@ import * as Menu from '@/components/ui/dropdown-menu';
 import { BoardToolButton } from './board-tool-button';
 import { boardBlockLabels } from './board-block-data';
 import {
-    boardShapeKinds,
+    boardInsertShapeKinds,
     boardShapePath,
     isBoardShapeTool,
 } from './board-shape-data';
@@ -52,7 +52,7 @@ export function BoardShapePicker({
                 }}
             >
                 <Menu.Label>Shapes</Menu.Label>
-                {boardShapeKinds.map((kind) => (
+                {boardInsertShapeKinds.map((kind) => (
                     <Menu.Item
                         key={kind}
                         disabled={disabled}

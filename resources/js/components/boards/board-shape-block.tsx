@@ -2,22 +2,35 @@
 
 import { BoardInlinePreview } from './board-inline-text';
 import { BoardNativeEditor } from './board-native-editor';
-import { boardShapePath } from './board-shape-data';
+import {
+    boardShapePath,
+    boardShapeRenderedPath,
+} from './board-shape-data';
 import type { BoardContentProps } from './board-text-block';
 
 export function BoardShapeBlock(props: BoardContentProps) {
     const { data } = props.object;
     const shape = data.shape!;
+    const customGeometry =
+        ['rectangle', 'circle', 'triangle'].includes(shape.kind) ||
+        (shape.kind === 'rounded_rectangle' &&
+            shape.corner_radius !== undefined);
+    const width = Math.max(1, props.object.width - 12);
+    const height = Math.max(1, props.object.height - 12);
     return (
         <div className="board-shape" data-shape-kind={shape.kind}>
             <svg
                 className="board-shape-vector"
-                viewBox="0 0 100 100"
+                viewBox={customGeometry ? `0 0 ${width} ${height}` : '0 0 100 100'}
                 preserveAspectRatio="none"
                 aria-hidden="true"
             >
                 <path
-                    d={boardShapePath(shape.kind)}
+                    d={
+                        customGeometry
+                            ? boardShapeRenderedPath(shape, width, height)
+                            : boardShapePath(shape.kind)
+                    }
                     fill={shape.fill}
                     stroke={shape.stroke}
                     strokeWidth={shape.stroke_width}

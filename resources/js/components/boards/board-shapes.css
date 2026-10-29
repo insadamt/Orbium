@@ -44,7 +44,8 @@
     flex-shrink: 0;
 }
 
-.board-shape[data-shape-kind='ellipse'] .board-shape-label {
+.board-shape[data-shape-kind='ellipse'] .board-shape-label,
+.board-shape[data-shape-kind='circle'] .board-shape-label {
     inset: 20%;
 }
 
@@ -92,3 +93,26 @@
 .board-shape-formatting {
     flex-wrap: wrap;
 }
+
+.board-shape-radius-menu {
+    min-width: 224px;
+    padding: 8px;
+}
+.board-shape-radius-control {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px;
+}
+.board-shape-radius-control input {
+    width: 150px;
+    accent-color: var(--foreground);
+    cursor: pointer;
+}
+.board-shape-radius-control output {
+    min-width: 32px;
+    text-align: end;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+}
+

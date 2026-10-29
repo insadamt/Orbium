@@ -84,6 +84,20 @@ export function boardKeyboardHandler(
             model.objects.map((object) =>
                 !model.selectedIds.includes(object.id)
                     ? object
+                    : event.altKey && object.data.shape?.kind === 'circle'
+                      ? {
+                            ...object,
+                            width: clamp(
+                                object.width + (dx || dy),
+                                boardLimits.minWidth,
+                                boardLimits.maxSize,
+                            ),
+                            height: clamp(
+                                object.width + (dx || dy),
+                                boardLimits.minWidth,
+                                boardLimits.maxSize,
+                            ),
+                        }
                     : event.altKey
                       ? {
                             ...object,

@@ -34,6 +34,7 @@ export type BoardTool =
     | BoardPlacementKind
     | BoardDrawingTool;
 export type BoardShapeKind =
+    | 'circle'
     | 'rectangle'
     | 'rounded_rectangle'
     | 'ellipse'
@@ -46,6 +47,7 @@ export type BoardShape = {
     stroke: string;
     stroke_width: number;
     stroke_style: 'solid' | 'dashed';
+    corner_radius?: number;
 };
 export type BoardDrawing = {
     points: [number, number][];

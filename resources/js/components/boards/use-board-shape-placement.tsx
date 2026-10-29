@@ -3,6 +3,7 @@
 import { useRef, type RefObject } from 'react';
 import {
     boardShapePath,
+    boardShapeDefaultSize,
     boardShapePlacementBounds,
     isBoardShapeTool,
 } from './board-shape-data';
@@ -38,7 +39,7 @@ export function useBoardShapePlacement(
             kind,
             localStart: local,
             worldStart,
-            bounds: { ...worldStart, width: 240, height: 160 },
+            bounds: { ...worldStart, ...boardShapeDefaultSize(kind) },
             moved: false,
         };
     }
@@ -55,7 +56,7 @@ export function useBoardShapePlacement(
         current.bounds = boardShapePlacementBounds(
             current.worldStart,
             canvasPoint(local, activeCamera),
-            equalSides,
+            equalSides || current.kind === 'circle',
         );
         const preview = previewRef.current;
         if (!preview) return;
@@ -72,7 +73,15 @@ export function useBoardShapePlacement(
         if (!current) return;
         const bounds = current.moved
             ? current.bounds
-            : { ...current.bounds, height: equalSides ? 240 : 160 };
+            : {
+                  ...current.bounds,
+                  ...boardShapeDefaultSize(current.kind),
+                  ...(equalSides
+                      ? {
+                            height: boardShapeDefaultSize(current.kind).width,
+                        }
+                      : {}),
+              };
         cancel();
         onPlace(current.kind, bounds);
     }

@@ -1,6 +1,9 @@
 // Summary: Owns active Board creation tools and keyboard placement; depends on camera coordinates, native object actions and editing locks.
 
-import { isBoardShapeTool } from './board-shape-data';
+import {
+    isBoardShapeTool,
+    boardShapeDefaultSize,
+} from './board-shape-data';
 import type { BoardBounds, BoardShapeKind } from './board-types';
 import { isBoardDrawingTool } from './board-drawing-data';
 import { useState, type KeyboardEvent } from 'react';
@@ -52,7 +55,7 @@ export function useBoardTools({
     function placeBlock(kind: BoardPlacementKind, point: BoardPoint) {
         if (isLocked()) return;
         if (isBoardShapeTool(kind)) {
-            placeShape(kind, { ...point, width: 240, height: 160 });
+            placeShape(kind, { ...point, ...boardShapeDefaultSize(kind) });
             return;
         }
         const previousCount = model.objectsRef.current.length;

@@ -88,6 +88,23 @@ export function resizeBoardObject({
         width = object.width * scale;
         height = object.height * scale;
     }
+    const circle =
+        object.block_type === 'shape' && object.data.shape?.kind === 'circle';
+    if (circle) {
+        const side = clamp(
+            corner
+                ? Math.abs(delta.x) >= Math.abs(delta.y)
+                    ? width
+                    : height
+                : horizontal
+                  ? width
+                  : height,
+            Math.max(boardLimits.minWidth, boardLimits.minHeight),
+            boardLimits.maxSize,
+        );
+        width = side;
+        height = side;
+    }
     if (object.block_type === 'image' && (!corner || freeAspect))
         data = { ...data, image_fit: 'cover' };
     width = clamp(width, boardLimits.minWidth, boardLimits.maxSize);
@@ -99,12 +116,20 @@ export function resizeBoardObject({
         ...object,
         data,
         x: clamp(
-            west ? object.x + object.width - width : object.x,
+            west
+                ? object.x + object.width - width
+                : circle && !horizontal
+                  ? object.x + (object.width - width) / 2
+                  : object.x,
             -boardLimits.coordinate,
             boardLimits.coordinate,
         ),
         y: clamp(
-            north ? object.y + object.height - height : object.y,
+            north
+                ? object.y + object.height - height
+                : circle && !vertical
+                  ? object.y + (object.height - height) / 2
+                  : object.y,
             -boardLimits.coordinate,
             boardLimits.coordinate,
         ),

@@ -94,6 +94,7 @@ export function BoardPropertiesPanel({
     const closeButton = useRef<HTMLButtonElement>(null);
     useEffect(() => closeButton.current?.focus({ preventScroll: true }), []);
     const automaticHeight = supportsBoardContentHeight(object);
+    const circle = object.block_type === 'shape' && object.data.shape?.kind === 'circle';
     const writing = ['text', 'heading', 'quote', 'callout'].includes(
         object.block_type,
     );
@@ -168,7 +169,11 @@ export function BoardPropertiesPanel({
                         disabled={disabled}
                         onCommit={(width) => {
                             if (width !== object.width)
-                                onChange({ ...object, width });
+                                onChange({
+                                    ...object,
+                                    width,
+                                    ...(circle ? { height: width } : {}),
+                                });
                         }}
                     />
                     <GeometryField
@@ -179,7 +184,11 @@ export function BoardPropertiesPanel({
                         disabled={disabled || automaticHeight}
                         onCommit={(height) => {
                             if (!automaticHeight && height !== object.height)
-                                onChange({ ...object, height });
+                                onChange({
+                                    ...object,
+                                    height,
+                                    ...(circle ? { width: height } : {}),
+                                });
                         }}
                     />
                 </div>

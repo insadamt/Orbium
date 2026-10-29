@@ -1,6 +1,9 @@
 // Summary: Edits saved shape appearance through existing Board history callbacks, depending on shared color menus and bounded outline presets.
 
 import * as Menu from '@/components/ui/dropdown-menu';
+import { useEffect, useState } from 'react';
+import { CornerUpRight } from 'lucide-react';
+import { boardShapeCornerRadius } from './board-shape-data';
 import { TextColorMenu } from '@/components/editor/ui/text-color-menu';
 import { BoardToolButton } from './board-tool-button';
 import { BoardTextLayoutControls } from './board-text-layout-controls';
@@ -16,6 +19,9 @@ export function BoardShapeFormatting({
     onChange: (object: BoardObject) => void;
 }) {
     const shape = object.data.shape!;
+    const radius = boardShapeCornerRadius(shape);
+    const [radiusDraft, setRadiusDraft] = useState(radius);
+    useEffect(() => setRadiusDraft(radius), [object.id, radius]);
     function applyAppearance(change: Partial<BoardShape>) {
         if (disabled) return;
         const nextShape = { ...shape, ...change };
@@ -116,6 +122,71 @@ export function BoardShapeFormatting({
                     </Menu.RadioGroup>
                 </Menu.Content>
             </Menu.Root>
+            {['rectangle', 'rounded_rectangle', 'triangle'].includes(
+                shape.kind,
+            ) && (
+                <Menu.Root modal={false}>
+                    <Menu.Trigger asChild>
+                        <BoardToolButton
+                            label="Corner rounding"
+                            disabled={disabled}
+                        >
+                            <CornerUpRight size={15} aria-hidden="true" />
+                            {radius}%
+                        </BoardToolButton>
+                    </Menu.Trigger>
+                    <Menu.Content
+                        className="board-shape-radius-menu"
+                        align="start"
+                        sideOffset={10}
+                        collisionPadding={12}
+                    >
+                        <Menu.Label>Corner rounding</Menu.Label>
+                        <div
+                            className="board-shape-radius-control"
+                            onKeyDown={(event) => event.stopPropagation()}
+                        >
+                            <input
+                                type="range"
+                                aria-label="Corner rounding"
+                                min={0}
+                                max={50}
+                                step={1}
+                                value={radiusDraft}
+                                disabled={disabled}
+                                onChange={(event) =>
+                                    setRadiusDraft(Number(event.target.value))
+                                }
+                                onPointerUp={() =>
+                                    applyAppearance({
+                                        corner_radius: radiusDraft,
+                                    })
+                                }
+                                onKeyUp={() =>
+                                    applyAppearance({
+                                        corner_radius: radiusDraft,
+                                    })
+                                }
+                                onBlur={() =>
+                                    applyAppearance({
+                                        corner_radius: radiusDraft,
+                                    })
+                                }
+                            />
+                            <output>{radiusDraft}%</output>
+                        </div>
+                        <Menu.Item
+                            disabled={disabled}
+                            onSelect={() => {
+                                setRadiusDraft(0);
+                                applyAppearance({ corner_radius: 0 });
+                            }}
+                        >
+                            Reset to sharp corners
+                        </Menu.Item>
+                    </Menu.Content>
+                </Menu.Root>
+            )}
             <BoardTextLayoutControls
                 data={object.data}
                 disabled={disabled}
