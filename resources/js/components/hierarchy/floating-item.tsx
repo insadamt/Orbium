@@ -13,6 +13,7 @@ import type { TreeNode } from '@/components/navigation/navigation-types';
 import { attachmentUrl } from '@/components/editor/editor-api';
 import { nodeImageUrl } from './node-media-api';
 import { ratioNumber, type GalleryAppearance } from './cover-presentation';
+import { ControlTooltip } from '@/components/navigation/control-tooltip';
 
 const icons = {
     folder: Folder,
@@ -203,18 +204,21 @@ export function FloatingItem({
                     {node.title}
                 </span>
             </span>
-            <button
-                type="button"
-                className="floating-item-actions"
-                aria-label={`Actions for ${node.title}`}
-                onDoubleClick={(event) => event.stopPropagation()}
-                onClick={(event) => {
-                    event.stopPropagation();
-                    onActions(event.currentTarget);
-                }}
-            >
-                <MoreHorizontal size={17} />
-            </button>
+            <ControlTooltip label="Page actions">
+                <button
+                    type="button"
+                    className="floating-item-actions"
+                    aria-label={`Actions for ${node.title}`}
+                    disabled={disabled}
+                    onDoubleClick={(event) => event.stopPropagation()}
+                    onClick={(event) => {
+                        event.stopPropagation();
+                        onActions(event.currentTarget);
+                    }}
+                >
+                    <MoreHorizontal size={17} />
+                </button>
+            </ControlTooltip>
         </div>
     );
 }

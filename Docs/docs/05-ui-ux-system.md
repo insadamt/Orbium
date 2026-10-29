@@ -1,5 +1,17 @@
 # UI/UX system
 
+Home controls/motion (2026-10-28): named removable type/Favorites chips reveal
+remembered filtering; clearing them preserves search, sort and view. Icon controls
+share app tooltips and neutral hover/press/disabled feedback. The nonmanual sort
+explanation lives in the sort tooltip. After the user’s screenshot review, desktop tabs retain their original centered
+top-row placement. The added search reservation and forced two-row override
+through 2000 px are removed; original responsive wrapping applies.
+Gallery settings reserves its control slot. Card entry, layout/size changes,
+filter exits, toolbar/folder arrival, chips and Reveal use bounded motion without
+delaying actions. Existing drag/selection, menus/dialogs and no-results motion
+remain. OS reduced motion cancels live card work and skips added transitions.
+See `../reports/07-home-controls-and-motion.md` for inventory and manual checks.
+
 Home no-results motion (2026-10-28): the centered feedback group fades and
 settles in over 240 ms and fades upward out over 180 ms. Exit is retained only
 for painting and reserves no layout space, so matching cards return immediately.

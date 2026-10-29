@@ -1,3 +1,5 @@
+// Animates accepted explorer layout changes while leaving drag gesture motion alone.
+// Depends on GSAP, card data attributes and the OS reduced-motion preference.
 import { gsap } from 'gsap';
 import { useLayoutEffect, useRef, type RefObject } from 'react';
 
@@ -26,17 +28,28 @@ export function useExplorerLayoutMotion(
         animatedCards.current.delete(element);
     }
 
-    useLayoutEffect(
-        () => () => {
+    useLayoutEffect(() => {
+        const reducedMotion = window.matchMedia(
+            '(prefers-reduced-motion: reduce)',
+        );
+        function stopAllMotion() {
             for (const element of animatedCards.current)
                 stopCardMotion(element);
             for (const element of exitCards.current) {
                 gsap.killTweensOf(element);
                 element.remove();
             }
-        },
-        [],
-    );
+            exitCards.current.clear();
+        }
+        function updateMotionPreference() {
+            if (reducedMotion.matches) stopAllMotion();
+        }
+        reducedMotion.addEventListener('change', updateMotionPreference);
+        return () => {
+            reducedMotion.removeEventListener('change', updateMotionPreference);
+            stopAllMotion();
+        };
+    }, []);
 
     useLayoutEffect(() => {
         if (!enabled || !container.current) {
@@ -72,9 +85,18 @@ export function useExplorerLayoutMotion(
                 outline: appearance.outline,
             });
         }
-        const previous = previousCards.current;
+        const firstLayout = previousCards.current === null;
+        const previous =
+            previousCards.current ?? new Map<number, CardSnapshot>();
         previousCards.current = currentCards;
-        if (!previous) return;
+        // Rapid filtering can bring a card back before its previous exit has finished.
+        for (const exit of exitCards.current) {
+            if (!currentCards.has(Number(exit.dataset.explorerExitId)))
+                continue;
+            gsap.killTweensOf(exit);
+            exit.remove();
+            exitCards.current.delete(exit);
+        }
         const changed =
             previous.size !== currentCards.size ||
             [...currentCards].some(([id, current]) => {
@@ -83,6 +105,8 @@ export function useExplorerLayoutMotion(
                     !old ||
                     Math.abs(old.left - current.left) > 0.5 ||
                     Math.abs(old.top - current.top) > 0.5 ||
+                    Math.abs(old.width - current.width) > 0.5 ||
+                    Math.abs(old.height - current.height) > 0.5 ||
                     old.element !== current.element
                 );
             });
@@ -90,6 +114,7 @@ export function useExplorerLayoutMotion(
         const reducedMotion = window.matchMedia(
             '(prefers-reduced-motion: reduce)',
         ).matches;
+        let entranceIndex = 0;
         for (const [id, current] of currentCards) {
             const old = previous.get(id);
             const oldX =
@@ -103,20 +128,35 @@ export function useExplorerLayoutMotion(
             stopCardMotion(current.element);
             if (reducedMotion || current.element.dataset.stackSource === 'true')
                 continue;
+            const viewportTop = containerBounds.top + current.top;
+            if (
+                firstLayout &&
+                (viewportTop > window.innerHeight ||
+                    viewportTop + current.height < 0)
+            )
+                continue;
             const x = old ? old.left + oldX - current.left : 0;
-            const y = old ? old.top + oldY - current.top : 0;
-            if (old && Math.abs(x) < 0.5 && Math.abs(y) < 0.5) continue;
+            const y = old ? old.top + oldY - current.top : 10;
+            const sizeChanged =
+                old &&
+                (Math.abs(old.width - current.width) > 0.5 ||
+                    Math.abs(old.height - current.height) > 0.5);
+            if (old && !sizeChanged && Math.abs(x) < 0.5 && Math.abs(y) < 0.5)
+                continue;
             current.element.dataset.layoutAnimating = 'true';
             animatedCards.current.add(current.element);
             gsap.fromTo(
                 current.element,
-                { x, y, opacity: old ? 1 : 0 },
+                { x, y, opacity: old ? (sizeChanged ? 0.75 : 1) : 0 },
                 {
                     x: 0,
                     y: 0,
                     opacity: 1,
-                    duration: 0.42,
-                    ease: 'power2.inOut',
+                    duration: old ? 0.42 : 0.28,
+                    delay: firstLayout
+                        ? Math.min(entranceIndex++, 8) * 0.02
+                        : 0,
+                    ease: old ? 'power2.inOut' : 'power2.out',
                     onComplete: () => stopCardMotion(current.element),
                 },
             );
@@ -130,6 +170,11 @@ export function useExplorerLayoutMotion(
             const oldY = animatedCards.current.has(old.element)
                 ? Number(gsap.getProperty(old.element, 'y'))
                 : 0;
+            const exitTop = containerBounds.top + old.top + oldY;
+            if (exitTop > window.innerHeight || exitTop + old.height < 0) {
+                stopCardMotion(old.element);
+                continue;
+            }
             const exit = old.element.cloneNode(true) as HTMLElement;
             exit.classList.add('floating-layout-exit');
             exit.removeAttribute('data-node-id');
@@ -137,6 +182,8 @@ export function useExplorerLayoutMotion(
             exit.removeAttribute('role');
             exit.removeAttribute('tabindex');
             exit.setAttribute('aria-hidden', 'true');
+            exit.inert = true;
+            exit.dataset.explorerExitId = String(id);
             exit.querySelectorAll('button').forEach((button) => {
                 button.disabled = true;
                 button.tabIndex = -1;

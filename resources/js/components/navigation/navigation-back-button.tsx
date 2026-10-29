@@ -1,4 +1,7 @@
+// Reveals tab-history navigation only where a previous location is available.
+// Depends on Inertia location, navigation history and the shared control tooltip.
 import { usePage } from '@inertiajs/react';
+import { ControlTooltip } from './control-tooltip';
 import { ArrowLeft } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigation } from './navigation-store';
@@ -34,17 +37,18 @@ export function NavigationBackButton({ className }: { className: string }) {
     }, [shouldShowBackButton]);
 
     return (
-        <button
-            type="button"
-            className={`navigation-back-button ${className}`}
-            data-visible={isRevealed}
-            aria-hidden={!shouldShowBackButton}
-            aria-label="Go back"
-            title="Go back (Alt + Left)"
-            disabled={!shouldShowBackButton}
-            onClick={() => stepHistory(-1)}
-        >
-            <ArrowLeft size={18} />
-        </button>
+        <ControlTooltip label="Go back (Alt + Left)">
+            <button
+                type="button"
+                className={`navigation-back-button ${className}`}
+                data-visible={isRevealed}
+                aria-hidden={!shouldShowBackButton}
+                aria-label="Go back"
+                disabled={!shouldShowBackButton}
+                onClick={() => stepHistory(-1)}
+            >
+                <ArrowLeft size={18} />
+            </button>
+        </ControlTooltip>
     );
 }

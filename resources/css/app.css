@@ -1,5 +1,5 @@
 /* App stylesheet entrypoint: assembles shared surfaces, editor styles and layout.
-   Viewport sizing loads last so feature minimums cannot add empty-page scrolling. */
+   Layout and interaction overrides follow feature styles to keep sizing consistent. */
 @import 'tailwindcss';
 @import './orbital-explorer.css';
 @import './orbital-explorer-content.css';
@@ -40,6 +40,7 @@
 @import './editor-image-motion.css';
 @import './editor-color-picker.css';
 @import './viewport-layout.css';
+@import './home-interactions.css';
 
 .table-edge-control {
     pointer-events: auto;

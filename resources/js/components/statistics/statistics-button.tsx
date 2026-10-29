@@ -1,4 +1,7 @@
+// Opens statistics for the current visible page, keeping split-pane scope intact.
+// Depends on navigation/page-cache context and the shared control tooltip.
 import { usePage } from '@inertiajs/react';
+import { ControlTooltip } from '@/components/navigation/control-tooltip';
 import { ChartNoAxesColumn } from 'lucide-react';
 import { useNavigation } from '@/components/navigation/navigation-store';
 import { useTabPageCache } from '@/components/navigation/tab-page-cache';
@@ -43,30 +46,31 @@ export function StatisticsButton({ className }: { className: string }) {
             : page;
 
     return (
-        <button
-            type="button"
-            onClick={() => {
-                const target = statisticsTarget(visiblePage.props);
-                const params = new URLSearchParams();
-                if (target.workspaceId !== null)
-                    params.set('workspace_id', String(target.workspaceId));
-                if (target.nodeId !== null) {
-                    params.set('node_id', String(target.nodeId));
-                    params.set('scope', 'page');
-                    params.set('title', target.title);
-                }
-                if (/^\/workspaces\/\d+(?:[/?]|$)/.test(visiblePage.url))
-                    params.set('return', visiblePage.url);
-                openLocation(
-                    `/statistics${params.size ? `?${params}` : ''}`,
-                    true,
-                );
-            }}
-            className={className}
-            aria-label="Statistics"
-            title="Statistics"
-        >
-            <ChartNoAxesColumn size={18} />
-        </button>
+        <ControlTooltip label="Statistics">
+            <button
+                type="button"
+                onClick={() => {
+                    const target = statisticsTarget(visiblePage.props);
+                    const params = new URLSearchParams();
+                    if (target.workspaceId !== null)
+                        params.set('workspace_id', String(target.workspaceId));
+                    if (target.nodeId !== null) {
+                        params.set('node_id', String(target.nodeId));
+                        params.set('scope', 'page');
+                        params.set('title', target.title);
+                    }
+                    if (/^\/workspaces\/\d+(?:[/?]|$)/.test(visiblePage.url))
+                        params.set('return', visiblePage.url);
+                    openLocation(
+                        `/statistics${params.size ? `?${params}` : ''}`,
+                        true,
+                    );
+                }}
+                className={className}
+                aria-label="Statistics"
+            >
+                <ChartNoAxesColumn size={18} />
+            </button>
+        </ControlTooltip>
     );
 }

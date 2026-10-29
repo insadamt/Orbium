@@ -2,6 +2,8 @@
 // Depends on shared menus/toggles and optional feedback supplied by the explorer.
 import type { ReactNode } from 'react';
 import * as Menu from '@/components/ui/dropdown-menu';
+import { ControlTooltip } from '@/components/navigation/control-tooltip';
+import { ExplorerActiveFilter } from './explorer-active-filter';
 import {
     explorerSortOptions,
     explorerTypeOptions,
@@ -49,11 +51,11 @@ export function ExplorerViewControls({
     return (
         <div className="explorer-view-controls">
             {children}
-            {sort !== 'manual' && (
-                <span className="explorer-sort-hint">
-                    Choose Manual order to drag items.
-                </span>
-            )}
+            <ExplorerActiveFilter
+                value={typeFilter}
+                disabled={disabled}
+                onClear={() => onTypeFilterChange('all')}
+            />
             <ExplorerOptionMenu
                 Icon={Filter}
                 active={typeFilter !== 'all'}
@@ -67,6 +69,11 @@ export function ExplorerViewControls({
                 Icon={ArrowDownAZ}
                 active={sort !== 'manual'}
                 label="Sort explorer"
+                hint={
+                    sort !== 'manual'
+                        ? 'Choose Manual order to drag items.'
+                        : undefined
+                }
                 value={sort}
                 onValueChange={onSortChange}
                 options={explorerSortOptions}
@@ -81,31 +88,33 @@ export function ExplorerViewControls({
                     if (choice) onChange(choice.value);
                 }}
                 aria-label="Explorer view"
-                className="explorer-view-switcher"
+                className="explorer-view-switcher floating-surface"
             >
                 {views.map(({ value, label, Icon }) => (
-                    <ToggleGroup.Item
-                        key={value}
-                        value={value}
-                        aria-label={`${label} view`}
-                        title={`${label} view`}
-                    >
-                        <Icon size={17} />
-                    </ToggleGroup.Item>
+                    <ControlTooltip key={value} label={`${label} view`}>
+                        <ToggleGroup.Item
+                            value={value}
+                            aria-label={`${label} view`}
+                        >
+                            <Icon size={17} />
+                        </ToggleGroup.Item>
+                    </ControlTooltip>
                 ))}
             </ToggleGroup.Root>
-            {view === 'gallery' && (
+            <ControlTooltip label="Gallery appearance">
                 <button
                     type="button"
-                    className="explorer-gallery-settings"
+                    className="explorer-gallery-settings floating-surface"
                     onClick={onGalleryAppearance}
-                    disabled={disabled}
+                    disabled={disabled || view !== 'gallery'}
+                    data-visible={view === 'gallery'}
+                    aria-hidden={view !== 'gallery' || undefined}
+                    tabIndex={view === 'gallery' ? undefined : -1}
                     aria-label="Gallery appearance"
-                    title="Gallery appearance"
                 >
                     <SlidersHorizontal size={17} />
                 </button>
-            )}
+            </ControlTooltip>
         </div>
     );
 }
@@ -118,6 +127,7 @@ function ExplorerOptionMenu({
     onValueChange,
     options,
     disabled,
+    hint,
 }: {
     Icon: LucideIcon;
     active: boolean;
@@ -126,20 +136,25 @@ function ExplorerOptionMenu({
     onValueChange: (value: string) => void;
     options: { value: string; label: string }[];
     disabled: boolean;
+    hint?: string;
 }) {
     const selectedLabel = options.find(
         (option) => option.value === value,
     )?.label;
     return (
         <Menu.Root>
-            <Menu.Trigger
-                className="explorer-option-button"
-                aria-label={`${label}: ${selectedLabel ?? value}`}
-                data-active={active}
-                disabled={disabled}
+            <ControlTooltip
+                label={`${label}: ${selectedLabel ?? value}${hint ? `. ${hint}` : ''}`}
             >
-                <Icon size={17} aria-hidden="true" />
-            </Menu.Trigger>
+                <Menu.Trigger
+                    className="explorer-option-button floating-surface"
+                    aria-label={`${label}: ${selectedLabel ?? value}`}
+                    data-active={active}
+                    disabled={disabled}
+                >
+                    <Icon size={17} aria-hidden="true" />
+                </Menu.Trigger>
+            </ControlTooltip>
             <Menu.Content sideOffset={5} collisionPadding={8}>
                 <Menu.RadioGroup value={value} onValueChange={onValueChange}>
                     {options.map((option) => (

@@ -1,4 +1,7 @@
+// Composes floating app navigation and scoped creation dialogs below the app shell.
+// Depends on page/workspace context, shared menus/tooltips and navigation history.
 import { Link, router, usePage } from '@inertiajs/react';
+import { ControlTooltip } from '@/components/navigation/control-tooltip';
 import * as Menu from '@/components/ui/dropdown-menu';
 import {
     Library,
@@ -115,68 +118,77 @@ export function FloatingTopControls({
     }, [workspace?.id]);
     return (
         <>
-            <header ref={topControlsRef} className="floating-top-controls">
+            <header
+                ref={topControlsRef}
+                className="floating-top-controls"
+                data-page-type={pageType}
+            >
                 <div className="floating-workspace-controls">
                     <NavigationBackButton className="floating-icon-button floating-surface" />
-                    <Link
-                        href={
-                            workspace
-                                ? `/workspaces/${workspace.id}`
-                                : '/dashboard'
-                        }
-                        className={`floating-logo floating-surface ${rootDropActive ? 'ring-2 ring-ring' : ''}`}
-                        aria-label="Workspace home"
-                        onDragOver={(event) => {
-                            if (
-                                !workspace ||
-                                !currentNode ||
-                                !event.dataTransfer.types.includes(
-                                    `application/orbium-workspace-${workspace.id}`,
+                    <ControlTooltip label="Workspace home">
+                        <Link
+                            href={
+                                workspace
+                                    ? `/workspaces/${workspace.id}`
+                                    : '/dashboard'
+                            }
+                            className={`floating-logo floating-surface ${rootDropActive ? 'ring-2 ring-ring' : ''}`}
+                            aria-label="Workspace home"
+                            onDragOver={(event) => {
+                                if (
+                                    !workspace ||
+                                    !currentNode ||
+                                    !event.dataTransfer.types.includes(
+                                        `application/orbium-workspace-${workspace.id}`,
+                                    )
                                 )
-                            )
-                                return;
-                            event.preventDefault();
-                            event.dataTransfer.dropEffect = 'move';
-                            setRootDropActive(true);
-                        }}
-                        onDragLeave={() => setRootDropActive(false)}
-                        onDrop={(event) => {
-                            event.preventDefault();
-                            setRootDropActive(false);
-                            if (
-                                !workspace ||
-                                !event.dataTransfer.types.includes(
-                                    `application/orbium-workspace-${workspace.id}`,
+                                    return;
+                                event.preventDefault();
+                                event.dataTransfer.dropEffect = 'move';
+                                setRootDropActive(true);
+                            }}
+                            onDragLeave={() => setRootDropActive(false)}
+                            onDrop={(event) => {
+                                event.preventDefault();
+                                setRootDropActive(false);
+                                if (
+                                    !workspace ||
+                                    !event.dataTransfer.types.includes(
+                                        `application/orbium-workspace-${workspace.id}`,
+                                    )
                                 )
-                            )
-                                return;
-                            const nodeId = Number(
-                                event.dataTransfer.getData(
-                                    'application/orbium-node',
-                                ),
-                            );
-                            const source = nodes.find(
-                                (node) => node.id === nodeId,
-                            );
-                            if (!source || source.parent_id === null) return;
-                            router.patch(
-                                `/workspaces/${workspace.id}/nodes/${nodeId}/move`,
-                                {
-                                    parent_id: null,
-                                    position: nodes.filter(
-                                        (node) => node.parent_id === null,
-                                    ).length,
-                                },
-                                {
-                                    preserveScroll: true,
-                                    onError: (errors) =>
-                                        toast.error(Object.values(errors)[0]),
-                                },
-                            );
-                        }}
-                    >
-                        <AppLogoIcon className="size-11 shrink-0 max-sm:size-9" />
-                    </Link>
+                                    return;
+                                const nodeId = Number(
+                                    event.dataTransfer.getData(
+                                        'application/orbium-node',
+                                    ),
+                                );
+                                const source = nodes.find(
+                                    (node) => node.id === nodeId,
+                                );
+                                if (!source || source.parent_id === null)
+                                    return;
+                                router.patch(
+                                    `/workspaces/${workspace.id}/nodes/${nodeId}/move`,
+                                    {
+                                        parent_id: null,
+                                        position: nodes.filter(
+                                            (node) => node.parent_id === null,
+                                        ).length,
+                                    },
+                                    {
+                                        preserveScroll: true,
+                                        onError: (errors) =>
+                                            toast.error(
+                                                Object.values(errors)[0],
+                                            ),
+                                    },
+                                );
+                            }}
+                        >
+                            <AppLogoIcon className="size-11 shrink-0 max-sm:size-9" />
+                        </Link>
+                    </ControlTooltip>
                     <Menu.Root>
                         <Menu.Trigger
                             className="floating-workspace-trigger floating-surface"
@@ -231,21 +243,23 @@ export function FloatingTopControls({
                 </div>
                 <div className="floating-tab-island floating-surface">
                     <NavigationTabStrip floating />
-                    <button
-                        type="button"
-                        className="floating-add-tab"
-                        aria-label="Open workspace home in a new tab"
-                        onClick={() =>
-                            openLocation(
-                                workspace
-                                    ? `/workspaces/${workspace.id}`
-                                    : '/dashboard',
-                                true,
-                            )
-                        }
-                    >
-                        <Plus size={18} />
-                    </button>
+                    <ControlTooltip label="Open workspace home in a new tab">
+                        <button
+                            type="button"
+                            className="floating-add-tab"
+                            aria-label="Open workspace home in a new tab"
+                            onClick={() =>
+                                openLocation(
+                                    workspace
+                                        ? `/workspaces/${workspace.id}`
+                                        : '/dashboard',
+                                    true,
+                                )
+                            }
+                        >
+                            <Plus size={18} />
+                        </button>
+                    </ControlTooltip>
                 </div>
                 <div
                     className="floating-account-controls"
@@ -258,27 +272,31 @@ export function FloatingTopControls({
                         )}
                     <StatisticsButton className="floating-icon-button floating-surface" />
                     {workspace && (
+                        <ControlTooltip label="Library">
+                            <button
+                                type="button"
+                                onClick={() =>
+                                    openLocation(
+                                        `/workspaces/${workspace.id}/library`,
+                                    )
+                                }
+                                className="floating-icon-button floating-surface"
+                                aria-label="Library"
+                            >
+                                <Library size={18} />
+                            </button>
+                        </ControlTooltip>
+                    )}
+                    <ControlTooltip label="Settings">
                         <button
                             type="button"
-                            onClick={() =>
-                                openLocation(
-                                    `/workspaces/${workspace.id}/library`,
-                                )
-                            }
+                            onClick={() => openLocation('/settings/profile')}
                             className="floating-icon-button floating-surface"
-                            aria-label="Library"
+                            aria-label="Settings"
                         >
-                            <Library size={18} />
+                            <Settings2 size={18} />
                         </button>
-                    )}
-                    <button
-                        type="button"
-                        onClick={() => openLocation('/settings/profile')}
-                        className="floating-icon-button floating-surface"
-                        aria-label="Settings"
-                    >
-                        <Settings2 size={18} />
-                    </button>
+                    </ControlTooltip>
                     <Menu.Root>
                         <Menu.Trigger
                             className="floating-user-trigger floating-surface"

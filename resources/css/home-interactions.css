@@ -1,0 +1,205 @@
+/* Polishes home controls and motion without changing editor or canvas gestures.
+   Depends on the explorer page marker, shared motion tokens and floating surfaces.
+   Search field structure is shared; desktop sizing and extra motion are home-only. */
+.floating-page-search-slot {
+    display: contents;
+}
+.floating-search-body {
+    display: flex;
+    min-width: 0;
+    flex: 1;
+    align-items: center;
+    opacity: 1;
+    transition: opacity 140ms ease;
+}
+.floating-page-search[data-open='false'] {
+    padding-right: 0;
+}
+.floating-page-search[data-open='false'] .floating-search-body {
+    opacity: 0;
+    pointer-events: none;
+}
+.floating-workspace[data-page-type='explorer'] .explorer-view-controls {
+    position: relative;
+}
+.explorer-active-filter {
+    display: inline-flex;
+    min-height: 34px;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 8px;
+    margin-inline-end: auto;
+    padding: 7px 11px;
+    border-radius: 12px;
+    color: var(--foreground);
+    font-size: 12px;
+}
+.explorer-gallery-settings[data-visible='false'] {
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+}
+.floating-workspace[data-page-type='explorer']
+    :is(
+        .explorer-option-button,
+        .explorer-gallery-settings,
+        .explorer-active-filter,
+        .explorer-view-switcher button,
+        .explorer-empty-action,
+        .explorer-filter-feedback button,
+        .floating-search-trigger,
+        .floating-search-close
+    ):hover:not(:disabled) {
+    background: var(--accent);
+    color: var(--foreground);
+}
+.floating-workspace[data-page-type='explorer']
+    :is(
+        .explorer-option-button,
+        .explorer-gallery-settings,
+        .explorer-active-filter,
+        .explorer-view-switcher button,
+        .explorer-empty-action
+    ):disabled {
+    cursor: default;
+    opacity: 0.4;
+}
+
+/* Header row placement stays owned by floating-workspace.css so the centered
+   tabs retain their original top-row desktop position. */
+@media (prefers-reduced-motion: no-preference) {
+    .floating-workspace[data-page-type='explorer']
+        .floating-item:not([data-layout-animating='true']):not(
+            [data-dragging='true']
+        ):not([data-stack-source='true']) {
+        transition:
+            transform 180ms ease,
+            background-color 180ms ease,
+            border-color 180ms ease,
+            box-shadow 180ms ease,
+            opacity 180ms ease,
+            scale 120ms var(--motion-ease),
+            outline-color 160ms ease;
+    }
+    .floating-workspace[data-page-type='explorer']
+        .explorer-gallery-settings[data-visible='false'] {
+        opacity: 0;
+        transition:
+            opacity 160ms ease,
+            visibility 0s linear 160ms;
+    }
+    .floating-workspace[data-page-type='explorer']
+        :is(
+            .floating-logo,
+            .floating-workspace-trigger,
+            .floating-user-trigger,
+            .floating-icon-button,
+            .floating-add-tab,
+            .floating-search-trigger,
+            .floating-search-close,
+            .explorer-option-button,
+            .explorer-gallery-settings,
+            .explorer-active-filter,
+            .explorer-view-switcher button,
+            .explorer-empty-action,
+            .explorer-filter-feedback button,
+            .floating-item-actions
+        ) {
+        transition:
+            scale 120ms var(--motion-ease),
+            background-color 160ms ease,
+            border-color 160ms ease,
+            color 160ms ease,
+            opacity 160ms ease,
+            box-shadow 160ms ease;
+    }
+    .floating-workspace[data-page-type='explorer']
+        :is(
+            .floating-logo,
+            .floating-workspace-trigger,
+            .floating-user-trigger,
+            .floating-icon-button,
+            .floating-add-tab,
+            .floating-search-trigger,
+            .floating-search-close,
+            .explorer-option-button,
+            .explorer-gallery-settings,
+            .explorer-active-filter,
+            .explorer-view-switcher button,
+            .explorer-empty-action,
+            .explorer-filter-feedback button,
+            .floating-item-actions
+        ):active:not(:disabled) {
+        scale: 0.96;
+    }
+    .floating-workspace[data-page-type='explorer'] .navigation-back-button {
+        transition:
+            width 320ms var(--motion-ease),
+            margin-right 320ms var(--motion-ease),
+            opacity 240ms ease,
+            transform 320ms var(--motion-ease),
+            scale 120ms var(--motion-ease),
+            background-color 160ms ease,
+            color 160ms ease;
+    }
+    .floating-workspace[data-page-type='explorer']
+        :is(.floating-workspace-trigger, .floating-user-trigger)
+        > svg:last-child {
+        transition: rotate 180ms var(--motion-ease);
+    }
+    .floating-workspace[data-page-type='explorer']
+        :is(
+            .floating-workspace-trigger,
+            .floating-user-trigger
+        )[aria-expanded='true']
+        > svg:last-child {
+        rotate: 180deg;
+    }
+    .floating-workspace[data-page-type='explorer'] .explorer-view-controls,
+    .floating-workspace[data-page-type='explorer'] .floating-folder-header {
+        animation: home-controls-arrive 220ms var(--motion-ease) both;
+    }
+    .floating-workspace[data-page-type='explorer']
+        .floating-item-label
+        > :first-child {
+        transition: scale 180ms var(--motion-ease);
+    }
+    .floating-workspace[data-page-type='explorer']
+        .floating-item:hover:not([data-dragging='true'])
+        .floating-item-label
+        > :first-child {
+        scale: 1.04;
+    }
+    .floating-workspace[data-page-type='explorer']
+        .floating-item:not([data-dragging='true']):not(
+            [data-layout-animating='true']
+        ):active {
+        scale: 0.99;
+    }
+}
+@keyframes home-controls-arrive {
+    from {
+        opacity: 0;
+        translate: 0 6px;
+    }
+    to {
+        opacity: 1;
+        translate: 0 0;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .floating-search-body,
+    .floating-workspace[data-page-type='explorer']
+        :is(
+            button,
+            .floating-logo,
+            .floating-folder-header,
+            .explorer-view-controls,
+            .floating-item-label > :first-child
+        ) {
+        animation: none;
+        transition: none;
+        scale: none;
+        rotate: none;
+    }
+}

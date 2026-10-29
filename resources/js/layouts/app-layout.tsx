@@ -1,3 +1,5 @@
+// Composes shared navigation and retained page surfaces with page-scoped styling.
+// Depends on Inertia context, navigation state, and the shared appearance runtime.
 import { router, usePage } from '@inertiajs/react';
 import { ChevronDown, Search } from 'lucide-react';
 import { useEffect, useLayoutEffect, useState, type ReactNode } from 'react';
@@ -239,6 +241,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
             )}
             <PageSearchProvider routePath={page.url.split('?')[0]}>
                 <main
+                    data-page-type={pageType}
                     className={`orbium-main w-full ${page.component === 'documents/show' ? 'document-workspace' : ''} ${page.component.startsWith('library/') ? 'library-workspace' : ''} ${page.component === 'library/show' ? 'library-detail-workspace' : ''} ${isFloatingPage ? 'floating-workspace' : 'mx-auto max-w-[1600px] px-5 py-10 md:px-8 md:py-14'}`}
                 >
                     {!isPane && isFloatingPage && (
