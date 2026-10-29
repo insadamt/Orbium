@@ -129,6 +129,7 @@ export function BoardWorkspace({
             tool: tools.tool,
             onPlace: tools.placeBlock,
             onPlaceShape: tools.placeShape,
+            onStartDrawing: tools.hideDrawingSettings,
             drawing,
         },
     );

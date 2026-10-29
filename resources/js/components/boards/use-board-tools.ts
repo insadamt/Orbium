@@ -60,6 +60,9 @@ export function useBoardTools({
         );
         camera.viewportRef.current?.focus({ preventScroll: true });
     }
+    function hideDrawingSettings() {
+        setOpenPanel((current) => (current === 'drawing' ? null : current));
+    }
     function placeShape(kind: BoardShapeKind, bounds: BoardBounds) {
         if (isLocked()) return;
         if (model.addShape(kind, bounds)) {
@@ -121,6 +124,7 @@ export function useBoardTools({
         setPanelOpen,
         drawingSettingsOpen,
         toggleDrawingSettings,
+        hideDrawingSettings,
         placing,
         placementKind,
         chooseTool,

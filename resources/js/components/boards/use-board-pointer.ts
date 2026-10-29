@@ -42,6 +42,7 @@ export function useBoardPointer(
     interaction: {
         tool: BoardTool;
         drawing: BoardDrawingController;
+        onStartDrawing: () => void;
         onPlaceShape: (kind: BoardShapeKind, bounds: BoardBounds) => void;
         onPlace: (kind: BoardPlacementKind, point: BoardPoint) => void;
     },
@@ -165,6 +166,9 @@ export function useBoardPointer(
                 );
                 gesture.current = { kind: 'draw', pointerId: event.pointerId };
                 event.currentTarget.dataset.gesture = 'draw';
+                // Dismiss the brush picker on the first canvas press without
+                // switching away from the active drawing tool.
+                interaction.onStartDrawing();
             }
             return;
         }
