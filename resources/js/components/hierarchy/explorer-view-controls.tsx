@@ -36,6 +36,7 @@ export function ExplorerViewControls({
     disabled,
     onChange,
     onGalleryAppearance,
+    leadingAction,
     children,
 }: {
     view: ExplorerView;
@@ -46,16 +47,20 @@ export function ExplorerViewControls({
     disabled: boolean;
     onChange: (view: ExplorerView) => void;
     onGalleryAppearance: () => void;
+    leadingAction?: ReactNode;
     children?: ReactNode;
 }) {
     return (
         <div className="explorer-view-controls">
-            {children}
-            <ExplorerActiveFilter
-                value={typeFilter}
-                disabled={disabled}
-                onClear={() => onTypeFilterChange('all')}
-            />
+            <div className="explorer-toolbar-leading">
+                {leadingAction}
+                {children}
+                <ExplorerActiveFilter
+                    value={typeFilter}
+                    disabled={disabled}
+                    onClear={() => onTypeFilterChange('all')}
+                />
+            </div>
             <ExplorerOptionMenu
                 Icon={Filter}
                 active={typeFilter !== 'all'}

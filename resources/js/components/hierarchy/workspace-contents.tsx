@@ -45,6 +45,7 @@ import {
     type ExplorerView,
 } from './explorer-view-controls';
 import type { WorkspaceContentsProps } from './workspace-contents-types';
+import { ExplorerCreateMenu } from './explorer-create-menu';
 
 export function WorkspaceContents({
     workspaceId,
@@ -286,6 +287,12 @@ export function WorkspaceContents({
                 moveOutActive={moveOutActive}
             />
             <ExplorerViewControls
+                leadingAction={
+                    <ExplorerCreateMenu
+                        disabled={explorerBusy}
+                        onCreate={setCreateType}
+                    />
+                }
                 view={view}
                 sort={sort}
                 onSortChange={setSort}

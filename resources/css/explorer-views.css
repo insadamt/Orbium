@@ -8,6 +8,61 @@
     gap: 8px;
     margin-top: 42px;
 }
+
+.explorer-toolbar-leading {
+    display: flex;
+    min-width: 0;
+    flex: 1 1 auto;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-inline-end: auto;
+}
+.explorer-toolbar-leading :is(.explorer-filter-feedback, .explorer-active-filter) {
+    margin-inline-end: 0;
+}
+.explorer-create-trigger {
+    display: inline-flex;
+    min-height: 42px;
+    flex: none;
+    align-items: center;
+    gap: 8px;
+    padding: 0 12px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--background) 84%, transparent);
+    color: var(--foreground);
+    font-size: 13px;
+    font-weight: 500;
+}
+.explorer-create-trigger:hover:not(:disabled),
+.explorer-create-trigger[data-state='open'] {
+    background: var(--accent);
+}
+.explorer-create-trigger:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+}
+.explorer-create-trigger:disabled {
+    cursor: default;
+    opacity: 0.4;
+}
+@media (prefers-reduced-motion: no-preference) {
+    .explorer-create-trigger {
+        transition:
+            scale 120ms var(--motion-ease),
+            background-color 160ms ease;
+    }
+    .explorer-create-trigger:active:not(:disabled) {
+        scale: 0.97;
+    }
+    .explorer-create-chevron {
+        transition: transform 180ms ease;
+    }
+    .explorer-create-trigger[data-state='open'] .explorer-create-chevron {
+        transform: rotate(180deg);
+    }
+}
 .explorer-filter-feedback {
     display: inline-flex;
     flex-shrink: 0;
