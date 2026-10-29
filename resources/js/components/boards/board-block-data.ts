@@ -1,3 +1,6 @@
+// Summary: Creates and validates native block content and readable labels; depends on the shared inline, shape, drawing and Mind Map schemas.
+
+import { defaultBoardShape, validBoardShapeData } from './board-shape-data';
 import {
     createMindMap,
     validMindMap,
@@ -12,10 +15,11 @@ import {
     type BoardBlockData,
     type BoardBlockKind,
     type BoardInline,
+    type BoardShapeKind,
     type BoardObject,
 } from './board-types';
 export const boardBlockLabels: Record<
-    BoardBlockKind | 'pdf' | 'video' | 'audio',
+    BoardBlockKind | BoardShapeKind | 'pdf' | 'video' | 'audio',
     string
 > = {
     text: 'Text',
@@ -36,6 +40,13 @@ export const boardBlockLabels: Record<
     resource: 'Resource',
     drawing: 'Drawing',
     mindmap: 'Mind Map',
+    shape: 'Shape',
+    rectangle: 'Rectangle',
+    rounded_rectangle: 'Rounded rectangle',
+    ellipse: 'Ellipse',
+    diamond: 'Diamond',
+    triangle: 'Triangle',
+    hexagon: 'Hexagon',
 };
 export function plainInline(text: string): BoardInline[] {
     return text
@@ -81,6 +92,12 @@ export function createBoardBlockData(
     kind: BoardBlockKind,
     text = '',
 ): BoardBlockData {
+    if (kind === 'shape')
+        return {
+            shape: defaultBoardShape('rectangle'),
+            content: plainInline(text),
+            align: 'center',
+        };
     if (kind === 'mindmap') return { mindmap: createMindMap() };
     if (['text', 'heading', 'quote', 'callout'].includes(kind))
         return {
@@ -159,6 +176,7 @@ export function validBoardBlockData(
         typeof data.legacy_source !== 'string'
     )
         return false;
+    if (kind === 'shape') return validBoardShapeData(data);
     if (kind === 'mindmap')
         return (
             Object.keys(data).every((key) => key === 'mindmap') &&

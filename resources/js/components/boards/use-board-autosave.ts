@@ -1,3 +1,5 @@
+// Summary: Queues revisioned Board saves and recoverable local drafts; depends on snapshot validation, mutation APIs and editing/navigation guards.
+
 import { scheduleEditorIdleWork } from '@/components/editor/schedule-editor-idle-work';
 import { router } from '@inertiajs/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -100,7 +102,7 @@ export function useBoardAutosave(
             )
                 return;
             const saved = writeBoardDraft(location, {
-                format_version: 8,
+                format_version: 9,
                 revision: revision.current,
                 objects,
             });
@@ -145,7 +147,7 @@ export function useBoardAutosave(
         let saved = false;
         try {
             const snapshot: BoardSnapshot = {
-                format_version: 8,
+                format_version: 9,
                 revision: revision.current,
                 objects,
             };
@@ -385,7 +387,7 @@ export function useBoardAutosave(
         downloadDraft: () =>
             downloadBoardDraft(
                 unsupportedDraft.current ?? {
-                    format_version: 8,
+                    format_version: 9,
                     revision: revision.current,
                     objects: materializeBoardObjects(latest.current),
                 },

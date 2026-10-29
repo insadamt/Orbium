@@ -1,0 +1,94 @@
+/* Summary: Native shape frames, label regions and placement previews; depends on Board geometry, theme variables and shared inline-editor styles. */
+
+.board-object[data-board-kind='shape'] .board-object-body {
+    padding: 0;
+    overflow: hidden;
+    zoom: 1;
+    width: 100%;
+    height: 100%;
+}
+
+.board-shape {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+.board-shape-vector {
+    position: absolute;
+    inset: 6px;
+    width: calc(100% - 12px);
+    height: calc(100% - 12px);
+    overflow: visible;
+    pointer-events: none;
+}
+
+.board-shape-label {
+    position: absolute;
+    inset: min(18px, 12%) 18px;
+    display: flex;
+    align-items: safe center;
+    justify-content: center;
+    overflow: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    font-size: calc(16px * var(--board-content-scale, 1));
+    line-height: 1.5;
+}
+
+.board-shape-label > * {
+    width: 100%;
+    min-width: 0;
+    flex-shrink: 0;
+}
+
+.board-shape[data-shape-kind='ellipse'] .board-shape-label {
+    inset: 20%;
+}
+
+.board-shape[data-shape-kind='diamond'] .board-shape-label {
+    inset: 29%;
+}
+
+.board-shape[data-shape-kind='triangle'] .board-shape-label {
+    inset: 50% 29% 14%;
+}
+
+.board-shape[data-shape-kind='hexagon'] .board-shape-label {
+    inset: 18% 29%;
+}
+
+.board-shape-label .board-inline-input {
+    font-size: inherit;
+    line-height: inherit;
+}
+
+.board-shape-sample {
+    width: 24px;
+    height: 24px;
+}
+
+.board-shape-placement {
+    position: absolute;
+    z-index: 1000003;
+    pointer-events: none;
+    color: var(--foreground);
+    opacity: 0.65;
+}
+
+.board-shape-placement[hidden] {
+    display: none;
+}
+
+.board-shape-placement svg {
+    width: 100%;
+    height: 100%;
+    padding: 6px;
+    overflow: visible;
+}
+
+.board-shape-formatting {
+    flex-wrap: wrap;
+}

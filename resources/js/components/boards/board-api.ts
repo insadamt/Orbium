@@ -1,3 +1,5 @@
+// Summary: Validates and adapts supported Board snapshots before network persistence; depends on native block schemas and explicit format guards.
+
 import { hasNativeBoardInlineIcons } from './board-inline-data';
 import {
     validBoardBlockData,
@@ -96,7 +98,7 @@ export function readBoardSnapshot(
     } | null;
     if (
         !snapshot ||
-        ![8, 7, 6, 5, ...(allowLegacyDraft ? [1, 2, 3, 4] : [])].includes(
+        ![9, 8, 7, 6, 5, ...(allowLegacyDraft ? [1, 2, 3, 4] : [])].includes(
             snapshot.format_version ?? 0,
         ) ||
         !Number.isSafeInteger(snapshot.revision) ||
@@ -133,6 +135,13 @@ export function readBoardSnapshot(
     const objects = snapshot.objects
         .flatMap((value) => {
             const object = value as BoardObject;
+            if (
+                (snapshot.format_version ?? 0) < 9 &&
+                object?.block_type === 'shape'
+            )
+                throw new BoardSaveError(
+                    'Shapes require Board format 9. Original recovery data is kept.',
+                );
             if (
                 (snapshot.format_version ?? 0) < 8 &&
                 hasNativeBoardInlineIcons(object?.data)
@@ -201,7 +210,7 @@ export function readBoardSnapshot(
             'This Board exceeds the native block limits or has invalid data. Download the original snapshot for recovery.',
         );
     return {
-        format_version: 8,
+        format_version: 9,
         revision: snapshot.revision!,
         objects,
         ...(snapshot.mutation_version === 1 ? { mutation_version: 1 } : {}),

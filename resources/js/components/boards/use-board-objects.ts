@@ -1,3 +1,5 @@
+// Summary: Publishes validated Board insertions, editing and history actions; depends on the record store, native content defaults and geometry bounds.
+
 import {
     useEffect,
     useMemo,
@@ -17,6 +19,8 @@ import { boardDataBytes, createBoardBlockData } from './board-block-data';
 import { validBoardObjects } from './board-api';
 import { BoardRecordStore, type BoardObjectSource } from './board-record-store';
 import { createResourceObject } from './board-resource-layout';
+import { defaultBoardShape } from './board-shape-data';
+import type { BoardBounds, BoardShapeKind } from './board-types';
 import { clamp } from './board-geometry';
 
 export function useBoardObjects(
@@ -171,6 +175,26 @@ export function useBoardObjects(
         select([object.id]);
         setEditingId(kind === 'divider' ? null : object.id);
     }
+    function addShape(kind: BoardShapeKind, bounds: BoardBounds) {
+        const object: BoardObject = {
+            id: crypto.randomUUID(),
+            block_type: 'shape',
+            content_format_version: 1,
+            data: {
+                shape: defaultBoardShape(kind),
+                content: [],
+                align: 'center',
+            },
+            ...bounds,
+            x: clamp(bounds.x, -boardLimits.coordinate, boardLimits.coordinate),
+            y: clamp(bounds.y, -boardLimits.coordinate, boardLimits.coordinate),
+            layer: objectsRef.current.length,
+        };
+        if (!commit([...objectsRef.current, object])) return false;
+        finishEditing();
+        select([object.id]);
+        return true;
+    }
     function addResource(point: BoardPoint, targetId: number) {
         const object = createResourceObject(
             point,
@@ -295,6 +319,7 @@ export function useBoardObjects(
         select,
         commit,
         addBlock,
+        addShape,
         addResource,
         adoptSavedInsertion,
         deleteSelected,

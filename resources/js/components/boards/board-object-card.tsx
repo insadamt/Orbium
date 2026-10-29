@@ -1,3 +1,6 @@
+// Summary: Hosts one native Board object with selection and edit controls; depends on block renderers, record callbacks and camera-sized geometry.
+
+import { BoardShapeBlock } from './board-shape-block';
 import { BoardMindMapBlock } from './board-mindmap-block';
 import { useBoardEditMotion } from './use-board-edit-motion';
 import { BoardDrawingStroke } from './board-drawing-stroke';
@@ -155,7 +158,7 @@ export const BoardObjectCard = memo(function BoardObjectCard({
             data-board-drag={!editing || undefined}
             role="group"
             tabIndex={0}
-            aria-label={`${boardBlockLabels[object.data.media_kind ?? object.block_type]}: ${boardBlockText(object).slice(0, 80) || 'Empty'}`}
+            aria-label={`${boardBlockLabels[object.data.shape?.kind ?? object.data.media_kind ?? object.block_type]}: ${boardBlockText(object).slice(0, 80) || 'Empty'}`}
             style={
                 {
                     left: object.x,
@@ -192,7 +195,9 @@ export const BoardObjectCard = memo(function BoardObjectCard({
                 className={`board-object-body board-object-preview${object.block_type === 'resource' ? '' : ' orbium-editor orbium-markdown-content'}`}
                 data-board-scroll
             >
-                {object.block_type === 'mindmap' ? (
+                {object.block_type === 'shape' ? (
+                    <BoardShapeBlock {...props} />
+                ) : object.block_type === 'mindmap' ? (
                     <BoardMindMapBlock {...props} />
                 ) : object.block_type === 'drawing' && object.data.drawing ? (
                     <BoardDrawingStroke drawing={object.data.drawing} />

@@ -1,3 +1,5 @@
+// Summary: Defines native Board records, shape appearance and envelope contracts shared by rendering, interaction and persistence.
+
 import type { InlineIconAttributes } from '@/components/inline-icons/inline-icon-data';
 import type { MindMapData } from '@/components/mindmap/mindmap-data';
 import type { AttachmentMediaKind } from '@/components/media/attachment-media';
@@ -18,10 +20,12 @@ export const boardBlockKinds = [
     'resource',
     'drawing',
     'mindmap',
+    'shape',
 ] as const;
 export type BoardBlockKind = (typeof boardBlockKinds)[number];
 export type BoardPlacementKind =
-    | Exclude<BoardBlockKind, 'resource' | 'drawing'>
+    | Exclude<BoardBlockKind, 'resource' | 'drawing' | 'shape'>
+    | BoardShapeKind
     | AttachmentMediaKind;
 export type BoardDrawingTool = 'pen' | 'path' | 'highlighter' | 'eraser';
 export type BoardTool =
@@ -29,6 +33,20 @@ export type BoardTool =
     | 'hand'
     | BoardPlacementKind
     | BoardDrawingTool;
+export type BoardShapeKind =
+    | 'rectangle'
+    | 'rounded_rectangle'
+    | 'ellipse'
+    | 'diamond'
+    | 'triangle'
+    | 'hexagon';
+export type BoardShape = {
+    kind: BoardShapeKind;
+    fill: string;
+    stroke: string;
+    stroke_width: number;
+    stroke_style: 'solid' | 'dashed';
+};
 export type BoardDrawing = {
     points: [number, number][];
     breaks?: number[];
@@ -55,6 +73,7 @@ export type BoardInline = {
     }[];
 };
 export type BoardBlockData = {
+    shape?: BoardShape;
     mindmap?: MindMapData;
     drawing?: BoardDrawing;
     text_scale?: number;
@@ -94,7 +113,7 @@ export type BoardBlockReplacement = {
     data: BoardBlockData;
 };
 export type BoardSnapshot = {
-    format_version: 8;
+    format_version: 9;
     mutation_version?: 1;
     revision: number;
     objects: BoardObject[];

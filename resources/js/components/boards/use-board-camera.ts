@@ -1,3 +1,5 @@
+// Summary: Owns bounded Board pan/zoom and wheel routing; depends on viewport geometry, renderer bounds and nested content scroll ownership.
+
 import { useBoardVisibleBounds } from './use-board-visible-bounds';
 import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import {
@@ -249,6 +251,15 @@ export function useBoardCamera(
                     event.target.closest(
                         '.mindmap-viewport, [data-mindmap-dialog]',
                     )
+                )
+                    return;
+                const shapeLabel =
+                    event.target.closest<HTMLElement>('.board-shape-label');
+                if (
+                    shapeLabel &&
+                    shapeLabel.scrollHeight > shapeLabel.clientHeight &&
+                    !event.ctrlKey &&
+                    !event.metaKey
                 )
                     return;
                 const body = event.target.closest<HTMLElement>(

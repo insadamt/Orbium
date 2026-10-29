@@ -37,3 +37,5 @@ Next phase
 ```
 
 Codex must not chain phases automatically.
+
+Native Board shapes were authorized on 2026-10-29 with “okey go ahead”. Follow `15-board-shapes.md` and `../plans/board-shapes.md`, then stop after `../reports/15-board-shapes.md` for manual review. Connected arrows and rotation remain separately gated.

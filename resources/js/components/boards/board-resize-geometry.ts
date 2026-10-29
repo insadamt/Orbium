@@ -1,3 +1,5 @@
+// Summary: Calculates bounded resize previews while preserving content-specific sizing; depends on Board limits and automatic-height rules.
+
 import { supportsBoardContentHeight } from './board-content-sizing';
 import { clamp, snapped } from './board-geometry';
 import { boardLimits, type BoardObject, type BoardPoint } from './board-types';
@@ -33,6 +35,7 @@ export function resizeBoardObject({
     if (
         corner &&
         object.block_type !== 'mindmap' &&
+        object.block_type !== 'shape' &&
         !(object.block_type === 'image' && freeAspect)
     ) {
         const ratio = object.width / object.height;
@@ -61,6 +64,29 @@ export function resizeBoardObject({
             ...data,
             text_scale: clamp(textScale * scale, 0.25, 8),
         };
+    }
+    if (object.block_type === 'shape' && corner && freeAspect) {
+        //
+        // Shape proportions can be constrained without scaling their independent labels.
+        //
+        const minimum = Math.max(
+            boardLimits.minWidth / object.width,
+            boardLimits.minHeight / object.height,
+        );
+        const maximum = Math.min(
+            boardLimits.maxSize / object.width,
+            boardLimits.maxSize / object.height,
+        );
+        const scale = clamp(
+            Math.abs(delta.x / object.width) >=
+                Math.abs(delta.y / object.height)
+                ? width / object.width
+                : height / object.height,
+            minimum,
+            maximum,
+        );
+        width = object.width * scale;
+        height = object.height * scale;
     }
     if (object.block_type === 'image' && (!corner || freeAspect))
         data = { ...data, image_fit: 'cover' };

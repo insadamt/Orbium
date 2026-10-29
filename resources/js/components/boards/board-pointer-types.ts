@@ -1,3 +1,5 @@
+// Summary: Defines transient Board gestures so drawing, shape placement and transforms share explicit pointer ownership.
+
 import type {
     BoardCamera,
     BoardObject,
@@ -10,6 +12,7 @@ import type { BoardGuide } from './board-alignment';
 
 export type BoardGesture =
     | { kind: 'draw'; pointerId: number }
+    | { kind: 'shape'; pointerId: number }
     | {
           kind: 'place';
           pointerId: number;

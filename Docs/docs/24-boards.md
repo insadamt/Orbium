@@ -1223,3 +1223,20 @@ Native inline icons and map zoom (2026-10-28): native Text/H1–H3/Quote/Callout
 
 
 Colon completion/selection repair (2026-10-28): native Board editors now install the shared colon suggestion extension with priority over ordinary newline handling. `:icon`/`:icons` open the unfiltered picker; ordinary `:name` completes symbols. Inline glyphs have an actual transparent selection character with overlaid artwork rather than empty user-select-all boxes, and editor/preview glyphs synchronize color directly from marks. Board, Mind Map and legacy Document text colors use the same saved-selection transaction; Board links inherit selected colors. Full reload is required for an already-mounted editor to receive the new extension. See `../reports/14-icon-completion-selection-repair.md` for exact checks/manual acceptance.
+
+
+## Native vector shapes (approved 2026-10-29)
+
+Summary: This approved addition supplies editable shapes for Board layouts and diagrams. It depends on existing native object records, history, revisioned saves, camera gestures and inline labels; implementation scope is recorded in `../phases/15-board-shapes.md` and `../plans/board-shapes.md`.
+
+**Shapes** in the creation dock offers Rectangle, Rounded rectangle, Ellipse, Diamond, Triangle and Hexagon with visual previews. Click inserts a 240 × 160 object; Enter inserts at the view-center placement point. Drag in any direction to size it; Shift constrains equal width/height. Placement respects existing minimum/maximum geometry. Accepted release creates one history action and returns to Select without opening a label editor. Escape, cancellation, lost capture, pinch, history and tool changes discard transient placement.
+
+Native `shape` objects use content version 1 and `data: { shape: { kind, fill, stroke, stroke_width, stroke_style }, content, align?, dir?, text_scale? }`. `content` uses existing Board inline validation and owned icon references. Shape colors allow `currentColor` or six-digit hex; fill also allows `none`. Outlines accept 1–12 world pixels and `solid`/`dashed`. The floating selection toolbar exposes fill/transparent fill, outline color/width/style and label alignment/direction. Selection color and selected-text formatting apply to labels separately from shape appearance.
+
+Double-click, Enter or Edit opens the existing native inline editor within the shape. Ctrl/Cmd+Enter or Escape finishes. Label text retains marks, links and inline icons through existing ownership/history. Structural writing conversion is unavailable inside a shape. Shape frames retain fixed geometry; long labels scroll within a reserved central area. Ordinary wheel over overflowing labels scrolls them; Ctrl/Cmd+wheel still zooms the Board. Non-overflowing labels retain ordinary Board panning.
+
+Shape resizing is free by default. Shift at a corner preserves the current aspect ratio, without changing label text scale or outline width. Existing move/multi-selection, layers, alignment/distribution, duplicate, clipboard and delete actions remain Board-owned. The same native SVG/React surface renders shapes in original and Instant Scene modes; no preparation cache, new dependency or continuous animation is added. Standard Board motion and reduced-motion guards remain.
+
+`2026_10_29_000001_add_board_shapes.php` advances the envelope/default to **9**, retaining all object rows/revisions and extending the native-kind database constraint. Supported older snapshots/drafts adapt explicitly; shapes are rejected in envelopes below 9, and unknown versions remain protected. All snapshot/full/incremental/resource-creation writers use 9. Old clients fail format validation rather than flattening shapes. Downgrade refuses while saved shapes exist, including Trash. Deploy matching migration/server/frontend and reload open Boards; the migration was applied locally.
+
+Connected arrows, rotation, persisted grouping, arbitrary SVG import and new Board export formats are outside this phase. Manual visual/interaction acceptance is pending; see `../reports/15-board-shapes.md` for actual checks and exact steps.

@@ -1,3 +1,5 @@
+// Summary: Creates or links original pages into Boards; depends on guarded resource endpoints and the current Board snapshot envelope.
+
 import { useRef, useState } from 'react';
 import { toast } from 'sonner';
 import type { BoardLocation } from './board-types';
@@ -73,7 +75,7 @@ export function useBoardResourceActions(
                     'Finish saving this Board before creating a Document.',
                 );
             const payload = pendingRef.current?.payload ?? {
-                format_version: 8,
+                format_version: 9,
                 revision: current.save.currentRevision(),
                 objects: current.model.objectsRef.current,
                 request_id: requestId,

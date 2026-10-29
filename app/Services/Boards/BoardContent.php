@@ -1,5 +1,7 @@
 <?php
 
+// Summary: Reads and validates revisioned Board snapshots; depends on Board records, native schemas and owned reference validation.
+
 namespace App\Services\Boards;
 
 use App\Models\Board;
@@ -10,7 +12,7 @@ use Illuminate\Validation\ValidationException;
 
 final class BoardContent
 {
-    public const FORMAT_VERSION = 8;
+    public const FORMAT_VERSION = 9;
 
     /** @return array<string, mixed> */
     public function snapshot(Node $node): array

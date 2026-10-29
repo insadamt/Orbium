@@ -1,3 +1,6 @@
+// Summary: Provides creation, history and view controls; depends on Board tool selection, visual pickers and camera actions.
+
+import { BoardShapePicker } from './board-shape-picker';
 import { isBoardDrawingTool } from './board-drawing-data';
 import {
     Type,
@@ -115,6 +118,11 @@ export function BoardToolbar({
                         isBoardDrawingTool(tool) && drawingSettingsOpen
                     }
                     onClick={onToggleDrawingSettings}
+                />
+                <BoardShapePicker
+                    tool={tool}
+                    disabled={blocked || editing}
+                    onChoose={onChooseTool}
                 />
                 <BoardBlockPicker
                     disabled={blocked || editing}

@@ -1,3 +1,6 @@
+// Summary: Hosts contextual actions for current Board selections; depends on record subscriptions, anchored toolbars and per-block formatting controls.
+
+import { BoardShapeFormatting } from './board-shape-formatting';
 import { BoardSelectionColor } from './board-selection-color';
 import { BoardDrawingFormatting } from './board-drawing-formatting';
 import { useState } from 'react';
@@ -116,6 +119,12 @@ export function BoardSelectionTools({
                                     }
                                 />
                             </>
+                        ) : object.block_type === 'shape' ? (
+                            <BoardShapeFormatting
+                                object={object}
+                                disabled={disabled || busy}
+                                onChange={onChange}
+                            />
                         ) : object.block_type === 'drawing' ? (
                             <BoardDrawingFormatting
                                 key={object.id}

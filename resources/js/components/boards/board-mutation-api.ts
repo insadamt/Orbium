@@ -1,3 +1,5 @@
+// Summary: Sends revisioned incremental Board saves; depends on the current envelope contract, native validation and shared API errors.
+
 import { csrfToken } from '@/components/editor/editor-api';
 import {
     BoardSaveError,
@@ -37,7 +39,7 @@ export function prepareBoardMutation(
         // Retain the exact serialized request through uncertain failures; newer edits wait behind this idempotent batch.
         //
         body: JSON.stringify({
-            format_version: 8,
+            format_version: 9,
             mutation_version: 1,
             mutation_id: mutationId,
             revision: snapshot.revision,

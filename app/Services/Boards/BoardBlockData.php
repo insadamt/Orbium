@@ -1,5 +1,7 @@
 <?php
 
+// Summary: Validates native Board block content and attachment ownership; depends on per-block schemas and workspace-owned media services.
+
 namespace App\Services\Boards;
 
 use App\Models\Attachment;
@@ -13,7 +15,7 @@ use Illuminate\Validation\ValidationException;
 
 final class BoardBlockData
 {
-    public const KINDS = ['text', 'heading', 'list', 'quote', 'callout', 'code', 'table', 'image', 'file', 'math', 'mermaid', 'divider', 'resource', 'drawing', 'mindmap'];
+    public const KINDS = ['text', 'heading', 'list', 'quote', 'callout', 'code', 'table', 'image', 'file', 'math', 'mermaid', 'divider', 'resource', 'drawing', 'mindmap', 'shape'];
 
     public function validate(string $kind, array $data): array
     {
@@ -23,6 +25,12 @@ final class BoardBlockData
             }
 
             return ['mindmap' => app(MindMapData::class)->validate($data['mindmap'], 'objects')];
+        }
+        if ($kind === 'shape') {
+            $data = app(BoardShapeData::class)->validate($data);
+            $this->validateInline($data['content']);
+
+            return $data;
         }
         if ($kind === 'drawing') {
             return (new BoardDrawingData)->validate($data);

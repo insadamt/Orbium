@@ -1,3 +1,5 @@
+// Summary: Coordinates the Board editing surface and guarded interactions; depends on revisioned saves, native records, camera and block adapters.
+
 import { useBoardDrawing } from './use-board-drawing';
 import { BoardObjectMotion } from './board-object-motion';
 import './board-micro-motion.css';
@@ -16,6 +18,8 @@ import {
     useBoardWorkScheduler,
 } from './board-resource-previews';
 import { useCallback, useMemo, useRef, useState } from 'react';
+import { BoardPlacementHint } from './board-placement-hint';
+import { BoardShapePlacementPreview } from './use-board-shape-placement';
 import { BoardHelpDialog } from './board-help-dialog';
 import { BoardContextMenu } from './board-context-menu';
 import { useBoardTools } from './use-board-tools';
@@ -46,8 +50,8 @@ import './board-toolbar-polish.css';
 import './board-contextual-toolbars.css';
 import './board-dock.css';
 import './board-surfaces.css';
+import './board-shapes.css';
 import { useBoardClipboard } from './use-board-clipboard';
-import { boardBlockLabels } from './board-block-data';
 import { BoardSelectionBounds } from './board-selection-bounds';
 import { BoardSelectionTools } from './board-selection-tools';
 import { readBoardRendererMode } from './instant-scene/board-renderer-mode';
@@ -121,8 +125,24 @@ export function BoardWorkspace({
             composingRef.current ||
             uploadingRef.current ||
             resourceLockedRef.current,
-        { tool: tools.tool, onPlace: tools.placeBlock, drawing },
+        {
+            tool: tools.tool,
+            onPlace: tools.placeBlock,
+            onPlaceShape: tools.placeShape,
+            drawing,
+        },
     );
+    function changeHistory(direction: 'undo' | 'redo') {
+        if (
+            save.blocked ||
+            composingRef.current ||
+            uploadingRef.current ||
+            resourceLockedRef.current
+        )
+            return;
+        pointer.cancel();
+        model[direction]();
+    }
     function chooseTool(tool: BoardTool) {
         pointer.cancel();
         tools.chooseTool(tool);
@@ -375,6 +395,10 @@ export function BoardWorkspace({
                                 />
                             ))}
                         </div>
+                        <BoardShapePlacementPreview
+                            previewRef={pointer.shapePreviewRef}
+                            tool={tools.tool}
+                        />
                         <div
                             ref={pointer.marqueeRef}
                             className="board-selection-box"
@@ -384,31 +408,19 @@ export function BoardWorkspace({
                             className="board-empty-state"
                             hidden={Boolean(model.layoutObjects.length)}
                         >
-                            <span>Choose Text, Draw or Add to begin.</span>
+                            <span>
+                                Choose Text, Shapes, Draw or Add to begin.
+                            </span>
                         </div>
                     </div>
                 </BoardContextMenu>
-                {tools.placementKind && (
-                    <div
-                        className="board-placement-hint board-panel glass-surface"
-                        role="status"
-                    >
-                        <span>
-                            Click to place{' '}
-                            {boardBlockLabels[
-                                tools.placementKind
-                            ].toLowerCase()}{' '}
-                            · Enter for center
-                        </span>
-                        <button
-                            type="button"
-                            onClick={tools.cancelTool}
-                            aria-label="Cancel placement"
-                        >
-                            Cancel <kbd>Esc</kbd>
-                        </button>
-                    </div>
-                )}
+                <BoardPlacementHint
+                    kind={tools.placementKind}
+                    onCancel={() => {
+                        pointer.cancel();
+                        tools.cancelTool();
+                    }}
+                />
                 <BoardDrawingControls
                     settingsOpen={tools.drawingSettingsOpen}
                     tool={tools.tool}
@@ -434,28 +446,8 @@ export function BoardWorkspace({
                     tool={tools.tool}
                     onChooseTool={chooseTool}
                     onHelp={() => setHelpOpen(true)}
-                    onUndo={() => {
-                        if (
-                            !save.blocked &&
-                            !composingRef.current &&
-                            !uploadingRef.current &&
-                            !resourceLockedRef.current
-                        ) {
-                            pointer.cancel();
-                            model.undo();
-                        }
-                    }}
-                    onRedo={() => {
-                        if (
-                            !save.blocked &&
-                            !composingRef.current &&
-                            !uploadingRef.current &&
-                            !resourceLockedRef.current
-                        ) {
-                            pointer.cancel();
-                            model.redo();
-                        }
-                    }}
+                    onUndo={() => changeHistory('undo')}
+                    onRedo={() => changeHistory('redo')}
                 />
                 <BoardSelectionTools
                     boardId={boardId}

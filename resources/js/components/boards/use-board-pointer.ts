@@ -1,3 +1,10 @@
+// Summary: Orchestrates captured Board gestures and release-time commits; depends on camera geometry, transient shape/drawing previews and record actions.
+
+import { commitBoardTransform } from './board-transform-commit';
+import { boardMarqueeSelection } from './board-marquee-selection';
+import { useBoardShapePlacement } from './use-board-shape-placement';
+import { isBoardShapeTool } from './board-shape-data';
+import type { BoardBounds, BoardShapeKind } from './board-types';
 import { useBoardPanShortcut } from './use-board-pan-shortcut';
 import { isBoardDrawingTool } from './board-drawing-data';
 import type { BoardDrawingController } from './use-board-drawing';
@@ -35,9 +42,13 @@ export function useBoardPointer(
     interaction: {
         tool: BoardTool;
         drawing: BoardDrawingController;
+        onPlaceShape: (kind: BoardShapeKind, bounds: BoardBounds) => void;
         onPlace: (kind: BoardPlacementKind, point: BoardPoint) => void;
     },
 ) {
+    const shape = useBoardShapePlacement(camera, interaction.onPlaceShape);
+    const shapeRef = useRef(shape);
+    shapeRef.current = shape;
     const gesture = useRef<BoardGesture | null>(null);
     const drawingRef = useRef(interaction.drawing);
     drawingRef.current = interaction.drawing;
@@ -51,6 +62,7 @@ export function useBoardPointer(
 
     const cancel = useCallback(() => {
         const current = gesture.current;
+        shapeRef.current.cancel();
         const drawingCanceled = drawingRef.current.cancel();
         if (current?.kind === 'move' || current?.kind === 'resize')
             paintBoardObjects(
@@ -153,6 +165,14 @@ export function useBoardPointer(
                 );
                 gesture.current = { kind: 'draw', pointerId: event.pointerId };
                 event.currentTarget.dataset.gesture = 'draw';
+            }
+            return;
+        }
+        if (isBoardShapeTool(interaction.tool)) {
+            if (!blocked) {
+                shape.start(interaction.tool, local);
+                gesture.current = { kind: 'shape', pointerId: event.pointerId };
+                event.currentTarget.dataset.gesture = 'shape';
             }
             return;
         }
@@ -306,6 +326,10 @@ export function useBoardPointer(
             });
             return;
         }
+        if (current.kind === 'shape') {
+            shape.move(local, event.shiftKey);
+            return;
+        }
         if (current.kind === 'place') {
             if (
                 Math.hypot(
@@ -379,6 +403,7 @@ export function useBoardPointer(
                 : null;
         } else if (current && current.pointerId === event.pointerId) {
             if (current.kind === 'draw') interaction.drawing.finish();
+            if (current.kind === 'shape') shape.finish(event.shiftKey);
             if (current.kind === 'place') {
                 const end = camera.localPoint({
                     x: event.clientX,
@@ -400,56 +425,16 @@ export function useBoardPointer(
                     );
             }
             if (current.kind === 'marquee') {
-                const first = canvasPoint(
-                    current.start,
-                    camera.cameraRef.current,
+                model.select(
+                    boardMarqueeSelection({
+                        ...current,
+                        camera: camera.cameraRef.current,
+                        objects: model.objectsRef.current,
+                    }),
                 );
-                const last = canvasPoint(current.end, camera.cameraRef.current);
-                const bounds = {
-                    x: Math.min(first.x, last.x),
-                    y: Math.min(first.y, last.y),
-                    width: Math.abs(first.x - last.x),
-                    height: Math.abs(first.y - last.y),
-                };
-                const matched =
-                    bounds.width > 2 && bounds.height > 2
-                        ? model.objectsRef.current
-                              .filter((object) => intersects(bounds, object))
-                              .map((object) => object.id)
-                        : [];
-                model.select([...new Set([...current.previous, ...matched])]);
             }
             if (current.kind === 'move' || current.kind === 'resize') {
-                if (current.kind === 'move')
-                    paintBoardObjects(
-                        viewportRef.current,
-                        current.preview,
-                        current.paintTargets,
-                    );
-                const changed = current.preview.some(
-                    (object, index) =>
-                        object.data !== current.originals[index].data ||
-                        ['x', 'y', 'width', 'height'].some(
-                            (field) =>
-                                object[field as 'x'] !==
-                                current.originals[index][field as 'x'],
-                        ),
-                );
-                if (changed) {
-                    const replacements = new Map(
-                        current.preview.map((object) => [object.id, object]),
-                    );
-                    const accepted = model.commit(
-                        model.objectsRef.current.map(
-                            (object) => replacements.get(object.id) ?? object,
-                        ),
-                    );
-                    if (!accepted)
-                        paintBoardObjects(
-                            viewportRef.current,
-                            current.originals,
-                        );
-                }
+                commitBoardTransform(model, current, viewportRef.current);
             }
             gesture.current = null;
         }
@@ -479,6 +464,7 @@ export function useBoardPointer(
             onPointerCancel();
     }
     return {
+        shapePreviewRef: shape.previewRef,
         guidesRef,
         marqueeRef,
         cancel: () => {
