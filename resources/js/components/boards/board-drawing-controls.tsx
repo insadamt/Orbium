@@ -20,12 +20,14 @@ export function BoardDrawingControls({
     settingsOpen,
     drawing,
     disabled,
+    skipExitAnimation,
     onChooseTool,
 }: {
     tool: BoardTool;
     settingsOpen: boolean;
     drawing: BoardDrawingController;
     disabled: boolean;
+    skipExitAnimation: boolean;
     onChooseTool: (tool: BoardTool) => void;
 }) {
     return (
@@ -36,6 +38,7 @@ export function BoardDrawingControls({
             aria-label="Drawing tools"
             data-board-interactive
             data-tool={tool}
+            data-switching={skipExitAnimation ? 'true' : undefined}
         >
             <div
                 className="board-drawing-tools"

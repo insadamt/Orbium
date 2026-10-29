@@ -424,6 +424,10 @@ export function BoardWorkspace({
                 />
                 <BoardDrawingControls
                     settingsOpen={tools.drawingSettingsOpen}
+                    skipExitAnimation={
+                        tools.openPanel === 'shapes' ||
+                        tools.openPanel === 'add'
+                    }
                     tool={tools.tool}
                     drawing={drawing}
                     disabled={save.blocked || uploading || resourceLocked}
