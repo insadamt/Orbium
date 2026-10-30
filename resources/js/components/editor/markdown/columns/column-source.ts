@@ -10,6 +10,24 @@ export function equalColumnWidths(count: number) {
     return count === 3 ? [3333, 3333, 3334] : [5000, 5000];
 }
 
+// Remove only the column whose final block was removed. Preserve the
+// proportions of the surviving columns instead of resetting their widths.
+export function removeEmptyColumn(layout: ColumnLayout, index: number) {
+    if (
+        layout.bodies.length <= 1 ||
+        index < 0 ||
+        index >= layout.bodies.length ||
+        layout.bodies[index].trim()
+    )
+        return layout;
+    const bodies = layout.bodies.filter((_, position) => position !== index);
+    const remaining = layout.widths.filter((_, position) => position !== index);
+    if (bodies.length === 1) return { bodies, widths: [10000] };
+    const sum = remaining.reduce((total, width) => total + width, 0);
+    const left = sum ? Math.round((remaining[0] / sum) * 10000) : 5000;
+    return { bodies, widths: [left, 10000 - left] };
+}
+
 export function serializeColumns(layout: ColumnLayout) {
     return serializeOrbiumBlock(
         { kind: 'columns', version: 1, widths: layout.widths },

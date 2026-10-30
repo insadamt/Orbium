@@ -10,6 +10,7 @@ import {
 import {
     containsColumnLayout,
     equalColumnWidths,
+    removeEmptyColumn,
     serializeColumns,
     type ColumnLayout,
 } from './column-source';
@@ -185,6 +186,25 @@ function applyColumnDrop(
                     : `\n\n${block.source}`,
         });
     }
+    // When a moved block leaves its column empty, remove that column in the
+    // same document transaction. A single survivor becomes normal blocks.
+    if (origin) {
+        const layout = draft(origin.columns);
+        const removedIndex =
+            origin.index +
+            (origin.columns === destination.columns &&
+            destination.placement === 'left'
+                ? 1
+                : 0);
+        const compacted = removeEmptyColumn(layout, removedIndex);
+        if (compacted !== layout) {
+            drafts.set(origin.columns, compacted);
+            if (focusColumns === origin.columns) {
+                if (compacted.bodies.length === 1) focusColumns = undefined;
+                else if (focusIndex > removedIndex) focusIndex--;
+            }
+        }
+    }
     if (!origin) changes.push(removeDocumentBlockForColumnMove(owner, block));
     for (const [columns, layout] of drafts) {
         const current = columns.current().block;
@@ -281,13 +301,14 @@ export function resolveColumnDrop(
         if (containsLayout || columns.composing()) return null;
         const current = columns.current();
         const outerBlock = { ...current.block, name: 'OrbiumDirective' };
+        const sideZone = Math.min(40, rect.width * 0.07);
         if (
             current.layout.bodies.length === 2 &&
             rect.width > 680 &&
-            (pointer.clientX < rect.left + 10 ||
-                pointer.clientX > rect.right - 10)
+            (pointer.clientX < rect.left + sideZone ||
+                pointer.clientX > rect.right - sideZone)
         ) {
-            const left = pointer.clientX < rect.left + 10;
+            const left = pointer.clientX < rect.left + sideZone;
             return target(
                 {
                     view: owner,
@@ -367,15 +388,17 @@ export function resolveColumnDrop(
     }
     const element = markdownBlockElement(owner, drop.block);
     const rect = element?.getBoundingClientRect();
-    const edge = Math.min(36, bounds.width * 0.08);
+    // Side drops are relative to the hovered block, not just the document's
+    // far edges. The existing vertical indicator previews the new column.
+    const edge = rect ? Math.min(48, rect.width * 0.12) : 0;
     if (
         !containsLayout &&
         rect &&
         bounds.width > 520 &&
-        (pointer.clientX < bounds.left + edge ||
-            pointer.clientX > bounds.right - edge)
+        (pointer.clientX < rect.left + edge ||
+            pointer.clientX > rect.right - edge)
     ) {
-        const left = pointer.clientX < bounds.left + edge;
+        const left = pointer.clientX < rect.left + edge;
         return target(
             {
                 view: owner,

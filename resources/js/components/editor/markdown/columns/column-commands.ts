@@ -7,6 +7,8 @@ import { serializeOrbiumBlock } from '../dialect/metadata';
 import { serializeColumns, type ColumnLayout } from './column-source';
 
 export function columnLayoutSource(block: RichBlock, layout: ColumnLayout) {
+    // One surviving column is normal document content, not another layout.
+    if (layout.bodies.length === 1) return layout.bodies[0];
     return preservePresentation(
         block,
         serializeColumns(layout),

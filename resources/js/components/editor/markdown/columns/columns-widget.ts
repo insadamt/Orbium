@@ -6,6 +6,7 @@ import { element, button } from '../rich/widget-controls';
 import {
     readColumns,
     equalColumnWidths,
+    removeEmptyColumn,
     type ColumnLayout,
 } from './column-source';
 import { replaceColumnLayout } from './column-commands';
@@ -79,13 +80,6 @@ export function mountColumns(mount: RichWidgetMount) {
         if (!canEdit()) return;
         replaceColumnLayout({ owner: mount.view, block, layout: next });
     }
-    const add = button('Add column', () => {
-        if (layout.bodies.length === 2)
-            commit({
-                widths: equalColumnWidths(3),
-                bodies: [...layout.bodies, ''],
-            });
-    });
     const equal = button('Equal widths', () =>
         commit({ ...layout, widths: equalColumnWidths(layout.bodies.length) }),
     );
@@ -112,11 +106,11 @@ export function mountColumns(mount: RichWidgetMount) {
         });
         mount.view.focus();
     });
-    for (const control of [add, equal, stack]) {
+    for (const control of [equal, stack]) {
         control.className = 'orbium-columns-action';
         control.title = control.textContent ?? '';
     }
-    toolbar.append(add, equal, stack);
+    toolbar.append(equal, stack);
     mount.root.append(toolbar, notice, grid);
     const unregister = registerMountedColumns(columns);
     function rebuildEditors() {
@@ -152,12 +146,19 @@ export function mountColumns(mount: RichWidgetMount) {
                 onNotice: showNotice,
                 onChange(body, userEvent) {
                     const bodies = [...layout.bodies];
+                    const emptied = Boolean(bodies[index].trim()) && !body.trim();
                     bodies[index] = body;
+                    const next = emptied
+                        ? removeEmptyColumn({ ...layout, bodies }, index)
+                        : { ...layout, bodies };
+                    const removed = next.bodies.length < layout.bodies.length;
+                    const collapsed = next.bodies.length === 1;
+                    const from = block.from;
                     if (
                         !replaceColumnLayout({
                             owner: mount.view,
                             block,
-                            layout: { ...layout, bodies },
+                            layout: next,
                             userEvent,
                         })
                     ) {
@@ -165,6 +166,23 @@ export function mountColumns(mount: RichWidgetMount) {
                             'The document changed. Finish composing or reopen the layout before editing.',
                         );
                         editors[index]?.update(layout.bodies[index]);
+                    } else if (removed) {
+                        if (collapsed) {
+                            queueMicrotask(() => {
+                                if (!mount.view.dom.isConnected) return;
+                                mount.view.dispatch({
+                                    selection: {
+                                        anchor: Math.min(
+                                            from,
+                                            mount.view.state.doc.length,
+                                        ),
+                                    },
+                                });
+                                mount.view.focus();
+                            });
+                        } else {
+                            columns.focus(Math.min(index, next.bodies.length - 1));
+                        }
                     }
                 },
             });
@@ -188,9 +206,8 @@ export function mountColumns(mount: RichWidgetMount) {
         block = next;
         layout = parsed;
         grid.dataset.columnCount = String(layout.bodies.length);
-        for (const control of [add, equal, stack])
+        for (const control of [equal, stack])
             control.disabled = !canEdit();
-        add.hidden = layout.bodies.length === 3;
         grid.querySelectorAll<HTMLButtonElement>(
             '.orbium-column-divider',
         ).forEach((divider) => {
