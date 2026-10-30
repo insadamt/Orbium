@@ -54,17 +54,17 @@ const currentBlocks = new WeakMap<HTMLElement, RichBlock>();
 
 function richBlockClassName(kind: RichBlock['kind']) {
     const classes: Partial<Record<RichBlock['kind'], string>> = {
-        columns: 'orbium-columns-block my-4',
-        mindmap: 'orbium-mindmap-block my-4',
+        columns: 'orbium-columns-block',
+        mindmap: 'orbium-mindmap-block',
         mermaid: 'orbium-mermaid rounded-xl border border-border p-4',
-        code: 'orbium-code my-5 overflow-hidden rounded-xl border border-border bg-muted',
-        image: 'orbium-image editor-image my-5',
-        file: 'orbium-file my-4 rounded-xl border border-border p-4',
-        table: 'orbium-table-container relative my-4',
-        callout: 'orbium-callout editor-callout my-4',
+        code: 'orbium-code overflow-hidden rounded-xl border border-border bg-muted',
+        image: 'orbium-image editor-image',
+        file: 'orbium-file rounded-xl border border-border p-4',
+        table: 'orbium-table-container relative',
+        callout: 'orbium-callout editor-callout',
         empty: 'orbium-paragraph',
     };
-    return `orbium-rich-block ${classes[kind] ?? `orbium-${kind} my-4 rounded-xl border border-border p-4`}`;
+    return `orbium-rich-block ${classes[kind] ?? `orbium-${kind} rounded-xl border border-border p-4`}`;
 }
 
 function estimateDiagramWidgetHeight(block: RichBlock, context: RichContext) {

@@ -43,79 +43,33 @@ export function markdownBlockControlTop(
     const element = markdownBlockElement(view, block);
     const origin =
         view.dom.getBoundingClientRect().top + view.dom.clientTop * view.scaleY;
-    // The document grip represents the entire columns layout. Its position
-    // must not follow the first paragraph, toolbar or block inside a column.
-    const columns = element?.matches('.orbium-columns-block[data-rich-from]')
-        ? element
-        : element?.querySelector<HTMLElement>(
-              '.orbium-columns-block[data-rich-from]',
-          );
-    if (
-        columns &&
-        columns.closest('.cm-editor') === view.dom &&
-        Number(columns.dataset.richFrom) === block.from
-    ) {
-        return (
-            (columns.getBoundingClientRect().top - origin) / view.scaleY +
-            (Math.min(view.defaultLineHeight, 32) - controlHeight) / 2
-        );
+    if (element) {
+        const bounds = element.getBoundingClientRect();
+        if (bounds.height) {
+            // Every block uses its measured outer layout wrapper. Read only
+            // that wrapper's inset: internal heading, callout, table and media
+            // padding must not shift the drag handle independently.
+            const wrapper = element.matches('.orbium-markdown-block-layout');
+            const style = wrapper ? getComputedStyle(element) : null;
+            const inset = style
+                ? (Number.parseFloat(style.borderTopWidth) || 0) +
+                  (Number.parseFloat(style.paddingTop) || 0)
+                : 0;
+            return (
+                (bounds.top - origin) / view.scaleY +
+                inset +
+                (Math.min(view.defaultLineHeight, 32) - controlHeight) / 2
+            );
+        }
     }
-    if (!element) {
-        const coordinates = view.coordsAtPos(
-            markdownBlockPresentation(view, block).contentFrom,
-        );
-        return coordinates
-            ? (coordinates.top - origin) / view.scaleY +
-                  (coordinates.bottom - coordinates.top) / view.scaleY / 2 -
-                  controlHeight / 2
-            : null;
-    }
-    // Choose by screen position: a nested toolbar may be below the container's first line.
-    const candidates = [
-        element,
-        ...element.querySelectorAll<HTMLElement>(
-            '[data-block-gutter-anchor], table tr, .cm-line, p, summary, li, .orbium-rich-block',
-        ),
-    ]
-        .flatMap((candidate) => {
-            const bounds = candidate.getBoundingClientRect();
-            const style = getComputedStyle(candidate);
-            if (
-                !bounds.height ||
-                style.visibility === 'hidden' ||
-                candidate.closest('[hidden]')
-            )
-                return [];
-            if (
-                candidate === element &&
-                !candidate.matches('.cm-line, .orbium-rich-block')
-            )
-                return [];
-            const inset =
-                (Number.parseFloat(style.borderTopWidth) || 0) +
-                (Number.parseFloat(style.paddingTop) || 0);
-            return [
-                {
-                    candidate,
-                    style,
-                    top: bounds.top + inset * view.scaleY,
-                    bounds,
-                },
-            ];
-        })
-        .sort((left, right) => left.top - right.top);
-    const first = candidates[0];
-    if (!first)
-        return (element.getBoundingClientRect().top - origin) / view.scaleY;
-    const lineHeight =
-        Number.parseFloat(first.style.lineHeight) || view.defaultLineHeight;
-    const firstRowHeight = first.candidate.matches('[data-block-gutter-anchor]')
-        ? Math.min(first.bounds.height / view.scaleY, 32)
-        : lineHeight;
-    return (
-        (first.top - origin) / view.scaleY +
-        (firstRowHeight - controlHeight) / 2
+    const coordinates = view.coordsAtPos(
+        markdownBlockPresentation(view, block).contentFrom,
     );
+    return coordinates
+        ? (coordinates.top - origin) / view.scaleY +
+              (coordinates.bottom - coordinates.top) / view.scaleY / 2 -
+              controlHeight / 2
+        : null;
 }
 
 type MarkdownDragPointer = {
