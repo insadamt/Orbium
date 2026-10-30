@@ -1,6 +1,6 @@
 import { isolateHistory } from '@codemirror/commands';
 import { syntaxTree } from '@codemirror/language';
-import { Prec } from '@codemirror/state';
+import { EditorState, Prec } from '@codemirror/state';
 import { exitEmptyMarkdownContainer } from './markdown-container-exit';
 import { EditorView, keymap } from '@codemirror/view';
 import type { SyntaxNode } from '@lezer/common';
@@ -189,7 +189,80 @@ function joinPreviousParagraph(view: EditorView): boolean {
     return true;
 }
 
-export const markdownWritingCommands = Prec.high(
+// Keep the span and its formatting metadata atomic when a delete operation
+// removes the final text inside it. CodeMirror's normal word/selection deletion
+// otherwise leaves an invalid :orbium[]... fragment that cannot be saved.
+const removeEmptyFormattingSpans = EditorState.transactionFilter.of(
+    (transaction) => {
+        if (
+            !transaction.docChanged ||
+            !transaction.isUserEvent('delete')
+        )
+            return transaction;
+        const tree = syntaxTree(transaction.startState);
+        const spans = new Map<number, SyntaxNode>();
+        transaction.changes.iterChangedRanges((from, to) => {
+            if (from === to) return;
+            // Resolve only the affected source, not every node in a large doc.
+            for (const position of [from, Math.max(from, to - 1)]) {
+                for (
+                    let node: SyntaxNode | null = tree.resolveInner(
+                        position,
+                        1,
+                    );
+                    node;
+                    node = node.parent
+                ) {
+                    if (node.name === 'OrbiumSpan')
+                        spans.set(node.from, node);
+                }
+            }
+        });
+        if (!spans.size) return transaction;
+        const removals: { from: number; to: number }[] = [];
+        for (const node of spans.values()) {
+            const marks = node.getChildren('OrbiumSpanMark');
+            const opening = marks[0];
+            const closing = marks[1];
+            if (!opening || !closing) continue;
+            const changes = transaction.changes;
+            const from = changes.mapPos(node.from, -1);
+            const contentFrom = changes.mapPos(opening.to, 1);
+            const contentTo = changes.mapPos(closing.from, -1);
+            const to = changes.mapPos(node.to, 1);
+            // Do not touch spans if their markers were edited/removed too.
+            if (
+                from >= to ||
+                contentFrom > contentTo ||
+                transaction.newDoc.sliceString(from, contentFrom) !==
+                    transaction.startState.sliceDoc(node.from, opening.to) ||
+                transaction.newDoc.sliceString(contentTo, to) !==
+                    transaction.startState.sliceDoc(closing.from, node.to) ||
+                transaction.newDoc.sliceString(contentFrom, contentTo).trim()
+            )
+                continue;
+            removals.push({ from, to });
+        }
+        if (!removals.length) return transaction;
+        removals.sort(
+            (left, right) => left.from - right.from || right.to - left.to,
+        );
+        const independent: typeof removals = [];
+        for (const range of removals)
+            if (
+                !independent.length ||
+                range.from >= independent[independent.length - 1].to
+            )
+                independent.push(range);
+        // Sequential changes join the user's deletion in the same update,
+        // including its selection mapping and undo/redo history.
+        return [transaction, { changes: independent, sequential: true }];
+    },
+);
+
+export const markdownWritingCommands = [
+    removeEmptyFormattingSpans,
+    Prec.high(
     keymap.of([
         {
             key: 'Enter',
@@ -206,4 +279,5 @@ export const markdownWritingCommands = Prec.high(
         },
         { key: 'Delete', run: (view) => removeInlineFormatting(view, 'end') },
     ]),
-);
+    ),
+];
