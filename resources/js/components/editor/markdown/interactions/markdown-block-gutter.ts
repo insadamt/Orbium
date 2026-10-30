@@ -34,6 +34,7 @@ export function markdownBlockGutter(
             motion = new MarkdownBlockHandleMotion(this.dom);
             hoveredPosition: number | null = null;
             hoverPointer: { clientX: number; clientY: number } | null = null;
+            hiddenUntilHover = scope === 'column';
             destroyed = false;
             animateNextMove = false;
             hoverSurface: HTMLElement;
@@ -53,6 +54,7 @@ export function markdownBlockGutter(
                 this.dom.hidden = true;
                 this.dom.dataset.blockScope = scope;
                 this.dom.setAttribute('data-block-controls', '');
+                this.dom.addEventListener('orbium-hide-block-handles', this.hideForTyping);
                 const add = interactionButton('Add block below', '', () => {
                     const block = this.block;
                     if (!block) return;
@@ -110,7 +112,13 @@ export function markdownBlockGutter(
                 this.hoverSurface.addEventListener('pointermove', this.hover);
                 this.hoverSurface.addEventListener('pointerleave', this.leave);
                 view.dom.addEventListener('focusin', this.focusChanged);
-                this.refreshActiveBlock();
+                if (scope === 'document') {
+                    // Captures typing in the parent editor and every nested column.
+                    view.dom.addEventListener('beforeinput', this.typingStarted, true);
+                    view.dom.addEventListener('compositionstart', this.typingStarted, true);
+                    view.dom.addEventListener('keydown', this.typingKeyDown, true);
+                    this.refreshActiveBlock();
+                }
                 view.dom.addEventListener('contextmenu', this.contextMenu);
                 window.addEventListener('scroll', this.viewportChanged, true);
                 window.addEventListener('resize', this.viewportChanged);
@@ -275,12 +283,14 @@ export function markdownBlockGutter(
                     : this.view.state.selection.main.head;
             }
             refreshCurrentBlock = (animate = false) => {
+                if (this.hiddenUntilHover) return;
                 this.animateNextMove ||= animate;
                 this.view.requestMeasure({
                     key: this,
                     read: () => {
                         if (
                             this.destroyed ||
+                            this.hiddenUntilHover ||
                             this.dragController.active ||
                             !this.panel.hidden ||
                             this.dom.matches(':hover, :focus-within')
@@ -329,6 +339,7 @@ export function markdownBlockGutter(
                     write: (placement) => {
                         if (
                             this.destroyed ||
+                            this.hiddenUntilHover ||
                             this.dragController.active ||
                             !this.panel.hidden ||
                             this.dom.matches(':hover, :focus-within') ||
@@ -353,6 +364,7 @@ export function markdownBlockGutter(
                 });
             };
             refreshActiveBlock = () => {
+                if (scope === 'column' || this.hiddenUntilHover) return;
                 if (
                     this.dragController.active ||
                     !this.panel.hidden ||
@@ -363,6 +375,33 @@ export function markdownBlockGutter(
                 // explicitly hovered block with the editor's old selection.
                 this.hoverPointer = null;
                 this.refreshCurrentBlock();
+            };
+            // Hiding every gutter in this document prevents stale child handles.
+            typingStarted = () => {
+                this.view.dom
+                    .querySelectorAll<HTMLElement>('.orbium-markdown-gutter')
+                    .forEach((gutter) =>
+                        gutter.dispatchEvent(
+                            new Event('orbium-hide-block-handles'),
+                        ),
+                    );
+            };
+            typingKeyDown = (event: KeyboardEvent) => {
+                if (
+                    event.ctrlKey ||
+                    event.metaKey ||
+                    event.altKey ||
+                    (event.key.length !== 1 &&
+                        !['Enter', 'Backspace', 'Delete'].includes(event.key))
+                ) return;
+                this.typingStarted();
+            };
+            hideForTyping = () => {
+                this.hiddenUntilHover = true;
+                this.hoverPointer = null;
+                this.hoveredPosition = null;
+                this.animateNextMove = false;
+                this.motion.hide();
             };
             releaseControls = () => {
                 this.motion.resume();
@@ -407,14 +446,22 @@ export function markdownBlockGutter(
                     return;
                 }
                 const block = markdownBlockAt(this.view.state, position);
-                if (this.hoveredPosition === block.from) return;
+                const wasHidden = this.hiddenUntilHover;
+                this.hiddenUntilHover = false;
+                if (!wasHidden && this.hoveredPosition === block.from) return;
                 this.hoveredPosition = block.from;
-                this.refreshCurrentBlock(true);
+                this.refreshCurrentBlock(!wasHidden);
             };
             leave = () => {
                 this.hoverPointer = null;
-                // Keep the grip attached to this editor's last hovered block.
-                if (this.panel.hidden) this.refreshCurrentBlock();
+                if (scope === 'column') {
+                    // Child grips are visible only while their column is hovered.
+                    this.hiddenUntilHover = true;
+                    this.hoveredPosition = null;
+                    this.motion.hide();
+                } else if (this.panel.hidden) {
+                    this.refreshCurrentBlock();
+                }
             };
             dismiss = (event: PointerEvent) => {
                 if (
@@ -468,6 +515,11 @@ export function markdownBlockGutter(
                 this.destroyed = true;
                 this.motion.hide();
                 this.view.dom.removeEventListener('focusin', this.focusChanged);
+                if (scope === 'document') {
+                    this.view.dom.removeEventListener('beforeinput', this.typingStarted, true);
+                    this.view.dom.removeEventListener('compositionstart', this.typingStarted, true);
+                    this.view.dom.removeEventListener('keydown', this.typingKeyDown, true);
+                }
                 this.hoverSurface.removeEventListener(
                     'pointermove',
                     this.hover,
