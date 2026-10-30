@@ -43,6 +43,32 @@ export function markdownBlockControlTop(
     const element = markdownBlockElement(view, block);
     const origin =
         view.dom.getBoundingClientRect().top + view.dom.clientTop * view.scaleY;
+
+    // CodeMirror renders an empty editor's prompt as a placeholder widget,
+    // not an ordinary text line. Align the grip to the rendered prompt's
+    // first text rect rather than estimating from the editor's line height.
+    if (!block.source.trim()) {
+        const placeholder = view.contentDOM.querySelector<HTMLElement>(
+            '.cm-placeholder',
+        );
+        if (
+            placeholder &&
+            placeholder.closest('.cm-editor') === view.dom
+        ) {
+            const range = view.dom.ownerDocument.createRange();
+            range.selectNodeContents(placeholder);
+            const bounds =
+                [...range.getClientRects()].find(
+                    (rect) => rect.width > 0 && rect.height > 0,
+                ) ?? placeholder.getBoundingClientRect();
+            if (bounds.height) {
+                return (
+                    (bounds.top + bounds.height / 2 - origin) / view.scaleY -
+                    controlHeight / 2
+                );
+            }
+        }
+    }
     if (element) {
         const rich = element.matches('.orbium-rich-block[data-rich-from]')
             ? element

@@ -90,44 +90,6 @@
 .orbium-column-divider:focus-visible::after {
     background: var(--foreground);
 }
-.orbium-columns-toolbar {
-    position: absolute;
-    z-index: 12;
-    top: -28px;
-    right: 0;
-    display: flex;
-    gap: 2px;
-    padding: 2px;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    background: var(--background);
-    box-shadow: 0 4px 14px #0000000d;
-    visibility: hidden;
-    opacity: 0;
-    transition: opacity 140ms ease;
-}
-.orbium-columns-block:hover > .orbium-columns-toolbar,
-.orbium-columns-block:focus-within > .orbium-columns-toolbar {
-    visibility: visible;
-    opacity: 1;
-}
-.orbium-columns-action {
-    padding: 3px 7px;
-    border-radius: 5px;
-    font-size: 11px;
-    color: var(--muted-foreground);
-}
-.orbium-columns-action:hover {
-    background: var(--accent);
-    color: var(--foreground);
-}
-.orbium-columns-action:disabled {
-    opacity: 0.4;
-    cursor: default;
-}
-.orbium-columns-action[hidden] {
-    display: none;
-}
 .orbium-column-notice {
     margin-block: 4px;
 }
@@ -153,20 +115,11 @@
     }
 }
 @media (hover: none) {
-    .orbium-columns-toolbar {
-        position: relative;
-        top: auto;
-        justify-content: end;
-        visibility: visible;
-        opacity: 1;
-        margin-bottom: 6px;
-    }
     .orbium-column-divider::after {
         opacity: 0.5;
     }
 }
 @media (prefers-reduced-motion: reduce) {
-    .orbium-columns-toolbar,
     .orbium-column-divider::after {
         transition: none;
     }

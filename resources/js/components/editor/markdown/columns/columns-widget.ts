@@ -1,11 +1,9 @@
 // Summary: Presents saved Markdown columns as independently editable block stacks with quiet layout controls; depends on owner history, the shared rich context and focused column editor/resize helpers.
 import { EditorView } from '@codemirror/view';
-import { isolateHistory } from '@codemirror/commands';
 import type { RichBlock, RichWidgetMount } from '../rich/rich-model';
-import { element, button } from '../rich/widget-controls';
+import { element } from '../rich/widget-controls';
 import {
     readColumns,
-    equalColumnWidths,
     removeEmptyColumn,
     type ColumnLayout,
 } from './column-source';
@@ -29,9 +27,6 @@ export function mountColumns(mount: RichWidgetMount) {
     const editors: ReturnType<typeof mountColumnEditor>[] = [];
     let unregisterEditors: (() => void)[] = [];
     let resize: ReturnType<typeof bindColumnDividers> | null = null;
-    const toolbar = element('div', 'orbium-columns-toolbar');
-    toolbar.setAttribute('aria-label', 'Column layout');
-    toolbar.setAttribute('role', 'group');
     const grid = element('div', 'orbium-columns-grid');
     grid.dir = 'ltr';
     const notice = element(
@@ -80,38 +75,7 @@ export function mountColumns(mount: RichWidgetMount) {
         if (!canEdit()) return;
         replaceColumnLayout({ owner: mount.view, block, layout: next });
     }
-    const equal = button('Equal widths', () =>
-        commit({ ...layout, widths: equalColumnWidths(layout.bodies.length) }),
-    );
-    const stack = button('Stack blocks', () => {
-        if (
-            !canEdit() ||
-            mount.view.state.sliceDoc(block.from, block.to) !== block.source
-        )
-            return;
-        //
-        // Removing a layout preserves every block in column reading order, including intentional blank text.
-        //
-        mount.view.dispatch({
-            changes: {
-                from: block.from,
-                to: block.to,
-                insert: layout.bodies
-                    .filter((body) => body.trim())
-                    .join('\n\n'),
-            },
-            selection: { anchor: block.from },
-            annotations: isolateHistory.of('full'),
-            userEvent: 'input.columns.stack',
-        });
-        mount.view.focus();
-    });
-    for (const control of [equal, stack]) {
-        control.className = 'orbium-columns-action';
-        control.title = control.textContent ?? '';
-    }
-    toolbar.append(equal, stack);
-    mount.root.append(toolbar, notice, grid);
+    mount.root.append(notice, grid);
     const unregister = registerMountedColumns(columns);
     function rebuildEditors() {
         resize?.destroy();
@@ -206,8 +170,6 @@ export function mountColumns(mount: RichWidgetMount) {
         block = next;
         layout = parsed;
         grid.dataset.columnCount = String(layout.bodies.length);
-        for (const control of [equal, stack])
-            control.disabled = !canEdit();
         grid.querySelectorAll<HTMLButtonElement>(
             '.orbium-column-divider',
         ).forEach((divider) => {
