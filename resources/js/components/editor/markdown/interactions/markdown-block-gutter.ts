@@ -288,12 +288,16 @@ export function markdownBlockGutter(
                             return undefined;
                         if (!this.view.state.facet(EditorView.editable))
                             return null;
+                        // Preserve the last hovered block when the pointer
+                        // leaves the editor; only fall back to the caret before
+                        // any block has been hovered.
                         const position =
                             (this.hoverPointer &&
                                 markdownBlockHoverPosition(
                                     this.view,
                                     this.hoverPointer,
                                 )) ??
+                            this.hoveredPosition ??
                             this.activeBlockPosition();
                         if (
                             isStructuralMarkdownSeparator(
@@ -355,9 +359,10 @@ export function markdownBlockGutter(
                     this.dom.matches(':hover, :focus-within')
                 )
                     return;
-                this.hoveredPosition = null;
+                // Focus and pointer-leave must not override the last
+                // explicitly hovered block with the editor's old selection.
                 this.hoverPointer = null;
-                this.refreshCurrentBlock(true);
+                this.refreshCurrentBlock();
             };
             releaseControls = () => {
                 this.motion.resume();
@@ -394,20 +399,22 @@ export function markdownBlockGutter(
                     clientY: event.clientY,
                 };
                 const position = markdownBlockHoverPosition(this.view, event);
-                if (position === null) {
-                    if (this.hoveredPosition !== null)
-                        this.refreshActiveBlock();
+                if (
+                    position === null ||
+                    isStructuralMarkdownSeparator(this.view.state, position)
+                ) {
+                    this.hoverPointer = null;
                     return;
                 }
-                if (isStructuralMarkdownSeparator(this.view.state, position))
-                    return;
                 const block = markdownBlockAt(this.view.state, position);
                 if (this.hoveredPosition === block.from) return;
                 this.hoveredPosition = block.from;
                 this.refreshCurrentBlock(true);
             };
             leave = () => {
-                if (this.panel.hidden) this.refreshActiveBlock();
+                this.hoverPointer = null;
+                // Keep the grip attached to this editor's last hovered block.
+                if (this.panel.hidden) this.refreshCurrentBlock();
             };
             dismiss = (event: PointerEvent) => {
                 if (
@@ -423,6 +430,20 @@ export function markdownBlockGutter(
             };
             update(update: ViewUpdate) {
                 this.dragController.update(update);
+                if (update.docChanged && this.hoveredPosition !== null) {
+                    const previous = this.hoveredPosition;
+                    let mapped = update.changes.mapPos(previous, 1);
+                    // Column edits replace the whole serialized layout.
+                    // Keep a hovered block anchored to its replacement start
+                    // instead of moving its grip to the end of that layout.
+                    update.changes.iterChangedRanges(
+                        (fromA, toA, fromB) => {
+                            if (fromA <= previous && previous < toA)
+                                mapped = fromB;
+                        },
+                    );
+                    this.hoveredPosition = mapped;
+                }
                 if (
                     update.docChanged ||
                     update.viewportChanged ||
@@ -431,7 +452,9 @@ export function markdownBlockGutter(
                 ) {
                     if (update.docChanged) {
                         this.dismissMenu();
-                        this.motion.hide();
+                        // Keep the handle visible while its position is
+                        // remeasured after edits, instead of flashing off.
+                        this.motion.finish();
                     }
                     this.refreshCurrentBlock();
                 }

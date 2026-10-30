@@ -35,7 +35,11 @@
 .orbium-column-editor > .orbium-markdown-gutter {
     left: 0;
     transform: none;
-    background: var(--background);
+    background: transparent;
+}
+.orbium-column-editor > .orbium-markdown-gutter > button {
+    /* The nested six-dot control should float without a dark pill on hover. */
+    background: transparent;
 }
 .orbium-column-editor > .orbium-markdown-gutter > button:first-child {
     display: none;
