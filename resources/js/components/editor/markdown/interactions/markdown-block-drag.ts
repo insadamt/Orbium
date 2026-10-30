@@ -1,3 +1,4 @@
+// Summary: Measures block surfaces and reorder targets without confusing nested editor offsets; depends on CodeMirror source positions and block presentation.
 import { syntaxTree } from '@codemirror/language';
 import type { EditorView } from '@codemirror/view';
 import {
@@ -13,9 +14,11 @@ export function markdownBlockElement(
     view: EditorView,
     block: MarkdownBlockRange,
 ) {
-    const widget = view.dom.querySelector<HTMLElement>(
-        `[data-rich-from="${block.from}"]`,
-    );
+    const widget = [
+        ...view.dom.querySelectorAll<HTMLElement>(
+            `[data-rich-from="${block.from}"]`,
+        ),
+    ].find((element) => element.closest('.cm-editor') === view.dom);
     const { node } = view.domAtPos(
         markdownBlockPresentation(view, block).contentFrom,
     );

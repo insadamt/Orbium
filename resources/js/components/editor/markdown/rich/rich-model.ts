@@ -1,3 +1,4 @@
+// Summary: Defines rich Markdown widget contracts shared by previews and editable columns; depends on CodeMirror, attachment and presentation types.
 import type { EditorView } from '@codemirror/view';
 import type { MermaidPreviewSession } from '../../mermaid-preview-session';
 import type { MarkdownUploadRequest } from '../markdown-slash-commands';
@@ -16,6 +17,7 @@ export type RichTable = {
     rich: boolean;
 };
 export type RichKind =
+    | 'columns'
     | 'mindmap'
     | 'code'
     | 'mermaid'
@@ -28,6 +30,7 @@ export type RichKind =
     | 'metadata'
     | 'empty';
 export type RichBlock = {
+    columns?: import('../columns/column-source').ColumnLayout;
     kind: RichKind;
     from: number;
     to: number;

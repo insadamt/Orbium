@@ -1,3 +1,4 @@
+// Summary: Positions block handles and menus in the owning editor, including nested columns; depends on block geometry, drag controls and menu surfaces.
 import { EditorView, ViewPlugin, type ViewUpdate } from '@codemirror/view';
 import { interactionButton } from './interaction-dom';
 import { mountMarkdownBlockMenu } from './markdown-block-menu';
@@ -34,12 +35,15 @@ export function markdownBlockGutter(onNotice: (message: string) => void) {
             animateNextMove = false;
             hoverSurface: HTMLElement;
             constructor(readonly view: EditorView) {
-                this.hoverSurface =
-                    view.dom.closest<HTMLElement>(
-                        '.floating-document-island',
-                    ) ??
-                    view.dom.parentElement ??
-                    view.dom;
+                this.hoverSurface = view.dom.classList.contains(
+                    'orbium-column-editor',
+                )
+                    ? view.dom.parentElement!
+                    : (view.dom.closest<HTMLElement>(
+                          '.floating-document-island',
+                      ) ??
+                      view.dom.parentElement ??
+                      view.dom);
                 this.dom.className =
                     'orbium-markdown-gutter absolute left-0 z-10 flex items-center rounded-lg text-muted-foreground sm:-left-12';
                 this.dom.hidden = true;
@@ -205,6 +209,8 @@ export function markdownBlockGutter(onNotice: (message: string) => void) {
             contextMenu = (event: MouseEvent) => {
                 if (
                     !this.view.state.facet(EditorView.editable) ||
+                    (event.target as Element).closest('.cm-editor') !==
+                        this.view.dom ||
                     (event.target as Element).closest(
                         'input, textarea, [data-block-controls]',
                     )
@@ -213,18 +219,20 @@ export function markdownBlockGutter(onNotice: (message: string) => void) {
                 const widget = (event.target as Element).closest<HTMLElement>(
                     '[data-rich-from]',
                 );
-                const position = widget
-                    ? Number(widget.dataset.richFrom)
-                    : this.view.posAtCoords({
-                          x: event.clientX,
-                          y: event.clientY,
-                      });
+                const position =
+                    widget && this.view.contentDOM.contains(widget)
+                        ? Number(widget.dataset.richFrom)
+                        : this.view.posAtCoords({
+                              x: event.clientX,
+                              y: event.clientY,
+                          });
                 if (
                     position === null ||
                     isStructuralMarkdownSeparator(this.view.state, position)
                 )
                     return;
                 event.preventDefault();
+                event.stopPropagation();
                 this.dismissMenu();
                 this.block = markdownBlockAt(this.view.state, position);
                 this.panel.hidden = false;
@@ -246,7 +254,16 @@ export function markdownBlockGutter(onNotice: (message: string) => void) {
                 const widget =
                     focused instanceof Element &&
                     this.view.dom.contains(focused)
-                        ? focused.closest<HTMLElement>('[data-rich-from]')
+                        ? [
+                              ...this.view.dom.querySelectorAll<HTMLElement>(
+                                  '[data-rich-from]',
+                              ),
+                          ].find(
+                              (candidate) =>
+                                  candidate.closest('.cm-editor') ===
+                                      this.view.dom &&
+                                  candidate.contains(focused),
+                          )
                         : null;
                 return widget
                     ? Number(widget.dataset.richFrom)

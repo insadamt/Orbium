@@ -1,3 +1,4 @@
+// Summary: Reads and serializes the reserved Markdown dialect, including column layout metadata; depends on shared icon and Mind Map validation.
 import { isBuiltinIcon } from '@/components/inline-icons/icon-catalog';
 import {
     validMindMap,
@@ -7,6 +8,8 @@ export type OrbiumMetadata = {
     icon?: string;
     mindmap?: MindMapData;
     kind?: string;
+    version?: number;
+    widths?: number[];
     dir?: 'auto' | 'ltr' | 'rtl';
     align?: 'left' | 'center' | 'right';
     alignment?: 'start' | 'left' | 'center' | 'right';
@@ -92,6 +95,8 @@ const allowedKeys: Record<string, string[]> = {
     empty: ['kind', 'dir', 'align'],
     math: ['kind', 'latex'],
     mindmap: ['kind', 'mindmap'],
+    columns: ['kind', 'version', 'widths'],
+    column: ['kind'],
     code: ['kind'],
     table: ['kind'],
     row: ['kind'],
@@ -124,6 +129,20 @@ export function readOrbiumMetadata(
             switch (key) {
                 case 'icon':
                     if (value !== 'custom' && !isBuiltinIcon(value))
+                        return null;
+                    break;
+                case 'version':
+                    if (value !== 1) return null;
+                    break;
+                case 'widths':
+                    if (
+                        !Array.isArray(value) ||
+                        ![2, 3].includes(value.length) ||
+                        value.some(
+                            (width) => !Number.isInteger(width) || width < 1500,
+                        ) ||
+                        value.reduce((sum, width) => sum + width, 0) !== 10000
+                    )
                         return null;
                     break;
                 case 'kind':
@@ -218,6 +237,8 @@ export function readOrbiumMetadata(
                         return null;
             }
         }
+        if (kind === 'columns' && (metadata.version !== 1 || !metadata.widths))
+            return null;
         if (kind === 'mindmap' && !validMindMap(metadata.mindmap)) return null;
         if (
             (kind === 'math' || kind === 'inline-math') &&

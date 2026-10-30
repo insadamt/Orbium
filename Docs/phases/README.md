@@ -1,3 +1,5 @@
+Summary: Lists implementation phases and approval gates so work remains independently reviewable; depends on repository instructions and user authorization for each feature phase.
+
 # Implementation phases
 
 The phases are designed to produce manually inspectable results without letting later systems hide defects in earlier foundations.
@@ -39,3 +41,5 @@ Next phase
 Codex must not chain phases automatically.
 
 Native Board shapes were authorized on 2026-10-29 with “okey go ahead”. Follow `15-board-shapes.md` and `../plans/board-shapes.md`, then stop after `../reports/15-board-shapes.md` for manual review. Connected arrows and rotation remain separately gated.
+
+Document columns were authorized on 2026-10-30 with “okey go ahead do it”. Follow `16-document-columns.md` for this focused feature phase and stop after `../reports/16-document-columns.md` for manual review.

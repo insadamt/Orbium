@@ -1,3 +1,5 @@
+Summary: Defines Document imports, exports and packages without losing owned content; depends on the Markdown dialect, transfer serializers and portability contracts.
+
 # Document import and export
 
 Approved by the user on 2026-10-13. This is the document-transfer extension to the current CodeMirror editor review. It does not implement Phase 6 account snapshot replacement.
@@ -103,3 +105,7 @@ Mind Map rich-text review (2026-10-26): formatting-preserving native transfer re
 
 
 Mind Map inline icons (2026-10-26): formatting-preserving graph-7 exports keep built-in/brand inline atoms and their marks. Custom icon attachment IDs are discovered inside every topic body and included in package asset selection. Native `.orbie` packages with included images retain atoms and remap IDs on import, with complete AST proof of all other content. Graph JSON rewrites target only parsed Mind Map directive headers, never code samples or unrelated metadata. Standalone `.orbie` files and package exports that omit an image replace that custom atom with its readable marked label, keeping the exact topic-text projection and avoiding dangling/source-installation IDs. Standard Markdown and Office exports retain the existing full topic outline with readable icon labels. No package envelope version changes; older clients reject unsupported graph 7. See `../reports/13-mindmap-inline-icons.md`.
+
+## Document columns (2026-10-30)
+
+Formatting-preserving `.orbie`, document packages and account archives retain the version-1 `columns`/`column` directives and exact width proportions. Existing parsed reference discovery/remapping includes every column body. Standard Markdown and Word/PDF flatten columns into ordinary blocks in left-to-right column reading order, preserving their content. No document/package/archive envelope version changes; older servers reject unknown reserved directive kinds. See [the columns phase](../phases/16-document-columns.md) and [manual report](../reports/16-document-columns.md).

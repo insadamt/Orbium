@@ -1,3 +1,6 @@
+// Summary: Extracts and navigates every Document H1/H2, including column bodies; depends on the Markdown source parser, mounted column position mapping and shared outline motion.
+import { resolveColumnDocumentPosition } from './columns/column-position';
+import { readOrbiumMetadata } from './dialect/metadata';
 import {
     outlineReadingTop,
     subscribeOutlineScrolling,
@@ -35,6 +38,21 @@ function readMarkdownHeadings(view: EditorView): DocumentHeading[] {
                 node,
             );
             if (presentation) visit(presentation.body);
+            else {
+                const header = node.getChild('OrbiumHeader');
+                const text =
+                    header && source.sliceString(header.from, header.to);
+                const metadata =
+                    text &&
+                    readOrbiumMetadata(text.slice(text.indexOf('{')).trimEnd());
+                const body = node.getChild('Document');
+                if (
+                    metadata &&
+                    ['columns', 'column'].includes(String(metadata.kind)) &&
+                    body
+                )
+                    visit(body);
+            }
             return;
         }
         const heading = /^(?:ATX|Setext)Heading([1-2])$/.exec(node.name);
@@ -107,15 +125,21 @@ export function MarkdownTableOfContents({
                 return animateHeadingNavigation({
                     editorElement: view.dom,
                     measureDestination(navigate) {
-                        view.dispatch({
-                            selection: { anchor: heading.position },
+                        const column = resolveColumnDocumentPosition(
+                            view,
+                            heading.position,
+                        );
+                        const targetView = column?.view ?? view;
+                        const position = column?.position ?? heading.position;
+                        targetView.dispatch({
+                            selection: { anchor: position },
                         });
-                        view.focus();
+                        targetView.focus();
                         // Measure without revealing: a preliminary scroll paints a flash before the tween.
                         view.requestMeasure({
                             read() {
                                 const headingTop =
-                                    view.coordsAtPos(heading.position)?.top ??
+                                    targetView.coordsAtPos(position)?.top ??
                                     view.documentTop +
                                         view.lineBlockAt(heading.position).top;
                                 return headingScrollDestination(

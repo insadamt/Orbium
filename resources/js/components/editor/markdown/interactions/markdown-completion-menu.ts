@@ -1,3 +1,4 @@
+// Summary: Renders shared slash completion icons and menu feedback, including column commands; depends on icon factories and CodeMirror completion tooltips.
 import { mountCompletionMenuReveal } from './markdown-completion-reveal';
 import {
     createBuiltinIcon,
@@ -20,6 +21,8 @@ import {
 
 const completionIcons: Record<string, Parameters<typeof widgetIcon>[0]> = {
     Text: 'text',
+    '2 columns': 'table',
+    '3 columns': 'table',
     'Heading 1': 'heading',
     'Heading 2': 'heading',
     'Heading 3': 'heading',

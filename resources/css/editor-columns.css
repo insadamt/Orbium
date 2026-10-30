@@ -1,0 +1,169 @@
+/* Summary: Styles saved column layouts and their contextual controls; depends on editor theme tokens and container queries so narrow split panes stack independently. */
+.orbium-columns-block {
+    position: relative;
+    min-width: 0;
+    container-name: orbium-columns;
+    container-type: inline-size;
+}
+.orbium-columns-grid {
+    display: grid;
+    align-items: stretch;
+    min-width: 0;
+}
+.orbium-column {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+.orbium-column-editor.cm-editor {
+    min-height: 60px;
+    font: inherit;
+    background: transparent;
+    outline: none;
+}
+.orbium-column-editor > .cm-scroller {
+    overflow: visible;
+    font: inherit;
+}
+.orbium-column-editor > .cm-scroller > .cm-content {
+    min-height: 60px;
+    /* Keep each column's grip clear of its neighbor and the outer layout grip. */
+    padding: 4px 0 4px 24px;
+}
+.orbium-column-editor > .cm-scroller > .cm-content > .cm-line {
+    padding-inline: 0;
+}
+.orbium-column-editor > .orbium-markdown-gutter {
+    left: 0;
+    transform: none;
+    background: var(--background);
+}
+.orbium-column-editor > .orbium-markdown-gutter > button:first-child {
+    display: none;
+}
+.orbium-column .orbium-rich-block {
+    max-width: 100%;
+}
+.orbium-column pre {
+    max-width: 100%;
+    overflow-x: auto;
+}
+.orbium-column img {
+    max-width: 100%;
+}
+.orbium-column-divider {
+    position: relative;
+    align-self: stretch;
+    width: 20px;
+    min-height: 40px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: col-resize;
+    touch-action: none;
+    outline-offset: -5px;
+}
+.orbium-column-divider::after {
+    position: absolute;
+    inset: 2px 9px;
+    border-radius: 2px;
+    background: var(--border);
+    content: '';
+    opacity: 0;
+    transition:
+        opacity 140ms ease,
+        background-color 140ms ease;
+}
+.orbium-columns-block:hover
+    > .orbium-columns-grid
+    > .orbium-column-divider::after,
+.orbium-column-divider:focus-visible::after,
+.orbium-columns-block[data-resizing]
+    > .orbium-columns-grid
+    > .orbium-column-divider::after {
+    opacity: 1;
+}
+.orbium-column-divider:hover::after,
+.orbium-column-divider:focus-visible::after {
+    background: var(--foreground);
+}
+.orbium-columns-toolbar {
+    position: absolute;
+    z-index: 12;
+    top: -28px;
+    right: 0;
+    display: flex;
+    gap: 2px;
+    padding: 2px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--background);
+    box-shadow: 0 4px 14px #0000000d;
+    visibility: hidden;
+    opacity: 0;
+    transition: opacity 140ms ease;
+}
+.orbium-columns-block:hover > .orbium-columns-toolbar,
+.orbium-columns-block:focus-within > .orbium-columns-toolbar {
+    visibility: visible;
+    opacity: 1;
+}
+.orbium-columns-action {
+    padding: 3px 7px;
+    border-radius: 5px;
+    font-size: 11px;
+    color: var(--muted-foreground);
+}
+.orbium-columns-action:hover {
+    background: var(--accent);
+    color: var(--foreground);
+}
+.orbium-columns-action:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+.orbium-columns-action[hidden] {
+    display: none;
+}
+.orbium-column-notice {
+    margin-block: 4px;
+}
+.orbium-markdown-drop-indicator[data-column-drop] {
+    transition: none;
+}
+@container orbium-columns (max-width: 520px) {
+    .orbium-columns-grid {
+        grid-template-columns: minmax(0, 1fr) !important;
+        gap: 16px;
+    }
+    .orbium-columns-grid > .orbium-column-divider {
+        display: none;
+    }
+}
+@container orbium-columns (max-width: 680px) {
+    .orbium-columns-grid[data-column-count='3'] {
+        grid-template-columns: minmax(0, 1fr) !important;
+        gap: 16px;
+    }
+    .orbium-columns-grid[data-column-count='3'] > .orbium-column-divider {
+        display: none;
+    }
+}
+@media (hover: none) {
+    .orbium-columns-toolbar {
+        position: relative;
+        top: auto;
+        justify-content: end;
+        visibility: visible;
+        opacity: 1;
+        margin-bottom: 6px;
+    }
+    .orbium-column-divider::after {
+        opacity: 0.5;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .orbium-columns-toolbar,
+    .orbium-column-divider::after {
+        transition: none;
+    }
+}

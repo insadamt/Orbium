@@ -1,3 +1,4 @@
+/* Summary: Composes Orbium application and editor styles, including responsive block columns; depends on Tailwind and the shared theme tokens. */
 /* App stylesheet entrypoint: assembles shared surfaces, editor styles and layout.
    Layout and interaction overrides follow feature styles to keep sizing consistent. */
 @import 'tailwindcss';
@@ -37,6 +38,7 @@
 @import './app-menus.css';
 @import './editor-toolbars.css';
 @import './editor-rich-cards.css';
+@import './editor-columns.css';
 @import './editor-image-motion.css';
 @import './editor-color-picker.css';
 @import './viewport-layout.css';

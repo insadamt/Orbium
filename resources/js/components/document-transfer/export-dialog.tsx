@@ -1,3 +1,4 @@
+// Summary: Lets users choose Document export formats and package contents with accurate layout expectations; depends on transfer endpoints and shared dialog/select controls.
 import { NativeCheckbox } from '@/components/ui/native-checkbox';
 import { AppSelect } from '@/components/ui/app-select';
 import { useEffect, useState } from 'react';
@@ -206,10 +207,10 @@ export function ExportDialog({
                 </label>
                 <p className="text-xs text-muted-foreground">
                     {officeFormat
-                        ? 'Clean document layout with standard typography, white pages, and 1-inch margins.'
+                        ? 'Clean document layout with standard typography, white pages, and 1-inch margins. Columns stack in reading order.'
                         : format === 'orbie'
                           ? 'Preserves Orbium document formatting.'
-                          : 'Standard Markdown. Orbium presentation formatting is omitted.'}
+                          : 'Standard Markdown. Orbium presentation formatting is omitted; columns stack in reading order.'}
                 </p>
                 {officeFormat && (
                     <OfficeExportPageOptions

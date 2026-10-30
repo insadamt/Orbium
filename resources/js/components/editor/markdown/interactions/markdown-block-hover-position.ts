@@ -1,3 +1,4 @@
+// Summary: Resolves pointer positions only within their owning editor; depends on editor DOM geometry so column offsets cannot target outer blocks.
 import type { EditorView } from '@codemirror/view';
 
 type MarkdownBlockPointer = { clientX: number; clientY: number };
@@ -31,12 +32,13 @@ export function markdownBlockHoverPosition(
     pointer: MarkdownBlockPointer,
 ): number | null {
     const target = markdownBlockPointerTarget(view, pointer);
-    if (!target) return null;
+    if (!target || target.closest('.cm-editor') !== view.dom) return null;
     const layout = target.closest('.orbium-markdown-block-layout');
     // Wrapper starts remain unambiguous even in widget padding and lower halves.
-    if (layout) return view.posAtDOM(layout, 0);
+    if (layout && view.contentDOM.contains(layout))
+        return view.posAtDOM(layout, 0);
     const widget = target.closest<HTMLElement>('[data-rich-from]');
-    return widget
+    return widget && view.contentDOM.contains(widget)
         ? Number(widget.dataset.richFrom)
         : view.posAtCoords({ x: pointer.clientX, y: pointer.clientY });
 }

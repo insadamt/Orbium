@@ -1,3 +1,5 @@
+// Summary: Supplies Markdown block insertion commands, including non-nested column layouts; depends on shared templates, completion UI and upload/mention adapters.
+import { createColumns } from './columns/column-source';
 import { createMindMap } from '@/components/mindmap/mindmap-data';
 import { markdownIconCompletion } from '@/components/inline-icons/markdown-icon-completion';
 import { openMarkdownIconPicker } from '@/components/inline-icons/markdown-icon-widget';
@@ -45,6 +47,18 @@ export type MarkdownBlockTemplate = {
 
 export const markdownBlockTemplates: MarkdownBlockTemplate[] = [
     { label: 'Text', search: 'paragraph plain', source: '', caret: 0 },
+    {
+        label: '2 columns',
+        search: 'columns side by side layout two',
+        source: createColumns(2),
+        caret: 0,
+    },
+    {
+        label: '3 columns',
+        search: 'columns side by side layout three',
+        source: createColumns(3),
+        caret: 0,
+    },
     {
         label: 'Mind Map',
         search: 'mindmap topics branches tree xmind',
@@ -172,10 +186,12 @@ export function markdownSlashCommands(
         workspaceId,
         sourceId,
         allowMentions = true,
+        allowColumns = true,
     }: {
         workspaceId: number;
         sourceId?: number;
         allowMentions?: boolean;
+        allowColumns?: boolean;
     },
 ) {
     const slashSource = (context: CompletionContext) => {
@@ -198,6 +214,10 @@ export function markdownSlashCommands(
         if (previous && !/\s/.test(previous)) return null;
         const query = match.text.slice(1).trim().toLowerCase();
         const options = markdownBlockTemplates
+            .filter(
+                (template) =>
+                    allowColumns || !template.label.endsWith('columns'),
+            )
             .filter((template) =>
                 `${template.label} ${template.search}`
                     .toLowerCase()

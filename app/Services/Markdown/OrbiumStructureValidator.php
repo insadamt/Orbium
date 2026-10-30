@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * Summary: Validates Markdown container relationships so malformed layouts cannot be saved; depends on the CommonMark AST and OrbiumBlock.
+ */
+
 namespace App\Services\Markdown;
 
 use League\CommonMark\Extension\CommonMark\Node\Block\BlockQuote;
@@ -18,6 +22,26 @@ final class OrbiumStructureValidator
         $children = iterator_to_array($block->children(), false);
         $metadata = $block->metadata;
         switch ($block->kind()) {
+            case 'columns':
+                if (count($children) !== count($metadata['widths'])) {
+                    $this->invalid($block, 'Column count must match the saved widths.');
+                }
+                for ($ancestor = $block->parent(); $ancestor !== null; $ancestor = $ancestor->parent()) {
+                    if ($ancestor instanceof OrbiumBlock && $ancestor->kind() === 'columns') {
+                        $this->invalid($block, 'Nested column layouts are not supported.');
+                    }
+                }
+                foreach ($children as $child) {
+                    if (! ($child instanceof OrbiumBlock && $child->kind() === 'column')) {
+                        $this->invalid($block, 'Columns contain column directives only.');
+                    }
+                }
+                break;
+            case 'column':
+                if (! ($block->parent() instanceof OrbiumBlock && $block->parent()->kind() === 'columns')) {
+                    $this->invalid($block, 'Column directives must be direct columns children.');
+                }
+                break;
             case 'empty':
             case 'math':
             case 'mindmap':

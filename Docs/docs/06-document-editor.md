@@ -1,3 +1,7 @@
+Summary: Defines Document writing, block interactions and persistence behavior so editor adapters stay consistent; depends on the canonical Markdown/legacy contracts and approved feature phases.
+
+> Side-by-side columns were approved on 2026-10-30. The Markdown Document editor supports two/three-column layouts, slash insertion, edge drops, block transfers and resizing; narrow containers stack without changing saved proportions. See [the columns phase](../phases/16-document-columns.md) for the version-1 directive, capability guard, export behavior and scope. Legacy format-1 editors keep their existing schema.
+
 > The 2026-10-13 approved CodeMirror document transfer extension is specified in [18-document-transfer.md](18-document-transfer.md). Its `.orbie`, clean Markdown, package, and replacement-confirmation behavior supersedes the earlier single-file transfer description below for format-2 documents. Legacy format-1 editor behavior remains unchanged.
 
 # Document editor specification

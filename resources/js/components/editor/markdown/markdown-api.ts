@@ -1,3 +1,4 @@
+// Summary: Validates and saves canonical Markdown with explicit client capabilities; depends on document limits, CSRF and revision checks.
 import { DocumentSaveError } from '../document-save-error';
 import type { Text } from '@codemirror/state';
 import { csrfToken, documentUrl } from '../editor-api';
@@ -40,7 +41,7 @@ function serializeMarkdown(request: MarkdownSaveRequest): string {
         markdown,
         revision: request.revision,
         content_format_version: 2,
-        editor_features: { inline_icons: 2 },
+        editor_features: { inline_icons: 2, columns: 1 },
     });
 }
 

@@ -1,3 +1,10 @@
+// Summary: Coordinates block drag gestures, scrolling and atomic column/split moves; depends on existing block targets and the column drop resolver.
+import { resolveColumnDrop } from '../columns/column-drop';
+import {
+    scrollMarkdownDrag,
+    scrollMarkdownDragBy,
+} from './markdown-drag-scroll';
+import { measureHostProjection } from './markdown-drag-pointer';
 import { EditorView, type ViewUpdate } from '@codemirror/view';
 import type { Text } from '@codemirror/state';
 import {
@@ -177,6 +184,25 @@ export class MarkdownBlockDragController {
             session.preview.style.left = `${pointer.clientX + 16}px`;
             session.preview.style.top = `${pointer.clientY + 16}px`;
         }
+        const columnTarget = this.canMove()
+            ? resolveColumnDrop(this.options.view, session.block, session)
+            : null;
+        if (columnTarget) {
+            const projection = measureHostProjection(this.options.view);
+            const position = markdownHostPointer(this.options.view, {
+                clientX: columnTarget.left,
+                clientY: columnTarget.top,
+            });
+            this.indicator.hidden = false;
+            this.indicator.dataset.columnDrop = 'true';
+            this.indicator.style.top = `${position.clientY}px`;
+            this.indicator.style.left = `${position.clientX}px`;
+            this.indicator.style.width = `${columnTarget.width * projection.scaleX}px`;
+            this.indicator.style.height = `${columnTarget.height * projection.scaleY}px`;
+            return;
+        }
+        delete this.indicator.dataset.columnDrop;
+        this.indicator.style.height = '';
         const target = this.canMove() ? this.pointerTarget(session) : null;
         this.indicator.hidden =
             !target ||
@@ -202,11 +228,22 @@ export class MarkdownBlockDragController {
         const session = this.session;
         if (!session?.started) return;
         Object.assign(session, session.readPointer());
-        const target = this.pointerTarget(session);
-        const continueEdgeScroll = target?.endpoint.scroll(
-            target.pointer,
-            time - this.previousFrameTime,
+        const columns = resolveColumnDrop(
+            this.options.view,
+            session.block,
+            session,
         );
+        const target = columns ? null : this.pointerTarget(session);
+        const continueEdgeScroll = columns
+            ? scrollMarkdownDrag(
+                  columns.owner,
+                  session,
+                  time - this.previousFrameTime,
+              )
+            : target?.endpoint.scroll(
+                  target.pointer,
+                  time - this.previousFrameTime,
+              );
         this.previousFrameTime = time;
         this.refreshTarget();
         if (continueEdgeScroll)
@@ -216,6 +253,25 @@ export class MarkdownBlockDragController {
     private scrollWheel = (event: WheelEvent) => {
         const session = this.session;
         if (!session?.started || event.ctrlKey) return;
+        const columns = resolveColumnDrop(
+            this.options.view,
+            session.block,
+            session,
+        );
+        if (columns) {
+            event.preventDefault();
+            event.stopPropagation();
+            const unit =
+                event.deltaMode === 1
+                    ? columns.owner.defaultLineHeight
+                    : event.deltaMode === 2
+                      ? columns.owner.dom.clientHeight
+                      : 1;
+            scrollMarkdownDragBy(columns.owner, event.deltaY * unit);
+            this.refreshTarget();
+            this.scheduleScrollFrame();
+            return;
+        }
         const target = this.pointerTarget(session);
         if (!target) return;
         event.preventDefault();
@@ -228,6 +284,15 @@ export class MarkdownBlockDragController {
     private releasePointer = (event: PointerEvent) => {
         const session = this.session;
         if (!session || event.pointerId !== session.pointerId) return;
+        session.readPointer = captureMarkdownDragPointer(
+            this.options.view,
+            event,
+        );
+        Object.assign(session, session.readPointer());
+        const columnTarget =
+            session.started && this.canMove()
+                ? resolveColumnDrop(this.options.view, session.block, session)
+                : null;
         const target =
             session.started && this.canMove()
                 ? this.pointerTarget({
@@ -241,6 +306,18 @@ export class MarkdownBlockDragController {
             event.stopPropagation();
         }
         this.finish();
+        if (columnTarget && session.doc === this.options.view.state.doc) {
+            try {
+                columnTarget.apply();
+            } catch (error) {
+                this.options.onNotice(
+                    error instanceof Error
+                        ? error.message
+                        : 'Could not move this block into columns.',
+                );
+            }
+            return;
+        }
         if (
             !session.started ||
             !target ||

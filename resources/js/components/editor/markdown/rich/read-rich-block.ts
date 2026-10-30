@@ -1,3 +1,5 @@
+// Summary: Maps parsed Markdown to rich blocks, keeping columns in canonical source; depends on the dialect metadata reader and Lezer AST.
+import { readColumns } from '../columns/column-source';
 import { missingReferenceKind } from '../preview/missing-reference-dialog';
 import type { EditorState } from '@codemirror/state';
 import type { SyntaxNode } from '@lezer/common';
@@ -132,6 +134,10 @@ export function readRichBlock(
             ),
             metadata,
         };
+        if (metadata.kind === 'columns') {
+            const columns = readColumns(base.source);
+            return columns ? { ...base, kind: 'columns', columns } : null;
+        }
         if (metadata.kind === 'mindmap' && !children.length)
             return { ...base, kind: 'mindmap' };
         if (metadata.kind === 'math' && !children.length)

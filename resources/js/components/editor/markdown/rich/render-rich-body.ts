@@ -1,3 +1,4 @@
+// Summary: Renders safe read-only Markdown previews, including responsive columns in hosted Documents; depends on the shared dialect, reference adapters and rich media renderers.
 import { mountMindMapPreview } from '@/components/mindmap/mindmap-mount';
 import { readMarkdownIcon } from '@/components/inline-icons/markdown-icon-source';
 import { createInlineIconElement } from '@/components/inline-icons/inline-icon-dom';
@@ -132,6 +133,26 @@ export function renderRichBody(
         block: RichBlock,
         node: SyntaxNode,
     ) {
+        if (block.kind === 'columns' && block.columns) {
+            target.className = 'orbium-columns-block';
+            const grid = element('div', 'orbium-columns-grid');
+            grid.dir = 'ltr';
+            grid.dataset.columnCount = String(block.columns.bodies.length);
+            grid.style.gridTemplateColumns = block.columns.widths
+                .map((width) => `minmax(0, ${width}fr)`)
+                .join(' 20px ');
+            block.columns.bodies.forEach((body, index) => {
+                if (index) grid.append(element('div', 'orbium-column-divider'));
+                const column = element('div', 'orbium-column');
+                column.dir = 'auto';
+                grid.append(column);
+                disposals.push(
+                    renderRichBody(column, body, context, measure, depth + 1),
+                );
+            });
+            target.append(grid);
+            return;
+        }
         if (block.kind === 'mindmap' && block.metadata.mindmap) {
             disposals.push(
                 mountMindMapPreview(target, block.metadata.mindmap, {

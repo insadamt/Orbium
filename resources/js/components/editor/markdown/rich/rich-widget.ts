@@ -1,3 +1,5 @@
+// Summary: Mounts and retains rich widgets across document edits and moves; depends on focused widget controllers and CodeMirror lifecycle.
+import { mountColumns } from '../columns/columns-widget';
 import { mountMindMap } from './mindmap-widget';
 import {
     canUpdateRetainedRichWidget,
@@ -30,6 +32,7 @@ import { bindRichBlockSelection } from './rich-block-selection';
 const richBlockMounts: Partial<
     Record<RichBlock['kind'], (mount: RichWidgetMount) => RichController>
 > = {
+    columns: mountColumns,
     mindmap: mountMindMap,
     empty: mountEmptyParagraph,
     mermaid: mountDiagram,
@@ -51,6 +54,7 @@ const currentBlocks = new WeakMap<HTMLElement, RichBlock>();
 
 function richBlockClassName(kind: RichBlock['kind']) {
     const classes: Partial<Record<RichBlock['kind'], string>> = {
+        columns: 'orbium-columns-block my-4',
         mindmap: 'orbium-mindmap-block my-4',
         mermaid: 'orbium-mermaid rounded-xl border border-border p-4',
         code: 'orbium-code my-5 overflow-hidden rounded-xl border border-border bg-muted',

@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * Summary: Validates reserved Markdown metadata, including versioned column widths; depends on MarkdownContract and shared icon/map validators.
+ */
+
 namespace App\Services\Markdown;
 
 use App\Services\Editor\InlineIconData;
@@ -72,6 +76,8 @@ final class OrbiumMetadata
             'empty' => ['kind', 'dir', 'align'],
             'math' => ['kind', 'latex'],
             'mindmap' => ['kind', 'mindmap'],
+            'columns' => ['kind', 'version', 'widths'],
+            'column' => ['kind'],
             'code', 'table', 'row' => ['kind'],
             'cell' => ['kind', 'align', 'header', 'colspan', 'rowspan', 'colwidth'],
             default => MarkdownContract::invalid('Unknown Orbium directive kind.'),
@@ -84,6 +90,11 @@ final class OrbiumMetadata
                 'icon' => $value === 'custom' || app(InlineIconData::class)->isBuiltin($value),
                 'mindmap' => is_array($value),
                 'kind' => is_string($value),
+                'version' => $value === 1,
+                'widths' => is_array($value) && array_is_list($value)
+                    && in_array(count($value), [2, 3], true)
+                    && count(array_filter($value, static fn ($width): bool => ! is_int($width) || $width < 1500)) === 0
+                    && array_sum($value) === 10000,
                 'dir' => in_array($value, ['auto', 'ltr', 'rtl'], true),
                 'align' => in_array($value, ['left', 'center', 'right'], true),
                 'alignment' => in_array($value, ['start', 'left', 'center', 'right'], true),
@@ -102,6 +113,9 @@ final class OrbiumMetadata
             if (! $valid) {
                 MarkdownContract::invalid("Invalid Orbium metadata value for {$key}.");
             }
+        }
+        if ($kind === 'columns' && (! isset($metadata['version']) || ! isset($metadata['widths']))) {
+            MarkdownContract::invalid('Columns require version 1 and two or three widths totaling 10000.');
         }
         if ($kind === 'mindmap') {
             $metadata['mindmap'] = app(MindMapData::class)->validate($metadata['mindmap'] ?? null, 'markdown');

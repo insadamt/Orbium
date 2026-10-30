@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * Summary: Authorizes Document endpoints and guards incompatible editor saves; depends on document services, validators and owned-node queries.
+ */
+
 namespace App\Http\Controllers;
 
 use App\Actions\Documents\SaveDocument;
@@ -11,6 +15,7 @@ use App\Models\Node;
 use App\Services\Editor\EditorContentInspector;
 use App\Services\Editor\InlineIconData;
 use App\Services\Editor\MermaidPreviewCache;
+use App\Services\Markdown\MarkdownColumnLayout;
 use App\Services\Markdown\MarkdownContract;
 use App\Services\Markdown\MarkdownDocumentInspector;
 use App\Services\Markdown\MarkdownReferenceValidator;
@@ -110,6 +115,11 @@ class DocumentController extends Controller
             && (app(InlineIconData::class)->markdownHasIcons($documentNode->document?->markdown ?? '')
                 || app(InlineIconData::class)->markdownHasIcons($data['markdown']))) {
             throw ValidationException::withMessages(['content_format_version' => 'This Document contains inline icons. Reload Orbium before saving with this editor.']);
+        }
+        if ((int) $request->input('editor_features.columns', 0) < 1
+            && (app(MarkdownColumnLayout::class)->containsColumns($documentNode->document?->markdown ?? '')
+                || app(MarkdownColumnLayout::class)->containsColumns($data['markdown']))) {
+            throw ValidationException::withMessages(['content_format_version' => 'This Document contains columns. Reload Orbium before saving with this editor.']);
         }
         $validatedAt = hrtime(true);
         $document = $save->save($documentNode, new MarkdownSaveData(

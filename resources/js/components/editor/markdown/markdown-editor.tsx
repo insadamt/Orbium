@@ -1,3 +1,6 @@
+// Summary: Orchestrates the Markdown Document editor and its canonical save/history lifecycle; depends on rich widgets, column composition guards and shared document services.
+import { columnSearchSynchronization } from './columns/column-search';
+import { isColumnEditorComposing } from './columns/column-registry';
 import { markdownImportPaste } from './markdown-import-paste';
 import { MarkdownFileInput } from './markdown-file-input';
 import { MarkdownInlineIcons } from '@/components/inline-icons/markdown-inline-icons';
@@ -103,7 +106,8 @@ export default function MarkdownEditor(props: MarkdownEditorProps) {
         isComposing: () =>
             Boolean(
                 editorView.current?.compositionStarted ||
-                isMindMapComposing(editorView.current?.dom),
+                isMindMapComposing(editorView.current?.dom) ||
+                isColumnEditorComposing(editorView.current?.dom),
             ),
     });
     const finder = useMarkdownSearch(view);
@@ -169,6 +173,7 @@ export default function MarkdownEditor(props: MarkdownEditorProps) {
                         doc: initial.current.markdown,
                         extensions: [
                             history(),
+                            columnSearchSynchronization,
                             markdownBlockHistoryMotion,
                             outlineUpdates.current.of([]),
                             orbiumSelectionAppearance,
