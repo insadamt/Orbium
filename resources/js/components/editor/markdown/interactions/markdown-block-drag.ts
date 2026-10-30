@@ -43,6 +43,23 @@ export function markdownBlockControlTop(
     const element = markdownBlockElement(view, block);
     const origin =
         view.dom.getBoundingClientRect().top + view.dom.clientTop * view.scaleY;
+    // The document grip represents the entire columns layout. Its position
+    // must not follow the first paragraph, toolbar or block inside a column.
+    const columns = element?.matches('.orbium-columns-block[data-rich-from]')
+        ? element
+        : element?.querySelector<HTMLElement>(
+              '.orbium-columns-block[data-rich-from]',
+          );
+    if (
+        columns &&
+        columns.closest('.cm-editor') === view.dom &&
+        Number(columns.dataset.richFrom) === block.from
+    ) {
+        return (
+            (columns.getBoundingClientRect().top - origin) / view.scaleY +
+            (Math.min(view.defaultLineHeight, 32) - controlHeight) / 2
+        );
+    }
     if (!element) {
         const coordinates = view.coordsAtPos(
             markdownBlockPresentation(view, block).contentFrom,

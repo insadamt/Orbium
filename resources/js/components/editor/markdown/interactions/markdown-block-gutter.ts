@@ -19,7 +19,10 @@ import {
     type MarkdownBlockRange,
 } from './markdown-block-actions';
 
-export function markdownBlockGutter(onNotice: (message: string) => void) {
+export function markdownBlockGutter(
+    onNotice: (message: string) => void,
+    scope: 'document' | 'column' = 'document',
+) {
     const gutter = ViewPlugin.fromClass(
         class {
             dom = document.createElement('div');
@@ -35,18 +38,20 @@ export function markdownBlockGutter(onNotice: (message: string) => void) {
             animateNextMove = false;
             hoverSurface: HTMLElement;
             constructor(readonly view: EditorView) {
-                this.hoverSurface = view.dom.classList.contains(
-                    'orbium-column-editor',
-                )
-                    ? view.dom.parentElement!
-                    : (view.dom.closest<HTMLElement>(
-                          '.floating-document-island',
-                      ) ??
-                      view.dom.parentElement ??
-                      view.dom);
+                // Column handles listen within their own host; the document
+                // handle continues to track the complete columns widget.
+                this.hoverSurface =
+                    scope === 'column'
+                        ? view.dom.parentElement!
+                        : (view.dom.closest<HTMLElement>(
+                              '.floating-document-island',
+                          ) ??
+                          view.dom.parentElement ??
+                          view.dom);
                 this.dom.className =
                     'orbium-markdown-gutter absolute left-0 z-10 flex items-center rounded-lg text-muted-foreground sm:-left-12';
                 this.dom.hidden = true;
+                this.dom.dataset.blockScope = scope;
                 this.dom.setAttribute('data-block-controls', '');
                 const add = interactionButton('Add block below', '', () => {
                     const block = this.block;

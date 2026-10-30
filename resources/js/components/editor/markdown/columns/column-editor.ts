@@ -95,7 +95,7 @@ export function mountColumnEditor(options: {
                 markdownDividerToolbar(options.onNotice),
                 search(),
                 markdownFindHighlights,
-                markdownBlockGutter(options.onNotice),
+                markdownBlockGutter(options.onNotice, 'column'),
                 EditorView.lineWrapping,
                 editing.of(EditorView.editable.of(enabled())),
                 EditorView.editorAttributes.of({
