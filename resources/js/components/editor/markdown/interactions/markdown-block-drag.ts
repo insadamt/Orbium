@@ -44,23 +44,94 @@ export function markdownBlockControlTop(
     const origin =
         view.dom.getBoundingClientRect().top + view.dom.clientTop * view.scaleY;
     if (element) {
-        const bounds = element.getBoundingClientRect();
-        if (bounds.height) {
-            // Every block uses its measured outer layout wrapper. Read only
-            // that wrapper's inset: internal heading, callout, table and media
-            // padding must not shift the drag handle independently.
-            const wrapper = element.matches('.orbium-markdown-block-layout');
-            const style = wrapper ? getComputedStyle(element) : null;
-            const inset = style
-                ? (Number.parseFloat(style.borderTopWidth) || 0) +
-                  (Number.parseFloat(style.paddingTop) || 0)
-                : 0;
+        const rich = element.matches('.orbium-rich-block[data-rich-from]')
+            ? element
+            : element.querySelector<HTMLElement>(
+                  `.orbium-rich-block[data-rich-from="${block.from}"]`,
+              );
+        // The outer columns grip must never follow text in a child editor.
+        // Its own gutter is responsible for the individual column blocks.
+        if (rich?.classList.contains('orbium-columns-block')) {
+            const bounds = rich.getBoundingClientRect();
             return (
-                (bounds.top - origin) / view.scaleY +
-                inset +
-                (Math.min(view.defaultLineHeight, 32) - controlHeight) / 2
+                (bounds.top + Math.min(view.defaultLineHeight / 2, 16) * view.scaleY - origin) /
+                    view.scaleY -
+                controlHeight / 2
             );
         }
+
+        // An image's optional caption is not its block handle anchor.
+        if (rich?.classList.contains('orbium-image')) {
+            const image = rich.querySelector('img');
+            if (image) {
+                const bounds = image.getBoundingClientRect();
+                if (bounds.height)
+                    return (
+                        (bounds.top +
+                            Math.min(view.defaultLineHeight / 2, 16) *
+                                view.scaleY -
+                            origin) /
+                            view.scaleY -
+                        controlHeight / 2
+                    );
+            }
+        }
+
+        // Match the *visible first line*, not the wrapper's generic line
+        // height. This accounts for large headings, callout padding and RTL
+        // text without moving the underlying block or changing its styling.
+        const walker = element.ownerDocument.createTreeWalker(
+            element,
+            NodeFilter.SHOW_TEXT,
+        );
+        const range = element.ownerDocument.createRange();
+        let node: Node | null;
+        let inspected = 0;
+        while ((node = walker.nextNode()) && inspected++ < 80) {
+            if (!node.textContent?.trim()) continue;
+            const parent = node.parentElement;
+            if (
+                !parent ||
+                parent.closest('.cm-editor') !== view.dom ||
+                parent.closest(
+                    '[hidden], [aria-hidden="true"], button, [role="toolbar"], [data-block-controls], .cm-gutters, .cm-tooltip',
+                )
+            )
+                continue;
+            const style = getComputedStyle(parent);
+            if (
+                style.display === 'none' ||
+                style.visibility !== 'visible'
+            )
+                continue;
+            range.selectNodeContents(node);
+            const firstLine = [...range.getClientRects()].find(
+                (rect) => rect.height > 0 && rect.width > 0,
+            );
+            if (firstLine) {
+                return (
+                    (firstLine.top + firstLine.height / 2 - origin) /
+                        view.scaleY -
+                    controlHeight / 2
+                );
+            }
+        }
+
+        // Media and other non-text blocks have no first text line. Anchor
+        // beside their visible top edge, not at the center of a tall widget.
+        const media = element.querySelector<HTMLElement>(
+            'img, video, canvas, .orbium-rich-table, .cm-md-divider',
+        );
+        const surface = media?.closest('.cm-editor') === view.dom
+            ? media
+            : (rich ?? element);
+        const bounds = surface.getBoundingClientRect();
+        if (bounds.height)
+            return (
+                (bounds.top + Math.min(view.defaultLineHeight / 2, 16) * view.scaleY - origin) /
+                    view.scaleY -
+                controlHeight / 2
+            );
     }
     const coordinates = view.coordsAtPos(
         markdownBlockPresentation(view, block).contentFrom,
