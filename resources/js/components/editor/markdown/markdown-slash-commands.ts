@@ -1,4 +1,5 @@
 // Summary: Supplies Markdown block insertion commands, including non-nested column layouts; depends on shared templates, completion UI and upload/mention adapters.
+import { insertV3Template } from './runtime/v3-template-commands';
 import { createColumns } from './columns/column-source';
 import { createMindMap } from '@/components/mindmap/mindmap-data';
 import { markdownIconCompletion } from '@/components/inline-icons/markdown-icon-completion';
@@ -148,6 +149,7 @@ export function insertBlockTemplate(
                 mindmap: createMindMap(),
             }),
         };
+    if (insertV3Template(view, template, from, to)) return;
     const line = view.state.doc.lineAt(from);
     const prefix = view.state.sliceDoc(line.from, from);
     const replaceFrom = prefix.trim() ? from : line.from;

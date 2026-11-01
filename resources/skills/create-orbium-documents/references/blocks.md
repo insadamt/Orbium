@@ -1,3 +1,5 @@
+Summary: Documents supported V3 body payloads and usage; depends on the stable block headers and native version-3 envelope in the skill entrypoint. Examples below are payload fragments unless a complete file is explicitly shown.
+
 # Complete document block reference
 
 Use SKILL.md for the .orbie header, package manifest, version, references, and limits. All examples here are body source; standalone files need the header. Optional metadata is strict JSON with no duplicate/unknown keys or nulls.
@@ -33,7 +35,16 @@ Use normal safe links; HTML/script source stays literal rather than executing. E
 :::
 ```
 
-`kind:block` wraps exactly one Markdown block. Alignment is valid only for paragraphs/headings; direction may apply to supported block contents. `kind:empty` is an atom with no body; use it for an authored empty visual block rather than assuming repeated blank lines will create visible height.
+`kind:block` wraps exactly one Markdown block. Alignment is valid only for paragraphs/headings; direction may apply to supported block contents. `kind:empty` represents a styled empty writable paragraph. Use the explicit V3 `spacer` type for intentional vertical space instead of accumulating blank paragraph lines:
+
+```markdown
+++block {"id":"spacing-1","type":"spacer"}++
+
+++block {"id":"following-text","type":"paragraph"}++
+Continue writing here.
+```
+
+A spacer has a whitespace-only body and one blank row of height. Repeated Enter in an empty paragraph leaves a spacer and a fresh writable paragraph. Live users can click a spacer and type: ordinary text promotes that same ID to a paragraph, while untouched spacing remains blank. In authored files, use a paragraph or another matching text type when supplying text; a saved spacer body must remain whitespace-only. Native exports retain untouched spacer IDs; clean Markdown carries blank lines and Office output carries an empty paragraph. Standard Markdown viewers may collapse additional blank lines visually.
 
 ## Lists and checklists
 

@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * Summary: Exports/verifies/imports bounded document packages with V3 native entries; depends on unchanged manifest schema, checksums, scoped references and atomic document actions.
+ */
+
 namespace App\Services\DocumentTransfer;
 
 use App\Actions\Documents\SaveMarkdownDocument;
@@ -54,7 +58,7 @@ final class DocumentPackage
                 }
                 $serializer = app(DocumentMarkdownSerializer::class);
                 $native = $data['format'] === 'orbie';
-                $source = $serializer->serialize($row['source'], new TransferSerializationOptions($native, $nodeDestinations, $attachmentDestinations));
+                $source = $serializer->serialize($row['source'], new TransferSerializationOptions(true, $nodeDestinations, $attachmentDestinations));
                 $body = $source;
                 if (! $native) {
                     foreach ($includedNodes as $id) {
@@ -65,7 +69,7 @@ final class DocumentPackage
                     }
                     $body = $serializer->serialize($row['source'], new TransferSerializationOptions(false, $nodeDestinations, $attachmentDestinations));
                 } else {
-                    $body = '<!-- orbium-document '.json_encode(['version' => 2, 'title' => $node->title], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR)." -->\n".$body;
+                    $body = '<!-- orbium-document '.json_encode(['version' => 3, 'title' => $node->title], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR)." -->\n".$body;
                 }
                 $entry = 'documents/'.$node->id.'.'.$data['format'];
                 $zip->addFromString($entry, $body);
@@ -264,7 +268,7 @@ final class DocumentPackage
                     $inspection = app(MarkdownDocumentInspector::class)->inspect($row['source']);
                     $source = $inspection->derived->mentions === [] && $inspection->derived->attachmentIds === [] ? $row['source'] : app(MarkdownReferenceRemapper::class)->remap($row['source'], $nodeIds, $attachmentIds);
                     $node = $workspace->nodes()->whereKey($nodeIds[$row['id']])->firstOrFail();
-                    app(SaveMarkdownDocument::class)->save($node, new MarkdownSaveData($source, 0, 2));
+                    app(SaveMarkdownDocument::class)->save($node, new MarkdownSaveData($source, 0, 3));
                 }
 
                 return ['node_id' => $nodeIds[$package['documents'][0]['id']], 'documents' => count($nodeIds), 'assets' => count($attachmentIds)];

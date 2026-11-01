@@ -1,3 +1,4 @@
+// Summary: Routes supported saved document formats to their matched editor or preview; depends on the version-3 Markdown contract and existing legacy/native Board contracts.
 import type { Page } from '@inertiajs/core';
 import { toast } from 'sonner';
 import { create } from 'zustand';
@@ -40,7 +41,7 @@ function retainedNavigationPage(page: Page, tabId: string): Page {
         props: {
             ...props,
             document: {
-                ...(document.content_format_version === 2
+                ...(document.content_format_version === 3
                     ? {
                           markdown: '',
                           markdown_limits: document.markdown_limits,

@@ -1,3 +1,4 @@
+/* Summary: Styles document typography, measured block spacing and editor controls; depends on shared theme tokens and CodeMirror body classes so empty and filled blocks share their geometry. */
 .orbium-editor {
     color: var(--foreground);
     font-size: 1.03rem;
@@ -182,11 +183,37 @@
     text-align: start;
 }
 
-.orbium-markdown-block-layout {
+.orbium-markdown-block-layout,
+.orbium-spacer-block {
     /* Shared measured frame for every Markdown block, including rich widgets.
        Keep spacing inside the wrapper so CodeMirror's height map stays exact. */
     display: flow-root;
     padding-block: 0.375rem;
+}
+.orbium-spacer-block {
+    /* Promotion into a paragraph must not change the blank row's footprint. */
+    box-sizing: border-box;
+    block-size: calc(1lh + 0.75rem);
+}
+.orbium-spacer-input {
+    box-sizing: border-box;
+    block-size: 1lh;
+    margin: 0;
+}
+.orbium-markdown-content .cm-v3-empty-paragraph {
+    position: relative;
+}
+.orbium-markdown-content [data-v3-placeholder]::before {
+    /* A hint is visual only: it must not become selectable text or change the empty line's baseline and width. */
+    content: attr(data-v3-placeholder);
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    color: var(--muted-foreground);
+    text-overflow: ellipsis;
+    white-space: pre;
+    pointer-events: none;
+    user-select: none;
 }
 .orbium-markdown-content .cm-line {
     margin: 0;

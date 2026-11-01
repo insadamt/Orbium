@@ -1,3 +1,5 @@
+Summary: Documents supported V3 body payloads and usage; depends on the stable block headers and native version-3 envelope in the skill entrypoint. Examples below are payload fragments unless a complete file is explicitly shown.
+
 # Colors, themes, and visual effects
 
 ## Three styling layers

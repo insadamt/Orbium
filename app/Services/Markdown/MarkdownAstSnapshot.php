@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * Summary: Captures semantic AST structure including stable V3 identities for safe reference proof; depends on scoped parser nodes and Mind Map icon remapping.
+ */
+
 namespace App\Services\Markdown;
 
 use App\Services\MindMaps\MindMapIconReferences;
@@ -14,7 +18,7 @@ final class MarkdownAstSnapshot
     /** @return list<MarkdownNodeSnapshot> */
     public function capture(Node $node, int $depth = 0, ?array $attachmentIds = null): array
     {
-        $values = [$node::class, $depth];
+        $values = [$node::class, $depth, $node->data->get('v3', null)];
         if ($node instanceof StringContainerInterface) {
             $values[] = $node->getLiteral();
         }

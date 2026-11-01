@@ -1,3 +1,4 @@
+// Summary: Projects readable body text and source offsets for search/copy while excluding V3 structural headers; depends on scoped Markdown trees and existing rich metadata decoding.
 import type { Text } from '@codemirror/state';
 import type { SyntaxNode } from '@lezer/common';
 import { markdownSourceParser } from './markdown-source-parser';
@@ -11,6 +12,7 @@ export type LogicalMarkdown = {
 export type LogicalMarkdownMatch = { from: number; to: number };
 const cache = new WeakMap<Text, LogicalMarkdown>();
 const hidden = new Set([
+    'V3Header',
     'HeaderMark',
     'QuoteMark',
     'ListMark',

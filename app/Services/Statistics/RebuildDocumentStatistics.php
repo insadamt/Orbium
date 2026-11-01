@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * Summary: Rebuilds statistics only through supported saved format readers; depends on locked document revisions, V3 inspection and the existing legacy inspector.
+ */
+
 namespace App\Services\Statistics;
 
 use App\Models\Document;
@@ -27,7 +31,7 @@ final class RebuildDocumentStatistics
             try {
                 $inspection = match ($document->content_format_version) {
                     1 => $this->legacyInspector->inspect($document->content),
-                    2 => is_string($document->markdown) ? $this->markdownInspector->inspect($document->markdown)->derived : throw new RuntimeException('Markdown source is unavailable.'),
+                    3 => is_string($document->markdown) ? $this->markdownInspector->inspect($document->markdown)->derived : throw new RuntimeException('Markdown source is unavailable.'),
                     default => throw new RuntimeException('Unsupported document content format.'),
                 };
                 $attributes = $inspection->statistics->attributes($inspection->attachmentIds);

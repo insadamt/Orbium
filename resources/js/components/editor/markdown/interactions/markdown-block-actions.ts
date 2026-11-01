@@ -1,3 +1,12 @@
+// Summary: Exposes shared block controls while delegating identified V3 writes to the owner; depends on presentation helpers, stable identities and existing legacy callers.
+import {
+    selectedV3ProductIds,
+    v3ProductBlockAt,
+    dispatchV3ProductOperation,
+    v3ProductNeighbor,
+    moveV3ProductBlock,
+    v3TypeForPrefix,
+} from '../runtime/v3-product-commands';
 import {
     preserveRichWidgetsDuringMove,
     richBlockMove,
@@ -19,6 +28,7 @@ import {
 import { fencedCodeSource } from '../rich/code-widget';
 import { markdownBlockMotion } from './markdown-block-motion';
 import { markdownBlockMotionEffect } from './markdown-block-history-motion';
+import { v3StructureField } from '../structure/v3-structure-state';
 import {
     readOrbiumMetadata,
     serializeOrbiumBlock,
@@ -26,6 +36,7 @@ import {
 } from '../dialect/metadata';
 
 export type MarkdownBlockRange = {
+    v3Id?: string;
     from: number;
     to: number;
     name: string;
@@ -36,6 +47,11 @@ export function isStructuralMarkdownSeparator(
     state: EditorState,
     position: number,
 ) {
+    //
+    // V3 blank bodies have their own block identity; the legacy separator heuristic would hide their handles merely because a header precedes them.
+    //
+    if (state.field(v3StructureField, false)?.current.blockAt(position))
+        return false;
     const line = state.doc.lineAt(position);
     if (
         line.text.trim() ||
@@ -53,6 +69,8 @@ export function markdownBlockAt(
     state: EditorState,
     position: number,
 ): MarkdownBlockRange {
+    const identified = v3ProductBlockAt(state, position);
+    if (identified) return identified;
     let node = syntaxTree(state).resolveInner(position, 1);
     if (node.name === 'Document') {
         const previous = node.childBefore(position + 1);
@@ -93,6 +111,14 @@ export function replaceMarkdownBlock(
         view.state.sliceDoc(block.from, block.to) !== block.source
     )
         return false;
+    if (block.v3Id) {
+        dispatchV3ProductOperation(
+            view,
+            { kind: 'replace-body', blockId: block.v3Id, body: source, caret },
+            options.focusEditor !== false,
+        );
+        return true;
+    }
     view.dispatch({
         changes: { from: block.from, to: block.to, insert: source },
         selection: { anchor: block.from + Math.min(caret, source.length) },
@@ -110,6 +136,7 @@ export function adjacentMarkdownBlock(
     block: MarkdownBlockRange,
     previous: boolean,
 ) {
+    if (block.v3Id) return v3ProductNeighbor(view, block.v3Id, previous);
     const tree =
         ensureSyntaxTree(view.state, view.state.doc.length, 100) ??
         syntaxTree(view.state);
@@ -131,6 +158,14 @@ export function deleteMarkdownBlock(
         view.state.sliceDoc(block.from, block.to) !== block.source
     )
         return false;
+    if (block.v3Id) {
+        dispatchV3ProductOperation(view, {
+            kind: 'delete',
+            blockIds: selectedV3ProductIds(view, block.v3Id),
+            ensureParagraph: true,
+        });
+        return true;
+    }
     let from = block.from;
     let to = block.to;
     while (from > 0) {
@@ -172,6 +207,8 @@ export function moveMarkdownBlock(
     placement = target.from < block.from ? 'before' : 'after',
     options: { preserveViewport?: boolean } = {},
 ) {
+    if (block.v3Id && target.v3Id)
+        return moveV3ProductBlock(view, block.v3Id, target.v3Id, placement);
     if (
         block.from === target.from ||
         (block.from < target.to && block.to > target.from)
@@ -355,6 +392,14 @@ export function turnMarkdownBlockInto(
     block: MarkdownBlockRange,
     prefix: string,
 ) {
+    if (block.v3Id) {
+        dispatchV3ProductOperation(view, {
+            kind: 'convert',
+            blockId: block.v3Id,
+            type: v3TypeForPrefix(prefix),
+        });
+        return;
+    }
     const current = markdownBlockPresentation(view, block);
     const node = syntaxTree(view.state).topNode.childAfter(block.from);
     const rich = node ? readRichBlock(view.state, node) : null;

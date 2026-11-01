@@ -1,3 +1,5 @@
+// Summary: Registers visible document drop endpoints and linked history, including V3 column-origin gestures; depends on existing viewport/preview services and authoritative owner registration.
+import { v3ColumnProjectionFor } from '../columns/v3/v3-column-registry';
 import { EditorView } from '@codemirror/view';
 import type { MarkdownLimits } from '../markdown-api';
 import { markdownBlockDropTarget } from './markdown-block-drag';
@@ -63,6 +65,15 @@ function registeredTargets(view: EditorView) {
     return (host.orbiumMarkdownBlockTargets ??= new Set());
 }
 
+export function markdownSplitDocumentIdentity(view: EditorView) {
+    const endpoint = [...registeredTargets(view)].find(
+        (entry) => entry.view === view,
+    );
+    if (!endpoint)
+        throw new Error('Keep both documents open before moving blocks.');
+    return { workspaceId: endpoint.workspaceId, nodeId: endpoint.nodeId };
+}
+
 function isMarkdownEditorRendered(view: EditorView) {
     let element: HTMLElement | null = view.dom;
     while (element) {
@@ -101,6 +112,7 @@ export function resolveMarkdownSplitBlockTarget(
     source: EditorView,
     pointer: Pointer,
 ) {
+    source = v3ColumnProjectionFor(source)?.owner ?? source;
     const endpoints = registeredTargets(source);
     const sourceEndpoint = [...endpoints].find(
         (entry) => entry.view === source,

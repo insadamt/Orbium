@@ -1,3 +1,6 @@
+// Summary: Binds the existing Mind Map surface to stable V3 body writes and paragraph insertion; depends on rich owner context, source baselines and the shared Mind Map component.
+import { v3StructureField } from '../structure/v3-structure-state';
+import { insertV3ParagraphAfter } from '../runtime/v3-product-commands';
 import { createRoot } from 'react-dom/client';
 import { EditorView } from '@codemirror/view';
 import { MindMapBlock } from '@/components/mindmap/mindmap-block';
@@ -22,6 +25,25 @@ export function mountMindMap(mount: RichWidgetMount): RichController {
                         kind: mount.context.ownerKind ?? 'document',
                     }}
                     editable={mount.view.state.facet(EditorView.editable)}
+                    onInsertParagraphAfter={
+                        mount.view.state.field(v3StructureField, false)
+                            ? () => {
+                                  const identified = mount.view.state
+                                      .field(v3StructureField)
+                                      .current.blockAt(block.from);
+                                  if (!identified) return false;
+                                  try {
+                                      insertV3ParagraphAfter(
+                                          mount.view,
+                                          identified.id,
+                                      );
+                                      return true;
+                                  } catch {
+                                      return false;
+                                  }
+                              }
+                            : undefined
+                    }
                     onChange={(mindmap) => {
                         const next = preservePresentation(
                             block,

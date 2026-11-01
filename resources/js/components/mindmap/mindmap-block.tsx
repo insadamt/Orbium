@@ -1,3 +1,4 @@
+// Summary: Presents Mind Map preview/fullscreen editing with owner history and optional V3 paragraph exit; depends on the validated graph, existing canvas/dialog and caller-owned document commands.
 import './mindmap-inline-icons.css';
 import {
     MindMapOwnerContext,
@@ -33,6 +34,7 @@ type Props = {
     onComposition?: (active: boolean) => void;
     onStartEditing?: () => void;
     onFinishEditing?: () => void;
+    onInsertParagraphAfter?: () => boolean;
 };
 
 export function MindMapBlock({
@@ -44,12 +46,14 @@ export function MindMapBlock({
     onComposition,
     onStartEditing,
     onFinishEditing,
+    onInsertParagraphAfter,
 }: Props) {
     const [data, setData] = useState(incoming);
     const [mode, setMode] = useState<'edit' | 'preview' | null>(null);
     const anchor = useRef<HTMLDivElement>(null);
     const dialog = useRef<HTMLDivElement>(null);
     const composing = useRef(false);
+    const insertParagraphOnClose = useRef(false);
     const [previewTreeHeight, setPreviewTreeHeight] = useState(0);
     const estimatedPreviewHeight = useMemo(
         () =>
@@ -87,6 +91,31 @@ export function MindMapBlock({
         onComposition?.(active);
     }
     function dispatchOwnerHistory(event: KeyboardEvent) {
+        if (
+            onInsertParagraphAfter &&
+            event.key === 'Enter' &&
+            event.shiftKey &&
+            !event.ctrlKey &&
+            !event.metaKey &&
+            !event.altKey &&
+            !event.nativeEvent.isComposing &&
+            !composing.current &&
+            editable &&
+            mode === 'edit' &&
+            !(event.target as Element).closest(
+                '[data-inline-icon-picker], [role="menu"], [role="listbox"]',
+            )
+        ) {
+            event.preventDefault();
+            event.stopPropagation();
+            //
+            // Close the modal before moving focus into the owner, so the dialog focus trap cannot steal the new paragraph caret.
+            //
+            insertParagraphOnClose.current = true;
+            setMode(null);
+            onFinishEditing?.();
+            return;
+        }
         if (
             (event.ctrlKey || event.metaKey) &&
             !event.altKey &&
@@ -268,6 +297,10 @@ export function MindMapBlock({
                             }
                             onCloseAutoFocus={(event) => {
                                 event.preventDefault();
+                                if (insertParagraphOnClose.current) {
+                                    insertParagraphOnClose.current = false;
+                                    if (onInsertParagraphAfter?.()) return;
+                                }
                                 anchor.current
                                     ?.querySelector<HTMLButtonElement>('button')
                                     ?.focus({ preventScroll: true });

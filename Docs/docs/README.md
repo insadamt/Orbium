@@ -1,3 +1,5 @@
+Summary: Indexes Orbium behavior and implementation contracts so active work can find its dependencies; depends on the specifications below and the phase status in `../START_HERE.md`.
+
 # Orbium documentation index
 
 | Document | Purpose |
@@ -25,3 +27,8 @@
 | `20-office-document-export.md` | Shared Word/PDF layout, direct downloads, and renderer deployment |
 | `21-statistics.md` | Scoped writing, block usage, unique uploads, storage, and statistics rebuild |
 | `22-advanced-statistics-plan.md` | Final feature before V1: per-page/workspace history, navigable periods, deltas, extensible metrics, and release acceptance |
+| `25-v3-document-structure.md` | V3 foundation: syntax, identity, source ranges, incremental index and native file contract |
+| `26-v3-owner-transactions.md` | V3 foundation: stable-ID owner commands, source integrity, undo/history and motion dispatch |
+| `27-v3-editing-ux.md` | V3 foundation: keyboard, block selection, scoped clipboard/paste, live protection and manual inspection contracts |
+| `28-v3-columns.md` | Identified column transactions, owner projections, grid widget foundation, cleanup and drop adapter |
+| `29-v3-active-editor.md` | Active V3 editor, matched format-3 storage, rich/column adapters and transfer readers |

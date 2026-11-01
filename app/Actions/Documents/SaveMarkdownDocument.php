@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * Summary: Saves validated V3 content and derived indexes atomically under revision/ownership locks; depends on the matched Markdown contract, reference validator and Mermaid cache.
+ */
+
 namespace App\Actions\Documents;
 
 use App\Models\Document;
@@ -23,7 +27,7 @@ final class SaveMarkdownDocument
     public function save(Node $node, MarkdownSaveData $data): Document
     {
         if ($data->contentFormatVersion !== MarkdownContract::FORMAT_VERSION) {
-            throw ValidationException::withMessages(['content_format_version' => 'Markdown requires content format version 2 (orbium-markdown-v1).']);
+            throw ValidationException::withMessages(['content_format_version' => 'Markdown requires content format version 3 (orbium-markdown-v3).']);
         }
         if ($data->revision < 0) {
             throw ValidationException::withMessages(['revision' => 'Revision must be a nonnegative integer.']);
@@ -38,7 +42,7 @@ final class SaveMarkdownDocument
             if ($document->revision !== $data->revision) {
                 throw ValidationException::withMessages(['revision' => 'This document changed elsewhere. Reload before saving.']);
             }
-            if (! in_array($document->content_format_version, [1, MarkdownContract::FORMAT_VERSION], true)) {
+            if ($document->content_format_version !== MarkdownContract::FORMAT_VERSION) {
                 throw ValidationException::withMessages(['content_format_version' => 'This stored content format is unsupported.']);
             }
             $liveSource = Node::query()->where('workspace_id', $node->workspace_id)->where('type', 'document')->find($node->id);

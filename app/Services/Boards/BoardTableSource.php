@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * Summary: Validates native Board table payloads independently of saved V3 documents; depends on the safe Markdown body parser and existing table projection schema.
+ */
+
 namespace App\Services\Boards;
 
 use App\Services\Markdown\MarkdownDocumentInspector;
@@ -12,7 +16,7 @@ final class BoardTableSource
 {
     public function validate(string $source, array $projection): void
     {
-        $document = app(MarkdownParserService::class)->parse($source);
+        $document = app(MarkdownParserService::class)->parseBody($source);
         $table = $document->firstChild();
         if (! $table || $table->next() || ! ($table instanceof Table || ($table instanceof OrbiumBlock && $table->kind() === 'table'))) {
             throw ValidationException::withMessages(['objects' => 'Board table source must contain exactly one table.']);
@@ -44,11 +48,11 @@ final class BoardTableSource
         //
         // Reuse the Document contract so rich cell syntax and references receive the same validation as ordinary Documents.
         //
-        app(MarkdownDocumentInspector::class)->inspect($source);
+        app(MarkdownDocumentInspector::class)->inspectBody($source);
     }
 
     public function attachmentIds(string $source): array
     {
-        return app(MarkdownDocumentInspector::class)->inspect($source)->derived->attachmentIds;
+        return app(MarkdownDocumentInspector::class)->inspectBody($source)->derived->attachmentIds;
     }
 }

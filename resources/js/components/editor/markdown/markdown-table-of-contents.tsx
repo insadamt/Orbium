@@ -1,4 +1,5 @@
 // Summary: Extracts and navigates every Document H1/H2, including column bodies; depends on the Markdown source parser, mounted column position mapping and shared outline motion.
+import { v3StructureField } from './structure/v3-structure-state';
 import { resolveColumnDocumentPosition } from './columns/column-position';
 import { readOrbiumMetadata } from './dialect/metadata';
 import {
@@ -24,6 +25,23 @@ import { readEditableMarkdownPresentation } from './interactions/markdown-editab
 
 function readMarkdownHeadings(view: EditorView): DocumentHeading[] {
     const source = view.state.doc;
+    const index = view.state.field(v3StructureField, false)?.current;
+    if (index)
+        return index.structure.blocks
+            .filter(
+                (block) =>
+                    block.type === 'heading-1' || block.type === 'heading-2',
+            )
+            .map((block) => ({
+                position: block.bodyFrom,
+                level: Number(block.type.slice(-1)) as 1 | 2,
+                label:
+                    logicalMarkdownText(
+                        source.slice(block.bodyFrom, block.bodyTo),
+                    )
+                        .text.trim()
+                        .replace(/\s+/g, ' ') || 'Untitled heading',
+            }));
     const headings: DocumentHeading[] = [];
     const visit = (node: SyntaxNode) => {
         if (

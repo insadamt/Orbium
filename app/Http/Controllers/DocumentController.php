@@ -20,6 +20,7 @@ use App\Services\Markdown\MarkdownContract;
 use App\Services\Markdown\MarkdownDocumentInspector;
 use App\Services\Markdown\MarkdownReferenceValidator;
 use App\Services\Markdown\MarkdownSaveData;
+use App\Services\Markdown\V3\V3SpacerCapability;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -33,6 +34,7 @@ class DocumentController extends Controller
     {
         $documentNode = $this->ownedDocument($request, $workspace, $node);
         $document = $documentNode->document()->firstOrFail();
+        abort_if($document->content_format_version === 2, 409, 'This development document uses retired format 2. Create a new V3 document or import a V3 file.');
         abort_unless(in_array($document->content_format_version, [1, MarkdownContract::FORMAT_VERSION], true), 409, 'This document format requires a newer editor.');
         abort_if($document->content_format_version === MarkdownContract::FORMAT_VERSION && ! is_string($document->markdown), 409, 'The stored Markdown source is unavailable.');
         $workspaceModel = $documentNode->workspace;
@@ -106,6 +108,7 @@ class DocumentController extends Controller
             'markdown' => ['present', 'string'],
             'revision' => ['required', 'integer', 'min:0'],
             'content_format_version' => ['required', 'integer', Rule::in([MarkdownContract::FORMAT_VERSION])],
+            'editor_features.stable_blocks' => ['required', 'integer', 'in:1'],
             'plain_text' => ['prohibited'],
             'mentions' => ['prohibited'],
             'attachment_ids' => ['prohibited'],
@@ -120,6 +123,11 @@ class DocumentController extends Controller
             && (app(MarkdownColumnLayout::class)->containsColumns($documentNode->document?->markdown ?? '')
                 || app(MarkdownColumnLayout::class)->containsColumns($data['markdown']))) {
             throw ValidationException::withMessages(['content_format_version' => 'This Document contains columns. Reload Orbium before saving with this editor.']);
+        }
+        if ((int) $request->input('editor_features.spacers', 0) < 1
+            && (app(V3SpacerCapability::class)->containsSpacers($documentNode->document?->markdown ?? '')
+                || app(V3SpacerCapability::class)->containsSpacers($data['markdown']))) {
+            throw ValidationException::withMessages(['content_format_version' => 'This Document contains empty-space blocks. Reload Orbium before saving with this editor.']);
         }
         $validatedAt = hrtime(true);
         $document = $save->save($documentNode, new MarkdownSaveData(

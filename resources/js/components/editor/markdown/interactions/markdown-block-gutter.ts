@@ -1,4 +1,9 @@
 // Summary: Positions block handles and menus in the owning editor, including nested columns; depends on block geometry, drag controls and menu surfaces.
+import { selectV3BlockFromHandle } from '../editing/v3-live-editing';
+import {
+    insertV3ParagraphAfter,
+    selectedV3ProductHeadPosition,
+} from '../runtime/v3-product-commands';
 import { EditorView, ViewPlugin, type ViewUpdate } from '@codemirror/view';
 import { interactionButton } from './interaction-dom';
 import { mountMarkdownBlockMenu } from './markdown-block-menu';
@@ -54,10 +59,18 @@ export function markdownBlockGutter(
                 this.dom.hidden = true;
                 this.dom.dataset.blockScope = scope;
                 this.dom.setAttribute('data-block-controls', '');
-                this.dom.addEventListener('orbium-hide-block-handles', this.hideForTyping);
+                this.dom.addEventListener(
+                    'orbium-hide-block-handles',
+                    this.hideForTyping,
+                );
                 const add = interactionButton('Add block below', '', () => {
                     const block = this.block;
                     if (!block) return;
+                    if (block.v3Id) {
+                        insertV3ParagraphAfter(view, block.v3Id);
+                        this.dismissMenu();
+                        return;
+                    }
                     if (
                         replaceMarkdownBlock(
                             view,
@@ -75,9 +88,25 @@ export function markdownBlockGutter(
                     'Drag block or open block menu',
                 );
                 handle.title = 'Drag to reorder · Click for block menu';
-                handle.addEventListener('click', () => {
-                    if (!this.dragController.suppressHandleClick)
-                        this.openMenu();
+                handle.addEventListener('click', (event) => {
+                    if (this.dragController.suppressHandleClick) return;
+                    if (this.block?.v3Id) {
+                        try {
+                            selectV3BlockFromHandle(
+                                view,
+                                this.block.v3Id,
+                                event.shiftKey,
+                            );
+                        } catch (error) {
+                            onNotice(
+                                error instanceof Error
+                                    ? error.message
+                                    : 'Could not select these blocks.',
+                            );
+                            return;
+                        }
+                    }
+                    if (!event.shiftKey) this.openMenu();
                 });
                 add.className =
                     'rounded-md p-1 hover:bg-accent hover:text-foreground';
@@ -114,9 +143,21 @@ export function markdownBlockGutter(
                 view.dom.addEventListener('focusin', this.focusChanged);
                 if (scope === 'document') {
                     // Captures typing in the parent editor and every nested column.
-                    view.dom.addEventListener('beforeinput', this.typingStarted, true);
-                    view.dom.addEventListener('compositionstart', this.typingStarted, true);
-                    view.dom.addEventListener('keydown', this.typingKeyDown, true);
+                    view.dom.addEventListener(
+                        'beforeinput',
+                        this.typingStarted,
+                        true,
+                    );
+                    view.dom.addEventListener(
+                        'compositionstart',
+                        this.typingStarted,
+                        true,
+                    );
+                    view.dom.addEventListener(
+                        'keydown',
+                        this.typingKeyDown,
+                        true,
+                    );
                     this.refreshActiveBlock();
                 }
                 view.dom.addEventListener('contextmenu', this.contextMenu);
@@ -149,17 +190,10 @@ export function markdownBlockGutter(
                     this.view.compositionStarted
                 )
                     return;
-                if (
-                    isStructuralMarkdownSeparator(
-                        this.view.state,
-                        this.view.state.selection.main.head,
-                    )
-                )
+                const position = this.activeBlockPosition();
+                if (isStructuralMarkdownSeparator(this.view.state, position))
                     return;
-                this.block = markdownBlockAt(
-                    this.view.state,
-                    this.view.state.selection.main.head,
-                );
+                this.block = markdownBlockAt(this.view.state, position);
                 const top = markdownBlockControlTop(
                     this.view,
                     this.block,
@@ -263,6 +297,10 @@ export function markdownBlockGutter(
                 });
             };
             activeBlockPosition() {
+                const selectedPosition = selectedV3ProductHeadPosition(
+                    this.view,
+                );
+                if (selectedPosition !== null) return selectedPosition;
                 const focused = document.activeElement;
                 const widget =
                     focused instanceof Element &&
@@ -393,7 +431,8 @@ export function markdownBlockGutter(
                     event.altKey ||
                     (event.key.length !== 1 &&
                         !['Enter', 'Backspace', 'Delete'].includes(event.key))
-                ) return;
+                )
+                    return;
                 this.typingStarted();
             };
             hideForTyping = () => {
@@ -483,12 +522,9 @@ export function markdownBlockGutter(
                     // Column edits replace the whole serialized layout.
                     // Keep a hovered block anchored to its replacement start
                     // instead of moving its grip to the end of that layout.
-                    update.changes.iterChangedRanges(
-                        (fromA, toA, fromB) => {
-                            if (fromA <= previous && previous < toA)
-                                mapped = fromB;
-                        },
-                    );
+                    update.changes.iterChangedRanges((fromA, toA, fromB) => {
+                        if (fromA <= previous && previous < toA) mapped = fromB;
+                    });
                     this.hoveredPosition = mapped;
                 }
                 if (
@@ -516,9 +552,21 @@ export function markdownBlockGutter(
                 this.motion.hide();
                 this.view.dom.removeEventListener('focusin', this.focusChanged);
                 if (scope === 'document') {
-                    this.view.dom.removeEventListener('beforeinput', this.typingStarted, true);
-                    this.view.dom.removeEventListener('compositionstart', this.typingStarted, true);
-                    this.view.dom.removeEventListener('keydown', this.typingKeyDown, true);
+                    this.view.dom.removeEventListener(
+                        'beforeinput',
+                        this.typingStarted,
+                        true,
+                    );
+                    this.view.dom.removeEventListener(
+                        'compositionstart',
+                        this.typingStarted,
+                        true,
+                    );
+                    this.view.dom.removeEventListener(
+                        'keydown',
+                        this.typingKeyDown,
+                        true,
+                    );
                 }
                 this.hoverSurface.removeEventListener(
                     'pointermove',

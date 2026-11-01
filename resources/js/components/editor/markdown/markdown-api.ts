@@ -1,4 +1,6 @@
 // Summary: Validates and saves canonical Markdown with explicit client capabilities; depends on document limits, CSRF and revision checks.
+import { requireValidV3Structure } from './structure/v3-document-file';
+import { invalidV3BodyType } from './editing/v3-body-validation';
 import { DocumentSaveError } from '../document-save-error';
 import type { Text } from '@codemirror/state';
 import { csrfToken, documentUrl } from '../editor-api';
@@ -18,6 +20,12 @@ export type MarkdownSaveRequest = {
 
 function serializeMarkdown(request: MarkdownSaveRequest): string {
     const markdown = request.source.toString();
+    const index = requireValidV3Structure(markdown);
+    const invalidBody = invalidV3BodyType(request.source, index);
+    if (invalidBody)
+        throw new Error(
+            `The ${invalidBody.type} block at source line ${request.source.lineAt(invalidBody.from).number} does not match its type. Use its block controls or repair Source mode before saving.`,
+        );
     if (
         markdown.includes('\0') ||
         /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/u.test(
@@ -40,8 +48,13 @@ function serializeMarkdown(request: MarkdownSaveRequest): string {
     return JSON.stringify({
         markdown,
         revision: request.revision,
-        content_format_version: 2,
-        editor_features: { inline_icons: 2, columns: 1 },
+        content_format_version: 3,
+        editor_features: {
+            inline_icons: 2,
+            columns: 1,
+            stable_blocks: 1,
+            spacers: 1,
+        },
     });
 }
 

@@ -1,0 +1,59 @@
+<!-- orbium-document {"version":3,"title":"V3 Editing Review"} -->
+
+++block {"id":"edit-summary","type":"paragraph"}++
+Summary: Disposable manual editing specimen for stage 4; depends on the inactive V3 inspector and must not be imported into the format-2 editor.
+
+++block {"id":"edit-first","type":"paragraph"}++
+Alpha omega.
+
+++block {"id":"edit-second","type":"paragraph"}++
+Beta.
+
+++block {"id":"edit-heading","type":"heading-2"}++
+## HEADING-TEXT
+
+++block {"id":"edit-bullets","type":"bullet-list"}++
+- First bullet
+  - Nested bullet
+- Last bullet
+
+++block {"id":"edit-tasks","type":"checklist"}++
+- [x] Completed task
+  - [ ] Nested task
+- [ ] Last task
+
+++block {"id":"edit-numbered","type":"numbered-list"}++
+1. First numbered item
+2. Last numbered item
+
+++block {"id":"edit-quote","type":"quote"}++
+> QUOTE-TEXT
+
+++block {"id":"edit-callout","type":"callout"}++
+> [!NOTE] Review title
+> CALLOUT-TEXT
+
+++block {"id":"edit-styled","type":"paragraph"}++
+:::orbium {"kind":"block","align":"center","dir":"rtl"}
+STYLED-TEXT with :orbium[color]{"color":"preset:blue","underline":true}.
+:::
+
+++block {"id":"edit-code","type":"code"}++
+````text
+Literal payload with blank lines:
+
+++block {"id":"edit-first","type":"paragraph"}++
+[@Literal reference](orbium:node/123)
+````
+
+++block {"id":"edit-math","type":"math"}++
+$$
+x^2 + y^2
+
+= z^2
+$$
+
+++block {"id":"edit-empty","type":"paragraph"}++
+
+++block {"id":"edit-last","type":"paragraph"}++
+END-TEXT

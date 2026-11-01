@@ -1,4 +1,7 @@
 // Summary: Resolves side-by-side and in/out-of-column drops into one owner transaction; depends on mounted column editors, canonical source serialization and existing block geometry.
+import { resolveV3ColumnDrop } from './v3/v3-column-drop';
+import { v3ColumnProjectionFor } from './v3/v3-column-registry';
+import { v3BlockSelectionField } from '../editing/v3-block-selection';
 import { EditorView } from '@codemirror/view';
 import { isolateHistory } from '@codemirror/commands';
 import type { ChangeSpec } from '@codemirror/state';
@@ -248,6 +251,21 @@ export function resolveColumnDrop(
     block: MarkdownBlockRange,
     pointer: Pointer,
 ): ColumnDropTarget | null {
+    if (block.v3Id) {
+        const owner = v3ColumnProjectionFor(source)?.owner ?? source;
+        const selected = source.state.field(v3BlockSelectionField, false)?.ids;
+        return resolveV3ColumnDrop({
+            owner,
+            blockIds: selected?.includes(block.v3Id) ? selected : [block.v3Id],
+            pointer,
+            isAvailable: () =>
+                source.dom.isConnected &&
+                !source.dom.closest('[hidden], [inert]'),
+            onError: (error) => {
+                throw error;
+            },
+        });
+    }
     const origin = columnEditorOwner(source);
     const owner = origin?.columns.owner ?? source;
     if (

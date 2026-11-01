@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * Summary: Resolves owned Board resources and version-matched hosted Documents; depends on native Board contracts, reference availability and the V3 Markdown reader.
+ */
+
 namespace App\Services\Boards;
 
 use App\Models\Node;
@@ -64,13 +68,14 @@ final class BoardResources
 
         return DB::transaction(function () use ($target): array {
             $document = $target->document()->sharedLock()->firstOrFail();
-            abort_unless(in_array($document->content_format_version, [1, 2], true), 409, 'This document requires a newer editor.');
-            abort_if($document->content_format_version === 2 && ! is_string($document->markdown), 409, 'Document source is unavailable.');
+            abort_if($document->content_format_version === 2, 409, 'This development document uses retired format 2. Create a new V3 document or import a V3 file.');
+            abort_unless(in_array($document->content_format_version, [1, 3], true), 409, 'This document requires a newer editor.');
+            abort_if($document->content_format_version === 3 && ! is_string($document->markdown), 409, 'Document source is unavailable.');
 
             return [
                 'id' => $target->id, 'title' => $target->title, 'parent_id' => $target->parent_id,
                 'content_format_version' => $document->content_format_version, 'revision' => $document->revision,
-                ...($document->content_format_version === 2
+                ...($document->content_format_version === 3
                     ? ['markdown' => $document->markdown, 'markdown_limits' => ['source_bytes' => MarkdownContract::MAX_SOURCE_BYTES, 'line_bytes' => MarkdownContract::MAX_LINE_BYTES]]
                     : ['content' => $document->content]),
             ];

@@ -1,3 +1,8 @@
+// Summary: Preserves rich block selection and adjacent paragraph creation in the active V3 owner; depends on exact block identity, shared rich widgets and legacy selection callers.
+import { v3StructureField } from '../structure/v3-structure-state';
+import { dispatchV3ProductOperation } from '../runtime/v3-product-commands';
+import { v3ColumnProjectionFor } from '../columns/v3/v3-column-registry';
+import { v3BodyCaretPosition } from '../editing/v3-live-selection';
 import { selectBlockContents } from '../markdown-selection';
 import { isolateHistory } from '@codemirror/commands';
 import { Prec } from '@codemirror/state';
@@ -19,6 +24,19 @@ function adjacentWritingPosition(
     block: RichBlock,
     before: boolean,
 ) {
+    const index = view.state.field(v3StructureField, false)?.current;
+    const identified = index?.blockAt(block.from);
+    if (index && identified) {
+        const siblings = index.blocksIn(identified.parentId);
+        const neighbor = (
+            before
+                ? siblings.slice(0, identified.order).reverse()
+                : siblings.slice(identified.order + 1)
+        ).find((item) => item.type !== 'spacer');
+        return neighbor
+            ? v3BodyCaretPosition(view.state, index, neighbor, before)
+            : null;
+    }
     const edgeLine = view.state.doc.lineAt(before ? block.from : block.to);
     for (
         let number = edgeLine.number + (before ? -1 : 1);
@@ -44,6 +62,31 @@ export function createOrFocusRichParagraph(
     },
 ) {
     if (!view.state.facet(EditorView.editable)) return;
+    const identified = view.state
+        .field(v3StructureField, false)
+        ?.current.blockAt(block.from);
+    if (identified) {
+        const owner = v3ColumnProjectionFor(view)?.owner ?? view;
+        const index = owner.state.field(v3StructureField).current;
+        const owningBlock = index.blockById(identified.id)!;
+        const siblings = index.blocksIn(owningBlock.parentId);
+        const beforeId =
+            placement === 'before'
+                ? identified.id
+                : siblings[
+                      siblings.findIndex((item) => item.id === identified.id) +
+                          1
+                  ]?.id;
+        dispatchV3ProductOperation(view, {
+            kind: 'insert',
+            target: { parentId: owningBlock.parentId, beforeId },
+            type: 'paragraph',
+            body: text,
+            caret: text.length,
+            motion: 'none',
+        });
+        return;
+    }
     const before = placement === 'before';
     const edge = before ? block.from : block.to;
     const adjacent = before
@@ -164,15 +207,25 @@ export function bindRichBlockSelection(
             }
         } else if (['Backspace', 'Delete'].includes(event.key)) {
             if (!view.state.facet(EditorView.editable)) return;
-            view.dispatch({
-                changes: { from: block.from, to: block.to },
-                selection: { anchor: block.from },
-                annotations: isolateHistory.of('full'),
-                userEvent: 'delete.block',
-                effects: markdownBlockMotionEffect.of({
-                    before: { from: block.from, to: block.to },
-                }),
-            });
+            const identified = view.state
+                .field(v3StructureField, false)
+                ?.current.blockAt(block.from);
+            if (identified)
+                dispatchV3ProductOperation(view, {
+                    kind: 'delete',
+                    blockIds: [identified.id],
+                    ensureParagraph: true,
+                });
+            else
+                view.dispatch({
+                    changes: { from: block.from, to: block.to },
+                    selection: { anchor: block.from },
+                    annotations: isolateHistory.of('full'),
+                    userEvent: 'delete.block',
+                    effects: markdownBlockMotionEffect.of({
+                        before: { from: block.from, to: block.to },
+                    }),
+                });
             view.focus();
         } else if (event.key.length === 1 && !event.isComposing) {
             createOrFocusRichParagraph(view, { block, text: event.key });

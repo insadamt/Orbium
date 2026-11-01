@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * Summary: Derives statistics from semantic body nodes without structural headers; depends on explicit V3 code intent and existing list/task/media projections.
+ */
+
 namespace App\Services\Statistics;
 
 use App\Services\Markdown\CalloutMarker;
@@ -102,9 +106,9 @@ final class MarkdownDocumentStatistics
         }
         if ($node instanceof FencedCode) {
             $parent = $node->parent();
-            $forcedCode = $parent instanceof OrbiumBlock && $parent->kind() === 'code';
+            $forcedCode = $node->data->get('v3_force_code', false) || ($parent instanceof OrbiumBlock && $parent->kind() === 'code');
 
-            return ! $forcedCode && strtolower(strtok($node->getInfo(), " \t") ?: '') === 'mermaid' ? 'mermaid' : 'code';
+            return $node->data->get('v3_force_mermaid', false) || (! $forcedCode && strtolower(strtok($node->getInfo(), " \t") ?: '') === 'mermaid') ? 'mermaid' : 'code';
         }
 
         return match (true) {

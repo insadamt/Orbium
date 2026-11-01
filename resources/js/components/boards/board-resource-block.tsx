@@ -1,3 +1,4 @@
+// Summary: Routes supported saved document formats to their matched editor or preview; depends on the version-3 Markdown contract and existing legacy/native Board contracts.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     HostedDocumentControlsHostContext,
@@ -139,7 +140,7 @@ export function BoardResourceBlock(
                 missing={preview?.missing}
                 editing={props.editing}
                 editorControlsReady={
-                    props.editing && snapshot?.content_format_version === 2
+                    props.editing && snapshot?.content_format_version === 3
                 }
                 controlsHost={setControlsHost}
                 onEdit={props.onStartEditing}

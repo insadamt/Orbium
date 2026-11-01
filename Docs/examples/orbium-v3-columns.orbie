@@ -1,0 +1,37 @@
+<!-- orbium-document {"version":3,"title":"V3 column scope review"} -->
+++block {"id":"columns-summary","type":"paragraph"}++
+Summary: This manual sample checks layout/column/child identities and decreasing directive fences. It depends on the inactive V3 structural inspector; the existing editor cannot import V3 yet.
+
+++block {"id":"review-layout","type":"columns"}++
+:::::::orbium {"kind":"columns","version":1,"widths":[6000,4000]}
+
+::::::orbium {"kind":"column","id":"review-left"}
+
+++block {"id":"review-left-heading","type":"heading-2"}++
+## Left column
+
+++block {"id":"review-left-text","type":"paragraph"}++
+:::orbium {"kind":"block","align":"center"}
+LEFT-TEXT belongs to review-left.
+:::
+
+::::::
+
+::::::orbium {"kind":"column","id":"review-right"}
+
+++block {"id":"review-right-tasks","type":"checklist"}++
+- [ ] RIGHT-TASK
+- [x] RIGHT-DONE
+
+++block {"id":"review-right-code","type":"code"}++
+```text
+++block {"id":"review-left-text","type":"paragraph"}++
+::::::
+```
+
+::::::
+
+:::::::
+
+++block {"id":"review-after-layout","type":"paragraph"}++
+AFTER-LAYOUT is a root sibling, not a child of review-right.

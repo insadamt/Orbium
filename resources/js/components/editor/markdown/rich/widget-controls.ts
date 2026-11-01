@@ -1,3 +1,7 @@
+// Summary: Applies rich edits through stable V3 owner bodies while retaining existing widget controls/history; depends on scoped structure, exact source baselines and legacy rich callers.
+import { v3ColumnProjectionFor } from '../columns/v3/v3-column-registry';
+import { v3StructureField } from '../structure/v3-structure-state';
+import { dispatchV3ProductOperation } from '../runtime/v3-product-commands';
 import { widgetIcon } from './widget-icons';
 import { isolateHistory, undo, redo } from '@codemirror/commands';
 import { EditorView } from '@codemirror/view';
@@ -38,6 +42,40 @@ export function applyRichSource(
         view.state.sliceDoc(block.from, block.to) !== block.source
     )
         return false;
+    if (source === block.source) return true;
+    const identified = view.state
+        .field(v3StructureField, false)
+        ?.current.blockAt(block.from);
+    if (identified) {
+        const body =
+            view.state.sliceDoc(identified.bodyFrom, block.from) +
+            source +
+            view.state.sliceDoc(block.to, identified.bodyTo);
+        try {
+            dispatchV3ProductOperation(
+                view,
+                {
+                    kind: 'replace-body',
+                    blockId: identified.id,
+                    body,
+                    caret:
+                        selectionOffset === undefined
+                            ? undefined
+                            : block.from -
+                              identified.bodyFrom +
+                              selectionOffset,
+                    userEvent:
+                        selectionOffset === undefined
+                            ? 'input.type.rich'
+                            : undefined,
+                },
+                selectionOffset !== undefined,
+            );
+            return true;
+        } catch {
+            return false;
+        }
+    }
     view.dispatch({
         changes: { from: block.from, to: block.to, insert: source },
         selection:
@@ -214,8 +252,10 @@ export function bindRichBlockHistory(
                     ? 'redo'
                     : 'undo';
             if (onHistory) onHistory(direction);
-            else if (direction === 'redo') redo(view);
-            else undo(view);
+            else {
+                const owner = v3ColumnProjectionFor(view)?.owner ?? view;
+                (direction === 'redo' ? redo : undo)(owner);
+            }
         },
         true,
     );

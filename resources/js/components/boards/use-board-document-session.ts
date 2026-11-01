@@ -1,3 +1,4 @@
+// Summary: Routes supported saved document formats to their matched editor or preview; depends on the version-3 Markdown contract and existing legacy/native Board contracts.
 import { Text } from '@codemirror/state';
 import type { Node } from '@tiptap/pm/model';
 import { router } from '@inertiajs/react';
@@ -38,7 +39,7 @@ export function useBoardDocumentSession(
             ? {
                   ...initial,
                   revision: recovery.draft.revision,
-                  ...(initial.content_format_version === 2
+                  ...(initial.content_format_version === 3
                       ? { markdown: recovery.draft.markdown! }
                       : { content: recovery.draft.content! }),
               }
@@ -54,7 +55,7 @@ export function useBoardDocumentSession(
     const pending = useRef<(() => Snapshot) | null>(
         recovery.draft
             ? () =>
-                  initial.content_format_version === 2
+                  initial.content_format_version === 3
                       ? { markdown: recovery.draft!.markdown! }
                       : { content: recovery.draft!.content! }
             : null,
@@ -62,7 +63,7 @@ export function useBoardDocumentSession(
     const latest = useRef<() => Snapshot>(
         pending.current ??
             (() =>
-                editorDocument.content_format_version === 2
+                editorDocument.content_format_version === 3
                     ? { markdown: editorDocument.markdown }
                     : { content: editorDocument.content }),
     );
@@ -149,7 +150,7 @@ export function useBoardDocumentSession(
         try {
             const next =
                 'markdown' in source &&
-                editorDocument.content_format_version === 2
+                editorDocument.content_format_version === 3
                     ? await saveMarkdown({
                           workspaceId: location.workspaceId,
                           nodeId: location.targetId,
@@ -211,7 +212,7 @@ export function useBoardDocumentSession(
     const queueSave = useCallback(
         (snapshot: Text | Node) => {
             const capture = (): Snapshot =>
-                editorDocument.content_format_version === 2
+                editorDocument.content_format_version === 3
                     ? { markdown: snapshot.toString() }
                     : {
                           content: (

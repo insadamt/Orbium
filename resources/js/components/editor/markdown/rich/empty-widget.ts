@@ -1,4 +1,8 @@
+// Summary: Edits a styled empty paragraph and delegates its exit to the V3 owner; depends on rich body replacement, identified sibling insertion and legacy fallback controls.
 import { EditorView } from '@codemirror/view';
+import { v3StructureField } from '../structure/v3-structure-state';
+import { dispatchV3ProductOperation } from '../runtime/v3-product-commands';
+import { createOrFocusRichParagraph } from './rich-block-selection';
 import { serializeOrbiumBlock } from '../dialect/metadata';
 import type { RichBlock, RichWidgetMount } from './rich-model';
 import { applyRichSource, element } from './widget-controls';
@@ -25,6 +29,18 @@ export function mountEmptyParagraph(mount: RichWidgetMount) {
         if (!(event.ctrlKey || event.metaKey)) event.stopPropagation();
         if (event.key !== 'Enter') return;
         event.preventDefault();
+        if (mount.view.state.field(v3StructureField, false)) {
+            const identified = mount.view.state
+                .field(v3StructureField)
+                .current.blockAt(block.from);
+            if (identified?.type === 'paragraph')
+                dispatchV3ProductOperation(mount.view, {
+                    kind: 'advance-empty',
+                    blockId: identified.id,
+                });
+            else createOrFocusRichParagraph(mount.view, { block });
+            return;
+        }
         const source = `${block.source}\n\n`;
         if (applyRichSource(mount.view, block, source)) {
             mount.view.dispatch({

@@ -1,3 +1,4 @@
+// Summary: Builds existing inline/line previews inside explicit V3 body trees; depends on safe rich/link/icon renderers and structural nodes owned by the V3 header/layout surfaces.
 import { readMarkdownIcon } from '@/components/inline-icons/markdown-icon-source';
 import { MarkdownIconWidget } from '@/components/inline-icons/markdown-icon-widget';
 import {
@@ -6,6 +7,7 @@ import {
 } from '../interactions/markdown-direction';
 import { readEditableMarkdownPresentation } from '../interactions/markdown-editable-presentation';
 import { readOrbiumMetadata } from '../dialect/metadata';
+import { v3StructureField } from '../structure/v3-structure-state';
 import { ensureSyntaxTree, syntaxTree } from '@codemirror/language';
 import type { Range } from '@codemirror/state';
 import { Decoration, EditorView, type WidgetType } from '@codemirror/view';
@@ -23,6 +25,8 @@ import {
 } from './markdown-preview-widgets';
 
 const opaqueNodes = new Set([
+    'V3Header',
+    'V3Layout',
     'OrbiumDirective',
     'OrbiumMathBlock',
     'OrbiumUnclosed',
@@ -105,7 +109,29 @@ export function buildMarkdownPreview(
         while (position <= visible.to) {
             const line = view.state.doc.lineAt(position);
             addLineClass(position, 'cm-md-directed');
-            if (!line.text.trim() && line.number < view.state.doc.lines)
+            const activeEmptyLine =
+                !line.text.trim() &&
+                view.state.selection.main.empty &&
+                view.state.doc.lineAt(view.state.selection.main.head).from ===
+                    line.from;
+            const identified = activeEmptyLine
+                ? view.state
+                      .field(v3StructureField, false)
+                      ?.current.blockAt(position)
+                : null;
+            if (
+                identified?.type.startsWith('heading-') &&
+                position >= identified.bodyFrom
+            ) {
+                const level = identified.type.slice(-1);
+                //
+                // Only the active writing line inherits heading size; trailing separators must keep their compact spacing.
+                //
+                addLineClass(
+                    position,
+                    `cm-md-heading cm-md-heading-${level} orbium-heading-${level}`,
+                );
+            } else if (!line.text.trim() && line.number < view.state.doc.lines)
                 addLineClass(position, 'cm-md-separator');
             if (line.to >= visible.to) break;
             position = line.to + 1;

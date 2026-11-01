@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * Summary: Creates owned hierarchy nodes and seeds new Documents with identified V3 paragraphs; depends on workspace locks, containment rules and the active Markdown contract.
+ */
+
 namespace App\Actions\Nodes;
 
 use App\Actions\Databases\ManageDatabase;
@@ -10,6 +14,7 @@ use App\Services\Markdown\MarkdownContract;
 use App\Services\Statistics\DocumentStatisticsData;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class ManageHierarchy
@@ -37,7 +42,7 @@ class ManageHierarchy
                     ...(new DocumentStatisticsData('', [], 0, 0))->attributes(),
                     'content' => ['type' => 'doc', 'content' => [['type' => 'paragraph']]],
                     'content_format_version' => MarkdownContract::FORMAT_VERSION,
-                    'markdown' => '',
+                    'markdown' => '++block '.json_encode(['id' => (string) Str::uuid(), 'type' => 'paragraph'], JSON_THROW_ON_ERROR)."++\n",
                     'plain_text' => '',
                 ]);
             }

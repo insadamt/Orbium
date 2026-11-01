@@ -1,3 +1,4 @@
+// Summary: Routes supported saved document formats to their matched editor or preview; depends on the version-3 Markdown contract and existing legacy/native Board contracts.
 import { applyLibraryPageImage } from '@/components/library/library-page-media';
 import type { LibraryFile } from '@/components/library/library-api';
 import { DocumentOutlineLayout } from '@/components/editor/document-outline-layout';
@@ -51,7 +52,7 @@ export type DocumentPageProps = {
     } & (
         | { content_format_version: 1; content: EditorDocument }
         | {
-              content_format_version: 2;
+              content_format_version: 3;
               markdown: string;
               markdown_limits: MarkdownLimits;
           }

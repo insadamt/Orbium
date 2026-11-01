@@ -1,7 +1,9 @@
+// Summary: Converts the safe Office model into document blocks, preserving deliberate spacer rows; depends on docx primitives and shared inline/media conversion.
 import {
     AlignmentType,
     BorderStyle,
     LevelFormat,
+    LineRuleType,
     Paragraph,
     Table,
     TableCell,
@@ -231,6 +233,18 @@ export async function documentBlocks(node, context) {
                 );
             return output;
         }
+        case 'spacer':
+            return [
+                new Paragraph({
+                    children: [],
+                    spacing: {
+                        before: 0,
+                        after: 0,
+                        line: 360,
+                        lineRule: LineRuleType.EXACT,
+                    },
+                }),
+            ];
         case 'paragraph':
         case 'heading':
             return [

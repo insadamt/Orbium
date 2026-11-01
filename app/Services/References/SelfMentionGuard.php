@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * Summary: Rejects self-referential native Board links and table mentions; depends on workspace-scoped URLs and independent safe Markdown body inspection.
+ */
+
 namespace App\Services\References;
 
 use App\Models\Node;
@@ -28,7 +32,7 @@ final class SelfMentionGuard
             }
         }
         if (is_string($value['table_source'] ?? null)) {
-            $inspection = app(MarkdownDocumentInspector::class)->inspect($value['table_source']);
+            $inspection = app(MarkdownDocumentInspector::class)->inspectBody($value['table_source']);
             foreach (array_keys($inspection->derived->mentions) as $targetId) {
                 $this->rejectSelfTarget($source, (int) $targetId, 'objects');
             }

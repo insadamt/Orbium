@@ -1,4 +1,6 @@
 // Summary: Renders safe read-only Markdown previews, including responsive columns in hosted Documents; depends on the shared dialect, reference adapters and rich media renderers.
+import { parseV3Body } from '../runtime/v3-markdown-dialect';
+import { renderV3ReadOnlyBody } from '../runtime/v3-read-only-body';
 import { mountMindMapPreview } from '@/components/mindmap/mindmap-mount';
 import { readMarkdownIcon } from '@/components/inline-icons/markdown-icon-source';
 import { createInlineIconElement } from '@/components/inline-icons/inline-icon-dom';
@@ -28,38 +30,7 @@ import { mountCodePreview } from './code-preview';
 const parser = (markdownLanguage.parser as MarkdownParser).configure(
     orbiumMarkdownDialect,
 );
-const hiddenMarks = new Set([
-    'HeaderMark',
-    'QuoteMark',
-    'ListMark',
-    'EmphasisMark',
-    'StrikethroughMark',
-    'CodeMark',
-    'OrbiumSpanMark',
-    'OrbiumMetadata',
-    'OrbiumHeader',
-    'OrbiumClose',
-]);
-const tags: Record<string, keyof HTMLElementTagNameMap> = {
-    Paragraph: 'p',
-    Task: 'div',
-    StrongEmphasis: 'strong',
-    Emphasis: 'em',
-    Strikethrough: 's',
-    InlineCode: 'code',
-    BulletList: 'ul',
-    OrderedList: 'ol',
-    ListItem: 'li',
-    Blockquote: 'blockquote',
-    ATXHeading1: 'h1',
-    ATXHeading2: 'h2',
-    ATXHeading3: 'h3',
-    ATXHeading4: 'h4',
-    ATXHeading5: 'h5',
-    ATXHeading6: 'h6',
-    SetextHeading1: 'h1',
-    SetextHeading2: 'h2',
-};
+import { hiddenMarks, tags } from './rich-body-elements';
 
 export function applyInlineMetadata(
     target: HTMLElement,
@@ -79,12 +50,23 @@ export function renderRichBody(
     measure: () => void,
     depth = 0,
 ): () => void {
+    const identified = renderV3ReadOnlyBody({
+        output,
+        source,
+        context,
+        measure,
+        depth,
+        render: renderRichBody,
+    });
+    if (identified) return identified;
     if (depth >= 32 || source.length > 131072) {
         output.textContent = source;
         return () => {};
     }
     const state = EditorState.create({ doc: source });
-    const tree = parser.parse(source);
+    const tree = context.v3BlockType
+        ? parseV3Body(source, context.v3BlockType)
+        : parser.parse(source);
     const disposals: (() => void)[] = [];
     let destroyed = false;
     function renderChildren(
@@ -282,7 +264,17 @@ export function renderRichBody(
         }
     }
     function renderNode(parent: HTMLElement, node: SyntaxNode) {
-        const block = readRichBlock(state, node);
+        let block = readRichBlock(state, node);
+        if (
+            block &&
+            ['code', 'mermaid'].includes(block.kind) &&
+            context.v3BlockType &&
+            ['code', 'mermaid'].includes(context.v3BlockType)
+        )
+            block = {
+                ...block,
+                kind: context.v3BlockType as 'code' | 'mermaid',
+            };
         if (block) {
             const target = element(
                 block.kind === 'inline-math' ? 'span' : 'div',
@@ -440,9 +432,11 @@ export function renderRichBody(
         }
         const child = element(tag);
         if (tag === 'p') child.className = 'orbium-paragraph';
-        else if (/^h[1-6]$/.test(tag))
+        else if (/^h[1-6]$/.test(tag)) {
             child.className = `orbium-heading-${tag.slice(1)}`;
-        else if (tag === 'ul') {
+            if (context.v3BlockType?.startsWith('heading-'))
+                child.style.whiteSpace = 'pre-wrap';
+        } else if (tag === 'ul') {
             const taskList = node
                 .getChildren('ListItem')
                 .some((item) => item.getChild('Task'));

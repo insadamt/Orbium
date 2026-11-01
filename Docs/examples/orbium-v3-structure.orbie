@@ -1,0 +1,41 @@
+<!-- orbium-document {"version":3,"title":"V3 structure review"} -->
+++block {"id":"review-summary","type":"paragraph"}++
+Summary: This manual sample exercises V3 identity, empty blocks, presentation and literal fences without relying on neighboring Markdown types. It depends on the stage-2 inspector, not the current format-2 import UI.
+
+++block {"id":"review-paragraph","type":"paragraph"}++
+PARAGRAPH-DELTA with Arabic العربية and emoji 🌍.
+\++block {"id":"escaped-example","type":"paragraph"}++
+    ++block {"id":"indented-example","type":"paragraph"}++
+
+++block {"id":"review-divider","type":"divider"}++
+---
+
+++block {"id":"review-bullets","type":"bullet-list"}++
+- BULLET-ALPHA
+- BULLET-BETA
+
+++block {"id":"review-checklist","type":"checklist"}++
+- [ ] TASK-GAMMA
+- [x] TASK-DONE
+
+++block {"id":"review-empty","type":"paragraph"}++
+++block {"id":"review-styled","type":"paragraph"}++
+:::orbium {"kind":"block","align":"center","dir":"rtl"}
+:orbium[Styled text]{"color":"preset:blue","underline":true}
+:::
+
+++block {"id":"review-code","type":"code"}++
+````text
+++block {"id":"review-summary","type":"paragraph"}++
+``` is shorter than the enclosing fence.
+:::::orbium {"kind":"columns","version":1,"widths":[5000,5000]}
+\++block {"id":"escaped-example","type":"paragraph"}++
+````
+
+++block {"id":"review-math","type":"math"}++
+$$
+++block {"id":"review-summary","type":"paragraph"}++
+$$
+
+++block {"id":"review-end","type":"paragraph"}++
+The literal examples above must not introduce additional structural identities.

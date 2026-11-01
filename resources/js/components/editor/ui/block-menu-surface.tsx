@@ -1,3 +1,4 @@
+// Summary: Renders shared block actions and optional contextual layout commands; depends on the existing positioned menu, formatting controls and caller-owned write actions.
 import {
     AlignCenter,
     AlignLeft,
@@ -31,6 +32,7 @@ export type BlockMenuAnchor = {
     direction: 'ltr' | 'rtl';
 };
 type Props = {
+    extraActions?: { label: string; onSelect: () => void }[];
     currentBlockType?: string;
     conversionTargets: readonly string[];
     anchor: BlockMenuAnchor;
@@ -50,6 +52,7 @@ type Props = {
 };
 
 export function BlockMenuSurface({
+    extraActions = [],
     currentBlockType,
     conversionTargets,
     anchor,
@@ -75,6 +78,15 @@ export function BlockMenuSurface({
             blockContextMenu
             onRestoreFocus={onFocusEditor}
         >
+            {extraActions.map((action) => (
+                <Menu.Item
+                    key={action.label}
+                    onSelect={() => perform(action.onSelect)}
+                >
+                    {action.label}
+                </Menu.Item>
+            ))}
+            {extraActions.length > 0 && <Menu.Separator />}
             {conversionTargets.length > 0 && (
                 <Menu.Sub>
                     <Menu.SubTrigger>

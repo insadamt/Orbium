@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * Summary: Coordinates owned V3 import/export without rewriting block identities; depends on validated source, package services and existing transfer permissions.
+ */
+
 namespace App\Http\Controllers;
 
 use App\Actions\Documents\SaveMarkdownDocument;
@@ -104,7 +108,7 @@ final class DocumentTransferController extends Controller
         }
         $result = DB::transaction(function () use ($workspace, $data) {
             $node = app(ManageHierarchy::class)->create($workspace, 'document', $data['title'], isset($data['parent_id']) ? (int) $data['parent_id'] : null);
-            app(SaveMarkdownDocument::class)->save($node, new MarkdownSaveData($data['source'], 0, 2));
+            app(SaveMarkdownDocument::class)->save($node, new MarkdownSaveData($data['source'], 0, 3));
 
             return ['node_id' => $node->id, 'documents' => 1, 'assets' => 0];
         });

@@ -1,3 +1,4 @@
+// Summary: Animates deliberate block operations and displaced rows; depends on GSAP, identity-aware snapshots and CodeMirror layout while honoring reduced motion.
 import { gsap } from 'gsap';
 import type { ChangeSet } from '@codemirror/state';
 import { EditorView, ViewPlugin, type ViewUpdate } from '@codemirror/view';
@@ -7,6 +8,7 @@ import { refreshRichBlocks } from '../rich/rich-effects';
 import {
     createMarkdownMotionSnapshot,
     renderedMarkdownMotionRows,
+    markdownMotionRowInRange,
 } from './markdown-motion-snapshot';
 
 type MotionScrollPosition = { element: HTMLElement; top: number; left: number };
@@ -79,9 +81,8 @@ class MarkdownBlockMotion {
         this.finish();
         if (this.reducedMotion.matches) return null;
         const rows = renderedMarkdownMotionRows(this.view);
-        const outgoing = rows.filter(
-            (row) =>
-                block && row.position >= block.from && row.position <= block.to,
+        const outgoing = rows.filter((row) =>
+            markdownMotionRowInRange(row, block),
         );
         const ghost = createMarkdownMotionSnapshot(this.view, outgoing);
         if (ghost) ghost.popElement.style.visibility = 'hidden';
@@ -204,11 +205,8 @@ class MarkdownBlockMotion {
                     0,
                 );
             }
-            const enteringRows = rows.filter(
-                (row) =>
-                    movedBlock &&
-                    row.position >= movedBlock.from &&
-                    row.position <= movedBlock.to,
+            const enteringRows = rows.filter((row) =>
+                markdownMotionRowInRange(row, movedBlock),
             );
             const incoming = createMarkdownMotionSnapshot(
                 this.view,
@@ -239,7 +237,10 @@ class MarkdownBlockMotion {
                 const previous = snapshot.rows.find(
                     (old) =>
                         !snapshot.outgoing.includes(old) &&
-                        changes.mapPos(old.position, 1) === row.position,
+                        (old.blockId && row.blockId
+                            ? old.blockId === row.blockId &&
+                              old.blockOffset === row.blockOffset
+                            : changes.mapPos(old.position, 1) === row.position),
                 );
                 if (!previous) continue;
                 const distance =

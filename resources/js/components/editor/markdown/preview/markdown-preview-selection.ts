@@ -1,3 +1,5 @@
+// Summary: Keeps preview carets out of hidden inline syntax and legacy separator rows; depends on Markdown/mention ranges and V3 identity so real empty blocks remain selectable.
+import { v3StructureField } from '../structure/v3-structure-state';
 import { normalizeMentionSelection } from './markdown-mention-selection';
 import { readMarkdownIcon } from '@/components/inline-icons/markdown-icon-source';
 import { syntaxTree } from '@codemirror/language';
@@ -10,6 +12,8 @@ import {
 } from '../interactions/markdown-block-actions';
 
 function isMarkdownSpacingPosition(state: EditorState, position: number) {
+    if (state.field(v3StructureField, false)?.current.blockAt(position))
+        return false;
     if (isStructuralMarkdownSeparator(state, position)) return true;
     const line = state.doc.lineAt(position);
     if (

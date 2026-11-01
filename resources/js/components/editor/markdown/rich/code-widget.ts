@@ -1,4 +1,6 @@
+// Summary: Edits code through the canonical rich-body owner while retaining rejected drafts for recovery; depends on the dedicated input, safe fences and shared rich controls.
 import { createRichBlockHeading } from './rich-block-heading';
+import { v3CodeDraftHandle } from '../runtime/v3-rich-draft';
 import { mountCodeCopyButton } from '../../mount-code-copy-button';
 import { mountCodeLanguageSelect } from '../../mount-code-language-select';
 import { EditorView } from '@codemirror/view';
@@ -13,6 +15,7 @@ import { serializeOrbiumBlock } from '../dialect/metadata';
 import type { RichBlock, RichController, RichWidgetMount } from './rich-model';
 import {
     applyRichSource,
+    button,
     element,
     preservePresentation,
 } from './widget-controls';
@@ -27,6 +30,8 @@ export function fencedCodeSource(content: string, language: string): string {
 
 export function mountCode(mount: RichWidgetMount): RichController {
     let block = mount.block;
+    const draft = v3CodeDraftHandle(mount.view, block.from);
+    let rejectedContent: string | null = draft.read()?.content ?? null;
     const toolbar = element('div');
     const heading = createRichBlockHeading(mount, toolbar, {
         title: 'Code',
@@ -55,16 +60,33 @@ export function mountCode(mount: RichWidgetMount): RichController {
     const languageSelect = mountCodeLanguageSelect(language);
     const copyButton = mountCodeCopyButton(
         heading.actions,
-        () => block.content,
+        () => rejectedContent ?? block.content,
     );
     const input = mountCodeInput({
         host: codeHost,
-        source: block.content,
+        source: rejectedContent ?? block.content,
         language:
             normalizeCodeLanguage(block.language ?? 'plaintext') || 'plaintext',
         isVisible: mount.context.isVisible,
-        onChange: (content) => write(content, block.language ?? 'text'),
+        onChange: (content) => write(content, language.value),
     });
+    const discardDraft = button('Discard draft', () => {
+        rejectedContent = null;
+        draft.clear();
+        delete mount.root.dataset.unsavedRichDraft;
+        error.hidden = true;
+        update(block);
+    });
+    function showRejectedDraft() {
+        mount.root.dataset.unsavedRichDraft = 'true';
+        error.replaceChildren(
+            document.createTextNode(
+                'These code changes are not saved. Copy your draft before discarding it, or retry editing after the document becomes available. ',
+            ),
+            discardDraft,
+        );
+        error.hidden = false;
+    }
     mount.root.addEventListener('orbium-edit-rich', () => input.focus());
     function write(content: string, name: string) {
         if (!mount.view.state.facet(EditorView.editable)) return;
@@ -75,7 +97,12 @@ export function mountCode(mount: RichWidgetMount): RichController {
         if (block.metadata.kind === 'code')
             source = serializeOrbiumBlock({ kind: 'code' }, source);
         source = preservePresentation(block, source, serializeOrbiumBlock);
-        if (applyRichSource(mount.view, block, source))
+        rejectedContent = null;
+        draft.clear();
+        if (applyRichSource(mount.view, block, source)) {
+            rejectedContent = null;
+            delete mount.root.dataset.unsavedRichDraft;
+            error.hidden = true;
             block = {
                 ...block,
                 content,
@@ -83,21 +110,25 @@ export function mountCode(mount: RichWidgetMount): RichController {
                 source,
                 to: block.from + source.length,
             };
-        else {
-            error.textContent =
-                'The code changed elsewhere. Reopen this block before editing.';
-            error.hidden = false;
+        } else {
+            rejectedContent = content;
+            draft.write({ content, language: name });
+            showRejectedDraft();
         }
     }
     language.addEventListener('change', () =>
-        write(block.content, language.value),
+        write(rejectedContent ?? block.content, language.value),
     );
     function update(next: RichBlock) {
         block = next;
-        error.textContent = next.diagnostic ?? '';
-        error.hidden = !next.diagnostic;
+        if (rejectedContent === null) {
+            error.textContent = next.diagnostic ?? '';
+            error.hidden = !next.diagnostic;
+        }
         const name =
-            normalizeCodeLanguage(next.language ?? 'plaintext') || 'plaintext';
+            normalizeCodeLanguage(
+                draft.read()?.language ?? next.language ?? 'plaintext',
+            ) || 'plaintext';
         if (
             !codeLanguages.includes(name) &&
             ![...language.options].some((option) => option.value === name)
@@ -110,10 +141,11 @@ export function mountCode(mount: RichWidgetMount): RichController {
         language.disabled = !mount.view.state.facet(EditorView.editable);
         languageSelect.update();
         languageIcon.replaceChildren(createCodeLanguageIcon(name));
-        input.update(next.content, name, language.disabled);
+        input.update(rejectedContent ?? next.content, name, language.disabled);
         return true;
     }
     update(block);
+    if (rejectedContent !== null) showRejectedDraft();
     return {
         update,
         destroy() {

@@ -1,3 +1,4 @@
+// Summary: Maintains viewport rich widgets within identified body scopes; depends on existing renderers, retained widget motion and V3 column projections owning their own children.
 import { ensureSyntaxTree, syntaxTree } from '@codemirror/language';
 import { StateField, type EditorState, type Range } from '@codemirror/state';
 import { getSearchQuery } from '@codemirror/search';
@@ -37,6 +38,7 @@ function collectBlocks(
         to,
         enter(reference) {
             const node = reference.node;
+            if (node.name === 'V3Layout') return false;
             if (readEditableMarkdownPresentation(state, node)) return;
             if (
                 [

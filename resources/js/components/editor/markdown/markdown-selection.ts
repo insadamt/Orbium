@@ -1,3 +1,9 @@
+// Summary: Preserves shared selection appearance and delegates V3 whole-document selection to its owner; depends on V3 selection effects and existing legacy/embedded selection callers.
+import { v3StructureField } from './structure/v3-structure-state';
+import {
+    v3SelectBlocks,
+    v3BlockSelectionField,
+} from './editing/v3-block-selection';
 import { syntaxTree } from '@codemirror/language';
 import { readRichBlock } from './rich/read-rich-block';
 import { Prec, type EditorSelection, type Text } from '@codemirror/state';
@@ -21,7 +27,21 @@ export function selectDocumentContents(view: EditorView) {
         parent =
             parent.parentElement?.closest<HTMLElement>('.cm-editor') ?? null;
     }
+    const roots = documentView.state
+        .field(v3StructureField, false)
+        ?.current.blocksIn(null);
     documentView.dispatch({
+        effects:
+            roots &&
+            documentView.state.field(v3BlockSelectionField, false) !==
+                undefined &&
+            roots.length
+                ? v3SelectBlocks.of({
+                      anchorId: roots[0].id,
+                      headId: roots.at(-1)!.id,
+                      ids: roots.map((block) => block.id),
+                  })
+                : undefined,
         selection: { anchor: 0, head: documentView.state.doc.length },
         userEvent: 'select.all',
     });

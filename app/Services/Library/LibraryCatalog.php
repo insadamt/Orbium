@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * Summary: Lists owned Library assets and their document usage; depends on scoped V3 inspection and existing native Board/legacy ownership readers.
+ */
+
 namespace App\Services\Library;
 
 use App\Models\Attachment;
@@ -131,7 +135,7 @@ final class LibraryCatalog
             $node = $nodes[$document->node_id];
             $add($document->cover_attachment_id, $node);
             $add($document->icon_attachment_id, $node);
-            $ids = $document->content_format_version === 2
+            $ids = $document->content_format_version === 3
                 ? app(MarkdownDocumentInspector::class)->inspect($document->markdown ?? '')->derived->attachmentIds
                 : app(EditorContentInspector::class)->inspect($document->content)->attachmentIds;
             foreach ($ids as $id) {

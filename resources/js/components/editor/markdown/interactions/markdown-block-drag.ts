@@ -14,11 +14,20 @@ export function markdownBlockElement(
     view: EditorView,
     block: MarkdownBlockRange,
 ) {
-    const widget = [
-        ...view.dom.querySelectorAll<HTMLElement>(
-            `[data-rich-from="${block.from}"]`,
-        ),
-    ].find((element) => element.closest('.cm-editor') === view.dom);
+    const spacer = block.v3Id
+        ? [
+              ...view.dom.querySelectorAll<HTMLElement>(
+                  `[data-v3-spacer-id="${block.v3Id}"]`,
+              ),
+          ].find((element) => element.closest('.cm-editor') === view.dom)
+        : null;
+    const widget =
+        spacer ??
+        [
+            ...view.dom.querySelectorAll<HTMLElement>(
+                `[data-rich-from="${block.from}"]`,
+            ),
+        ].find((element) => element.closest('.cm-editor') === view.dom);
     const { node } = view.domAtPos(
         markdownBlockPresentation(view, block).contentFrom,
     );
@@ -44,17 +53,27 @@ export function markdownBlockControlTop(
     const origin =
         view.dom.getBoundingClientRect().top + view.dom.clientTop * view.scaleY;
 
+    if (!block.source.trim() && block.v3Id) {
+        const line = view.contentDOM.querySelector<HTMLElement>(
+            `[data-v3-empty-block-id="${block.v3Id}"], [data-v3-spacer-id="${block.v3Id}"] textarea`,
+        );
+        if (line?.closest('.cm-editor') === view.dom) {
+            const bounds = line.getBoundingClientRect();
+            if (bounds.height)
+                return (
+                    (bounds.top + bounds.height / 2 - origin) / view.scaleY -
+                    controlHeight / 2
+                );
+        }
+    }
+
     // CodeMirror renders an empty editor's prompt as a placeholder widget,
     // not an ordinary text line. Align the grip to the rendered prompt's
     // first text rect rather than estimating from the editor's line height.
     if (!block.source.trim()) {
-        const placeholder = view.contentDOM.querySelector<HTMLElement>(
-            '.cm-placeholder',
-        );
-        if (
-            placeholder &&
-            placeholder.closest('.cm-editor') === view.dom
-        ) {
+        const placeholder =
+            view.contentDOM.querySelector<HTMLElement>('.cm-placeholder');
+        if (placeholder && placeholder.closest('.cm-editor') === view.dom) {
             const range = view.dom.ownerDocument.createRange();
             range.selectNodeContents(placeholder);
             const bounds =
@@ -80,7 +99,9 @@ export function markdownBlockControlTop(
         if (rich?.classList.contains('orbium-columns-block')) {
             const bounds = rich.getBoundingClientRect();
             return (
-                (bounds.top + Math.min(view.defaultLineHeight / 2, 16) * view.scaleY - origin) /
+                (bounds.top +
+                    Math.min(view.defaultLineHeight / 2, 16) * view.scaleY -
+                    origin) /
                     view.scaleY -
                 controlHeight / 2
             );
@@ -125,10 +146,7 @@ export function markdownBlockControlTop(
             )
                 continue;
             const style = getComputedStyle(parent);
-            if (
-                style.display === 'none' ||
-                style.visibility !== 'visible'
-            )
+            if (style.display === 'none' || style.visibility !== 'visible')
                 continue;
             range.selectNodeContents(node);
             const firstLine = [...range.getClientRects()].find(
@@ -148,13 +166,16 @@ export function markdownBlockControlTop(
         const media = element.querySelector<HTMLElement>(
             'img, video, canvas, .orbium-rich-table, .cm-md-divider',
         );
-        const surface = media?.closest('.cm-editor') === view.dom
-            ? media
-            : (rich ?? element);
+        const surface =
+            media?.closest('.cm-editor') === view.dom
+                ? media
+                : (rich ?? element);
         const bounds = surface.getBoundingClientRect();
         if (bounds.height)
             return (
-                (bounds.top + Math.min(view.defaultLineHeight / 2, 16) * view.scaleY - origin) /
+                (bounds.top +
+                    Math.min(view.defaultLineHeight / 2, 16) * view.scaleY -
+                    origin) /
                     view.scaleY -
                 controlHeight / 2
             );

@@ -1,3 +1,4 @@
+// Summary: Coordinates paired document history so cross-document moves reverse together; depends on owner snapshots, registered endpoints and optional persistence barriers.
 import {
     invertedEffects,
     undo,
@@ -64,6 +65,7 @@ type Move = {
     targetRange: MarkdownBlockRange;
     source: Snapshot;
     target: Snapshot;
+    prepareHistoryPersistence?: (direction: Direction) => void;
 };
 type Registry = {
     endpoints: Map<string, Endpoint>;
@@ -110,6 +112,7 @@ export function performLinkedMarkdownMove(options: {
     target: EditorView;
     block: MarkdownBlockRange;
     perform: (id: string) => MarkdownBlockRange;
+    prepareHistoryPersistence?: (direction: Direction) => void;
 }) {
     const state = registry(options.source);
     const endpoints = [...state.endpoints.values()];
@@ -133,6 +136,7 @@ export function performLinkedMarkdownMove(options: {
         targetRange,
         source: source.snapshot(),
         target: target.snapshot(),
+        prepareHistoryPersistence: options.prepareHistoryPersistence,
     });
 }
 
@@ -220,6 +224,7 @@ function handleLinkedHistory(
                     restoredRange,
                 );
                 try {
+                    move.prepareHistoryPersistence?.(direction);
                     restoring.applyHistory(direction);
                     removing.applyHistory(direction);
                     move.phase = direction === 'undo' ? 'undone' : 'done';

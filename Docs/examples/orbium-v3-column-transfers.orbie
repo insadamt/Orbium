@@ -1,0 +1,68 @@
+<!-- orbium-document {"version":3,"title":"V3 Column Transfer Review"} -->
+
+++block {"id":"transfer-summary","type":"paragraph"}++
+Summary: Disposable stage-5 specimen for column transfers, proportional cleanup and identity-preserving dissolution; depends on the inactive V3 inspectors and must not be imported into the format-2 application.
+
+++block {"id":"root-before","type":"paragraph"}++
+ROOT-BEFORE
+
+++block {"id":"layout-a","type":"columns"}++
+:::::::orbium {"kind":"columns","version":1,"widths":[2500,3500,4000]}
+
+::::::orbium {"kind":"column","id":"a-left"}
+
+++block {"id":"a-left-one","type":"paragraph"}++
+LEFT-ONE
+
+++block {"id":"a-left-two","type":"checklist"}++
+- [x] LEFT-DONE
+  - [ ] LEFT-NESTED
+
+::::::
+
+::::::orbium {"kind":"column","id":"a-middle"}
+
+++block {"id":"a-middle-one","type":"heading-2"}++
+## MIDDLE-ONE
+
+::::::
+
+::::::orbium {"kind":"column","id":"a-right"}
+
+++block {"id":"a-right-one","type":"code"}++
+````text
+++block {"id":"a-left-one","type":"paragraph"}++
+::::::
+[@Literal reference](orbium:node/123)
+````
+
+::::::
+
+:::::::
+
+++block {"id":"root-between","type":"paragraph"}++
+ROOT-BETWEEN
+
+++block {"id":"layout-b","type":"columns"}++
+:::::::orbium {"kind":"columns","version":1,"widths":[6000,4000]}
+
+::::::orbium {"kind":"column","id":"b-left"}
+
+++block {"id":"b-left-one","type":"paragraph"}++
+:::orbium {"kind":"block","align":"center","dir":"rtl"}
+B-LEFT with :orbium[color]{"color":"preset:blue","underline":true}.
+:::
+
+::::::
+
+::::::orbium {"kind":"column","id":"b-right"}
+
+++block {"id":"b-right-one","type":"paragraph"}++
+B-RIGHT
+
+::::::
+
+:::::::
+
+++block {"id":"root-after","type":"paragraph"}++
+ROOT-AFTER

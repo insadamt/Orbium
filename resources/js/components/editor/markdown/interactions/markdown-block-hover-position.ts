@@ -1,5 +1,6 @@
-// Summary: Resolves nested column pointers to their parent document block while keeping child block hover local to its own editor.
+// Summary: Resolves pointers to owning document/column blocks and identified blank spacers; depends on scoped DOM ownership and the V3 index so atomic empty widgets cannot resolve to a neighbor.
 import type { EditorView } from '@codemirror/view';
+import { v3StructureField } from '../structure/v3-structure-state';
 
 type MarkdownBlockPointer = { clientX: number; clientY: number };
 
@@ -48,7 +49,25 @@ export function markdownBlockHoverPosition(
         const from = Number(columns.dataset.richFrom);
         return Number.isFinite(from) ? from : null;
     }
+    const spacerId = target.closest<HTMLElement>('[data-v3-spacer-id]')?.dataset
+        .v3SpacerId;
+    if (spacerId) {
+        const spacer = view.state
+            .field(v3StructureField, false)
+            ?.current.blockById(spacerId);
+        if (spacer?.type === 'spacer') return spacer.bodyFrom;
+    }
     const layout = target.closest('.orbium-markdown-block-layout');
+    const emptyLine =
+        target.closest<HTMLElement>('[data-v3-empty-block-id]') ??
+        layout?.querySelector<HTMLElement>('[data-v3-empty-block-id]');
+    if (emptyLine?.closest('.cm-editor') === view.dom) {
+        const id = emptyLine.dataset.v3EmptyBlockId;
+        const block = id
+            ? view.state.field(v3StructureField, false)?.current.blockById(id)
+            : null;
+        if (block?.type === 'paragraph') return block.bodyFrom;
+    }
     // Wrapper starts remain unambiguous even in widget padding and lower halves.
     if (layout && view.contentDOM.contains(layout))
         return view.posAtDOM(layout, 0);

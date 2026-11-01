@@ -1,3 +1,4 @@
+// Summary: Routes supported saved document formats to their matched editor or preview; depends on the version-3 Markdown contract and existing legacy/native Board contracts.
 import { useEffect, useRef, useState } from 'react';
 import { serializeDocumentAsMarkdown } from '@/components/editor/markdown-export';
 import { renderRichBody } from '@/components/editor/markdown/rich/render-rich-body';
@@ -123,7 +124,7 @@ export function BoardDocumentPreview({
         );
         const richQueue = createBoardRichPreviewQueue(output, scheduler);
         const source =
-            currentSnapshot.content_format_version === 2
+            currentSnapshot.content_format_version === 3
                 ? currentSnapshot.markdown
                 : serializeDocumentAsMarkdown(
                       currentSnapshot.title,
@@ -144,7 +145,7 @@ export function BoardDocumentPreview({
                 mathPreviewScope: prepared.mathScope,
                 metadata: new Map(),
                 documentSourceRanges:
-                    currentSnapshot.content_format_version === 2,
+                    currentSnapshot.content_format_version === 3,
                 schedulePreview: (element, render) =>
                     richQueue.enqueue(element, render),
                 isVisible: () => output.isConnected,

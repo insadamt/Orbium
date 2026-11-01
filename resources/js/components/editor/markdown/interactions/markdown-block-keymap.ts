@@ -1,3 +1,6 @@
+// Summary: Routes block shortcuts through shared controls and identified V3 selection; depends on stable block actions and existing rich source reveal behavior.
+import { selectV3BlockFromHandle } from '../editing/v3-live-editing';
+import { selectedV3ProductHeadPosition } from '../runtime/v3-product-commands';
 import { Prec } from '@codemirror/state';
 import { EditorView, keymap } from '@codemirror/view';
 import { revealRichSource } from '../rich/rich-effects';
@@ -24,7 +27,8 @@ export function markdownBlockKeymap(
                 run(view: EditorView) {
                     const block = markdownBlockAt(
                         view.state,
-                        view.state.selection.main.head,
+                        selectedV3ProductHeadPosition(view) ??
+                            view.state.selection.main.head,
                     );
                     const neighbor = adjacentMarkdownBlock(
                         view,
@@ -40,8 +44,13 @@ export function markdownBlockKeymap(
                 run(view) {
                     const block = markdownBlockAt(
                         view.state,
-                        view.state.selection.main.head,
+                        selectedV3ProductHeadPosition(view) ??
+                            view.state.selection.main.head,
                     );
+                    if (block.v3Id) {
+                        selectV3BlockFromHandle(view, block.v3Id);
+                        return true;
+                    }
                     view.dispatch({
                         selection: { anchor: block.from, head: block.to },
                         effects: revealRichSource.of(block.from),

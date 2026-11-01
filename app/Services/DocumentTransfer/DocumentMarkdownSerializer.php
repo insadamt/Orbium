@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * Summary: Exports scoped V3 content as exact native source or readable Markdown; depends on the canonical parser, byte-preserving native remapper and existing rich fallbacks.
+ */
+
 namespace App\Services\DocumentTransfer;
 
 use App\Services\Markdown\CalloutMarker;
@@ -7,6 +11,7 @@ use App\Services\Markdown\MarkdownParserService;
 use App\Services\Markdown\MathBlock;
 use App\Services\Markdown\OrbiumBlock;
 use App\Services\Markdown\OrbiumInline;
+use App\Services\Markdown\V3\V3NativeExport;
 use App\Services\MindMaps\MindMapData;
 use App\Services\MindMaps\MindMapIconReferences;
 use League\CommonMark\Extension\CommonMark\Node\Block\BlockQuote;
@@ -39,11 +44,18 @@ final class DocumentMarkdownSerializer
         $serializer = clone $this;
         $serializer->options = $options ?? new TransferSerializationOptions;
 
+        if ($serializer->options->preserveFormatting) {
+            return app(V3NativeExport::class)->serialize($source, $serializer->options);
+        }
+
         return $serializer->render(app(MarkdownParserService::class)->parse($source));
     }
 
     private function render(Node $node): string
     {
+        if ($node->data->get('v3.type', null) === 'spacer') {
+            return "\n";
+        }
         if ($node instanceof OrbiumInline) {
             if ($this->options->preserveFormatting) {
                 return $node->latex === null ? ':orbium['.$this->children($node, '').']'.json_encode($node->metadata, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR)
@@ -69,7 +81,14 @@ final class DocumentMarkdownSerializer
             $value = $node->getLiteral();
             $fence = $this->fence($value, 3);
 
-            return $fence.($node instanceof FencedCode ? $node->getInfo() : '')."\n".$value.($value !== '' && ! str_ends_with($value, "\n") ? "\n" : '').$fence;
+            $info = $node instanceof FencedCode ? $node->getInfo() : '';
+            if ($node->data->get('v3_force_mermaid', false)) {
+                $info = 'mermaid';
+            } elseif ($node->data->get('v3_force_code', false) && strtolower(strtok($info, " \t") ?: '') === 'mermaid') {
+                $info = 'text';
+            }
+
+            return $fence.$info."\n".$value.($value !== '' && ! str_ends_with($value, "\n") ? "\n" : '').$fence;
         }
         if ($node instanceof MathBlock) {
             return "$$\n".rtrim($node->getLiteral(), "\n")."\n$$";

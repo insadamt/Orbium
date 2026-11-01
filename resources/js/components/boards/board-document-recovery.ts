@@ -1,3 +1,4 @@
+// Summary: Routes supported saved document formats to their matched editor or preview; depends on the version-3 Markdown contract and existing legacy/native Board contracts.
 import type { EditorDocument } from '@/components/editor/editor-api';
 import type {
     ResourceDocument,
@@ -8,7 +9,7 @@ export type DocumentDraft = {
     workspace_id: number;
     node_id: number;
     revision: number;
-    content_format_version: 1 | 2;
+    content_format_version: 1 | 3;
     markdown?: string;
     content?: EditorDocument;
 };
@@ -34,10 +35,10 @@ export function readDocumentDraft(
         )
             return { raw };
         if (
-            draft.content_format_version === 2 &&
+            draft.content_format_version === 3 &&
             (typeof draft.markdown !== 'string' ||
                 new TextEncoder().encode(draft.markdown).length >
-                    (document.content_format_version === 2
+                    (document.content_format_version === 3
                         ? document.markdown_limits.source_bytes
                         : 2097152))
         )

@@ -1,4 +1,5 @@
 // Summary: Coordinates block drag gestures, scrolling and atomic column/split moves; depends on existing block targets and the column drop resolver.
+import { moveV3AcrossDocuments } from '../runtime/v3-document-transfer';
 import { resolveColumnDrop } from '../columns/column-drop';
 import {
     scrollMarkdownDrag,
@@ -326,6 +327,15 @@ export class MarkdownBlockDragController {
         )
             return;
         try {
+            if (
+                session.block.v3Id &&
+                moveV3AcrossDocuments({
+                    source: this.options.view,
+                    block: session.block,
+                    target,
+                })
+            )
+                return;
             if (target.endpoint.view !== this.options.view) {
                 const previews = collectMarkdownSplitTransferPreviews(
                     this.options.view,

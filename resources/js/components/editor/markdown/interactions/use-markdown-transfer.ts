@@ -1,3 +1,9 @@
+// Summary: Applies verified V3 imports atomically and detects meaningful document content; depends on server validation, source baselines and trusted owner history annotations.
+import { requireValidV3Structure } from '../structure/v3-document-file';
+import { focusV3OwnerColumnSelection } from '../columns/v3/v3-column-registry';
+import { v3OwnerOperation } from '../transactions/v3-transaction-types';
+import { v3StructureField } from '../structure/v3-structure-state';
+import { initialV3Caret } from '../runtime/v3-initial-selection';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { EditorView } from '@codemirror/view';
 import { isolateHistory } from '@codemirror/commands';
@@ -12,11 +18,11 @@ export function useMarkdownTransfer(
     context: MarkdownTransferContext,
 ) {
     const controller = useRef<AbortController | null>(null);
-    const [empty, setEmpty] = useState(!view?.state.doc.toString().trim());
+    const [empty, setEmpty] = useState(!hasV3Content(view));
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState('');
     const updateEmpty = useCallback(
-        () => setEmpty(!view?.state.doc.toString().trim()),
+        () => setEmpty(!hasV3Content(view)),
         [view],
     );
     useEffect(() => {
@@ -28,7 +34,7 @@ export function useMarkdownTransfer(
             if (
                 !view ||
                 !view.state.facet(EditorView.editable) ||
-                view.state.doc.toString().trim() ||
+                hasV3Content(view) ||
                 controller.current
             )
                 return;
@@ -53,11 +59,24 @@ export function useMarkdownTransfer(
                     );
                 view.dispatch({
                     changes: { from: 0, to: original.length, insert: source },
-                    selection: { anchor: 0 },
-                    annotations: isolateHistory.of('full'),
+                    selection: {
+                        anchor:
+                            requireValidV3Structure(
+                                source,
+                            ).structure.blocks.find(
+                                (block) => block.type !== 'columns',
+                            )?.bodyFrom ?? 0,
+                    },
+                    annotations: [
+                        isolateHistory.of('full'),
+                        v3OwnerOperation.of(true),
+                    ],
                     userEvent: 'input.import',
                 });
                 view.focus();
+                queueMicrotask(() => {
+                    if (view.dom.isConnected) focusV3OwnerColumnSelection(view);
+                });
             } catch (failure) {
                 if (!request.signal.aborted)
                     setError(
@@ -108,11 +127,19 @@ export function useMarkdownTransfer(
                 );
             view.dispatch({
                 changes: { from: 0, to: view.state.doc.length, insert: source },
-                selection: { anchor: 0 },
-                annotations: isolateHistory.of('full'),
+                selection: {
+                    anchor: initialV3Caret(source),
+                },
+                annotations: [
+                    isolateHistory.of('full'),
+                    v3OwnerOperation.of(true),
+                ],
                 userEvent: 'input.import',
             });
             view.focus();
+            queueMicrotask(() => {
+                if (view.dom.isConnected) focusV3OwnerColumnSelection(view);
+            });
         },
         [view],
     );
@@ -125,4 +152,15 @@ export function useMarkdownTransfer(
         validateReplacement,
         replaceContent,
     };
+}
+
+function hasV3Content(view: EditorView | null) {
+    if (!view) return false;
+    const index = view.state.field(v3StructureField, false)?.current;
+    if (!index?.valid) return Boolean(view.state.doc.toString().trim());
+    return index.structure.blocks.some(
+        (block) =>
+            block.type !== 'paragraph' ||
+            Boolean(view.state.sliceDoc(block.bodyFrom, block.bodyTo).trim()),
+    );
 }

@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * Summary: Validates inline icons across native and Markdown surfaces; depends on the safe body grammar, owned attachments and installed icon catalogs.
+ */
+
 namespace App\Services\Editor;
 
 use App\Models\Attachment;
@@ -20,7 +24,7 @@ final class InlineIconData
         if (! str_contains($source, ':orbium[')) {
             return false;
         }
-        $walker = app(MarkdownParserService::class)->parse($source)->walker();
+        $walker = app(MarkdownParserService::class)->parseBody($source)->walker();
         while ($event = $walker->next()) {
             $node = $event->getNode();
             if ($event->isEntering() && $node instanceof OrbiumInline && isset($node->metadata['icon'])) {

@@ -1,3 +1,4 @@
+// Summary: Routes supported saved document formats to their matched editor or preview; depends on the version-3 Markdown contract and existing legacy/native Board contracts.
 import type { DocumentPageProps } from './document-page';
 import MarkdownEditorLoader, {
     MarkdownOpeningPreview,
@@ -22,7 +23,7 @@ export default function DocumentContent({
 }: Props) {
     return (
         <>
-            {document.content_format_version === 2 ? (
+            {document.content_format_version === 3 ? (
                 previewOnly ? (
                     <MarkdownOpeningPreview />
                 ) : (

@@ -1,3 +1,4 @@
+// Summary: Routes supported saved document formats to their matched editor or preview; depends on the version-3 Markdown contract and existing legacy/native Board contracts.
 import type { Page } from '@inertiajs/core';
 import { create } from 'zustand';
 import { useNavigation, type Tab } from './navigation-store';
@@ -47,7 +48,7 @@ async function fetchPreparedDocument({
         const savedDocument = page.props.document as {
             content_format_version?: number;
         };
-        if (savedDocument.content_format_version === 2)
+        if (savedDocument.content_format_version === 3)
             await import('@/components/editor/markdown/markdown-editor');
         else await import('@/components/editor/document-editor');
         if (useNavigation.getState().storageKey !== storageKey) return false;

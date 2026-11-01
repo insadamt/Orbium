@@ -1,3 +1,4 @@
+// Summary: Saves immutable owner snapshots and guards navigation while content or a rejected rich draft is pending; depends on revision-checked persistence, document activity and hosted sessions.
 import { useHostedDocumentSession } from '../hosted-document-session';
 import type { Text } from '@codemirror/state';
 import { router } from '@inertiajs/react';
@@ -5,6 +6,13 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useDocumentTab } from '@/components/navigation/document-tab-context';
 import { useNavigation } from '@/components/navigation/navigation-store';
 import { saveMarkdown, type MarkdownLimits } from './markdown-api';
+import {
+    acknowledgeV3MoveSave,
+    updateV3MoveReceivingSnapshot,
+    v3MoveSaveMustWait,
+    v3PersistenceHost,
+    v3MoveSavedEvent,
+} from './runtime/v3-move-persistence';
 
 type AutosaveOptions = {
     workspaceId: number;
@@ -12,6 +20,7 @@ type AutosaveOptions = {
     revision: number;
     limits: MarkdownLimits;
     isComposing: () => boolean;
+    hasPendingDraft?: () => boolean;
 };
 
 export function useMarkdownAutosave(options: AutosaveOptions) {
@@ -29,6 +38,8 @@ export function useMarkdownAutosave(options: AutosaveOptions) {
     const requestInFlight = useRef(false);
     const isComposing = useRef(options.isComposing);
     isComposing.current = options.isComposing;
+    const hasPendingDraft = useRef(options.hasPendingDraft);
+    hasPendingDraft.current = options.hasPendingDraft;
     const stopped = useRef(false);
     const timer = useRef<number | undefined>(undefined);
     const dirtySince = useRef<number | null>(null);
@@ -37,7 +48,22 @@ export function useMarkdownAutosave(options: AutosaveOptions) {
 
     const flush = useCallback(async () => {
         clearTimeout(timer.current);
-        if (stopped.current || pendingSource.current === null) return;
+        if (hasPendingDraft.current?.()) {
+            setStatus('error');
+            setError(
+                'A rich editor contains an unsaved draft. Copy or resolve it before leaving.',
+            );
+            return;
+        }
+        if (stopped.current) return;
+        if (pendingSource.current === null) {
+            if (!requestInFlight.current) {
+                setStatus('saved');
+                setError('');
+                setNavigationNotice('');
+            }
+            return;
+        }
         if (isComposing.current()) {
             // EditContext can end composition without another document transaction.
             timer.current = window.setTimeout(() => void flush(), 700);
@@ -48,6 +74,14 @@ export function useMarkdownAutosave(options: AutosaveOptions) {
             return;
         }
         const source = pendingSource.current;
+        if (v3MoveSaveMustWait({ workspaceId, nodeId }, source)) {
+            setStatus('unsaved');
+            setNavigationNotice(
+                'Waiting for the other document to save the moved blocks. Keep both documents open and resolve any save error there.',
+            );
+            timer.current = window.setTimeout(() => void flush(), 1000);
+            return;
+        }
         pendingSource.current = null;
         dirtySince.current = null;
         requestInFlight.current = true;
@@ -62,6 +96,7 @@ export function useMarkdownAutosave(options: AutosaveOptions) {
                 revision: revision.current,
             });
             succeeded = true;
+            acknowledgeV3MoveSave({ workspaceId, nodeId }, source);
             if (!stopped.current) {
                 setError('');
                 setStatus(pendingSource.current === null ? 'saved' : 'unsaved');
@@ -94,6 +129,7 @@ export function useMarkdownAutosave(options: AutosaveOptions) {
 
     const queueSave = useCallback(
         (source: Text) => {
+            updateV3MoveReceivingSnapshot({ workspaceId, nodeId }, source);
             // CodeMirror Text is immutable; defer full-source serialization until a save.
             pendingSource.current = source;
             dirtySince.current ??= performance.now();
@@ -117,13 +153,15 @@ export function useMarkdownAutosave(options: AutosaveOptions) {
                 ),
             );
         },
-        [flush],
+        [flush, workspaceId, nodeId],
     );
 
     useEffect(() => {
         stopped.current = false;
         const isDirty = () =>
-            pendingSource.current !== null || requestInFlight.current;
+            pendingSource.current !== null ||
+            requestInFlight.current ||
+            Boolean(hasPendingDraft.current?.());
         const removeGuard = router.on('before', (event) => {
             if (
                 (!activeTab.current ||
@@ -152,12 +190,21 @@ export function useMarkdownAutosave(options: AutosaveOptions) {
         };
         window.addEventListener('beforeunload', beforeUnload);
         window.addEventListener('orbium:before-tab-close', beforeClose);
+        const releaseMoveSave = () => {
+            if (pendingSource.current !== null) void flush();
+        };
+        const persistenceHost = v3PersistenceHost();
+        persistenceHost.addEventListener(v3MoveSavedEvent, releaseMoveSave);
         return () => {
             stopped.current = true;
             clearTimeout(timer.current);
             removeGuard();
             window.removeEventListener('beforeunload', beforeUnload);
             window.removeEventListener('orbium:before-tab-close', beforeClose);
+            persistenceHost.removeEventListener(
+                v3MoveSavedEvent,
+                releaseMoveSave,
+            );
         };
     }, [flush, tabId]);
 

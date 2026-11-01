@@ -1,3 +1,10 @@
+// Summary: Reuses the product block menu for stable V3 and legacy blocks; depends on shared presentation actions and owner transactions.
+import { mountV3LayoutMenu } from '../runtime/v3-layout-menu';
+import { copyV3MenuBlocks } from '../runtime/v3-menu-clipboard';
+import {
+    dispatchV3ProductOperation,
+    selectedV3ProductIds,
+} from '../runtime/v3-product-commands';
 import { createRoot } from 'react-dom/client';
 import { EditorView } from '@codemirror/view';
 import {
@@ -62,6 +69,17 @@ export function mountMarkdownBlockMenu({
     onNotice: (message: string) => void;
     onClose: () => void;
 }) {
+    if (block.v3Id) {
+        const layoutMenu = mountV3LayoutMenu({
+            view,
+            blockId: block.v3Id,
+            host,
+            anchor,
+            onNotice,
+            onClose,
+        });
+        if (layoutMenu) return layoutMenu;
+    }
     const container = document.createElement('div');
     host.append(container);
     const root = createRoot(container);
@@ -87,6 +105,11 @@ export function mountMarkdownBlockMenu({
     }
     function runAction(action: BlockMenuAction) {
         if (action === 'delete') deleteMarkdownBlock(view, block);
+        else if (action === 'duplicate' && block.v3Id)
+            dispatchV3ProductOperation(view, {
+                kind: 'duplicate',
+                blockIds: selectedV3ProductIds(view, block.v3Id),
+            });
         else if (action === 'duplicate')
             replaceMarkdownBlock(
                 view,
@@ -95,6 +118,16 @@ export function mountMarkdownBlockMenu({
                 block.source.length + 2,
             );
         else if (action === 'copy') {
+            if (block.v3Id) {
+                void copyV3MenuBlocks(view, block.v3Id).catch((error) =>
+                    onNotice(
+                        error instanceof Error
+                            ? error.message
+                            : 'Could not copy these blocks.',
+                    ),
+                );
+                return;
+            }
             void navigator.clipboard
                 .writeText(
                     logicalMarkdownText(

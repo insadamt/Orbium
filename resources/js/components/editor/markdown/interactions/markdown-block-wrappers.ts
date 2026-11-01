@@ -1,3 +1,4 @@
+// Summary: Wraps visible Markdown bodies for measured spacing and presentation; depends on the syntax tree, rich-block readers and CodeMirror wrappers while excluding V3 identity metadata.
 import { StateField, type EditorState, type Range } from '@codemirror/state';
 import { BlockWrapper, Decoration, EditorView } from '@codemirror/view';
 import type { SyntaxNode, Tree } from '@lezer/common';
@@ -22,6 +23,10 @@ function collectMarkdownWrappers(
         to,
         enter(reference) {
             const node = reference.node;
+            //
+            // Hidden identity lines must not acquire a padded layout frame.
+            //
+            if (node.name === 'V3Header') return false;
             const start = state.doc.lineAt(node.from).from;
             const end = state.doc.lineAt(Math.max(node.from, node.to - 1)).to;
             if (
@@ -38,6 +43,10 @@ function collectMarkdownWrappers(
                     }).range(start, end),
                 );
             }
+            //
+            // Keep the visible layout's frame, but leave nested body wrappers to the column projections.
+            //
+            if (node.name === 'V3Layout') return false;
             const presentation = readEditableMarkdownPresentation(state, node);
             if (presentation) {
                 const { body, header, close, metadata } = presentation;

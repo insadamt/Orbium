@@ -1,3 +1,4 @@
+// Summary: Tracks an asynchronous upload's text anchor and originating block identity across edits; depends on CodeMirror change mapping and V3 completion checks.
 import { StateEffect, StateField } from '@codemirror/state';
 
 export type MarkdownUploadAnchor = {
@@ -5,6 +6,7 @@ export type MarkdownUploadAnchor = {
     from: number;
     to: number;
     source: string;
+    blockId?: string;
 };
 export const setMarkdownUploadAnchor =
     StateEffect.define<MarkdownUploadAnchor | null>();

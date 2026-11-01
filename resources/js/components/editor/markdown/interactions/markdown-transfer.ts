@@ -1,3 +1,8 @@
+// Summary: Validates V3 imports and rewrites online destinations without changing structural IDs; depends on scoped parsing, limits and the matched server inspection contract.
+import { EditorState } from '@codemirror/state';
+import { markdownReferenceDestination } from './markdown-reference-links';
+import { normalizeV3PastedMarkdown } from '../editing/v3-paste-source';
+import { requireValidV3Structure } from '../structure/v3-document-file';
 import type { MarkdownLimits } from '../markdown-api';
 import { markdownSourceParser } from './markdown-source-parser';
 import { csrfToken, documentUrl } from '../../editor-api';
@@ -24,18 +29,23 @@ export function validateMarkdownTransfer(
 
 export function prepareMarkdownImport(input: string) {
     const source = input.replace(/^\uFEFF/, '').replace(/\r\n?/g, '\n');
+    if (/^\s*\+\+block[ \t]/.test(source)) {
+        requireValidV3Structure(source);
+        return source;
+    }
     const replacements: { from: number; to: number; insert: string }[] = [];
+    const bodyState = EditorState.create({ doc: source });
     markdownSourceParser.parse(source).iterate({
         enter(node) {
             if (['FencedCode', 'CodeBlock', 'InlineCode'].includes(node.name))
                 return false;
             if (node.name !== 'Image') return;
             const destination = node.node.getChild('URL');
-            const url =
-                destination &&
-                source
-                    .slice(destination.from, destination.to)
-                    .replace(/^<|>$/g, '');
+            const url = (
+                destination
+                    ? source.slice(destination.from, destination.to)
+                    : markdownReferenceDestination(bodyState, node.node)
+            )?.replace(/^<|>$/g, '');
             if (
                 url?.startsWith('orbium:attachment/') ||
                 /^#orbium-missing-image-[1-9]\d*$/.test(url ?? '')
@@ -64,7 +74,7 @@ export function prepareMarkdownImport(input: string) {
             result.slice(0, replacement.from) +
             replacement.insert +
             result.slice(replacement.to);
-    return result;
+    return normalizeV3PastedMarkdown(result).source;
 }
 
 export async function inspectMarkdownImport(
@@ -84,7 +94,7 @@ export async function inspectMarkdownImport(
             },
             body: JSON.stringify({
                 markdown: source,
-                content_format_version: 2,
+                content_format_version: 3,
             }),
             signal,
         },

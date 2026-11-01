@@ -58,6 +58,7 @@ export type AttachmentMetadata = {
     purpose: string;
 };
 export type RichContext = {
+    v3BlockType?: import('../structure/v3-contract').V3BlockType;
     localIconUploads?: boolean;
     onIconBusy?: (busy: boolean) => void;
     tabId?: string;

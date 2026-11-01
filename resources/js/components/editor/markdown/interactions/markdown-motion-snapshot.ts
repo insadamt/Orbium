@@ -1,12 +1,16 @@
+// Summary: Captures visible Markdown rows for block motion; depends on CodeMirror geometry, scoped V3 identities and isolated DOM/media clones.
 import { generate, parse, walk } from 'css-tree';
 import type { EditorView } from '@codemirror/view';
 import { markdownDragViewport } from './markdown-drag-scroll';
 import { markdownBlockPopOrigin } from './markdown-block-pop-origin';
+import { v3StructureField } from '../structure/v3-structure-state';
 
 export type RenderedRow = {
     element: HTMLElement;
     position: number;
     bounds: DOMRect;
+    blockId?: string;
+    blockOffset?: number;
 };
 
 let snapshotSequence = 0;
@@ -121,6 +125,7 @@ function copySnapshotMediaFrames(source: HTMLElement, clone: HTMLElement) {
 
 export function renderedMarkdownMotionRows(view: EditorView): RenderedRow[] {
     const rows: RenderedRow[] = [];
+    const index = view.state.field(v3StructureField, false)?.current;
     for (const child of view.contentDOM.children) {
         if (!(child instanceof HTMLElement)) continue;
         const bounds = child.getBoundingClientRect();
@@ -131,11 +136,53 @@ export function renderedMarkdownMotionRows(view: EditorView): RenderedRow[] {
         )
             continue;
         // Inline widgets belong to their containing row, not to a separate moving block.
-        const position = view.posAtDOM(child, 0);
+        //
+        // Empty widgets can resolve to an adjacent header at their DOM boundary; their rendered identity is authoritative.
+        //
+        const identifiedRow = child.matches(
+            '[data-v3-spacer-id], [data-v3-empty-block-id]',
+        )
+            ? child
+            : child.querySelector<HTMLElement>(
+                  '[data-v3-spacer-id], [data-v3-empty-block-id]',
+              );
+        const id =
+            identifiedRow?.closest('.cm-editor') === view.dom
+                ? (identifiedRow.dataset.v3SpacerId ??
+                  identifiedRow.dataset.v3EmptyBlockId)
+                : undefined;
+        const identifiedBlock = id ? index?.blockById(id) : null;
+        const position = identifiedBlock
+            ? identifiedBlock.type === 'spacer'
+                ? identifiedBlock.from
+                : identifiedBlock.bodyFrom
+            : view.posAtDOM(child, 0);
+        const block = identifiedBlock ?? index?.blockAt(position);
         if (Number.isFinite(position))
-            rows.push({ element: child, position, bounds });
+            rows.push({
+                element: child,
+                position,
+                bounds,
+                blockId: block?.id,
+                blockOffset: block ? position - block.from : undefined,
+            });
     }
     return rows;
+}
+
+export function markdownMotionRowInRange(
+    row: RenderedRow,
+    range?: { from: number; to: number },
+) {
+    //
+    // V3 ranges end at the next header; including that boundary incorrectly removes the next blank row from displacement motion.
+    //
+    return Boolean(
+        range &&
+        row.position >= range.from &&
+        (row.position < range.to ||
+            (!row.blockId && row.position === range.to)),
+    );
 }
 
 export function createMarkdownMotionSnapshot(

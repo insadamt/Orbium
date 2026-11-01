@@ -1,4 +1,5 @@
 // Summary: Maps parsed Markdown to rich blocks, keeping columns in canonical source; depends on the dialect metadata reader and Lezer AST.
+import { v3StructureField } from '../structure/v3-structure-state';
 import { readColumns } from '../columns/column-source';
 import { missingReferenceKind } from '../preview/missing-reference-dialog';
 import type { EditorState } from '@codemirror/state';
@@ -42,6 +43,9 @@ export function readRichBlock(
     depth = 0,
 ): RichBlock | null {
     if (depth > 32) return null;
+    const explicitType = state
+        .field(v3StructureField, false)
+        ?.current.blockAt(node.from)?.type;
     if (node.name === 'FencedCode') {
         const marks = node.getChildren('CodeMark');
         if (marks.length < 2) return null;
@@ -78,7 +82,11 @@ export function readRichBlock(
             ...model(
                 state,
                 node,
-                language.toLowerCase() === 'mermaid' ? 'mermaid' : 'code',
+                explicitType === 'mermaid' ||
+                    (language.toLowerCase() === 'mermaid' &&
+                        explicitType !== 'code')
+                    ? 'mermaid'
+                    : 'code',
                 from,
                 to,
             ),

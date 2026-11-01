@@ -14,15 +14,17 @@ Approved by the user on 2026-10-13. This is the document-transfer extension to t
 
 The 2026-10-14 approved [Word/PDF export extension](20-office-document-export.md) adds `.docx` and direct `.pdf` downloads to Single document. These formats use a clean document layout shared through DOCX generation and server-side LibreOffice conversion. They do not use Orbium editor themes and are not offered as package/import formats.
 
-Settings → **AI skills** provides the `create-orbium-documents` skill bundle for external assistants to generate version-2 `.orbie` files, document ZIP packages, and separate editor CSS themes. **Download skill ZIP** downloads a folder containing `SKILL.md`, usage/block/color/effect references, an importable `.orbie` showcase, and a CSS starter theme. The authenticated download assembles the current maintained files from `resources/skills/create-orbium-documents/` and deletes its temporary archive after sending. The page presents one primary ZIP download, a concise contents overview, three setup steps, an example prompt, and an Editor styles link for the included theme. Copy controls and the raw instruction field were removed during the UI review. The ZIP is installed in the assistant, not Orbium's Whole package importer. Import its showcase through Single document and its CSS through Editor styles. Documentation covers all supported native body metadata, preset Light/Dark colors, exact CSS selectors/properties, supported static effects, Appearance settings, package schema/checksums/limits, and manual usage. This does not connect an AI service or import generated files automatically.
+Settings → **AI skills** provides the `create-orbium-documents` skill bundle for external assistants to generate version-3 `.orbie` files, document ZIP packages, and separate editor CSS themes. **Download skill ZIP** downloads a folder containing `SKILL.md`, usage/block/color/effect references, an importable `.orbie` showcase, and a CSS starter theme. The authenticated download assembles the current maintained files from `resources/skills/create-orbium-documents/` and deletes its temporary archive after sending. The page presents one primary ZIP download, a concise contents overview, three setup steps, an example prompt, and an Editor styles link for the included theme. Copy controls and the raw instruction field were removed during the UI review. The ZIP is installed in the assistant, not Orbium's Whole package importer. Import its showcase through Single document and its CSS through Editor styles. Documentation covers all supported native body metadata, preset Light/Dark colors, exact CSS selectors/properties, supported static effects, Appearance settings, package schema/checksums/limits, and manual usage. This does not connect an AI service or import generated files automatically.
 
-`.orbie` is UTF-8 text, with a versioned header and the Orbium Markdown body dialect. New files use version 2; version-1 files remain readable:
+`.orbie` is UTF-8 text, with a versioned header and the Orbium Markdown body dialect. New files use version 3. Historical native V1/V2 development files are unsupported:
 
 ```text
-<!-- orbium-document {"version":2,"title":"Example"} -->
+<!-- orbium-document {"version":3,"title":"Example"} -->
+++block {"id":"example","type":"paragraph"}++
+Example body.
 ```
 
-It preserves supported Orbium body presentation metadata. Serialization normalizes source spelling; it does not mutate the current editor content. Single files do not contain binary assets or other pages. Version-2 single exports retain image/file placeholders and page-mention labels using explicit missing-reference destinations. Images keep their captions and presentation metadata in `.orbie`. Their missing targets are not fetched or connected to unrelated destination IDs. Standard `.md` uses the same missing-reference fragments with ordinary Markdown image/link syntax. Version-1 exports retain their original installation-link behavior; re-export to obtain the new placeholders.
+It preserves explicit structural identities, empty blocks, supported body metadata and source bytes. Omitted semantic references receive targeted destination rewrites; the editor content is not mutated. Single files do not contain binary assets or other pages. Version-2 single exports retain image/file placeholders and page-mention labels using explicit missing-reference destinations. Images keep their captions and presentation metadata in `.orbie`. Their missing targets are not fetched or connected to unrelated destination IDs. Standard `.md` uses the same missing-reference fragments with ordinary Markdown image/link syntax. Version-1 exports retain their original installation-link behavior; re-export to obtain the new placeholders.
 
 `.md` uses standard Markdown/GFM. Color, underline, explicit direction/alignment, divider styling, image sizing and rich-table spans are omitted or flattened into readable equivalents. Rich cell content uses `<br>` separators in GFM tables. Mermaid fences and math source remain; rendering math/Mermaid depends on the receiving Markdown application. Code is opaque during conversion. No account CSS theme is included.
 
@@ -40,7 +42,7 @@ Export **Package** uses three checkboxes:
 
 Counts update with the selected documents. Zero-count choices are disabled. Related documents are directly mentioned, visible, supported Markdown documents in the same workspace, excluding the main document itself; they are not recursively expanded. The main document may use current unsaved editor content. Related pages use their saved contents captured when the dialog loads.
 
-Current ZIP format 2 (format 1 remains supported):
+Current ZIP manifest format 3 (its original field schema is retained):
 
 ```text
 manifest.json
@@ -48,9 +50,9 @@ documents/<source-id>.orbie OR documents/<source-id>.md
 assets/<source-attachment-id>
 ```
 
-The manifest has `kind: orbium-document-package`, `version: 2`, ordered `documents`, and `assets`. Each document declares `id`, `title`, `source`, `path`, and `sha256`. `source` is the validated import representation with semantic `orbium:` relationship keys. Each asset declares `id`, `owner`, `name`, `path`, and `sha256`. Source IDs are package-local relationship keys, never destination IDs.
+The manifest has `kind: orbium-document-package`, `version: 3`, ordered `documents`, and `assets`. Each document declares `id`, `title`, `source`, `path`, and `sha256`. `source` is the validated import representation with semantic `orbium:` relationship keys. Each asset declares `id`, `owner`, `name`, `path`, and `sha256`. Source IDs are package-local relationship keys, never destination IDs.
 
-Native `.orbie` document entries retain package-local relationship keys. Markdown entries use relative links to documents/assets for use outside Orbium. Import verifies that each entry's parsed content agrees with its manifest representation after resolving those destinations. The first document is the main document. In format 2, excluded references use explicit missing destinations. Included references are remapped as before. Format-1 packages remain readable with their original installation links; their shape and reference interpretation are not rewritten.
+Native `.orbie` document entries retain package-local relationship keys. Markdown entries use relative links to documents/assets for use outside Orbium. Import verifies exact native V3 source/identity equality and exact canonical clean-Markdown output with resolved destinations. The first document is the main document. In format 2, excluded references use explicit missing destinations. Included references are remapped as before. Historical package schemas are not rewritten; old document bodies are unsupported by the active V3 reader.
 
 Packages include referenced body images/files only. Covers, icons, themes, database schemas/properties, hierarchy, tags, and account settings are not transferred. A document package is not an account archive or arbitrary folder ZIP importer.
 
@@ -93,7 +95,7 @@ Page mentions have an inline button appearance and keyboard focus. Normal click,
 
 ## Library shared assets (2026-10-13)
 
-New document ZIP manifests use version 3. The field shapes remain those described above, but every included document may reference any included asset. Each binary is emitted once, and `owner` selects an included document for import provenance. Native `.orbie` document headers remain version 2. Versions 1 and 2 retain their original per-document asset ownership validation. Older Orbium installations reject version 3 with an upgrade message. This is independent from the whole-account archive format.
+New document ZIP manifests use version 3. The field shapes remain those described above, but every included document may reference any included asset. Each binary is emitted once, and `owner` selects an included document for import provenance. Native `.orbie` document headers now use version 3, independently of the manifest version. Versions 1 and 2 retain their original per-document asset ownership validation. Older Orbium installations reject version 3 with an upgrade message. This is independent from the whole-account archive format.
 
 
 ## Mind Map export compatibility (2026-10-24)
@@ -109,3 +111,5 @@ Mind Map inline icons (2026-10-26): formatting-preserving graph-7 exports keep b
 ## Document columns (2026-10-30)
 
 Formatting-preserving `.orbie`, document packages and account archives retain the version-1 `columns`/`column` directives and exact width proportions. Existing parsed reference discovery/remapping includes every column body. Standard Markdown and Word/PDF flatten columns into ordinary blocks in left-to-right column reading order, preserving their content. No document/package/archive envelope version changes; older servers reject unknown reserved directive kinds. See [the columns phase](../phases/16-document-columns.md) and [manual report](../reports/16-document-columns.md).
+
+V3 cutover (2026-10-31): see [Active V3 editor](29-v3-active-editor.md). Manifest `source` includes all structural block/column headers; native entries retain those IDs, while `.md` bodies flatten them. Legacy descriptions above record earlier reference policy; they do not enable native V1/V2 compatibility.

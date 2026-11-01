@@ -1,3 +1,5 @@
+// Summary: Searches visible V3 body text and navigates mapped column matches; depends on scoped logical text, mounted projections and existing debounced page-search controls.
+import { resolveV3ColumnPosition } from './columns/v3/v3-column-registry';
 import { setLogicalMarkdownMatches } from './interactions/markdown-find-highlights';
 import { SearchQuery, setSearchQuery } from '@codemirror/search';
 import { EditorView } from '@codemirror/view';
@@ -65,6 +67,22 @@ export function useMarkdownSearch(view: EditorView | null) {
                     EditorView.scrollIntoView(match.from, { y: 'center' }),
                 ],
             });
+            const column = resolveV3ColumnPosition(view, match.from);
+            if (column) {
+                column.view.dispatch({
+                    selection: {
+                        anchor: column.position,
+                        head: Math.min(
+                            column.view.state.doc.length,
+                            column.position + match.to - match.from,
+                        ),
+                    },
+                    effects: EditorView.scrollIntoView(column.position, {
+                        y: 'center',
+                    }),
+                });
+                column.view.focus();
+            }
         },
         [view, matchesFor, setResultCount],
     );

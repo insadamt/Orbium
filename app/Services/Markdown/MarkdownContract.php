@@ -1,14 +1,18 @@
 <?php
 
+/**
+ * Summary: Defines the active saved V3 Markdown contract and bounded source validation; depends on matching frontend version/capability guards and the V3 structural parser.
+ */
+
 namespace App\Services\Markdown;
 
 use Illuminate\Validation\ValidationException;
 
 final class MarkdownContract
 {
-    public const FORMAT_VERSION = 2;
+    public const FORMAT_VERSION = 3;
 
-    public const DIALECT = 'orbium-markdown-v1';
+    public const DIALECT = 'orbium-markdown-v3';
 
     public const MAX_SOURCE_BYTES = 2097152;
 

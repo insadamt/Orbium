@@ -1,5 +1,19 @@
 // Summary: Orchestrates the Markdown Document editor and its canonical save/history lifecycle; depends on rich widgets, column composition guards and shared document services.
-import { columnSearchSynchronization } from './columns/column-search';
+import {
+    guardV3RichDraft,
+    hasV3RichDraft,
+    guardV3DraftHistory,
+} from './runtime/v3-rich-draft';
+import { initialV3Caret } from './runtime/v3-initial-selection';
+import { isV3EmbeddedComposing } from './editing/v3-composition';
+import { normalizeV3HeaderSelection } from './editing/v3-live-selection';
+import {
+    v3ProductPresentation,
+    v3ProductLanguage,
+} from './runtime/v3-product-presentation';
+import { v3OwnerTransactionExtensions } from './transactions/v3-transaction-plan';
+import { v3StructureField } from './structure/v3-structure-state';
+import { isV3ColumnComposing } from './columns/v3/v3-column-registry';
 import { isColumnEditorComposing } from './columns/column-registry';
 import { markdownImportPaste } from './markdown-import-paste';
 import { MarkdownFileInput } from './markdown-file-input';
@@ -7,17 +21,11 @@ import { MarkdownInlineIcons } from '@/components/inline-icons/markdown-inline-i
 import { isMindMapComposing } from '@/components/mindmap/mindmap-composition';
 import { useHostedMarkdownDocument } from '../use-hosted-document-activity';
 import { dispatchMarkdownHistoryWithLayoutMotion } from './interactions/markdown-history-layout-motion';
-import { markdownBlockHistoryMotion } from './interactions/markdown-block-history-motion';
 import { LibraryPicker } from '@/components/library/library-picker';
 import { ExportDialog } from '@/components/document-transfer/export-dialog';
 import { ImportDialog } from '@/components/document-transfer/import-dialog';
-import {
-    markdownSelectAll,
-    orbiumSelectionAppearance,
-} from './markdown-selection';
+import { orbiumSelectionAppearance } from './markdown-selection';
 import { MermaidPreviewSession } from '../mermaid-preview-session';
-import { orbiumMarkdownDialect } from './dialect/markdown-dialect';
-import { markdownRichBlocks } from './rich/rich-blocks';
 import type { RichContext } from './rich/rich-model';
 import { Compartment, EditorSelection, EditorState } from '@codemirror/state';
 import { normalizeMentionSelection } from './preview/markdown-mention-selection';
@@ -29,16 +37,9 @@ import {
     placeholder,
 } from '@codemirror/view';
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
-import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
 import { search } from '@codemirror/search';
-import { markdownBlockWrappers } from './interactions/markdown-block-wrappers';
-import { markdownPresentationCommands } from './interactions/markdown-presentation-commands';
 import { markdownFindHighlights } from './interactions/markdown-find-highlights';
-import { markdownDividerToolbar } from './interactions/markdown-divider-toolbar';
-import { markdownSelectionToolbar } from './interactions/markdown-selection-toolbar';
 import { registerMarkdownSplitBlockTarget } from './interactions/markdown-split-block-targets';
-import { markdownBlockGutter } from './interactions/markdown-block-gutter';
-import { markdownTrailingParagraph } from './interactions/markdown-trailing-paragraph';
 import { markdownMediaInput } from './interactions/markdown-media-input';
 import { useMarkdownTransfer } from './interactions/use-markdown-transfer';
 import { MarkdownEditorControls } from './interactions/markdown-editor-controls';
@@ -50,13 +51,8 @@ import {
 } from './markdown-pending-formatting';
 import { markdownUploadAnchor } from './markdown-upload-anchor';
 import { useMarkdownUpload } from './use-markdown-upload';
-import { markdownLivePreview } from './preview/markdown-live-preview';
-import { markdownWritingCommands } from './preview/markdown-writing-commands';
 import { markdownLinkNavigation } from './preview/markdown-link-preview';
-import {
-    markdownPreviewTheme,
-    markdownSlashMenuTheme,
-} from './preview/markdown-preview-theme';
+import { markdownSlashMenuTheme } from './preview/markdown-preview-theme';
 import { useEffect, useRef, useState } from 'react';
 import { useAppearance } from '@/hooks/use-appearance';
 import { useDocumentTab } from '@/components/navigation/document-tab-context';
@@ -85,6 +81,7 @@ export type MarkdownEditorProps = {
 export default function MarkdownEditor(props: MarkdownEditorProps) {
     const host = useRef<HTMLDivElement>(null);
     const [view, setView] = useState<EditorView | null>(null);
+    const [structureError, setStructureError] = useState('');
     const [notice, setNotice] = useState('');
     const [transferDialog, setTransferDialog] = useState<
         'import' | 'export' | null
@@ -103,11 +100,17 @@ export default function MarkdownEditor(props: MarkdownEditorProps) {
     const editorView = useRef<EditorView | null>(null);
     const autosave = useMarkdownAutosave({
         ...props,
+        hasPendingDraft: () => hasV3RichDraft(editorView.current),
         isComposing: () =>
             Boolean(
                 editorView.current?.compositionStarted ||
                 isMindMapComposing(editorView.current?.dom) ||
-                isColumnEditorComposing(editorView.current?.dom),
+                isColumnEditorComposing(editorView.current?.dom) ||
+                Boolean(
+                    editorView.current &&
+                    (isV3ColumnComposing(editorView.current) ||
+                        isV3EmbeddedComposing(editorView.current)),
+                ),
             ),
     });
     const finder = useMarkdownSearch(view);
@@ -144,15 +147,15 @@ export default function MarkdownEditor(props: MarkdownEditorProps) {
         isVisible: () => visibility.current,
         onUpload: (request) => callbacks.current.chooseFile(request),
     }));
-    const [richExtensions] = useState(() => markdownRichBlocks(richContext));
-    const [interactionExtensions] = useState(() => [
-        markdownSelectionToolbar(setNotice),
-        markdownDividerToolbar(setNotice),
-        //
-        // Hosted Documents need their own block controls; canvas selection only moves the outer card.
-        //
-        markdownBlockGutter(setNotice),
-    ]);
+    const [richExtensions] = useState(() =>
+        v3ProductPresentation({
+            context: richContext,
+            clipboardScope: `workspace:${props.workspaceId}`,
+            isAvailable: () => visibility.current,
+            onNotice: setNotice,
+            onUpload: (request) => callbacks.current.chooseFile(request),
+        }),
+    );
 
     useEffect(() => {
         if (!host.current) return;
@@ -171,31 +174,18 @@ export default function MarkdownEditor(props: MarkdownEditorProps) {
                         dispatchMarkdownHistoryWithLayoutMotion,
                     state: EditorState.create({
                         doc: initial.current.markdown,
+                        selection: {
+                            anchor: initialV3Caret(initial.current.markdown),
+                        },
                         extensions: [
                             history(),
-                            columnSearchSynchronization,
-                            markdownBlockHistoryMotion,
+                            v3OwnerTransactionExtensions,
                             outlineUpdates.current.of([]),
                             orbiumSelectionAppearance,
-                            markdownSelectAll,
-                            presentation.current.of([
-                                markdownLivePreview(initial.current),
-                                richExtensions,
-                                markdownPreviewTheme,
-                                markdownWritingCommands,
-                                markdownBlockWrappers,
-                                markdownPresentationCommands,
-                                markdownTrailingParagraph,
-                                interactionExtensions,
-                            ]),
+                            presentation.current.of(richExtensions),
                             highlightActiveLine(),
                             EditorView.lineWrapping,
-                            markdown({
-                                base: markdownLanguage,
-                                extensions: [orbiumMarkdownDialect],
-                                completeHTMLTags: false,
-                                pasteURLAsLink: false,
-                            }),
+                            v3ProductLanguage(),
                             search(),
                             markdownFindHighlights,
                             markdownSlashCommands(
@@ -239,6 +229,15 @@ export default function MarkdownEditor(props: MarkdownEditorProps) {
                             }),
                             EditorView.updateListener.of((update) => {
                                 if (!update.docChanged) return;
+                                setNotice('');
+                                const diagnostic =
+                                    update.state.field(v3StructureField).current
+                                        .structure.diagnostics[0];
+                                setStructureError(
+                                    diagnostic
+                                        ? `${diagnostic.message} (line ${diagnostic.line}). Repair this in Source mode before saving.`
+                                        : '',
+                                );
                                 callbacks.current.queueSave(update.state.doc);
                                 callbacks.current.count();
                                 callbacks.current.updateEmpty();
@@ -302,7 +301,7 @@ export default function MarkdownEditor(props: MarkdownEditorProps) {
                       view.state.selection.ranges.map((range) =>
                           normalizeMentionSelection(
                               view.state,
-                              range,
+                              normalizeV3HeaderSelection(view.state, range),
                               range.head,
                           ),
                       ),
@@ -311,16 +310,7 @@ export default function MarkdownEditor(props: MarkdownEditorProps) {
                 : undefined,
             effects: presentation.current.reconfigure(
                 livePreview
-                    ? [
-                          markdownLivePreview(initial.current),
-                          richExtensions,
-                          markdownPreviewTheme,
-                          markdownWritingCommands,
-                          markdownBlockWrappers,
-                          markdownPresentationCommands,
-                          markdownTrailingParagraph,
-                          interactionExtensions,
-                      ]
+                    ? richExtensions
                     : [
                           lineNumbers(),
                           markdownSourceHighlighting(
@@ -361,6 +351,7 @@ export default function MarkdownEditor(props: MarkdownEditorProps) {
                 view.composing
             )
                 return;
+            if (guardV3DraftHistory(event, view, setNotice)) return;
             if (event.key.toLowerCase() === 's') {
                 event.preventDefault();
                 void autosave.saveNow();
@@ -370,8 +361,8 @@ export default function MarkdownEditor(props: MarkdownEditorProps) {
                 finder.openSearch();
             }
         };
-        window.addEventListener('keydown', keyDown);
-        return () => window.removeEventListener('keydown', keyDown);
+        window.addEventListener('keydown', keyDown, true);
+        return () => window.removeEventListener('keydown', keyDown, true);
     }, [active, view, autosave.saveNow, finder.openSearch]);
 
     return (
@@ -395,10 +386,27 @@ export default function MarkdownEditor(props: MarkdownEditorProps) {
                 disabled={!active || !view || upload.uploading}
                 importing={transfer.busy}
                 onRetry={() => void autosave.saveNow()}
-                onTogglePreview={() => setLivePreview((current) => !current)}
-                onImport={() => setTransferDialog('import')}
-                onExport={() => setTransferDialog('export')}
+                onTogglePreview={() =>
+                    guardV3RichDraft(view, setNotice, () =>
+                        setLivePreview((current) => !current),
+                    )
+                }
+                onImport={() =>
+                    guardV3RichDraft(view, setNotice, () =>
+                        setTransferDialog('import'),
+                    )
+                }
+                onExport={() =>
+                    guardV3RichDraft(view, setNotice, () =>
+                        setTransferDialog('export'),
+                    )
+                }
             />
+            {structureError && (
+                <p role="alert" className="mb-2 text-sm text-destructive">
+                    {structureError}
+                </p>
+            )}
             {notice && (
                 <p role="status" className="mb-2 text-sm text-muted-foreground">
                     {notice}
@@ -427,8 +435,7 @@ export default function MarkdownEditor(props: MarkdownEditorProps) {
                 <ImportDialog
                     workspaceId={props.workspaceId}
                     replaceDocument={{
-                        hasContent: () =>
-                            Boolean(view.state.doc.toString().trim()),
+                        hasContent: () => !transfer.empty,
                         validate: transfer.validateReplacement,
                         replace: transfer.replaceContent,
                     }}

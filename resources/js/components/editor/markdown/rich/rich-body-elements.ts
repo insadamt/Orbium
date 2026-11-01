@@ -1,0 +1,33 @@
+// Summary: Maps safe body syntax to read-only HTML and suppresses source markers; depends on shared Markdown node names and native HTML elements.
+export const hiddenMarks = new Set([
+    'HeaderMark',
+    'QuoteMark',
+    'ListMark',
+    'EmphasisMark',
+    'StrikethroughMark',
+    'CodeMark',
+    'OrbiumSpanMark',
+    'OrbiumMetadata',
+    'OrbiumHeader',
+    'OrbiumClose',
+]);
+export const tags: Record<string, keyof HTMLElementTagNameMap> = {
+    Paragraph: 'p',
+    Task: 'div',
+    StrongEmphasis: 'strong',
+    Emphasis: 'em',
+    Strikethrough: 's',
+    InlineCode: 'code',
+    BulletList: 'ul',
+    OrderedList: 'ol',
+    ListItem: 'li',
+    Blockquote: 'blockquote',
+    ATXHeading1: 'h1',
+    ATXHeading2: 'h2',
+    ATXHeading3: 'h3',
+    ATXHeading4: 'h4',
+    ATXHeading5: 'h5',
+    ATXHeading6: 'h6',
+    SetextHeading1: 'h1',
+    SetextHeading2: 'h2',
+};

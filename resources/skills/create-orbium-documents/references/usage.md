@@ -1,3 +1,5 @@
+Summary: Documents supported V3 body payloads and usage; depends on the stable block headers and native version-3 envelope in the skill entrypoint. Examples below are payload fragments unless a complete file is explicitly shown.
+
 # Using Orbium and the skill bundle
 
 ## Install or share the skill
@@ -52,7 +54,7 @@ Open Settings → Editor styles → Customize styles → Import the bundled/gene
 
 | Symptom                              | What to check                                                                                              |
 | ------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
-| Header/version error                 | Exact first-line orbium-document JSON, integer version 2, nonblank matching title, LF newline              |
+| Header/version error                 | Exact first-line orbium-document JSON, integer version 3, nonblank matching title, LF newline              |
 | Manifest/path/checksum error         | ZIP root, regular entries only, exact declared paths, hash final bytes after content edits                 |
 | Missing live reference               | Include target document/asset, use the correct owner's asset, or replace with an explicit missing fragment |
 | External image stays text            | Supply supported image bytes and create a package; remote URLs do not create owned images                  |

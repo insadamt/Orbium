@@ -1,4 +1,5 @@
 // Summary: Maps an owning Document's source positions to mounted column editors so outline navigation reaches actual headings; depends on the column registry and reserved directive parser.
+import { resolveV3ColumnPosition } from './v3/v3-column-registry';
 import type { EditorView } from '@codemirror/view';
 import { readOrbiumMetadata } from '../dialect/metadata';
 import { markdownSourceParser } from '../interactions/markdown-source-parser';
@@ -8,6 +9,8 @@ export function resolveColumnDocumentPosition(
     owner: EditorView,
     position: number,
 ): { view: EditorView; position: number } | null {
+    const identified = resolveV3ColumnPosition(owner, position);
+    if (identified) return identified;
     for (const columns of mountedDocumentColumns(owner)) {
         const { block } = columns.current();
         if (position < block.from || position > block.to) continue;

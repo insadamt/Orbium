@@ -1,3 +1,4 @@
+// Summary: Routes supported saved document formats to their matched editor or preview; depends on the version-3 Markdown contract and existing legacy/native Board contracts.
 import { csrfToken } from '@/components/editor/editor-api';
 import { readBoardSnapshot, BoardSaveError } from './board-api';
 import type { BoardLocation, BoardSnapshot, BoardBounds } from './board-types';
@@ -50,11 +51,11 @@ export async function fetchResourceDocument(
         typeof result.title !== 'string' ||
         !Number.isSafeInteger(result.revision) ||
         result.revision < 0 ||
-        ![1, 2].includes(result.content_format_version)
+        ![1, 3].includes(result.content_format_version)
     )
         throw new Error('Unsupported Document response.');
     if (
-        result.content_format_version === 2 &&
+        result.content_format_version === 3 &&
         (typeof result.markdown !== 'string' ||
             !result.markdown_limits?.source_bytes ||
             !result.markdown_limits.line_bytes)

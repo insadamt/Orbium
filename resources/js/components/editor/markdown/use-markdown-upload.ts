@@ -1,3 +1,8 @@
+// Summary: Inserts owned uploads with stable V3 block types and asynchronous anchor checks; depends on Library/upload APIs, owner transactions and inline icon adapters.
+import { v3StructureField } from './structure/v3-structure-state';
+import { dispatchV3ProductOperation } from './runtime/v3-product-commands';
+import { createV3Identity, encodeV3Header } from './structure/v3-contract';
+import { v3ColumnProjectionFor } from './columns/v3/v3-column-registry';
 import { serializeOrbiumBlock } from './dialect/metadata';
 import { announceInsertedIcon } from '@/components/inline-icons/icon-preferences';
 import { inlineIconLabel } from '@/components/inline-icons/icon-catalog';
@@ -85,6 +90,9 @@ export function useMarkdownUpload(
                     from: next.from,
                     to: next.to,
                     source: next.view.state.sliceDoc(next.from, next.to),
+                    blockId: next.view.state
+                        .field(v3StructureField, false)
+                        ?.current.blockAt(next.from)?.id,
                 }),
             });
             closeCompletion(next.view);
@@ -184,6 +192,50 @@ export function useMarkdownUpload(
                         `Upload completed, but the insertion text changed. Paste this reference where you want it: ${source}`,
                     );
                 setError('');
+                const identified = current.view.state
+                    .field(v3StructureField, false)
+                    ?.current.blockAt(anchor.from);
+                if (anchor.blockId && identified?.id !== anchor.blockId)
+                    throw new Error(
+                        `Upload completed, but its original block moved or was replaced. Paste this reference where you want it: ${source}`,
+                    );
+                if (identified && !current.inlineIcon) {
+                    const before = current.view.state.sliceDoc(
+                        identified.bodyFrom,
+                        anchor.from,
+                    );
+                    const after = current.view.state.sliceDoc(
+                        anchor.to,
+                        identified.bodyTo,
+                    );
+                    if (!before.trim() && !after.trim())
+                        dispatchV3ProductOperation(current.view, {
+                            kind: 'replace-block',
+                            blockId: identified.id,
+                            type: current.kind,
+                            body: source,
+                        });
+                    else {
+                        const projection = v3ColumnProjectionFor(current.view);
+                        const offset = projection
+                            ? projection.owner.state
+                                  .field(v3StructureField)
+                                  .current.columnById(projection.columnId)!
+                                  .bodyFrom
+                            : 0;
+                        dispatchV3ProductOperation(current.view, {
+                            kind: 'paste',
+                            blockId: identified.id,
+                            from: anchor.from + offset,
+                            to: anchor.to + offset,
+                            source: `${encodeV3Header({ id: createV3Identity(), type: current.kind })}\n${source}\n`,
+                        });
+                    }
+                    current.view.dispatch({
+                        effects: setMarkdownUploadAnchor.of(null),
+                    });
+                    return current.view.state.selection.main.head;
+                }
                 const line = current.view.state.doc.lineAt(anchor.from);
                 const prefix =
                     current.view.state

@@ -1,3 +1,4 @@
+// Summary: Routes supported saved document formats to their matched editor or preview; depends on the version-3 Markdown contract and existing legacy/native Board contracts.
 import { useState } from 'react';
 import MarkdownEditorLoader from '@/components/editor/markdown/markdown-editor-loader';
 import DocumentEditorLoader from '@/pages/documents/document-editor-loader';
@@ -73,7 +74,7 @@ export function BoardDocumentEditor({
                 }}
             >
                 <HostedDocumentSessionContext.Provider value={session.runtime}>
-                    {document.content_format_version === 2 ? (
+                    {document.content_format_version === 3 ? (
                         <MarkdownEditorLoader
                             title={document.title}
                             workspaceId={location.workspaceId}

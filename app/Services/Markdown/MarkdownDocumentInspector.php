@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * Summary: Derives text, references, statistics and preview hashes from scoped V3 bodies; depends on the canonical parser and existing reference and rich metadata validators.
+ */
+
 namespace App\Services\Markdown;
 
 use App\Services\Editor\DocumentInspectionResult;
@@ -13,6 +17,7 @@ use League\CommonMark\Extension\CommonMark\Node\Inline\Link;
 use League\CommonMark\Extension\Table\TableRow;
 use League\CommonMark\Extension\TaskList\TaskListItemMarker;
 use League\CommonMark\Node\Block\AbstractBlock;
+use League\CommonMark\Node\Block\Document;
 use League\CommonMark\Node\Block\Paragraph;
 use League\CommonMark\Node\Inline\Newline;
 use League\CommonMark\Node\Node;
@@ -26,9 +31,19 @@ final class MarkdownDocumentInspector
     {
         $source = MarkdownContract::normalizeSource($source);
         $document = $this->parser->parse($source);
-        foreach ($document->getReferenceMap() as $definition) {
-            $this->semanticReference(new Link($definition->getDestination()));
-        }
+
+        return $this->inspectParsed($source, $document);
+    }
+
+    public function inspectBody(string $source): MarkdownInspectionResult
+    {
+        $source = MarkdownContract::normalizeSource($source);
+
+        return $this->inspectParsed($source, $this->parser->parseBody($source));
+    }
+
+    private function inspectParsed(string $source, Document $document): MarkdownInspectionResult
+    {
         $mentions = [];
         $attachments = [];
         $mermaid = [];
@@ -50,7 +65,7 @@ final class MarkdownDocumentInspector
             $source = $this->withoutStructuralNewline($node->getLiteral());
             $infoToken = strtolower(explode(' ', str_replace("\t", ' ', $node->getInfo()))[0]);
             $parent = $node->parent();
-            if ($infoToken === 'mermaid' && ! ($parent instanceof OrbiumBlock && $parent->kind() === 'code')) {
+            if ($node->data->get('v3_force_mermaid', false) || (! $node->data->get('v3_force_code', false) && $infoToken === 'mermaid' && ! ($parent instanceof OrbiumBlock && $parent->kind() === 'code'))) {
                 if (strlen($source) > 50000) {
                     MarkdownContract::invalid('Mermaid source exceeds the 50,000 byte preview limit.', $node->getStartLine());
                 }
@@ -81,6 +96,11 @@ final class MarkdownDocumentInspector
         }
         if ($node instanceof OrbiumBlock && $node->kind() === 'math') {
             return (string) $node->metadata['latex'];
+        }
+        if ($node instanceof Document) {
+            foreach ($node->getReferenceMap() as $definition) {
+                $this->semanticReference(new Link($definition->getDestination()));
+            }
         }
         $parts = [];
         foreach ($node->children() as $child) {

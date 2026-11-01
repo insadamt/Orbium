@@ -1,3 +1,4 @@
+// Summary: Routes supported saved document formats to their matched editor or preview; depends on the version-3 Markdown contract and existing legacy/native Board contracts.
 import type { EditorDocument } from '@/components/editor/editor-api';
 import type { MarkdownLimits } from '@/components/editor/markdown/markdown-api';
 export type BoardResource = {
@@ -19,7 +20,7 @@ export type ResourceDocument = {
     revision: number;
 } & (
     | {
-          content_format_version: 2;
+          content_format_version: 3;
           markdown: string;
           markdown_limits: MarkdownLimits;
       }

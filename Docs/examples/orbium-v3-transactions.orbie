@@ -1,0 +1,40 @@
+<!-- orbium-document {"version":3,"title":"V3 owner transaction review"} -->
+++block {"id":"tx-summary","type":"paragraph"}++
+Summary: This manual sample exercises stage-3 owner transactions, persistent IDs, inline formatting and opaque copies. It depends on the isolated transaction inspector; its illustrative page/attachment references are not authorized application data and must not be imported into a real workspace.
+
+++block {"id":"tx-first","type":"paragraph"}++
+Hello **world**.
+
+++block {"id":"tx-second","type":"paragraph"}++
+Again.
+
+++block {"id":"tx-heading","type":"heading-2"}++
+## HEADING-TITLE
+Heading carryover.
+
+++block {"id":"tx-tasks","type":"checklist"}++
+- [ ] TASK-ONE
+  - [x] NESTED-CHECKED
+- [x] TASK-TWO
+  Continuation text stays with its item.
+
+++block {"id":"tx-styled","type":"paragraph"}++
+:::orbium {"kind":"block","align":"center","dir":"rtl"}
+:orbium[Styled text]{"color":"preset:blue","underline":true}
+:::
+
+++block {"id":"tx-code","type":"code"}++
+````text
+++block {"id":"tx-first","type":"paragraph"}++
+orbium:attachment/123 is literal source here.
+````
+
+++block {"id":"tx-reference","type":"paragraph"}++
+[@Manual target](orbium:node/123)
+
+++block {"id":"tx-callout","type":"callout"}++
+> [!NOTE] Authored callout title
+> CALLOUT-BODY
+
+++block {"id":"tx-last","type":"paragraph"}++
+END-TEXT

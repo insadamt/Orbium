@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * Summary: Builds readable Office content from scoped V3 body nodes; depends on the canonical Markdown parser, reference resolver and rich fallback models.
+ */
+
 namespace App\Services\DocumentExport;
 
 use App\Models\Node as DocumentNode;
@@ -43,6 +47,9 @@ final class OfficeDocumentModel
     /** @return array<string, mixed> */
     private function convert(Node $node, Workspace $workspace, DocumentNode $document): array
     {
+        if ($node->data->get('v3.type', null) === 'spacer') {
+            return ['kind' => 'spacer', 'children' => []];
+        }
         $children = [];
         foreach ($node->children() as $child) {
             $children[] = $this->convert($child, $workspace, $document);
@@ -61,8 +68,8 @@ final class OfficeDocumentModel
             return ['kind' => 'math', 'text' => trim($node->getLiteral()), 'inline' => false];
         }
         if ($node instanceof FencedCode || $node instanceof IndentedCode) {
-            $diagram = $node instanceof FencedCode && strtolower(explode(' ', str_replace("\t", ' ', $node->getInfo()))[0]) === 'mermaid'
-                && ! ($node->parent() instanceof OrbiumBlock && $node->parent()->kind() === 'code');
+            $diagram = $node->data->get('v3_force_mermaid', false) || (! $node->data->get('v3_force_code', false) && $node instanceof FencedCode && strtolower(explode(' ', str_replace("\t", ' ', $node->getInfo()))[0]) === 'mermaid'
+                && ! ($node->parent() instanceof OrbiumBlock && $node->parent()->kind() === 'code'));
             $text = rtrim($node->getLiteral(), "\n");
 
             return ['kind' => $diagram ? 'diagram' : 'codeBlock', 'text' => $text, 'hash' => hash('sha256', str_ends_with($node->getLiteral(), "\n") ? substr($node->getLiteral(), 0, -1) : $node->getLiteral())];
