@@ -4,6 +4,7 @@ import { v3StructureField } from '../structure/v3-structure-state';
 import { isV3TextType, writeV3TextBody } from '../transactions/v3-text-body';
 import type { V3BlockOperation } from '../transactions/v3-transaction-types';
 import { readV3EditableText } from './v3-editable-text';
+import { v3TextPrefixLength } from './v3-text-prefix';
 
 export function isV3ProtectedTextBoundary(
     state: EditorState,
@@ -24,7 +25,12 @@ export function isV3ProtectedTextBoundary(
               text.model.contentFrom + text.model.content.length;
 }
 
-export type V3EditingKey = 'Enter' | 'Shift-Enter' | 'Backspace' | 'Delete';
+export type V3EditingKey =
+    | 'Enter'
+    | 'Shift-Enter'
+    | 'Backspace'
+    | 'Ctrl-Backspace'
+    | 'Delete';
 
 export function resolveV3KeyboardOperation(request: {
     state: EditorState;
@@ -50,6 +56,28 @@ export function resolveV3KeyboardOperation(request: {
                 body: '\n',
             };
         return null;
+    }
+    if (key === 'Ctrl-Backspace') {
+        if (!selection.empty) return null;
+        if (block.type !== 'spacer') {
+            if (!isV3TextType(block.type)) return null;
+            const { model } = readV3EditableText(state, index, block);
+            //
+            // Required Markdown markers are structure, so an otherwise blank heading or list is still an empty writing block.
+            //
+            if (
+                model.content
+                    .slice(v3TextPrefixLength(block.type, model.content))
+                    .trim()
+            )
+                return null;
+        }
+        return {
+            kind: 'delete',
+            blockIds: [block.id],
+            ensureParagraph: true,
+            motion: 'none',
+        };
     }
     if (
         (key === 'Enter' || key === 'Shift-Enter') &&

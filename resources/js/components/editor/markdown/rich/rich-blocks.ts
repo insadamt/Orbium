@@ -1,4 +1,4 @@
-// Summary: Maintains viewport rich widgets within identified body scopes; depends on existing renderers, retained widget motion and V3 column projections owning their own children.
+// Summary: Maintains scoped rich widgets and hides their outer text caret; depends on existing renderers, retained widget motion and V3 column projections owning their own children.
 import { ensureSyntaxTree, syntaxTree } from '@codemirror/language';
 import { StateField, type EditorState, type Range } from '@codemirror/state';
 import { getSearchQuery } from '@codemirror/search';
@@ -25,6 +25,7 @@ import { MarkdownRichWidget } from './rich-widget';
 import { richBlockSelection } from './rich-block-selection';
 import { mapRichBlockEdge, mapRichContentPosition } from './rich-range-mapping';
 import { readEditableMarkdownPresentation } from '../interactions/markdown-editable-presentation';
+import { v3StructureField } from '../structure/v3-structure-state';
 
 function collectBlocks(
     state: EditorState,
@@ -262,6 +263,36 @@ export function markdownRichBlocks(context: RichContext) {
         },
         provide: (source) => [
             EditorView.decorations.from(source, (value) => value.decorations),
+            EditorView.editorAttributes.compute(
+                [source, 'selection'],
+                (state) => {
+                    const { blocks, revealed } = state.field(source);
+                    //
+                    // CodeMirror also draws a caret at a selection's head and at a replacement's closing edge; both still belong to the rendered widget.
+                    //
+                    const hideOuterCaret = state.selection.ranges.every(
+                        (range) =>
+                            blocks.some(
+                                (block) =>
+                                    block.kind !== 'inline-math' &&
+                                    block.kind !== 'metadata' &&
+                                    block.kind !== 'empty' &&
+                                    block.from !== revealed &&
+                                    range.head >= block.from &&
+                                    range.head <= block.to,
+                            ) ||
+                            state
+                                .field(v3StructureField, false)
+                                ?.current.blockAt(range.head)?.type ===
+                                'divider',
+                    );
+                    return {
+                        class: hideOuterCaret
+                            ? 'orbium-rich-block-caret-hidden'
+                            : '',
+                    };
+                },
+            ),
             EditorView.atomicRanges.of(
                 (view) => view.state.field(source).decorations,
             ),
@@ -388,6 +419,13 @@ export function markdownRichBlocks(context: RichContext) {
     );
     return [
         field,
+        EditorView.theme({
+            //
+            // Block widgets occupy a whole line, so the owner's caret spans their height; scope this rule to its own layer to preserve nested text-input carets.
+            //
+            '&.orbium-rich-block-caret-hidden > .cm-scroller > .cm-cursorLayer':
+                { display: 'none' },
+        }),
         manager,
         markdownDiagramPreparation(context),
         richBlockSelection((view) => view.state.field(field).blocks),

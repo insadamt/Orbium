@@ -85,7 +85,12 @@ export function v3LiveEditingExtensions(options: V3LiveEditingOptions) {
             return false;
         try {
             const selected = view.state.field(v3BlockSelectionField);
-            if (selected && (name === 'Backspace' || name === 'Delete')) {
+            if (
+                selected &&
+                (name === 'Backspace' ||
+                    name === 'Ctrl-Backspace' ||
+                    name === 'Delete')
+            ) {
                 apply(view, {
                     kind: 'delete',
                     blockIds: selected.ids,
@@ -322,7 +327,13 @@ export function v3LiveEditingExtensions(options: V3LiveEditingOptions) {
         Prec.highest(
             keymap.of([
                 ...(
-                    ['Enter', 'Shift-Enter', 'Backspace', 'Delete'] as const
+                    [
+                        'Enter',
+                        'Shift-Enter',
+                        'Backspace',
+                        'Ctrl-Backspace',
+                        'Delete',
+                    ] as const
                 ).map((name) => ({
                     key: name,
                     run: (view: EditorView) => key(view, name),

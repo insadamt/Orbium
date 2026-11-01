@@ -101,7 +101,21 @@ export function createV3SpacerInput(view: EditorView, blockId: string) {
     });
     input.addEventListener('keydown', (event) => {
         if (event.isComposing || composing) return;
-        if (event.ctrlKey || event.metaKey || event.altKey) return;
+        const deleteEmptyBlock =
+            event.ctrlKey &&
+            !event.metaKey &&
+            !event.altKey &&
+            !event.shiftKey &&
+            event.key === 'Backspace' &&
+            !input.value;
+        //
+        // Blank native textareas have no word to erase; route this shortcut through owner deletion instead of leaving the spacer untouched.
+        //
+        if (
+            (event.ctrlKey || event.metaKey || event.altKey) &&
+            !deleteEmptyBlock
+        )
+            return;
         event.stopPropagation();
         if (!['Enter', 'Backspace', 'Delete'].includes(event.key)) return;
         if (input.value) {
