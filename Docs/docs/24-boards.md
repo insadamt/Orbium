@@ -1,3 +1,5 @@
+Summary: Records Board feature contracts and chronological corrections to preserve implementation history. Depends on linked Board phases, native records, history, attachment ownership and revisioned persistence; later corrections supersede historical behavior below.
+
 # Boards
 
 Requested 2026-10-18. The supplied development specification ends at “Unlimited subtopics within practical” in section 8; later Mind Map requirements and any subsequent sections are unavailable. The user authorized the confirmed Mind Map core on 2026-10-24; see the phase-5 contract below. Do not claim the missing remainder is implemented.
@@ -1240,3 +1242,15 @@ Shape resizing is free by default. Shift at a corner preserves the current aspec
 `2026_10_29_000001_add_board_shapes.php` advances the envelope/default to **9**, retaining all object rows/revisions and extending the native-kind database constraint. Supported older snapshots/drafts adapt explicitly; shapes are rejected in envelopes below 9, and unknown versions remain protected. All snapshot/full/incremental/resource-creation writers use 9. Old clients fail format validation rather than flattening shapes. Downgrade refuses while saved shapes exist, including Trash. Deploy matching migration/server/frontend and reload open Boards; the migration was applied locally.
 
 Connected arrows, rotation, persisted grouping, arbitrary SVG import and new Board export formats are outside this phase. Manual visual/interaction acceptance is pending; see `../reports/15-board-shapes.md` for actual checks and exact steps.
+
+## Experimental Konva hybrid engine (authorized 2026-11-01)
+
+The migration brief authorizes an internal graphics engine migration with unchanged native UI and persistence. `?boardRenderer=konva` is opt-in; URL overrides still precede valid session overrides, and Instant Scene remains the default. Original/instant overrides stay available. Konva uses a separate `konva.view.v1` camera key with 10–400% zoom, keeping one authoritative camera ref.
+
+Native cards keep editors, viewers, rich shape labels, selection, handles and pointer ownership. Existing Instant Scene HTML/Mermaid/PDF preparation is reused in Konva mode. Graphics represent existing records; no Konva serialization, format migration, API or archive change. Actual shape placement offers Circle/Rectangle/Triangle; all seven validated saved kinds remain supported.
+
+Graphics bands interleave with HTML barriers in global layer order. At most six presented bands plus one input surface are allowed, with viewport-intersection crops, pixel ratio at most two and a 24-million-scene-pixel budget. Exceeding budgets selects original graphics for the entire presentation. Canvas attributes expose the effective renderer and fallback reason. This preserves compatibility but does not accelerate fallback views.
+
+Freehand caches completed 64-sample chunks and prepares its bounded tail, retaining smoothing profiles, endpoints and the 6,000-point saved bound. Preview/final geometry agree; existing saved ink is not re-smoothed. Local smoothing/curve sampling is not pixel-identical to previous global preparation and needs manual acceptance. Path Pen retains native anchor controls. Partial erasure keeps existing exact clipping/identity/history while filtering spatial candidates and unrelated segments.
+
+Motion remains finite; graphics mirror native feedback, drawing style timing and reduced-motion changes. No permanent graphics loop is introduced. No automated tests/browser automation were performed. Runtime parity and CPU/GPU/thermal improvement remain unverified. See `../plans/board-konva-engine.md`, `../reports/17-boards-konva-feature-parity.md` and `../reports/17-boards-konva-engine.md` for decisions, actual checks and exact manual steps. Stop for review before changing the default or removing original rendering.

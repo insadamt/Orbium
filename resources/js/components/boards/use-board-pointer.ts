@@ -263,7 +263,16 @@ export function useBoardPointer(
                     pointerLocalPoint({ x: event.clientX, y: event.clientY }),
                 );
             const samples = event.nativeEvent.getCoalescedEvents?.() ?? [];
-            const points = (samples.length ? samples : [event]).map((sample) =>
+            const last = samples.at(-1);
+            //
+            // Some devices omit the dispatched endpoint from coalesced samples; include it once without doubling eraser sweeps.
+            //
+            const completeSamples =
+                last?.clientX === event.clientX &&
+                last.clientY === event.clientY
+                    ? samples
+                    : [...samples, event];
+            const points = completeSamples.map((sample) =>
                 canvasPoint(
                     pointerLocalPoint({ x: sample.clientX, y: sample.clientY }),
                     camera.cameraRef.current,

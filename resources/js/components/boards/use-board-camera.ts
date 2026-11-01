@@ -22,6 +22,7 @@ import {
     type BoardRendererMode,
 } from './instant-scene/board-renderer-mode';
 import { paintBoardCameraSurface } from './instant-scene/paint-board-camera-surface';
+import { paintBoardGraphicsCamera } from './konva/board-graphics-bridge';
 
 export function useBoardCamera(
     location: BoardLocation,
@@ -43,7 +44,11 @@ export function useBoardCamera(
     const gridRef = useRef(grid);
     const storageKey = boardStorageKey(
         location,
-        rendererMode === 'instant' ? 'instant.view.v1' : 'view.v1',
+        rendererMode === 'instant'
+            ? 'instant.view.v1'
+            : rendererMode === 'konva'
+              ? 'konva.view.v1'
+              : 'view.v1',
     );
     const minZoom =
         rendererMode === 'instant'
@@ -91,6 +96,7 @@ export function useBoardCamera(
         diagnostics.current.cameraPaints++;
         const { x, y, zoom } = cameraRef.current;
         paintWorld();
+        paintBoardGraphicsCamera(viewportRef.current);
         const viewport = viewportRef.current;
         if (viewport) {
             const inverseZoom = String(1 / zoom);

@@ -1,3 +1,5 @@
+// Summary: Projects the authoritative camera onto native content; depends on renderer-specific density behavior and shared world coordinates.
+
 import type { BoardCamera } from '../board-types';
 import type { BoardRendererMode } from './board-renderer-mode';
 
@@ -16,7 +18,7 @@ export function paintBoardCameraSurface({
     const style = world.style;
     const previousDensity = Number(style.zoom) || zoom;
     const density =
-        mode === 'original' || settleDensity ? zoom : previousDensity;
+        mode !== 'instant' || settleDensity ? zoom : previousDensity;
     //
     // Keep layout density fixed during Instant Scene gestures, then commit sharp native layout in one synchronous style update.
     //

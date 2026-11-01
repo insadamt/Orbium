@@ -1,4 +1,9 @@
+// Summary: Buffers Board ink/eraser gestures and commits once on release; depends on canonical history, smoothing, the camera and optional Konva preview painting.
+
 import { useBoardPathDrawing } from './use-board-path-drawing';
+import { boardGraphics } from './konva/board-graphics-bridge';
+import { BoardStreamingStroke } from './konva/board-streaming-stroke';
+import { boardFragmentsPath } from './konva/board-konva-geometry';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import {
@@ -25,6 +30,7 @@ type DrawingGesture = {
     brush: BoardBrush;
     points: [number, number][];
     renderedPoints: [number, number][];
+    streaming: BoardStreamingStroke | null;
     smoothing: BoardDrawingSmoothing;
     zoom: number;
     endpoint: BoardPoint | null;
@@ -51,6 +57,22 @@ export function useBoardDrawing(
     const gesture = useRef<DrawingGesture | null>(null);
     const frame = useRef<number | undefined>(undefined);
     const viewportRef = camera.viewportRef;
+    const paintCurrentPreview = useRef(paintPreview);
+    paintCurrentPreview.current = paintPreview;
+
+    useEffect(() => {
+        const viewport = viewportRef.current;
+        const repaint = () => {
+            gesture.current?.eraser?.invalidatePreview();
+            if (gesture.current && frame.current === undefined)
+                frame.current = requestAnimationFrame(() =>
+                    paintCurrentPreview.current(),
+                );
+        };
+        viewport?.addEventListener('board-graphics-change', repaint);
+        return () =>
+            viewport?.removeEventListener('board-graphics-change', repaint);
+    }, [viewportRef]);
 
     useEffect(() => {
         const viewport = viewportRef.current;
@@ -68,6 +90,26 @@ export function useBoardDrawing(
         const current = gesture.current;
         if (!current) return;
         if (current.tool !== 'eraser') {
+            if (current.streaming) {
+                const tail = current.streaming.prepare(
+                    current.points,
+                    current.endpoint,
+                );
+                const graphics = boardGraphics(viewportRef.current);
+                if (graphics)
+                    graphics.paintStroke({
+                        completed: current.streaming.completedPath,
+                        tail,
+                        brush: current.brush,
+                        highlighter: current.tool === 'highlighter',
+                    });
+                else
+                    previewPathRef.current?.setAttribute(
+                        'd',
+                        boardDrawingPath(current.streaming.finish()),
+                    );
+                return;
+            }
             current.renderedPoints = prepareBoardDrawingPoints({
                 points: current.points,
                 endpoint: current.endpoint,
@@ -75,10 +117,19 @@ export function useBoardDrawing(
                 zoom: current.zoom,
                 pointLimit: boardDrawingPointLimit,
             });
-            previewPathRef.current?.setAttribute(
-                'd',
-                boardDrawingPath(current.renderedPoints),
-            );
+            const graphics = boardGraphics(viewportRef.current);
+            if (graphics)
+                graphics.paintStroke({
+                    completed: boardFragmentsPath([current.renderedPoints]),
+                    tail: [],
+                    brush: current.brush,
+                    highlighter: current.tool === 'highlighter',
+                });
+            else
+                previewPathRef.current?.setAttribute(
+                    'd',
+                    boardDrawingPath(current.renderedPoints),
+                );
             return;
         }
         for (const point of current.pendingEraserPoints.splice(0)) {
@@ -100,6 +151,7 @@ export function useBoardDrawing(
         if (frame.current !== undefined) cancelAnimationFrame(frame.current);
         frame.current = undefined;
         previewPathRef.current?.setAttribute('d', '');
+        boardGraphics(viewportRef.current)?.paintStroke(null);
         return active;
     }
 
@@ -128,6 +180,13 @@ export function useBoardDrawing(
             brush: { ...brush },
             points: [],
             renderedPoints: [],
+            streaming:
+                tool !== 'eraser' && boardGraphics(viewportRef.current)
+                    ? new BoardStreamingStroke(
+                          smoothing,
+                          camera.cameraRef.current.zoom,
+                      )
+                    : null,
             smoothing,
             zoom: camera.cameraRef.current.zoom,
             endpoint: null,
@@ -226,6 +285,8 @@ export function useBoardDrawing(
                 return;
             }
             if (current.points.length) {
+                if (current.streaming)
+                    current.renderedPoints = current.streaming.finish();
                 const layer = model.objectsRef.current.reduce(
                     (highest, object) => Math.max(highest, object.layer + 1),
                     0,

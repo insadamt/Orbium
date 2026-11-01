@@ -1,3 +1,6 @@
+// Summary: Owns multi-click Path Pen drafts and cancellation; depends on the original camera, shared brush and one completed Board history action.
+
+import { boardGraphics } from './konva/board-graphics-bridge';
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { toast } from 'sonner';
 import {
@@ -52,10 +55,21 @@ export function useBoardPathDrawing(
             current.hover = snapPoint(point, pointer.shift);
             pendingPointer.current = null;
         }
-        const points = current.hover
-            ? [...current.points, current.hover]
-            : current.points;
-        pathRef.current?.setAttribute('d', boardDrawingPath(points));
+        const graphics = boardGraphics(camera.viewportRef.current);
+        if (graphics) {
+            graphics.paintPath(
+                current.points,
+                current.hover
+                    ? { x: current.hover[0], y: current.hover[1] }
+                    : null,
+                current.brush,
+            );
+        } else {
+            const points = current.hover
+                ? [...current.points, current.hover]
+                : current.points;
+            pathRef.current?.setAttribute('d', boardDrawingPath(points));
+        }
         pathRef.current?.setAttribute('stroke', current.brush.color);
         pathRef.current?.setAttribute(
             'stroke-width',
@@ -117,6 +131,7 @@ export function useBoardPathDrawing(
         if (frame.current !== undefined) cancelAnimationFrame(frame.current);
         frame.current = undefined;
         pathRef.current?.setAttribute('d', '');
+        boardGraphics(camera.viewportRef.current)?.paintStroke(null);
         anchorsRef.current?.replaceChildren();
         if (active) setPointCount(0);
         return active;
@@ -214,7 +229,7 @@ export function useBoardPathDrawing(
     function removeLastPoint() {
         const current = draft.current;
         if (!current || isLocked()) return false;
-        current.points.pop();
+        current.points = current.points.slice(0, -1);
         if (!current.points.length) cancel();
         else {
             setPointCount(current.points.length);
@@ -289,10 +304,15 @@ export function useBoardPathDrawing(
         viewport.addEventListener('pointermove', move);
         viewport.addEventListener('dblclick', doubleClick);
         viewport.addEventListener('pointerleave', leave);
+        const repaint = () => {
+            if (draft.current) schedulePaint();
+        };
+        viewport.addEventListener('board-graphics-change', repaint);
         return () => {
             viewport.removeEventListener('pointermove', move);
             viewport.removeEventListener('dblclick', doubleClick);
             viewport.removeEventListener('pointerleave', leave);
+            viewport.removeEventListener('board-graphics-change', repaint);
             if (frame.current !== undefined)
                 cancelAnimationFrame(frame.current);
         };

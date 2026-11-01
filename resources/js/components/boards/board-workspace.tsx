@@ -25,7 +25,7 @@ import { BoardContextMenu } from './board-context-menu';
 import { useBoardTools } from './use-board-tools';
 import { handleBoardEscape } from './board-escape';
 import { handleBoardHistoryKeyboard } from './board-history-keyboard';
-import { BoardSubscribedObjectCard } from './board-subscribed-object-card';
+import { BoardObjectLayer } from './board-object-layer';
 import { BoardToolbar } from './board-toolbar';
 import { BoardSaveStatus } from './board-save-status';
 import { useBoardAutosave } from './use-board-autosave';
@@ -55,6 +55,7 @@ import { useBoardClipboard } from './use-board-clipboard';
 import { BoardSelectionBounds } from './board-selection-bounds';
 import { BoardSelectionTools } from './board-selection-tools';
 import { readBoardRendererMode } from './instant-scene/board-renderer-mode';
+import { BoardKonvaContext, useBoardKonva } from './konva/use-board-konva';
 import {
     useBoardInstantScene,
     useBoardInstantScenePresentation,
@@ -234,6 +235,13 @@ export function BoardWorkspace({
         renderedObjects,
         model.editingId,
     );
+    const konvaScene = useBoardKonva({
+        mode: rendererMode,
+        store: model.store,
+        camera,
+        presented: renderedObjects,
+        selectedIds: model.selectedIds,
+    });
     const preparedPreviews = useBoardPreparedPreviews();
     const workScheduler = useBoardWorkScheduler();
     useBoardPerformanceDiagnostics({
@@ -243,6 +251,7 @@ export function BoardWorkspace({
         mountingBounds: camera.visibleBounds,
         rendererMode,
         pinnedPdfIds,
+        readKonvaScene: konvaScene ? () => konvaScene.snapshot() : undefined,
         readPreparedPreviews: () => preparedPreviews.snapshot(),
         readWorkScheduler: () => workScheduler.snapshot(),
         readCameraDiagnostics: camera.readDiagnostics,
@@ -361,40 +370,28 @@ export function BoardWorkspace({
                                 className="board-alignment-guides"
                                 aria-hidden="true"
                             />
-                            {renderedObjects.map((object) => (
-                                <BoardSubscribedObjectCard
-                                    key={object.id}
-                                    store={model.store}
-                                    objectId={object.id}
-                                    instantScene={instantScene}
-                                    location={location}
-                                    tabId={tabId}
-                                    onResourceLock={resourceLocks.setCardLocked}
-                                    selected={model.selectedIds.includes(
-                                        object.id,
-                                    )}
-                                    editing={model.editingId === object.id}
-                                    blocked={
-                                        save.blocked ||
-                                        (object.id !== model.editingId &&
-                                            (uploading || resourceLocked))
-                                    }
-                                    editorResetVersion={
-                                        model.editorResetVersion
-                                    }
-                                    onComposition={updateComposition}
-                                    onUploading={updateUploading}
-                                    onSelect={selectFocusedObject}
-                                    onEdit={beginEditing}
-                                    onFinish={finishEditing}
-                                    onChange={updateBlockContent}
-                                    onObjectChange={updateBlockObject}
-                                    editPoint={model.editPoint}
-                                    onTransform={transformBlock}
-                                    onHeightChange={updateContentHeight}
-                                    onHistoryBoundary={breakHistoryGroup}
-                                />
-                            ))}
+                            <BoardObjectLayer
+                                objects={renderedObjects}
+                                model={model}
+                                instantScene={instantScene}
+                                location={location}
+                                tabId={tabId}
+                                onResourceLock={resourceLocks.setCardLocked}
+                                blocked={save.blocked}
+                                editingLocked={uploading || resourceLocked}
+                                editorResetVersion={model.editorResetVersion}
+                                onComposition={updateComposition}
+                                onUploading={updateUploading}
+                                onSelect={selectFocusedObject}
+                                onEdit={beginEditing}
+                                onFinish={finishEditing}
+                                onChange={updateBlockContent}
+                                onObjectChange={updateBlockObject}
+                                editPoint={model.editPoint}
+                                onTransform={transformBlock}
+                                onHeightChange={updateContentHeight}
+                                onHistoryBoundary={breakHistoryGroup}
+                            />
                         </div>
                         <BoardShapePlacementPreview
                             previewRef={pointer.shapePreviewRef}
@@ -485,10 +482,12 @@ export function BoardWorkspace({
         </section>
     );
     return (
-        <BoardPageInsertionContext.Provider
-            value={{ insertDocument: resources.insertDocument }}
-        >
-            {content}
-        </BoardPageInsertionContext.Provider>
+        <BoardKonvaContext value={konvaScene}>
+            <BoardPageInsertionContext.Provider
+                value={{ insertDocument: resources.insertDocument }}
+            >
+                {content}
+            </BoardPageInsertionContext.Provider>
+        </BoardKonvaContext>
     );
 }

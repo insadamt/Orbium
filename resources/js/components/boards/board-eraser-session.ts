@@ -1,3 +1,10 @@
+// Summary: Owns one partial-erasure preview and atomic history result; depends on drawing-only spatial candidates, cached fragments and unchanged capsule clipping.
+
+import { BoardDrawingSpatialIndex } from './board-drawing-spatial-index';
+import {
+    boardGraphics,
+    type BoardStrokePoint,
+} from './konva/board-graphics-bridge';
 import {
     boardDrawingPath,
     boardDrawingStrokePath,
@@ -16,19 +23,31 @@ export class BoardEraserSession {
     private paintedPaths = new Map<SVGPathElement, string>();
     private previewPointCount = 0;
     private dirtyIds = new Set<string>();
+    private spatialIndex: BoardDrawingSpatialIndex | null = null;
+    private originalFragments = new Map<string, BoardStrokePoint[][]>();
+    private paintedGraphics = new Set<string>();
+    private graphicsViewport: HTMLElement | null = null;
     limited = false;
 
     constructor(private radius: number) {}
 
     eraseSweep(objects: BoardObject[], start: BoardPoint, end: BoardPoint) {
         if (this.limited) return;
-        for (const object of objects) {
-            if (object.block_type !== 'drawing' || !object.data.drawing)
-                continue;
+        this.spatialIndex ??= new BoardDrawingSpatialIndex(objects);
+        for (const object of this.spatialIndex.candidates(
+            start,
+            end,
+            this.radius,
+        )) {
+            let cachedFragments = this.originalFragments.get(object.id);
+            if (!cachedFragments) {
+                cachedFragments = boardDrawingFragments(object.data.drawing!);
+                this.originalFragments.set(object.id, cachedFragments);
+            }
             const previous = this.previews.get(object.id);
             const preview = previous ?? {
                 original: object,
-                fragments: boardDrawingFragments(object.data.drawing),
+                fragments: cachedFragments,
             };
             const fragments = eraseStrokeFragments(preview, {
                 start,
@@ -60,8 +79,15 @@ export class BoardEraserSession {
 
     paintPreview(viewport: HTMLElement | null) {
         if (!viewport) return;
+        this.graphicsViewport = viewport;
+        const graphics = boardGraphics(viewport);
         for (const id of this.dirtyIds) {
             const { original, fragments } = this.previews.get(id)!;
+            if (graphics) {
+                graphics.paintErasure(id, fragments);
+                this.paintedGraphics.add(id);
+                continue;
+            }
             const path = viewport.querySelector<SVGPathElement>(
                 `[data-board-object-id="${original.id}"] .board-drawing-stroke path`,
             );
@@ -76,7 +102,14 @@ export class BoardEraserSession {
         this.dirtyIds.clear();
     }
 
+    invalidatePreview() {
+        for (const id of this.previews.keys()) this.dirtyIds.add(id);
+    }
+
     restorePreview() {
+        const graphics = boardGraphics(this.graphicsViewport);
+        for (const id of this.paintedGraphics) graphics?.paintErasure(id, null);
+        this.paintedGraphics.clear();
         for (const [path, originalPath] of this.paintedPaths)
             path.setAttribute('d', originalPath);
         this.paintedPaths.clear();

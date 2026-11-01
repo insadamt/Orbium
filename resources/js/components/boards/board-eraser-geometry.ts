@@ -1,3 +1,5 @@
+// Summary: Clips stroke fragments against exact swept eraser capsules; depends on saved drawing coordinates and preserves object identity and partial-erasure history.
+
 import type { BoardObject, BoardPoint } from './board-types';
 
 type StrokePoint = [number, number];
@@ -138,11 +140,23 @@ export function eraseStrokeFragments(
         for (let index = 1; index < fragment.length; index++) {
             const start = fragment[index - 1];
             const end = fragment[index];
-            const intervals = erasedIntervals(
-                worldPoint(start),
-                worldPoint(end),
-                { ...sweep, radius },
-            );
+            const worldStart = worldPoint(start);
+            const worldEnd = worldPoint(end);
+            //
+            // Most segments of a long stroke are unrelated to this local sweep; reject them before solving capsule intersections.
+            //
+            const outside =
+                Math.max(worldStart.x, worldEnd.x) <
+                    Math.min(sweep.start.x, sweep.end.x) - radius ||
+                Math.min(worldStart.x, worldEnd.x) >
+                    Math.max(sweep.start.x, sweep.end.x) + radius ||
+                Math.max(worldStart.y, worldEnd.y) <
+                    Math.min(sweep.start.y, sweep.end.y) - radius ||
+                Math.min(worldStart.y, worldEnd.y) >
+                    Math.max(sweep.start.y, sweep.end.y) + radius;
+            const intervals = outside
+                ? []
+                : erasedIntervals(worldStart, worldEnd, { ...sweep, radius });
             if (!intervals.length) {
                 if (!run.length) run.push(start);
                 run.push(end);

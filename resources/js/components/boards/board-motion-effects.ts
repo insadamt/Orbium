@@ -1,3 +1,5 @@
+// Summary: Owns finite native Board feedback and its graphics notification; depends on WAAPI and the user's reduced-motion preference.
+
 export class BoardMotionEffects {
     private running = new Map<Element, Animation>();
 
@@ -26,6 +28,12 @@ export class BoardMotionEffects {
             easing: 'cubic-bezier(0.16, 1, 0.3, 1)',
         });
         this.running.set(target, animation);
+        target.dispatchEvent(
+            new CustomEvent('board-graphic-motion', {
+                bubbles: true,
+                detail: { animation, frames },
+            }),
+        );
         const finish = () => {
             if (this.running.get(target) === animation)
                 this.running.delete(target);

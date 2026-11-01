@@ -1,3 +1,5 @@
+Summary: Defines manual production comparisons and separate development attribution. Depends on disposable Board scenes, existing diagnostics and current renderer contracts; no measurements are implied by this protocol.
+
 # Board performance P0 — manual profiling protocol
 
 Prepared: 2026-10-21. This is the measurement task from
@@ -274,3 +276,41 @@ P0 measurement is accepted when the recordings/worksheet identify the dominant
 costs and manual behavior checks pass. The later explicit architecture instruction
 authorized implementation before those recordings. See the current architecture
 report for acceptance; future experiments still require evidence.
+
+## Konva drawing comparison (2026-11-01)
+
+Compare `?boardRenderer=original` and `?boardRenderer=konva` on the **same saved Boards and production asset build**. Instant Scene may be a separately labelled third reference; it remains the default. Current Board format is 9. The historical 1,000-object cap in earlier protocol text was removed; retain actual point, geometry and byte validation. Counts 10/100/500/1,000 are workload milestones, not product limits.
+
+Before each capture, record `.board-canvas` attributes: requested `data-board-renderer`, effective `data-board-graphics`, and `data-board-graphics-fallback`. More than six presented graphics bands or the pixel budget selects original graphics. Label these **fallback** trials; never count them as Konva acceleration. Camera keys differ: explicitly match zoom, landmarks, viewport and geometry between modes.
+
+Prepare a small graphics Board with Pen, Highlighter, Path Pen, rich-labelled shapes, text, table, PDF and linked Document. Wait for Saved between trials. For scaling, use existing local native stress scenes and a separately labelled graphics/mixed Board built through UI duplication. Dense long strokes can hit aggregate bytes before 1,000 objects; record that boundary without bypassing validation. Do not compare different densities as equivalent.
+
+Repeat each action for ten seconds, three trials per renderer, restoring identical starting content. For one short stroke, include the full action/save/idle interval and record actual input duration separately.
+
+| Scenario | Exact manual action | Record and check |
+|---|---|---|
+| Empty idle | Settle 30s, capture 10s untouched. | CPU/GPU, unwanted paint/frame activity, canvas pixels and background stacks. Separate app-wide effects from Board work. |
+| Pointer only | Move over empty canvas without pressing. | Input overhead; no selection/content save or unsolicited graphics redraw. |
+| Short stroke | Pen 3px at 100%; matching short line and dot. | Input latency, JS/paint, endpoint fidelity, one final action. |
+| Long dense stroke | Matching 10s loop/handwriting path inside geometry limits. | Frame/main-thread cost as input accumulates; chunk/tail seams, memory and release cost. |
+| Off / Light / Strong | Repeat wiggles, sharp turns and sparse fast curves. | Distinction, retained detail, bounded tail work and no release-time geometry jump. |
+| Highlighter | Matching continuous self-crossing loop. | Live/released alpha and no darker processing joins. |
+| Path Pen | Matching anchors/hover path; Shift, remove two points, Finish. | Cached placed geometry, anchors, brush changes and one commit. |
+| Repeated drawing | Same stroke count and approximate length. | Accumulated heap/path/canvas allocations; completed planes should not redraw for every live tail sample. |
+| Repeated erasing | Sweep a local area in dense ink, then sparse distant strokes. | Candidate/segment cost, localized preview, retained gaps, cancel/Undo/Redo. |
+| 10 / 100 / 500 / 1,000 | Matching pointer/drawing/pan/resize runs at each milestone. | Total/visible/presented graphics and native counts; label effective fallback. |
+| Mixed stacking | Reorder overlapping ink/labels/HTML and cross six-band limit. | Exact ordering, editor focus and bounded fallback without missing objects. |
+| Pan / zoom | Same landmarks; 100→50→100→200→100% anchored zoom. | Alignment, crop reallocations, PDF/text clarity and redraw cost. |
+| Drag / resize | Drawing, shape and mixed group; cancel once. | Frame latency, live geometry, guides/handles and one release action. |
+| Idle after drawing | Finish ink/erasure, wait for Saved plus 1s, capture 10s. | Graphics/geometry work stops; distinguish finite motion/barrier expiry/autosave from sustained activity. |
+| Hidden return | Hide 10s, return, then leave/reopen Boards three times. | Work pauses, presentation recovers, canvas/listener populations remain bounded. |
+
+Record production CPU/GPU where exposed; frame intervals/drops against actual refresh rate; input latency/long tasks; JavaScript/style/layout/paint/raster; process/heap/GPU memory and canvas allocations. Keep validation/autosave in the trace and label their intervals. Use the same OS sensor to record temperature before, during and after interaction under matched starting thermal/power conditions. Unsupported hardware/GPU metrics are **unavailable**, not proxy estimates. No browser/hardware evidence was collected during implementation.
+
+Development snapshots are mechanism attribution only: use the existing `orbium.board.profile` session flag and inspect `konvaScene` in two snapshots 10s apart after settling. Scene/camera/geometry/eraser counters and queued-frame state should be stable without actual changes. Diagnostic captures run their own rAF observer; that observer is not Board painting and its overhead is not production idle usage. Production must not expose `window.__ORBIUM_BOARD_PERF__`.
+
+| Scene / requested renderer / effective graphics / trial | CPU / GPU | Frame intervals / drops / refresh rate | JS / layout / paint / raster | Long tasks / input latency | Heap / process / GPU memory / canvas pixels | Temperature before / during / after | Parity notes |
+|---|---|---|---|---|---|---|---|
+| Pending manual capture | pending | pending | pending | pending | pending | pending | pending |
+
+Acceptance requires retained behavior and lower measured comparable overhead, not merely a successful build, changed geometry code or stable source counters.

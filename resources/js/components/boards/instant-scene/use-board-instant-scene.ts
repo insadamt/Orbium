@@ -1,3 +1,5 @@
+// Summary: Preserves native HTML and PDF preparation independently of the graphics renderer; depends on Board records, bounded caches and the shared background scheduler.
+
 import { useEffect, useMemo, useSyncExternalStore } from 'react';
 import type { BoardRecordStore } from '../board-record-store';
 import {
@@ -21,7 +23,7 @@ export function useBoardInstantScene({
     const prepared = useBoardPreparedPreviews();
     const scene = useMemo(
         () =>
-            mode === 'instant'
+            mode === 'instant' || mode === 'konva'
                 ? new BoardInstantScene({ store, scheduler, prepared, boardId })
                 : null,
         [mode, store, scheduler, prepared, boardId],

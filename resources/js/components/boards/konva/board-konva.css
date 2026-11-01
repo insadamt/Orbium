@@ -1,0 +1,18 @@
+/* Summary: Positions passive graphics planes inside the existing Board world; depends on the shared camera projection and original object chrome. */
+.board-konva-surface {
+    position: absolute;
+    overflow: hidden;
+    pointer-events: none;
+}
+.board-konva-surface > canvas {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+.board-canvas[data-board-graphics='konva'] .board-drawing-preview {
+    z-index: 1000003;
+}
+
+.board-canvas[data-board-graphics='konva'] .board-drawing-preview > path {
+    display: none;
+}

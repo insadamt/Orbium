@@ -1,4 +1,6 @@
-export type BoardRendererMode = 'original' | 'instant';
+// Summary: Resolves renderer overrides without changing the existing default; depends on URL precedence and optional per-tab storage.
+
+export type BoardRendererMode = 'original' | 'instant' | 'konva';
 
 //
 // This experimental branch opens the prototype directly for manual review; explicit overrides retain the reference renderer.
@@ -22,10 +24,16 @@ export function readBoardRendererMode(): BoardRendererMode {
     const requested = new URLSearchParams(window.location.search).get(
         'boardRenderer',
     );
-    if (requested === 'original' || requested === 'instant') return requested;
+    if (
+        requested === 'original' ||
+        requested === 'instant' ||
+        requested === 'konva'
+    )
+        return requested;
     try {
         const saved = sessionStorage.getItem('orbium.board.renderer');
-        if (saved === 'original' || saved === 'instant') return saved;
+        if (saved === 'original' || saved === 'instant' || saved === 'konva')
+            return saved;
     } catch {}
     return defaultBoardRendererMode;
 }

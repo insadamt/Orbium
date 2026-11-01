@@ -1,6 +1,8 @@
 // Summary: Hosts one native Board object with selection and edit controls; depends on block renderers, record callbacks and camera-sized geometry.
 
 import { BoardShapeBlock } from './board-shape-block';
+import { useContext } from 'react';
+import { BoardKonvaContext } from './konva/use-board-konva';
 import { BoardMindMapBlock } from './board-mindmap-block';
 import { useBoardEditMotion } from './use-board-edit-motion';
 import { BoardDrawingStroke } from './board-drawing-stroke';
@@ -77,6 +79,7 @@ export const BoardObjectCard = memo(function BoardObjectCard({
     editorResetVersion: number;
     instantScene?: BoardInstantScene | null;
 }) {
+    const konvaScene = useContext(BoardKonvaContext);
     const updateResourceLock = useCallback(
         (locked: boolean) => onResourceLock(object.id, locked),
         [object.id, onResourceLock],
@@ -165,7 +168,7 @@ export const BoardObjectCard = memo(function BoardObjectCard({
                     top: object.y,
                     width: object.width,
                     height: object.height,
-                    zIndex: object.layer + 1,
+                    zIndex: (object.layer + 1) * (konvaScene ? 2 : 1),
                     '--board-content-scale': object.data.text_scale ?? 1,
                     '--board-frame-width': `${object.width - 2}px`,
                     '--board-frame-height': `${object.height - 2}px`,

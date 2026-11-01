@@ -1,4 +1,7 @@
+// Summary: Paints transient Board transforms without domain writes; depends on cached native targets and the optional graphics bridge.
+
 import { enclosingBounds } from './board-geometry';
+import { boardGraphics } from './konva/board-graphics-bridge';
 import type { BoardObject } from './board-types';
 import type { BoardGuide } from './board-alignment';
 
@@ -40,6 +43,7 @@ export function paintBoardMovement(
         );
     }
     paintSelectionBounds(viewport, objects, targets);
+    boardGraphics(viewport)?.paintObjects(objects);
 }
 
 export function paintBoardObjects(
@@ -70,6 +74,7 @@ export function paintBoardObjects(
             writeStyle(image, 'object-fit', object.data.image_fit ?? 'cover');
     }
     paintSelectionBounds(viewport, objects, targets);
+    boardGraphics(viewport)?.paintObjects(objects);
 }
 
 function paintSelectionBounds(

@@ -1,4 +1,7 @@
+// Summary: Samples opt-in development attribution without polling while idle; depends on canonical geometry, existing renderer diagnostics and mounted DOM counts.
+
 import type { RefObject } from 'react';
+import type { BoardKonvaScene } from './konva/board-konva-scene';
 import { intersects } from './board-geometry';
 import type { BoardBounds, BoardCamera, BoardObject } from './board-types';
 import type { BoardRendererMode } from './instant-scene/board-renderer-mode';
@@ -15,6 +18,7 @@ export type BoardPerformanceContext = {
     rendererMode?: BoardRendererMode;
     pinnedPdfIds?: readonly string[];
     readInstantScene?: () => ReturnType<BoardInstantScene['snapshot']>;
+    readKonvaScene?: () => ReturnType<BoardKonvaScene['snapshot']>;
     readPreparedPreviews?: () => ReturnType<BoardPreparedPreviews['snapshot']>;
     readWorkScheduler?: () => ReturnType<BoardWorkScheduler['snapshot']>;
     readCameraDiagnostics?: BoardCameraController['readDiagnostics'];
@@ -80,6 +84,7 @@ export function readBoardPerformanceScene(context: BoardPerformanceContext) {
     return {
         rendererMode: context.rendererMode ?? 'original',
         instantScene: context.readInstantScene?.() ?? null,
+        konvaScene: context.readKonvaScene?.() ?? null,
         preparedPreviews: context.readPreparedPreviews?.() ?? null,
         workScheduler: context.readWorkScheduler?.() ?? null,
         cameraWork: context.readCameraDiagnostics?.() ?? null,
