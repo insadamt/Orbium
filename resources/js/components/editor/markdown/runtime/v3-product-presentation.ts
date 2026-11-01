@@ -38,6 +38,7 @@ import { executeV3Operation } from '../transactions/v3-transaction-dispatch';
 import { v3SpacerBlocks } from './v3-spacer-blocks';
 import { v3EmptyLineCleanup } from './v3-empty-line-cleanup';
 import { v3RichBlockFocus } from './v3-rich-block-focus';
+import { v3WritingBottomScroll } from './v3-writing-bottom-scroll';
 
 export const v3ProductLanguage = () =>
     markdown({
@@ -71,6 +72,7 @@ export function v3ProductPresentation(options: {
         markdownBlockGutter(options.onNotice, column ? 'column' : 'document'),
     ];
     return [
+        v3WritingBottomScroll,
         v3ColumnSearch,
         v3ColumnFocus,
         v3LiveEditingExtensions({

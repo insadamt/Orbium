@@ -199,6 +199,10 @@ export function markdownSlashCommands(
     const slashSource = (context: CompletionContext) => {
         if (
             !context.state.facet(EditorView.editable) ||
+            //
+            // Rich inputs publish into their owner while retaining focus and their own inline completion menu.
+            //
+            !context.view?.hasFocus ||
             context.view?.compositionStarted
         )
             return null;

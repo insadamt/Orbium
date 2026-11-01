@@ -1,11 +1,11 @@
-// Summary: Resolves renderer overrides without changing the existing default; depends on URL precedence and optional per-tab storage.
+// Summary: Defaults Boards to the Konva hybrid engine while retaining renderer overrides; depends on URL precedence and optional per-tab storage.
 
 export type BoardRendererMode = 'original' | 'instant' | 'konva';
 
 //
-// This experimental branch opens the prototype directly for manual review; explicit overrides retain the reference renderer.
+// The user approved Konva as the default; explicit overrides keep both earlier renderers available for comparison and rollback.
 //
-const defaultBoardRendererMode: BoardRendererMode = 'instant';
+const defaultBoardRendererMode: BoardRendererMode = 'konva';
 
 export const instantSceneBudgets = {
     textEntries: 1000,
