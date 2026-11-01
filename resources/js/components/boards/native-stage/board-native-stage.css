@@ -1,0 +1,92 @@
+/* Summary: Positions the Phase-1 tools and development controls using Orbium's existing surfaces; depends on shared Board CSS and theme variables. */
+
+.board-native-notice {
+    position: absolute;
+    top: 16px;
+    left: 20px;
+    max-width: calc(100% - 180px);
+    color: var(--muted-foreground);
+    font-size: 11px;
+    pointer-events: none;
+}
+.board-native-toolbar,
+.board-native-zoom,
+.board-native-diagnostics {
+    position: absolute;
+    z-index: 2;
+    padding: 6px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--card);
+    box-shadow: 0 4px 16px rgb(0 0 0 / 0.06);
+}
+.board-native-toolbar {
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+.board-native-zoom {
+    left: 50%;
+    bottom: 12px;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    font-size: 12px;
+}
+.board-native-zoom span {
+    min-width: 46px;
+    text-align: center;
+}
+.board-native-diagnostics {
+    right: 12px;
+    top: 68px;
+    max-width: min(380px, calc(100% - 90px));
+    max-height: calc(100% - 145px);
+    overflow: auto;
+    font-size: 11px;
+}
+.board-native-diagnostics summary {
+    cursor: pointer;
+}
+.board-native-diagnostics label,
+.board-native-diagnostics p {
+    display: block;
+    margin-block: 8px;
+}
+.board-native-diagnostics select,
+.board-native-diagnostics button {
+    margin: 4px;
+    padding: 4px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--background);
+}
+.board-native-diagnostics textarea {
+    width: 100%;
+    min-width: 240px;
+    font-family: monospace;
+    user-select: text;
+}
+.board-native-canvas[data-tool='rectangle'],
+.board-native-canvas[data-tool='circle'],
+.board-native-canvas[data-tool='triangle'] {
+    cursor: crosshair;
+}
+.board-native-error {
+    position: absolute;
+    top: 55px;
+    left: 20px;
+    color: var(--destructive);
+}
+@media (max-width: 640px) {
+    .board-native-notice {
+        max-width: calc(100% - 135px);
+        font-size: 10px;
+    }
+    .board-native-diagnostics {
+        top: 100px;
+    }
+}
