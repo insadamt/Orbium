@@ -1,3 +1,4 @@
+// Summary: Installs live Markdown rendering, selection normalization and empty-formatting cleanup; depends on preview decorations, syntax trees and shared document/rich-input contexts.
 import { syntaxTree } from '@codemirror/language';
 import { getSearchQuery } from '@codemirror/search';
 import {
@@ -10,6 +11,7 @@ import { measureEditorWork } from '@/lib/editor-performance';
 import type { MarkdownLinkContext } from './markdown-link-preview';
 import { buildMarkdownPreview } from './build-markdown-preview';
 import { markdownPreviewSelection } from './markdown-preview-selection';
+import { removeEmptyFormattingSpans } from './markdown-empty-formatting-spans';
 
 export function markdownLivePreview(context: MarkdownLinkContext) {
     const previewPlugin = ViewPlugin.fromClass(
@@ -57,5 +59,9 @@ export function markdownLivePreview(context: MarkdownLinkContext) {
                 ),
         },
     );
-    return [previewPlugin, markdownPreviewSelection];
+    return [
+        previewPlugin,
+        markdownPreviewSelection,
+        removeEmptyFormattingSpans,
+    ];
 }

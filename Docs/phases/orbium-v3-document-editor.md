@@ -14,6 +14,8 @@ Stage-6 empty-row layout repair (2026-11-01): the user requests correction of em
 
 # Orbium V3 — Document Editor Refactor Specification
 
+Stage-6 unused-block spacing amendment (2026-11-01): the user requests that an added writing block left unwritten count as a space block. Leaving or blurring an empty paragraph now preserves the same ID and position as a writable spacer rather than removing it. This supersedes earlier abandoned empty-paragraph removal, including for a sole paragraph. Existing Enter, explicit deletion and trailing-row trimming rules remain. See `../reports/orbium-v3-unused-paragraph-spacing.md`; remain in stage-6 review.
+
 **Status:** Approved product decisions; implementation not started\
 **Date:** 2026-10-30\
 **Target:** Existing Orbium application, `main` branch\

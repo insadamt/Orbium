@@ -1,4 +1,4 @@
-// Summary: Removes abandoned temporary writing rows after leaving a block without changing deliberate spacer blocks; depends on current owner/projection IDs, checked text bodies and deferred owner commands.
+// Summary: Preserves abandoned empty paragraphs as spacers and trims unused trailing writing rows; depends on current owner/projection IDs, checked text bodies and deferred owner commands.
 import { ViewPlugin } from '@codemirror/view';
 import { v3StructureField } from '../structure/v3-structure-state';
 import { v3BlockSelectionField } from '../editing/v3-block-selection';
@@ -23,7 +23,6 @@ export const v3EmptyLineCleanup = ViewPlugin.define((view) => {
                 !view.hasFocus &&
                 !view.dom.contains(view.root.activeElement);
             if (
-                update.docChanged ||
                 (!update.selectionSet && !lostFocus) ||
                 !view.state.selection.main.empty ||
                 !update.startState.selection.main.empty ||
@@ -42,9 +41,10 @@ export const v3EmptyLineCleanup = ViewPlugin.define((view) => {
                 !before ||
                 (before.id === after?.id &&
                     !lostFocus &&
-                    view.state.doc
-                        .lineAt(view.state.selection.main.head)
-                        .text.trim()) ||
+                    (update.docChanged ||
+                        view.state.doc
+                            .lineAt(view.state.selection.main.head)
+                            .text.trim())) ||
                 !isV3TextType(before.type)
             )
                 return;
@@ -87,17 +87,19 @@ export const v3EmptyLineCleanup = ViewPlugin.define((view) => {
                         block.id;
                     if (!model.content.trim()) {
                         if (
-                            !lostFocus &&
-                            !caretInBlock &&
-                            block.type === 'paragraph' &&
-                            index.blocksIn(block.parentId).length > 1
+                            (lostFocus || !caretInBlock) &&
+                            block.type === 'paragraph'
                         )
+                            //
+                            // Leaving an unused writing block expresses intentional spacing; keep its identity and position instead of deleting the user's blank row.
+                            //
                             dispatchV3ProductOperation(
                                 view,
                                 {
-                                    kind: 'delete',
-                                    blockIds: [block.id],
-                                    ensureParagraph: true,
+                                    kind: 'replace-block',
+                                    blockId: block.id,
+                                    type: 'spacer',
+                                    body: '\n',
                                     motion: 'none',
                                 },
                                 false,
