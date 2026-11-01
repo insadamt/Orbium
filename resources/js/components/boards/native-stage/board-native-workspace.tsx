@@ -1,4 +1,4 @@
-// Summary: Presents the isolated, unsaved Phase-1 Stage with existing Board control styling and manual fixture/profiling actions; depends on the imperative native Stage owner.
+// Summary: Presents the isolated Phase-2 graphics scratch scene with shared drawing/shape controls and manual profiling actions; depends on the native Stage owner and low-frequency completed-action notifications.
 
 import { useLayoutEffect, useRef, useState } from 'react';
 import {
@@ -12,6 +12,9 @@ import {
     RotateCcw,
     Square,
     Triangle,
+    Pencil,
+    Undo2,
+    Redo2,
 } from 'lucide-react';
 import { BoardToolButton } from '../board-tool-button';
 import {
@@ -21,21 +24,46 @@ import {
 import type { NativeBoardTool } from './board-native-interactions';
 import { BoardNativeBaseline } from './board-native-baseline';
 import './board-native-stage.css';
+import { BoardDrawingControls } from '../board-drawing-controls';
+import { isBoardDrawingTool, type BoardBrush } from '../board-drawing-data';
+import type { BoardDrawingSmoothing } from '../board-drawing-smoothing';
+import type { BoardObject } from '../board-types';
+import { BoardNativeSelectionControls } from './board-native-selection-controls';
 
 export default function BoardNativeWorkspace({
     baseline,
+    referenceGraphics,
 }: {
     baseline: boolean;
+    referenceGraphics: BoardObject[];
 }) {
-    return baseline ? <BoardNativeBaseline /> : <BoardNativeFoundation />;
+    return baseline ? (
+        <BoardNativeBaseline />
+    ) : (
+        <BoardNativeFoundation referenceGraphics={referenceGraphics} />
+    );
 }
 
-function BoardNativeFoundation() {
+function BoardNativeFoundation({
+    referenceGraphics,
+}: {
+    referenceGraphics: BoardObject[];
+}) {
     const hostRef = useRef<HTMLDivElement>(null);
     const zoomRef = useRef<HTMLSpanElement>(null);
     const runtimeRef = useRef<NativeBoardStage | null>(null);
     const [tool, setTool] = useState<NativeBoardTool>('select');
     const [grid, setGrid] = useState(true);
+    const [brush, setBrush] = useState<BoardBrush>({
+        color: 'currentColor',
+        width: 3,
+    });
+    const [smoothing, setSmoothing] = useState<BoardDrawingSmoothing>('light');
+    const [eraserSize, setEraserSize] = useState(16);
+    const [pathCount, setPathCount] = useState(0);
+    const [historyState, setHistoryState] = useState(0);
+    const [selected, setSelected] = useState<BoardObject | null>(null);
+    const [drawingSettingsOpen, setDrawingSettingsOpen] = useState(true);
     const [snapshot, setSnapshot] = useState('');
     const [error, setError] = useState<string | null>(null);
 
@@ -45,7 +73,12 @@ function BoardNativeFoundation() {
         if (!host || !zoomLabel) return;
         let runtime: NativeBoardStage;
         try {
-            runtime = createNativeBoardStage(host, zoomLabel);
+            runtime = createNativeBoardStage(host, zoomLabel, {
+                onSelectionChange: setSelected,
+                onPathCountChange: setPathCount,
+                onToolChange: setTool,
+                onHistoryChange: setHistoryState,
+            });
         } catch (failure) {
             setError(
                 failure instanceof Error
@@ -61,8 +94,17 @@ function BoardNativeFoundation() {
         };
     }, []);
 
+    useLayoutEffect(() => {
+        runtimeRef.current?.setDrawingSettings({
+            brush,
+            smoothing,
+            eraserSize,
+        });
+    }, [brush, smoothing, eraserSize]);
+
     function chooseTool(next: NativeBoardTool) {
-        runtimeRef.current?.setTool(next);
+        if (next !== tool) runtimeRef.current?.setTool(next);
+        if (isBoardDrawingTool(next)) setDrawingSettingsOpen(true);
         setTool(next);
         hostRef.current?.focus({ preventScroll: true });
     }
@@ -83,7 +125,7 @@ function BoardNativeFoundation() {
                     aria-describedby="board-native-help"
                 />
                 <p id="board-native-help" className="board-native-notice">
-                    Phase 1 preview · Unsaved scratch scene · Existing Board
+                    Phase 2 preview · Unsaved scratch scene · Existing Board
                     content is safe.
                 </p>
                 {error && (
@@ -130,6 +172,32 @@ function BoardNativeFoundation() {
                         />
                     ))}
                     <BoardToolButton
+                        label="Draw"
+                        icon={Pencil}
+                        aria-pressed={isBoardDrawingTool(tool)}
+                        onClick={() => {
+                            if (isBoardDrawingTool(tool))
+                                setDrawingSettingsOpen(!drawingSettingsOpen);
+                            else chooseTool('pen');
+                        }}
+                    />
+                    <BoardToolButton
+                        label="Undo"
+                        icon={Undo2}
+                        disabled={!(historyState & 1)}
+                        onClick={() =>
+                            runtimeRef.current?.changeHistory('undo')
+                        }
+                    />
+                    <BoardToolButton
+                        label="Redo"
+                        icon={Redo2}
+                        disabled={!(historyState & 2)}
+                        onClick={() =>
+                            runtimeRef.current?.changeHistory('redo')
+                        }
+                    />
+                    <BoardToolButton
                         label="Toggle grid"
                         icon={Grid2X2}
                         aria-pressed={grid}
@@ -139,6 +207,42 @@ function BoardNativeFoundation() {
                         }}
                     />
                 </div>
+                <BoardDrawingControls
+                    tool={tool}
+                    settingsOpen={drawingSettingsOpen}
+                    disabled={false}
+                    skipExitAnimation={false}
+                    onChooseTool={(next) => {
+                        if (isBoardDrawingTool(next)) chooseTool(next);
+                    }}
+                    drawing={{
+                        brush,
+                        setBrush,
+                        smoothing,
+                        setSmoothing,
+                        eraserSize,
+                        setEraserSize,
+                        path: {
+                            pointCount: pathCount,
+                            finish: () => runtimeRef.current?.finishPath(),
+                            removeLastPoint: () =>
+                                runtimeRef.current?.removeLastPathPoint(),
+                            cancel: () => runtimeRef.current?.cancelPath(),
+                        },
+                    }}
+                />
+                <BoardNativeSelectionControls
+                    object={selected}
+                    onChange={(object) =>
+                        runtimeRef.current?.changeObject(object)
+                    }
+                    onLayer={(direction) =>
+                        runtimeRef.current?.changeLayer(direction)
+                    }
+                    onFocusCanvas={() =>
+                        hostRef.current?.focus({ preventScroll: true })
+                    }
+                />
                 <div
                     className="board-native-zoom"
                     role="toolbar"
@@ -188,6 +292,22 @@ function BoardNativeFoundation() {
                             ))}
                         </select>
                     </label>
+                    <button
+                        type="button"
+                        disabled={!referenceGraphics.length}
+                        onClick={() => {
+                            runtimeRef.current?.replaceGraphicsReference(
+                                referenceGraphics,
+                            );
+                            setSnapshot('');
+                        }}
+                    >
+                        Replace scratch with saved ink and shapes
+                    </button>
+                    <p>
+                        Copies graphics only. Rich labels and HTML stay in the
+                        saved Board; scratch changes are never saved.
+                    </p>
                     <button
                         type="button"
                         onClick={() =>

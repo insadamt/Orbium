@@ -23,6 +23,13 @@ export function v3ColumnProjectionFor(view: EditorView) {
     );
 }
 
+export function v3ColumnProjectionsForOwner(owner: EditorView) {
+    return [...projections].filter(
+        (projection) =>
+            projection.owner === owner && projection.view.dom.isConnected,
+    );
+}
+
 export function isV3ColumnComposing(owner: EditorView, except?: EditorView) {
     return [...projections].some(
         (projection) =>

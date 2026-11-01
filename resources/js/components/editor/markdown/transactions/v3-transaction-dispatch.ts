@@ -110,8 +110,11 @@ export function applyV3PreparedOperation(
                     'owner-dispatch-rejected',
                     'The owner dispatcher did not accept the prepared transaction.',
                 );
+            //
+            // Column projections synchronize in microtasks; measure incoming rows only after their owner changes are rendered.
+            //
             if (snapshot)
-                motion?.play(
+                motion?.playAfterLayout(
                     snapshot,
                     prepared.transaction.changes,
                     prepared.after,

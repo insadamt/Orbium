@@ -1,54 +1,47 @@
-// Summary: Adapts scratch BoardRecordStore shapes to native Konva primitives and commits completed drags; depends on existing shape defaults and validation, with no server persistence.
+// Summary: Owns disposable graphics projections and scratch record transactions for shapes and ink; depends on canonical BoardRecordStore, domain limits and native visual adapters, without server persistence.
 
 import Konva from 'konva';
-import { defaultBoardShape, boardShapeDefaultSize } from '../board-shape-data';
+import {
+    defaultBoardShape,
+    boardShapeDefaultSize,
+    boardShapeKinds,
+} from '../board-shape-data';
 import { BoardRecordStore } from '../board-record-store';
-import { boardLimits, type BoardObject, type BoardPoint } from '../board-types';
+import {
+    boardLimits,
+    type BoardBounds,
+    type BoardObject,
+    type BoardPoint,
+    type BoardShapeKind,
+} from '../board-types';
+import {
+    createNativeObjectVisual,
+    type NativeObjectVisual,
+} from './board-native-object-visual';
 
-export type NativeShapeKind = 'rectangle' | 'circle' | 'triangle';
+export type NativeShapeKind = BoardShapeKind;
 
-export function createNativeBoardGraphics(layer: Konva.Layer, color: string) {
+export function createNativeBoardGraphics(
+    layer: Konva.Layer,
+    initialColor: string,
+) {
     const store = new BoardRecordStore([], () => {});
     const groups = new Map<string, Konva.Group>();
-    const metrics = { created: 0, destroyed: 0, recordTransactions: 0 };
-    let stroke = color;
+    const visuals = new Map<string, NativeObjectVisual>();
+    const metrics = {
+        created: 0,
+        destroyed: 0,
+        recordTransactions: 0,
+        erasurePreviews: 0,
+        transformPreviews: 0,
+    };
+    let foreground = initialColor;
     let draggable = true;
 
-    function createShape(object: BoardObject) {
-        const appearance = {
-            stroke,
-            strokeWidth: 2,
-            fill: undefined,
-            perfectDrawEnabled: false,
-        };
-        if (object.data.shape?.kind === 'circle')
-            return new Konva.Ellipse({
-                ...appearance,
-                x: object.width / 2,
-                y: object.height / 2,
-                radiusX: object.width / 2,
-                radiusY: object.height / 2,
-            });
-        if (object.data.shape?.kind === 'triangle')
-            return new Konva.Line({
-                ...appearance,
-                points: [
-                    object.width / 2,
-                    0,
-                    object.width,
-                    object.height,
-                    0,
-                    object.height,
-                ],
-                closed: true,
-            });
-        return new Konva.Rect({
-            ...appearance,
-            width: object.width,
-            height: object.height,
-        });
+    function restore(id: string) {
+        const record = store.getObject(id);
+        if (record) visuals.get(id)?.update(record);
     }
-
     const unsubscribe = store.subscribeChanges((ids) => {
         metrics.recordTransactions++;
         for (const id of ids) {
@@ -58,6 +51,7 @@ export function createNativeBoardGraphics(layer: Konva.Layer, color: string) {
                 if (group) {
                     group.destroy();
                     groups.delete(id);
+                    visuals.delete(id);
                     metrics.destroyed++;
                 }
                 continue;
@@ -68,12 +62,19 @@ export function createNativeBoardGraphics(layer: Konva.Layer, color: string) {
                     name: 'native-board-object',
                     draggable,
                 });
-                group.add(createShape(object));
+                layer.add(group);
+                visuals.set(
+                    id,
+                    createNativeObjectVisual(group, object, foreground),
+                );
                 group.on('dragend.records', () => {
                     const current = store.getObject(id);
                     const node = groups.get(id);
-                    if (!current || !node) return;
-                    if (node.x() === current.x && node.y() === current.y)
+                    if (
+                        !current ||
+                        !node ||
+                        (node.x() === current.x && node.y() === current.y)
+                    )
                         return;
                     const x = Math.max(
                         -boardLimits.coordinate,
@@ -83,20 +84,21 @@ export function createNativeBoardGraphics(layer: Konva.Layer, color: string) {
                         -boardLimits.coordinate,
                         Math.min(boardLimits.coordinate, node.y()),
                     );
-                    if (!store.changeObject({ ...current, x, y }))
-                        node.position({ x: current.x, y: current.y });
+                    if (!store.changeObject({ ...current, x, y })) restore(id);
                 });
                 groups.set(id, group);
-                layer.add(group);
                 metrics.created++;
             }
-            group.position({ x: object.x, y: object.y });
+            visuals.get(id)!.update(object);
+            group.zIndex(
+                Math.min(object.layer + 1, layer.getChildren().length - 1),
+            );
         }
     });
 
-    function makeRecord(
+    function makeShape(
         kind: NativeShapeKind,
-        point: BoardPoint,
+        bounds: BoardBounds,
         layerIndex: number,
     ): BoardObject {
         return {
@@ -104,60 +106,83 @@ export function createNativeBoardGraphics(layer: Konva.Layer, color: string) {
             block_type: 'shape',
             content_format_version: 1,
             data: { shape: defaultBoardShape(kind), content: [] },
-            ...point,
-            ...boardShapeDefaultSize(kind),
+            ...bounds,
             layer: layerIndex,
         };
     }
-
     return {
         store,
         groups,
         metrics,
-        insert(kind: NativeShapeKind, point: BoardPoint) {
-            const objects = store.getObjects();
-            const object = makeRecord(kind, point, objects.length);
-            return store.commitSnapshot([...objects, object])
+        insert(
+            kind: NativeShapeKind,
+            point: BoardPoint,
+            size = boardShapeDefaultSize(kind),
+        ) {
+            const object = makeShape(
+                kind,
+                { ...point, ...size },
+                store.getObjects().length,
+            );
+            return store.commitSnapshot([...store.getObjects(), object])
                 ? object.id
                 : null;
         },
+        insertDrawing(object: BoardObject) {
+            return store.commitSnapshot([
+                ...store.getObjects(),
+                { ...object, layer: store.getObjects().length },
+            ]);
+        },
         replaceFixture(count: number) {
-            const kinds: NativeShapeKind[] = [
-                'rectangle',
-                'circle',
-                'triangle',
-            ];
-            const objects = Array.from({ length: count }, (_, index) =>
-                makeRecord(
-                    kinds[index % kinds.length],
-                    {
-                        x: 80 + (index % 40) * 280,
-                        y: 100 + Math.floor(index / 40) * 240,
-                    },
-                    index,
+            store.replaceSnapshot(
+                Array.from({ length: count }, (_, index) =>
+                    makeShape(
+                        boardShapeKinds[index % boardShapeKinds.length],
+                        {
+                            x: 80 + (index % 40) * 280,
+                            y: 100 + Math.floor(index / 40) * 240,
+                            ...boardShapeDefaultSize(
+                                boardShapeKinds[index % boardShapeKinds.length],
+                            ),
+                        },
+                        index,
+                    ),
                 ),
             );
-            store.replaceSnapshot(objects);
         },
         setDraggable(enabled: boolean) {
+            if (draggable === enabled) return;
             draggable = enabled;
             groups.forEach((group) => group.draggable(enabled));
         },
-        recolor(nextColor: string) {
-            stroke = nextColor;
-            groups.forEach((group) =>
-                group
-                    .getChildren()
-                    .forEach((node) => (node as Konva.Shape).stroke(stroke)),
-            );
+        recolor(color: string) {
+            foreground = color;
+            visuals.forEach((visual) => visual.recolor(color));
         },
+        previewGeometry(object: BoardObject) {
+            visuals.get(object.id)?.update(object);
+            metrics.transformPreviews++;
+        },
+        paintErasure(id: string, fragments: [number, number][][] | null) {
+            visuals.get(id)?.replaceFragments(fragments);
+            metrics.erasurePreviews++;
+        },
+        restore,
         cancelDrags() {
             groups.forEach((group, id) => {
                 const record = store.getObject(id);
                 //
-                // Restore before stopDrag emits dragend so cancellation cannot commit preview coordinates.
+                // Native touch cancellation may mark a drag stopped before this capture handler runs; geometry must still be restored before dragend can commit it.
                 //
-                if (record) group.position({ x: record.x, y: record.y });
+                if (
+                    record &&
+                    (group.x() !== record.x ||
+                        group.y() !== record.y ||
+                        group.scaleX() !== 1 ||
+                        group.scaleY() !== 1)
+                )
+                    restore(id);
                 group.stopDrag();
             });
         },
@@ -166,6 +191,7 @@ export function createNativeBoardGraphics(layer: Konva.Layer, color: string) {
             groups.forEach((group) => group.destroy());
             metrics.destroyed += groups.size;
             groups.clear();
+            visuals.clear();
         },
     };
 }

@@ -4,6 +4,7 @@ import type { EditorView } from '@codemirror/view';
 import { markdownDragViewport } from './markdown-drag-scroll';
 import { markdownBlockPopOrigin } from './markdown-block-pop-origin';
 import { v3StructureField } from '../structure/v3-structure-state';
+import { v3ColumnProjectionsForOwner } from '../columns/v3/v3-column-registry';
 
 export type RenderedRow = {
     element: HTMLElement;
@@ -126,8 +127,14 @@ function copySnapshotMediaFrames(source: HTMLElement, clone: HTMLElement) {
 export function renderedMarkdownMotionRows(view: EditorView): RenderedRow[] {
     const rows: RenderedRow[] = [];
     const index = view.state.field(v3StructureField, false)?.current;
+    const projections = v3ColumnProjectionsForOwner(view);
     for (const child of view.contentDOM.children) {
         if (!(child instanceof HTMLElement)) continue;
+        //
+        // Animate projected children individually; cloning their layout as well would draw every column twice.
+        //
+        if (projections.some((entry) => child.contains(entry.view.dom)))
+            continue;
         const bounds = child.getBoundingClientRect();
         if (
             !bounds.height ||
@@ -166,6 +173,12 @@ export function renderedMarkdownMotionRows(view: EditorView): RenderedRow[] {
                 blockId: block?.id,
                 blockOffset: block ? position - block.from : undefined,
             });
+    }
+    for (const projection of projections) {
+        const column = index?.columnById(projection.columnId);
+        if (!column) continue;
+        for (const row of renderedMarkdownMotionRows(projection.view))
+            rows.push({ ...row, position: column.bodyFrom + row.position });
     }
     return rows;
 }

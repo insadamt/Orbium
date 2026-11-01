@@ -1,7 +1,9 @@
+// Summary: Presents shared brush colors, widths and smoothing; depends only on the drawing palette model so native and reference engines retain identical controls.
+
 import { Check } from 'lucide-react';
 import { AppSelect } from '@/components/ui/app-select';
 import { BoardToolButton } from './board-tool-button';
-import type { BoardDrawingController } from './use-board-drawing';
+import type { BoardDrawingControlsModel } from './board-drawing-controls-model';
 import type { BoardDrawingSmoothing } from './board-drawing-smoothing';
 
 const colors = [
@@ -30,7 +32,7 @@ export function BoardDrawingStyleControls({
     disabled,
     smoothingEnabled = true,
 }: {
-    drawing: BoardDrawingController;
+    drawing: BoardDrawingControlsModel;
     highlighter: boolean;
     disabled: boolean;
     smoothingEnabled?: boolean;

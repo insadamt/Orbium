@@ -1,5 +1,7 @@
+// Summary: Presents the existing screen-space eraser sizes for either Board engine; depends on the shared drawing palette model.
+
 import { BoardToolButton } from './board-tool-button';
-import type { BoardDrawingController } from './use-board-drawing';
+import type { BoardDrawingControlsModel } from './board-drawing-controls-model';
 
 const eraserSizes = [
     [8, 'Fine'],
@@ -12,7 +14,7 @@ export function BoardEraserControls({
     drawing,
     disabled,
 }: {
-    drawing: BoardDrawingController;
+    drawing: BoardDrawingControlsModel;
     disabled: boolean;
 }) {
     return (

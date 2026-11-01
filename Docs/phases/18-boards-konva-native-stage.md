@@ -2,6 +2,8 @@ Summary: Defines the authorized Phase-1 native Konva foundation and its manual r
 
 # Boards V2 — Phase 1: native Stage foundation
 
+Continuation authorized 2026-11-01: the user's “go ahead” after delivery approves starting [Phase 2](19-boards-konva-native-graphics.md). Phase 1 is committed as `4ec6dff`. This approval does not manufacture browser/performance evidence or approve an HTML stacking compromise.
+
 Authorized 2026-11-01. Start from the latest verified `feat/boards-konva-engine`, preserve its V3 editor work and create `feat/boards-konva-native-stage`. Build an independently selected Stage rather than extending the hybrid graphics adapter. Existing renderer defaults and saved Boards remain unchanged.
 
 Deliver a native Stage lifecycle, viewport-sized buffers, Stage camera, navigation, basic grid/shapes, native selection/dragging and on-demand diagnostics. Include a separate empty-Stage baseline and 10/100/500/1,000-shape scratch fixtures. Mount neither old Board orchestration nor native editor services in the experiment. Keep the selector development-only, with an explicit local optimized-build profiling flag.

@@ -13,10 +13,12 @@ export function BoardShapeFormatting({
     object,
     disabled,
     onChange,
+    showTextLayout = true,
 }: {
     object: BoardObject;
     disabled: boolean;
     onChange: (object: BoardObject) => void;
+    showTextLayout?: boolean;
 }) {
     const shape = object.data.shape!;
     const radius = boardShapeCornerRadius(shape);
@@ -187,11 +189,13 @@ export function BoardShapeFormatting({
                     </Menu.Content>
                 </Menu.Root>
             )}
-            <BoardTextLayoutControls
-                data={object.data}
-                disabled={disabled}
-                onChange={(data) => onChange({ ...object, data })}
-            />
+            {showTextLayout && (
+                <BoardTextLayoutControls
+                    data={object.data}
+                    disabled={disabled}
+                    onChange={(data) => onChange({ ...object, data })}
+                />
+            )}
         </div>
     );
 }

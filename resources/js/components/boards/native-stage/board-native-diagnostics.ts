@@ -13,12 +13,25 @@ declare global {
 export function attachNativeBoardDiagnostics(
     stage: Konva.Stage,
     layer: Konva.Layer,
-    graphics?: NativeBoardGraphics,
-    gridTile?: HTMLCanvasElement,
+    sources: {
+        graphics?: NativeBoardGraphics;
+        gridTile?: HTMLCanvasElement;
+        inputLayer?: Konva.Layer;
+        readLiveCanvases?: () => {
+            role: string;
+            width: number;
+            height: number;
+            ratio: number;
+        }[];
+        readInkMetrics?: () => unknown;
+    } = {},
 ) {
+    const { graphics, gridTile } = sources;
     const started = performance.now();
     const counters = {
         sceneDraws: 0,
+        graphicsLayerDraws: 0,
+        inputLayerDraws: 0,
         fullLayerPaints: 0,
         localizedPaints: 0,
         cameraAttributeChanges: 0,
@@ -32,20 +45,28 @@ export function attachNativeBoardDiagnostics(
         sceneRebuilds: 0,
     };
     let lastInput: number | null = null;
-    layer.on('draw.diagnostics', () => {
-        counters.sceneDraws++;
-        counters.fullLayerPaints++;
-        if (lastInput !== null) {
-            const delay = performance.now() - lastInput;
-            counters.inputToSceneDrawSamples++;
-            counters.inputToSceneDrawTotalMs += delay;
-            counters.inputToSceneDrawMaxMs = Math.max(
-                counters.inputToSceneDrawMaxMs,
-                delay,
-            );
-            lastInput = null;
-        }
-    });
+    function observeDraws(
+        observed: Konva.Layer,
+        role: 'graphicsLayerDraws' | 'inputLayerDraws',
+    ) {
+        observed.on('draw.diagnostics', () => {
+            counters[role]++;
+            counters.sceneDraws++;
+            counters.fullLayerPaints++;
+            if (lastInput !== null) {
+                const delay = performance.now() - lastInput;
+                counters.inputToSceneDrawSamples++;
+                counters.inputToSceneDrawTotalMs += delay;
+                counters.inputToSceneDrawMaxMs = Math.max(
+                    counters.inputToSceneDrawMaxMs,
+                    delay,
+                );
+                lastInput = null;
+            }
+        });
+    }
+    observeDraws(layer, 'graphicsLayerDraws');
+    if (sources.inputLayer) observeDraws(sources.inputLayer, 'inputLayerDraws');
     stage.on(
         'xChange.diagnostics yChange.diagnostics scaleXChange.diagnostics',
         () => counters.cameraAttributeChanges++,
@@ -90,6 +111,7 @@ export function attachNativeBoardDiagnostics(
                 height: gridTile.height,
                 ratio: 1,
             });
+        canvases.push(...(sources.readLiveCanvases?.() ?? []));
         const allocatedPixels = canvases.reduce(
             (total, canvas) => total + canvas.width * canvas.height,
             0,
@@ -123,6 +145,7 @@ export function attachNativeBoardDiagnostics(
                                   0,
                       ).length
                 : 0,
+            ink: sources.readInkMetrics?.(),
             camera: { x: stage.x(), y: stage.y(), zoom: stage.scaleX() },
             viewport: stage.size(),
             canvases,
@@ -152,6 +175,7 @@ export function attachNativeBoardDiagnostics(
         dispose() {
             controller.abort();
             layer.off('.diagnostics');
+            sources.inputLayer?.off('.diagnostics');
             stage.off('.diagnostics');
             registry.delete(stage.id());
             if (!registry.size && window.__ORBIUM_NATIVE_STAGES__ === registry)

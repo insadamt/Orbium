@@ -65,6 +65,11 @@ export function BoardCanvas(
                 >
                     <BoardNativeWorkspace
                         baseline={native === 'native-empty'}
+                        referenceGraphics={result.snapshot.objects.filter(
+                            (object) =>
+                                object.block_type === 'shape' ||
+                                object.block_type === 'drawing',
+                        )}
                     />
                 </Suspense>
             ) : (

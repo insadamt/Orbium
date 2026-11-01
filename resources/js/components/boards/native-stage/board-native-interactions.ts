@@ -1,27 +1,48 @@
 // Summary: Routes navigation and selection to Konva's native hit graph and drag lifecycle; depends on the Stage camera, scratch graphics and a selection Transformer.
 
 import type Konva from 'konva';
+import { isBoardDrawingTool } from '../board-drawing-data';
+import { isBoardShapeTool } from '../board-shape-data';
+import type { BoardDrawingTool, BoardPoint } from '../board-types';
+import type { NativeDrawing } from './board-native-drawing';
+import type { NativePlacement } from './board-native-placement';
+import type { NativeTransformations } from './board-native-transformations';
 import type { NativeBoardCamera } from './board-native-camera';
 import type {
     NativeBoardGraphics,
     NativeShapeKind,
 } from './board-native-graphics';
 
-export type NativeBoardTool = 'select' | 'hand' | NativeShapeKind;
+export type NativeBoardTool =
+    | 'select'
+    | 'hand'
+    | NativeShapeKind
+    | BoardDrawingTool;
 
 export function attachNativeBoardInteractions({
     stage,
     camera,
     graphics,
-    selection,
+    transformations,
+    drawing,
+    placement,
+    onToolChange,
     host,
 }: {
     stage: Konva.Stage;
     camera: NativeBoardCamera;
     graphics: NativeBoardGraphics;
-    selection: Konva.Transformer;
+    transformations: NativeTransformations;
+    drawing: NativeDrawing;
+    placement: NativePlacement;
+    onToolChange: (tool: NativeBoardTool) => void;
     host: HTMLDivElement;
 }) {
+    const selection = transformations.transformer;
+    let primaryPointer: number | null = null;
+    let nativePress: Konva.KonvaEventObject<MouseEvent | TouchEvent> | null =
+        null;
+    let sampleBounds = { left: 0, top: 0, scaleX: 1, scaleY: 1 };
     let tool: NativeBoardTool = 'select';
     let space = false;
     let middle = false;
@@ -43,15 +64,27 @@ export function attachNativeBoardInteractions({
         host.dataset.tool = pan ? 'hand' : tool;
     }
 
-    function select(id: string | null) {
-        const group = id ? graphics.groups.get(id) : undefined;
-        selection.nodes(group ? [group] : []);
-        selection.moveToTop();
+    const select = (id: string | null) => transformations.select(id);
+    function changeTool(next: NativeBoardTool) {
+        cancel();
+        tool = next;
+        updateDragMode();
+        onToolChange(next);
+    }
+    function worldSample(event: PointerEvent): BoardPoint {
+        return camera.worldPoint({
+            x: (event.clientX - sampleBounds.left) * sampleBounds.scaleX,
+            y: (event.clientY - sampleBounds.top) * sampleBounds.scaleY,
+        });
     }
 
     function cancel() {
+        drawing.cancelAll();
+        placement.cancel();
+        transformations.cancel();
+        primaryPointer = null;
         graphics.cancelDrags();
-        if (stage.isDragging()) {
+        if (stage.isDragging() || pressed) {
             camera.apply(panOrigin);
         }
         stage.stopDrag();
@@ -64,17 +97,33 @@ export function attachNativeBoardInteractions({
     }
 
     const preparePointer = (event: PointerEvent) => {
-        if (event.button > 1) return;
+        if (
+            event.button > 1 ||
+            (event.pointerType === 'touch' && !event.isPrimary)
+        )
+            return;
+        primaryPointer = event.pointerId;
+        const rect = stage.content.getBoundingClientRect();
+        sampleBounds = {
+            left: rect.left,
+            top: rect.top,
+            scaleX: stage.width() / rect.width,
+            scaleY: stage.height() / rect.height,
+        };
         host.focus({ preventScroll: true });
         pressed = true;
         panOrigin = camera.read();
         middle = event.button === 1;
+        if (space || middle || tool === 'hand') {
+            drawing.cancelGesture();
+            drawing.path.hover(null, false);
+            placement.cancel();
+        }
         updateDragMode();
         //
         // Native DOM capture keeps the library's own drag events flowing beyond the canvas edge.
         //
-        if (event.pointerType !== 'touch')
-            stage.content.setPointerCapture(event.pointerId);
+        stage.content.setPointerCapture(event.pointerId);
     };
     const finishPointer = () => {
         pressed = false;
@@ -86,20 +135,90 @@ export function attachNativeBoardInteractions({
     };
 
     stage.on('mousedown.native touchstart.native', (event) => {
+        nativePress = event;
         if ('button' in event.evt && event.evt.button !== 0) return;
         if (tool === 'hand' || space || middle || suppressTouch) return;
+        if (event.target.findAncestor('Transformer', true)) return;
         const object = event.target.findAncestor('.native-board-object', true);
-        if (tool !== 'select') {
-            const pointer = stage.getPointerPosition();
-            if (pointer)
-                select(graphics.insert(tool, camera.worldPoint(pointer)));
-            return;
-        }
+        if (tool !== 'select') return;
         select(object?.id() ?? null);
         if (!object && event.evt.type === 'touchstart') stage.startDrag(event);
     });
     stage.on('dragstart.native', (event) => {
         if (event.target !== stage) select(event.target.id());
+    });
+
+    stage.on(
+        'pointerdown.native',
+        (event: Konva.KonvaEventObject<PointerEvent>) => {
+            if (
+                event.evt.pointerId !== primaryPointer ||
+                event.evt.button !== 0 ||
+                suppressTouch
+            )
+                return;
+            if (tool === 'hand' || space || middle) {
+                drawing.cancelGesture();
+                drawing.path.hover(null, false);
+                placement.cancel();
+                return;
+            }
+            const point = worldSample(event.evt);
+            if (isBoardDrawingTool(tool)) {
+                select(null);
+                drawing.start(tool, point, event.evt.shiftKey);
+            } else if (isBoardShapeTool(tool)) {
+                select(null);
+                placement.start(tool, point);
+            }
+        },
+    );
+    stage.on(
+        'pointermove.native',
+        (event: Konva.KonvaEventObject<PointerEvent>) => {
+            if (suppressTouch || space || middle || tool === 'hand') return;
+            if (drawing.active && event.evt.pointerId === primaryPointer) {
+                const samples = event.evt.getCoalescedEvents?.() ?? [];
+                drawing.move([...samples, event.evt].map(worldSample));
+            } else if (
+                placement.active &&
+                event.evt.pointerId === primaryPointer
+            )
+                placement.move(worldSample(event.evt), event.evt.shiftKey);
+            else if (tool === 'path') {
+                const pointer = stage.getPointerPosition();
+                if (pointer)
+                    drawing.path.hover(
+                        camera.worldPoint(pointer),
+                        event.evt.shiftKey,
+                    );
+            }
+        },
+    );
+    stage.on(
+        'pointerup.native',
+        (event: Konva.KonvaEventObject<PointerEvent>) => {
+            if (event.evt.pointerId !== primaryPointer || suppressTouch) return;
+            if (drawing.active) {
+                drawing.move([worldSample(event.evt)]);
+                drawing.finish();
+            }
+            if (placement.active) {
+                const id = placement.finish(
+                    worldSample(event.evt),
+                    event.evt.shiftKey,
+                );
+                changeTool('select');
+                select(id);
+            }
+            primaryPointer = null;
+        },
+    );
+    stage.on('pointerleave.native', () => {
+        if (tool === 'path') drawing.path.hover(null, false);
+    });
+    stage.on('dblclick.native', () => {
+        if (tool === 'path' && !space && !middle) drawing.path.finish();
     });
 
     stage.on('wheel.native', (event: Konva.KonvaEventObject<WheelEvent>) => {
@@ -186,16 +305,66 @@ export function attachNativeBoardInteractions({
 
     const keyDown = (event: KeyboardEvent) => {
         if (event.target !== host) return;
+        if (event.isComposing || event.defaultPrevented) return;
+        const modifier = event.ctrlKey || event.metaKey;
+        if (tool === 'path' && drawing.path.active) {
+            if (event.key === 'Enter' && !modifier) {
+                event.preventDefault();
+                drawing.path.finish();
+                return;
+            }
+            if (
+                event.key === 'Backspace' ||
+                (modifier && !event.shiftKey && event.key.toLowerCase() === 'z')
+            ) {
+                event.preventDefault();
+                drawing.path.removeLastPoint();
+                return;
+            }
+        }
+        if (modifier && ['z', 'y'].includes(event.key.toLowerCase())) {
+            event.preventDefault();
+            cancel();
+            if (event.key.toLowerCase() === 'y' || event.shiftKey)
+                graphics.store.redo();
+            else graphics.store.undo();
+            return;
+        }
+        if (event.key === 'Enter' && isBoardShapeTool(tool)) {
+            event.preventDefault();
+            const id = graphics.insert(
+                tool,
+                camera.worldPoint({
+                    x: stage.width() / 2 - 100,
+                    y: stage.height() / 2 - 100,
+                }),
+            );
+            changeTool('select');
+            select(id);
+            return;
+        }
         if (event.code === 'Space') {
             event.preventDefault();
             if (!space) {
+                drawing.cancelGesture();
+                placement.cancel();
+                transformations.cancel();
                 space = true;
                 updateDragMode();
+                if (pressed && nativePress) {
+                    panOrigin = camera.read();
+                    stage.startDrag(nativePress);
+                }
             }
         } else if (event.key === 'Escape') {
             event.preventDefault();
-            cancel();
-            select(null);
+            if (drawing.active) drawing.cancelGesture();
+            else if (drawing.path.active) drawing.path.cancel();
+            else {
+                cancel();
+                changeTool('select');
+                select(null);
+            }
         } else if (
             ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(
                 event.key,
@@ -296,11 +465,7 @@ export function attachNativeBoardInteractions({
     return {
         select,
         cancel,
-        setTool(next: NativeBoardTool) {
-            cancel();
-            tool = next;
-            updateDragMode();
-        },
+        setTool: (next: NativeBoardTool) => changeTool(next),
         dispose() {
             cancel();
             controller.abort();

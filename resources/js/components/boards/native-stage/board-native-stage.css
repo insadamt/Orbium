@@ -1,4 +1,4 @@
-/* Summary: Positions the Phase-1 tools and development controls using Orbium's existing surfaces; depends on shared Board CSS and theme variables. */
+/* Summary: Positions native graphics tools, selection controls and development diagnostics using Orbium's existing surfaces; depends on shared Board CSS and theme variables. */
 
 .board-native-notice {
     position: absolute;
@@ -80,6 +80,42 @@
     top: 55px;
     left: 20px;
     color: var(--destructive);
+}
+.board-native-toolbar {
+    max-height: calc(100% - 80px);
+    overflow-y: auto;
+}
+.board-native-selection-controls {
+    position: absolute;
+    z-index: 5;
+    top: 42px;
+    left: 72px;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 5px;
+    max-width: calc(100% - 100px);
+    padding: 6px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--card);
+    box-shadow: 0 4px 16px rgb(0 0 0 / 0.06);
+}
+.board-native-selection-controls .board-toolbar-group {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+.board-native-canvas:is(
+    [data-tool='pen'],
+    [data-tool='path'],
+    [data-tool='highlighter']
+) {
+    cursor: crosshair;
+}
+.board-native-canvas[data-tool='eraser'] {
+    cursor: var(--board-eraser-cursor, crosshair);
 }
 @media (max-width: 640px) {
     .board-native-notice {

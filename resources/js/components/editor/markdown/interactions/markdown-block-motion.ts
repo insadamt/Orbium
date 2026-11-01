@@ -50,6 +50,7 @@ class MarkdownBlockMotion {
     private frame: number | null = null;
     private layoutSnapshots: HTMLElement[] = [];
     private liveRowMask: HTMLStyleElement | null = null;
+    private maskedEditors = new Set<HTMLElement>();
     private revision = 0;
     private scrollPositions: ReturnType<
         typeof captureMotionScrollPositions
@@ -245,15 +246,25 @@ class MarkdownBlockMotion {
                 if (!previous) continue;
                 const distance =
                     (previous.bounds.top - row.bounds.top) / this.view.scaleY;
-                if (Math.abs(distance) < 0.5) continue;
+                const horizontalDistance =
+                    (previous.bounds.left - row.bounds.left) / this.view.scaleX;
+                if (
+                    Math.abs(distance) < 0.5 &&
+                    Math.abs(horizontalDistance) < 0.5
+                )
+                    continue;
                 const moving = createMarkdownMotionSnapshot(this.view, [row]);
                 if (!moving) continue;
                 this.layoutSnapshots.push(moving.element);
                 hiddenRows.push(row.element);
-                gsap.set(moving.popElement, { y: distance });
+                gsap.set(moving.popElement, {
+                    x: horizontalDistance,
+                    y: distance,
+                });
                 timeline.to(
                     moving.popElement,
                     {
+                        x: 0,
                         y: 0,
                         duration: 0.14,
                         ease: 'power2.inOut',
@@ -282,16 +293,24 @@ class MarkdownBlockMotion {
         if (!elements.length) return;
         const owner = `block-motion-${++motionSequence}`;
         const mask = document.createElement('style');
-        const children = Array.from(this.view.contentDOM.children);
         mask.textContent =
             elements
-                .map(
-                    (element) =>
-                        `[data-block-motion-owner="${owner}"] > .cm-scroller > .cm-content > :nth-child(${children.indexOf(element) + 1})`,
-                )
+                .map((element) => {
+                    const editor = element.closest<HTMLElement>('.cm-editor')!;
+                    if (!this.maskedEditors.has(editor)) {
+                        editor.setAttribute(
+                            'data-block-motion-owner',
+                            `${owner}-${this.maskedEditors.size}`,
+                        );
+                        this.maskedEditors.add(editor);
+                    }
+                    const children = Array.from(
+                        element.parentElement!.children,
+                    );
+                    return `[data-block-motion-owner="${editor.getAttribute('data-block-motion-owner')}"] > .cm-scroller > .cm-content > :nth-child(${children.indexOf(element) + 1})`;
+                })
                 .join(',') + ' { opacity: 0 !important; }';
         // CodeMirror observes row attributes and can reset inline styles while redrawing.
-        this.view.dom.setAttribute('data-block-motion-owner', owner);
         this.view.dom.ownerDocument.head.append(mask);
         this.liveRowMask = mask;
     }
@@ -310,7 +329,9 @@ class MarkdownBlockMotion {
         this.frame = null;
         this.liveRowMask?.remove();
         this.liveRowMask = null;
-        this.view.dom.removeAttribute('data-block-motion-owner');
+        for (const editor of this.maskedEditors)
+            editor.removeAttribute('data-block-motion-owner');
+        this.maskedEditors.clear();
         this.context?.revert();
         this.context = null;
         this.ghost = null;

@@ -21,6 +21,7 @@ export class BoardStreamingStroke {
     constructor(
         private smoothing: BoardDrawingSmoothing,
         private zoom: number,
+        private onCompletedChunk?: (points: BoardStrokePoint[]) => void,
     ) {}
 
     prepare(points: BoardStrokePoint[], endpoint: BoardPoint | null) {
@@ -33,6 +34,7 @@ export class BoardStreamingStroke {
                 null,
             );
             appendBoardStrokePath(this.completedPath, chunk);
+            this.onCompletedChunk?.(chunk);
             this.completedPoints.push(
                 ...(this.completedPoints.length ? chunk.slice(1) : chunk),
             );

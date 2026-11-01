@@ -1,3 +1,5 @@
+// Summary: Presents shared drawing palettes for either Board engine; depends on explicit presentation state and actions rather than camera or pointer hooks.
+
 import { BoardPathControls } from './board-path-controls';
 import { BoardEraserControls } from './board-eraser-controls';
 import { BoardBrushPreview } from './board-brush-preview';
@@ -6,7 +8,7 @@ import { BoardToolbarHighlight } from './board-toolbar-highlight';
 import { isBoardDrawingTool } from './board-drawing-data';
 import { BoardDrawingStyleControls } from './board-drawing-style-controls';
 import type { BoardTool } from './board-types';
-import type { BoardDrawingController } from './use-board-drawing';
+import type { BoardDrawingControlsModel } from './board-drawing-controls-model';
 
 const drawingTools = [
     { tool: 'pen', label: 'Pen' },
@@ -25,7 +27,7 @@ export function BoardDrawingControls({
 }: {
     tool: BoardTool;
     settingsOpen: boolean;
-    drawing: BoardDrawingController;
+    drawing: BoardDrawingControlsModel;
     disabled: boolean;
     skipExitAnimation: boolean;
     onChooseTool: (tool: BoardTool) => void;

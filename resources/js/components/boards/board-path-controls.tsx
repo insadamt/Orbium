@@ -1,12 +1,14 @@
+// Summary: Presents shared Path Pen finish/remove/cancel actions; depends on explicit draft state and callbacks from either Board engine.
+
 import { Check, Undo2, X } from 'lucide-react';
 import { BoardToolButton } from './board-tool-button';
-import type { BoardDrawingController } from './use-board-drawing';
+import type { BoardDrawingControlsModel } from './board-drawing-controls-model';
 
 export function BoardPathControls({
     drawing,
     disabled,
 }: {
-    drawing: BoardDrawingController;
+    drawing: BoardDrawingControlsModel;
     disabled: boolean;
 }) {
     return (
