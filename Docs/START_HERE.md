@@ -1,5 +1,7 @@
 Summary: Entry point for current Orbium implementation status and review gates; depends on the phase specifications and reports linked below.
 
+V3 inline bracket/color repair (2026-11-02): colored text now escapes literal `[`/`]` consistently during formatting and direct Live Preview typing. Whole reference-style links retain functional Markdown and selected colors. Follow `reports/orbium-v3-inline-brackets-and-colors.md` for the patch boundaries and exact manual validation. No document-format migration or automated tests; remain in stage-6 review.
+
 V3 unused writing blocks become spacing (2026-11-01): the user now requests that a newly added block left unwritten count as a space block. Leaving or blurring an empty paragraph preserves its ID and position as a writable spacer instead of deleting it, including when insertion moves the caret to another block. Read `reports/orbium-v3-unused-paragraph-spacing.md` for checks and pending manual acceptance. This supersedes abandoned empty-paragraph removal; remain in stage-6 review.
 
 V3 empty inline-formatting cleanup (2026-11-01): deleting the final colored/underlined text now removes its hidden inline wrapper through shared Live Preview cleanup. The existing cleanup had only been installed in embedded writing commands, leaving the active V3 owner and projections uncovered. Read `reports/orbium-v3-empty-inline-formatting.md` for actual checks and manual acceptance. No automated tests/browser automation; remain in stage-6 review.

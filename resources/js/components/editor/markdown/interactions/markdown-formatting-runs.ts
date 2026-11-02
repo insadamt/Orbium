@@ -23,6 +23,7 @@ export type FormattingRun = {
     selected: boolean;
     literal?: boolean;
     protected?: boolean;
+    opaqueMarkdown?: boolean;
     icon?: { prefix: string; metadata: OrbiumMetadata };
 };
 export type FormattingBlock = {
@@ -48,7 +49,6 @@ const protectedNodes = new Set([
     'OrbiumInlineMath',
     'HTMLTag',
     'Autolink',
-    'LinkReference',
     'HardBreak',
 ]);
 
@@ -110,7 +110,7 @@ function readInlineRuns(
     const marks = { ...inherited };
     const markerName = inlineMarks[node.name];
     if (node.name === 'Link' && !node.getChild('URL')) {
-        appendSourceRuns(state, from, to, marks, runs, true);
+        appendSourceRuns(state, from, to, marks, runs, false, false, true);
         return;
     }
     if (markerName) {
@@ -191,6 +191,8 @@ function readInlineRuns(
         if (child.from > position)
             appendSourceRuns(state, position, child.from, marks, runs);
         if (inlineMarks[child.name]) readInlineRuns(state, child, marks, runs);
+        else if (child.name === 'LinkReference')
+            appendSourceRuns(state, child.from, child.to, marks, runs, false, false, true);
         else
             appendSourceRuns(
                 state,
@@ -213,6 +215,7 @@ function appendSourceRuns(
     runs: FormattingRun[],
     protectedSource = false,
     literal = false,
+    opaqueMarkdown = false,
 ) {
     let position = from;
     while (position < to) {
@@ -228,6 +231,7 @@ function appendSourceRuns(
                 source: state.sliceDoc(position, end),
                 marks,
                 literal,
+                opaqueMarkdown,
                 protected: protectedSource || calloutHeader,
                 selected: false,
             });
@@ -257,6 +261,19 @@ function splitRunAtSelection(
                         !range.empty &&
                         range.from < run.to &&
                         range.to > run.from,
+                ),
+            },
+        ];
+    // Keep reference-link syntax intact, but style it when selected as a whole.
+    if (run.opaqueMarkdown)
+        return [
+            {
+                ...run,
+                selected: selection.ranges.some(
+                    (range) =>
+                        !range.empty &&
+                        range.from <= run.from &&
+                        range.to >= run.to,
                 ),
             },
         ];

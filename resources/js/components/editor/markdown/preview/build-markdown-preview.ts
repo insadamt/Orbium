@@ -386,7 +386,10 @@ export function buildMarkdownPreview(
                         .join(';');
                     if (styles) attributes.style = styles;
                     decorations.push(
-                        Decoration.mark({ attributes }).range(
+                        Decoration.mark({
+                            class: color ? 'cm-md-colored-span' : undefined,
+                            attributes,
+                        }).range(
                             node.from,
                             node.to,
                         ),

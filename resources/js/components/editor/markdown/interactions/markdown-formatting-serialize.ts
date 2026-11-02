@@ -1,5 +1,5 @@
 import type { FormattingRun, TextMarks } from './markdown-formatting-runs';
-import { escapeUnbalancedSpanBrackets } from './markdown-span-source';
+import { escapeSpanTextBrackets } from './markdown-span-source';
 
 const markOrder = [
     'bold',
@@ -211,7 +211,7 @@ function serializedRunText(run: FormattingRun, source: string): string {
         else delete metadata.underline;
         return run.icon.prefix + JSON.stringify(metadata);
     }
-    if (run.protected) return source;
+    if (run.protected || run.opaqueMarkdown) return source;
     if (run.marks.code)
         return run.literal ? source : decodeInlineSource(source);
     if (run.literal)
@@ -219,6 +219,6 @@ function serializedRunText(run: FormattingRun, source: string): string {
             .replace(/&/g, '&amp;')
             .replace(/([\\`*_[\]<>~])/g, '\\$1');
     if (run.marks.color || run.marks.underline || run.marks.href)
-        return escapeUnbalancedSpanBrackets(source);
+        return escapeSpanTextBrackets(source);
     return source;
 }

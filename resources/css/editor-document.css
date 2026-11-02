@@ -118,6 +118,11 @@
     background: var(--muted);
 }
 .orbium-editor hr,
+.orbium-markdown-content .cm-md-colored-span a.cm-md-link {
+    /* Nested links must inherit an explicitly chosen text color. */
+    color: inherit;
+}
+
 .orbium-editor .cm-md-divider {
     border: 0;
     height: 1.75em;
