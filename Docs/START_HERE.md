@@ -1,5 +1,7 @@
 Summary: Entry point for current Orbium implementation status and review gates; depends on the phase specifications and reports linked below.
 
+V3 PHP inline parser parity (2026-11-02): server-side colored-span end detection now matches the frontend's metadata-aware closing and unmatched-opening recovery, addressing the confirmed save-validation mismatch. Review `reports/orbium-v3-inline-brackets-and-colors.md`; runtime acceptance remains pending.
+
 V3 bracket deletion follow-up (2026-11-02): Backspace/Delete now remove escaped brackets atomically and unwrap hidden formatting at color-span boundaries. The inline parser also recovers prematurely closing literal brackets. Refer to `reports/orbium-v3-inline-brackets-and-colors.md` for manual validation. Remain in stage-6 review.
 
 V3 inline bracket/color repair (2026-11-02): colored text now escapes literal `[`/`]` consistently during formatting and direct Live Preview typing. Whole reference-style links retain functional Markdown and selected colors. Follow `reports/orbium-v3-inline-brackets-and-colors.md` for the patch boundaries and exact manual validation. No document-format migration or automated tests; remain in stage-6 review.

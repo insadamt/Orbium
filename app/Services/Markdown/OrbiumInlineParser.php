@@ -94,6 +94,8 @@ final class OrbiumInlineParser implements EnvironmentAwareInterface, InlineParse
     private function findSpanEnd(string $source): int
     {
         $depth = 1;
+        $recoverableClosing = null;
+        $metadataReader = new OrbiumMetadata;
         for ($index = strlen(':orbium['), $length = strlen($source); $index < $length; $index++) {
             if ($source[$index] === '\\') {
                 $index++;
@@ -116,9 +118,31 @@ final class OrbiumInlineParser implements EnvironmentAwareInterface, InlineParse
                 }
             } elseif ($source[$index] === '[') {
                 $depth++;
-            } elseif ($source[$index] === ']' && --$depth === 0) {
-                return $index;
+            } elseif ($source[$index] === ']') {
+                // A formatting span ends only at a valid inline metadata object.
+                // Keep this rule in sync with the CodeMirror inline dialect.
+                if (($source[$index + 1] ?? '') === '{') {
+                    $suffix = substr($source, $index + 1);
+                    try {
+                        $jsonLength = $metadataReader->objectLength($suffix);
+                        $metadataReader->decode(substr($suffix, 0, $jsonLength), true);
+                        if ($depth === 1) {
+                            return $index;
+                        }
+                        // An unmatched literal opening bracket may remain
+                        // after editing; the frontend also accepts this end.
+                        $recoverableClosing = $index;
+                    } catch (ValidationException) {
+                        // This is content, not a valid formatting delimiter.
+                    }
+                }
+                if ($depth > 1) {
+                    $depth--;
+                }
             }
+        }
+        if ($recoverableClosing !== null) {
+            return $recoverableClosing;
         }
         MarkdownContract::invalid('Unclosed Orbium inline span.');
     }

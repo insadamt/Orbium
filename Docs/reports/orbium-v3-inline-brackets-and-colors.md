@@ -39,3 +39,12 @@ This follow-up makes Backspace/Delete remove an escaped square bracket atomicall
 Manual acceptance: In a disposable V3 paragraph, color text followed by many bracket pairs. Repeatedly press Backspace and Delete inside the brackets and at both color boundaries. Check selection across a bracket, undo/redo, recoloring, Source/Live switching, save and reload. One key press must remove one visible bracket, never expose raw metadata, and not change unrelated colors. Repeat in V3 columns, table cells and callouts. Check links and code.
 
 Verification: Authored through connected GitHub without a local dependency environment; formatter, lint, TypeScript, build and browser checks could not be run. No automated tests or browser automation were added or run as instructed by root AGENTS.md. Manual acceptance is still required.
+
+
+## PHP validator parity (2026-11-02)
+
+The user reproduced both exposed formatting syntax and a save failure (`Unclosed Orbium inline span`) after earlier Live Preview changes. The PHP `OrbiumInlineParser::findSpanEnd` still treated any balanced `]` as the closing delimiter. The frontend `balancedSpanEnd` now requires immediately following valid inline metadata and can recover an unmatched literal opening bracket. The two implementations therefore disagreed about the same source.
+
+PHP now scans for a closing bracket followed by valid, decoded inline metadata and uses the same recoverable closing candidate as the frontend. The existing escape, inline-math, dollar-math, and code-span handling stays in place; metadata validation remains strict. This targets server validation of existing V3 content and does not change `.orbie` or client UI. Already damaged source without metadata cannot be reconstructed automatically.
+
+Manual acceptance still required: in a disposable V3 paragraph, color text containing repeated `[]` and test Backspace/Delete within and at the boundaries; inspect Source mode; save and reload; try an unmatched literal opening bracket, nested color, code, links, columns, callouts, and table cells. Confirm no raw color syntax or failed saves. GitHub-only editing could not run local PHP syntax/Pint, TypeScript, build or browser checks; no automated test suite was run under the current root AGENTS.md instructions.
