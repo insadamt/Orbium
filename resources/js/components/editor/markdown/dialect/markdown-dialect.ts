@@ -4,7 +4,7 @@ import type {
     Line,
     MarkdownConfig,
 } from '@lezer/markdown';
-import { jsonObjectEnd } from './metadata';
+import { jsonObjectEnd, readOrbiumMetadata } from './metadata';
 
 let nestedParseDepth = 0;
 
@@ -83,6 +83,7 @@ function parseLiteralBlock(
 function balancedSpanEnd(text: string, start: number): number | null {
     let depth = 1;
     let codeLength = 0;
+    let recoverableClosing: number | null = null;
     for (let position = start; position < text.length; position++) {
         if (text[position] === '\\') {
             position++;
@@ -98,10 +99,23 @@ function balancedSpanEnd(text: string, start: number): number | null {
             position = end - 1;
         } else if (!codeLength && text[position] === '[') {
             if (++depth > 32) return null;
-        } else if (!codeLength && text[position] === ']' && --depth === 0)
-            return position;
+        } else if (!codeLength && text[position] === ']') {
+            // Only a valid metadata suffix can end the colored text wrapper.
+            if (text[position + 1] === '{') {
+                const end = jsonObjectEnd(text, position + 1);
+                if (
+                    end !== null &&
+                    readOrbiumMetadata(text.slice(position + 1, end), 'inline')
+                ) {
+                    if (depth === 1) return position;
+                    // Recover an existing span with one unmatched literal '['.
+                    recoverableClosing = position;
+                }
+            }
+            if (depth > 1) depth--;
+        }
     }
-    return null;
+    return recoverableClosing;
 }
 
 export const orbiumMarkdownDialect: MarkdownConfig = {

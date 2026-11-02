@@ -12,7 +12,10 @@ import type { MarkdownLinkContext } from './markdown-link-preview';
 import { buildMarkdownPreview } from './build-markdown-preview';
 import { markdownPreviewSelection } from './markdown-preview-selection';
 import { removeEmptyFormattingSpans } from './markdown-empty-formatting-spans';
-import { escapeTypedSpanBrackets } from './markdown-span-input';
+import {
+    escapeTypedSpanBrackets,
+    markdownSpanDeletion,
+} from './markdown-span-input';
 
 export function markdownLivePreview(context: MarkdownLinkContext) {
     const previewPlugin = ViewPlugin.fromClass(
@@ -65,5 +68,6 @@ export function markdownLivePreview(context: MarkdownLinkContext) {
         markdownPreviewSelection,
         removeEmptyFormattingSpans,
         escapeTypedSpanBrackets,
+        markdownSpanDeletion,
     ];
 }

@@ -28,3 +28,14 @@ Static source inspection completed. This edit was authored through the connected
 7. Type raw `[` and `]` in explicit Source mode, and use a literal standalone Markdown link in a non-colored paragraph. Expected: normal source editing/link syntax is unchanged.
 
 Remain in stage-6 manual review.
+
+
+## Backspace follow-up — 2026-11-02
+
+After the original formatting repair, pressing Backspace could expose raw color metadata in Live Preview. Literal brackets were represented by two Markdown source characters, but the editor could delete just one source character. A broken escape could turn a visible bracket into a premature span delimiter. Deletion at the visible start or end could also damage an inline wrapper's hidden marker.
+
+This follow-up makes Backspace/Delete remove an escaped square bracket atomically, expands partial keyboard selections at escaped brackets, and unwraps a whole color/underline wrapper at its visible boundary rather than deleting a hidden marker. The dialect now recognizes a closing bracket only when a valid metadata object immediately follows, and recovers an unbalanced literal opening bracket at the last valid metadata suffix. The V3 document format and UI do not change.
+
+Manual acceptance: In a disposable V3 paragraph, color text followed by many bracket pairs. Repeatedly press Backspace and Delete inside the brackets and at both color boundaries. Check selection across a bracket, undo/redo, recoloring, Source/Live switching, save and reload. One key press must remove one visible bracket, never expose raw metadata, and not change unrelated colors. Repeat in V3 columns, table cells and callouts. Check links and code.
+
+Verification: Authored through connected GitHub without a local dependency environment; formatter, lint, TypeScript, build and browser checks could not be run. No automated tests or browser automation were added or run as instructed by root AGENTS.md. Manual acceptance is still required.
